@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
     <ClCompile Include="Data\osu.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="Resources\GameResources.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Data\AutoReplay.hpp" />
     <ClInclude Include="Data\bms.hpp" />
     <ClInclude Include="Data\Chart.hpp" />
     <ClInclude Include="Data\osu.hpp" />

@@ -64,8 +64,18 @@ RhythmEngine::~RhythmEngine() {
 bool RhythmEngine::Load(Chart* chart) {
 	m_currentChart = chart;
 
+	m_autoHitIndex.clear();
+	m_autoHitInfos.clear();
+
 	for (int i = 0; i < chart->m_keyCount; i++) {
-		m_tracks.push_back(new GameTrack( this, trackOffset[i] ));
+		m_tracks.push_back(new GameTrack( this, i, trackOffset[i] ));
+		m_autoHitIndex[i] = 0;
+
+		if (m_eventCallback) {
+			m_tracks[i]->ListenEvent([&](int lane, bool state) {
+				m_eventCallback(lane, state);
+			});
+		}
 	}
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
@@ -83,6 +93,15 @@ bool RhythmEngine::Load(Chart* chart) {
 		m_autoSamples.push_back(sample);
 	}
 
+	auto replay = AutoReplay::CreateReplay(chart);
+	std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
+		return a.Time < b.Time;
+	});
+
+	for (auto& hit : replay) {
+		m_autoHitInfos[hit.Lane].push_back(hit);
+	}
+
 	std::sort(m_notes.begin(), m_notes.end(), [](const NoteInfo& a, const NoteInfo& b) {
 		return a.StartTime < b.StartTime;
 	});
@@ -90,6 +109,8 @@ bool RhythmEngine::Load(Chart* chart) {
 	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
 		return a.StartTime < b.StartTime;
 	});
+
+	m_beatmapOffset = chart->m_bpms[0].StartTime;
 
 	GameAudioSampleCache::Load(chart);
 	CreateTimingMarkers();
@@ -104,7 +125,7 @@ bool RhythmEngine::Start() {
 		}
 	}
 
-	m_currentAudioPosition -= 500;
+	m_currentAudioPosition -= 3000;
 	m_state = GameState::Playing;
 	return true;
 }
@@ -144,6 +165,25 @@ void RhythmEngine::Update(double delta) {
 		}
 		else {
 			break;
+		}
+	}
+
+	for (int i = 0; i < 7; i++) {
+		int& index = m_autoHitIndex[i];
+
+		if (index < m_autoHitInfos[i].size() 
+			&& m_currentAudioGamePosition >= m_autoHitInfos[i][index].Time) {
+			
+			auto& info = m_autoHitInfos[i][index];
+
+			if (info.Type == ReplayHitType::KEY_DOWN) {
+				m_tracks[i]->OnKeyDown();
+			}
+			else {
+				m_tracks[i]->OnKeyUp();
+			}
+
+			index++;
 		}
 	}
 }
@@ -191,7 +231,7 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 		if (key.second.key == state.key) {
 			key.second.isPressed = true;
 
-			m_tracks[key.first]->OnKeyDown(state);
+			m_tracks[key.first]->OnKeyDown();
 		}
 	}
 }
@@ -203,9 +243,13 @@ void RhythmEngine::OnKeyUp(const KeyState& state) {
 		if (key.second.key == state.key) {
 			key.second.isPressed = false;
 
-			m_tracks[key.first]->OnKeyUp(state);
+			m_tracks[key.first]->OnKeyUp();
 		}
 	}
+}
+
+void RhythmEngine::ListenKeyEvent(std::function<void(int,bool)> callback) {
+	m_eventCallback = callback;
 }
 
 double RhythmEngine::GetAudioPosition() const {

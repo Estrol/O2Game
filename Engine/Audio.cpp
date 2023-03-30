@@ -91,25 +91,29 @@ bool Audio::CreateStream() {
 		return false;
 	}
 
-	m_hStream = BASS_StreamCreateFile(TRUE, m_pBuffer, 0, m_dwSize, BASS_SAMPLE_FLOAT); //BASS_STREAM_DECODE | BASS_SAMPLE_FLOAT);
+	m_hStream = BASS_StreamCreateFile(TRUE, m_pBuffer, 0, m_dwSize, BASS_STREAM_DECODE | BASS_SAMPLE_FLOAT);
 	if (!m_hStream) {
 		MessageBoxA(NULL, "Failed to create stream", "EstEngine Error", MB_ICONERROR);
 		return false;
 	}
 
-	/*m_hStream = BASS_FX_TempoCreate(m_hStream, BASS_FX_FREESOURCE);
+	m_hStream = BASS_FX_TempoCreate(m_hStream, BASS_FX_FREESOURCE);
 	if (!m_hStream) {
 		MessageBoxA(NULL, "Failed to create tempo stream", "EstEngine Error", MB_ICONERROR);
 		return false;
-	}*/
+	}
 
 	volume = 50;
 	SetVolume(volume);
 
-	if (!BASS_ChannelUpdate(m_hStream, 0)) {
+	if (!BASS_ChannelUpdate(m_hStream, 1000)) {
 		MessageBoxA(NULL, "Failed to update stream", "EstEngine Error", MB_ICONERROR);
 		return false;
 	}
+
+	// HACK: This is the fastest way to fix delay problem!
+	BASS_ChannelPlay(m_hStream, FALSE);
+	BASS_ChannelPause(m_hStream);
 
 	return true;
 }

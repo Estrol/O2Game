@@ -7,24 +7,14 @@
 GameplayScene::GameplayScene() : Scene::Scene() {
 	m_keyLighting = {};
 	m_keyButtons = {};
+	m_keyState = {};
 	m_game = nullptr;
-
-	m_keyMap = {
-		{ManiaKeys::MANIA_KEY_1, {Keys::A, false}},
-		{ManiaKeys::MANIA_KEY_2, {Keys::S, false}},
-		{ManiaKeys::MANIA_KEY_3, {Keys::D, false}},
-		{ManiaKeys::MANIA_KEY_4, {Keys::Space, false}},
-		{ManiaKeys::MANIA_KEY_5, {Keys::J, false}},
-		{ManiaKeys::MANIA_KEY_6, {Keys::K, false}},
-		{ManiaKeys::MANIA_KEY_7, {Keys::L, false}},
-	};
 }
 
 void GameplayScene::Update(double delta) {
-	static double waitTime = 0;
 	static bool started = false;
 	
-	if ((waitTime += delta) > 5 && !started) {
+	if (!started) {
 		started = true;
 
 		m_game->Start();
@@ -36,8 +26,8 @@ void GameplayScene::Update(double delta) {
 void GameplayScene::Render(double delta) {
 	m_playfieldBG->Draw();
 	
-	for (auto& it : m_keyMap) {
-		if (it.second.isPressed) {
+	for (auto& it : m_keyState) {
+		if (it.second) {
 			m_keyLighting[it.first]->Draw();
 			m_keyButtons[it.first]->Draw();
 		}
@@ -51,26 +41,18 @@ void GameplayScene::Input(double delta) {
 }
 
 void GameplayScene::OnKeyDown(const KeyState& state) {
-	for (auto& it : m_keyMap) {
-		if (it.second.key == state.key) {
-			it.second.isPressed = true;
-		}
-	}
-
 	m_game->OnKeyDown(state);
 }
 
 void GameplayScene::OnKeyUp(const KeyState& state) {
-	for (auto& it : m_keyMap) {
-		if (it.second.key == state.key) {
-			it.second.isPressed = false;
-		}
-	}
-
 	m_game->OnKeyUp(state);
 }
 
 bool GameplayScene::Attach() {
+	for (int i = 0; i < 7; i++) {
+		m_keyState[i] = false;
+	}
+
 	{
 		auto playfieldFile = GamePlayingResource::GetFile("Note_BG.ojs");
 		if (!playfieldFile) {
@@ -114,8 +96,8 @@ bool GameplayScene::Attach() {
 			O2Texture* lighting = new O2Texture(keyLighting->Frames[i].get());
 			O2Texture* button = new O2Texture(keyButton->Frames[i].get());
 
-			m_keyLighting.insert({ (ManiaKeys)i, lighting });
-			m_keyButtons.insert({ (ManiaKeys)i, button });
+			m_keyLighting.insert({ i, lighting });
+			m_keyButtons.insert({ i, button });
 		}
 	}
 
@@ -128,11 +110,15 @@ bool GameplayScene::Attach() {
 			return false;
 		}
 
-		std::string title = "Estrol RhythmPlayer: " + beatmap.Artist + " - " + beatmap.Title;
+		std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
 		Window::GetInstance()->SetWindowTitle(title);
 
 		Chart* chart = new Chart(beatmap);
 		m_game = new RhythmEngine();
+		m_game->ListenKeyEvent([&](int lane, bool state) {
+			m_keyState[lane] = state;
+		});
+
 		m_game->Load(chart);
 	}
 

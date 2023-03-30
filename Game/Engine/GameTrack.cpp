@@ -4,8 +4,9 @@
 #include <algorithm>
 #include <mutex>
 
-GameTrack::GameTrack(RhythmEngine* engine, int offset) {
+GameTrack::GameTrack(RhythmEngine* engine, int laneIndex, int offset) {
 	m_engine = engine;
+	m_laneIndex = laneIndex;
 	m_laneOffset = offset;
 	m_deleteDelay = 0;
 }
@@ -53,7 +54,11 @@ void GameTrack::Render(double delta) {
 	}
 }
 
-void GameTrack::OnKeyUp(const KeyState& key) {
+void GameTrack::OnKeyUp() {
+	if (m_callback) {
+		m_callback(m_laneIndex, false);
+	}
+
 	std::vector<Note*> copy = m_notes;
 	for (auto& it : copy) {
 		auto result = it->CheckRelease();
@@ -65,7 +70,11 @@ void GameTrack::OnKeyUp(const KeyState& key) {
 	}
 }
 
-void GameTrack::OnKeyDown(const KeyState& key) {
+void GameTrack::OnKeyDown() {
+	if (m_callback) {
+		m_callback(m_laneIndex, true);
+	}
+
 	std::vector<Note*> copy = m_notes;
 	for (auto& it : copy) {
 		auto result = it->CheckHit();
@@ -91,4 +100,8 @@ void GameTrack::AddNote(NoteInfoDesc* desc) {
 	note->SetXPosition(m_laneOffset);
 
 	m_notes.push_back(note);
+}
+
+void GameTrack::ListenEvent(std::function<void(int, bool)> callback) {
+	m_callback = callback;
 }

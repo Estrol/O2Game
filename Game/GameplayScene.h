@@ -25,10 +25,9 @@ public:
 	bool Detach() override;
 	
 private:
-	std::unordered_map<ManiaKeys, O2Texture*> m_keyLighting;
-	std::unordered_map<ManiaKeys, O2Texture*> m_keyButtons;
-
-	std::unordered_map<ManiaKeys, ManiaKeyState> m_keyMap;
+	std::unordered_map<int, O2Texture*> m_keyLighting;
+	std::unordered_map<int, O2Texture*> m_keyButtons;
+	std::unordered_map<int, bool> m_keyState;
 
 	O2Texture* m_playfieldBG;
 	RhythmEngine* m_game;

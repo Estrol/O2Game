@@ -20,7 +20,7 @@ typedef HRESULT(*D3D11_CreateDeviceAndSwapChain)(
     ID3D11DeviceContext**       ppImmediateContext
 );
 
-#define MAIN_SPRITE_BATCH 0
+constexpr auto MAIN_SPRITE_BATCH = 0;
 
 Renderer::Renderer() {
 	m_scissorRect = std::unordered_map<int, RECT>();
@@ -76,7 +76,11 @@ bool Renderer::Create(RendererMode mode, Window* window, RECT& internalResolutio
     scd.SampleDesc.Count = 4;
     scd.Windowed = TRUE;
 
-    UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG;
+    UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+#if _DEBUG
+    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
     D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_11_1;
     D3D_FEATURE_LEVEL level2 = D3D_FEATURE_LEVEL_11_1;

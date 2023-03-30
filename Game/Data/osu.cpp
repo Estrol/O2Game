@@ -164,10 +164,15 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			}
 
 			OsuEvent ev = {};
-			ev.StartTime = std::stof(event[1]);
+			try {
+				ev.StartTime = std::stof(event[1]);
+			}
+			catch (std::invalid_argument& e) {
+				ev.StartTime = 0; // WHY TF people set invalid things on invalid row
+			}
 
 			// background
-			if (event[0] == "0" && event[1] == "0") {
+			if (event[0] == "0") {
 				ev.Type = OsuEventType::Background;
 			}
 

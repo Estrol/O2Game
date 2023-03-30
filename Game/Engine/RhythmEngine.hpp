@@ -1,7 +1,8 @@
 #pragma once
 #include <vector>
 #include "../../Engine/EstEngine.hpp"
-#include "../Data/chart.hpp"
+#include "../Data/Chart.hpp"
+#include "../Data/AutoReplay.hpp"
 #include "GameTrack.hpp"
 
 enum class GameState {
@@ -26,6 +27,8 @@ public:
 	void OnKeyDown(const KeyState& key);
 	void OnKeyUp(const KeyState& key);
 
+	void ListenKeyEvent(std::function<void(int,bool)> callback);
+
 	double GetAudioPosition() const;
 	double GetVisualPosition() const;
 	double GetGameAudioPosition() const;
@@ -41,7 +44,7 @@ private:
 	double GetPositionFromOffset(double offset);
 	double GetPositionFromOffset(double offset, int index);
 
-	double m_rate, m_offset;
+	double m_rate, m_offset, m_beatmapOffset;
 	double m_currentAudioPosition;
 	double m_currentVisualPosition;
 	double m_currentAudioGamePosition;
@@ -63,4 +66,8 @@ private:
 	std::vector<GameTrack*> m_tracks;
 	std::vector<NoteInfo> m_notes;
 	std::vector<AutoSample> m_autoSamples;
+	std::unordered_map<int, int> m_autoHitIndex;
+	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
+
+	std::function<void(int, bool)> m_eventCallback;
 };

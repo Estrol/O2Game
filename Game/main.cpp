@@ -42,7 +42,11 @@ int main(int argc, char* argv[]) {
 	if (!file.ends_with(".osu") || !std::filesystem::exists(file)) {
 		file = prompt();
 
-		if (!file.ends_with(".osu")) {
+		if (file.size() == 0) {
+			MessageBoxA(NULL, "You need select file, try again when open this game!", "EstGame Error", MB_ICONERROR);
+			return -1;
+		}
+		else if (!file.ends_with(".osu")) {
 			MessageBoxA(NULL, "Not an .osu file!", "EstGame Error", MB_ICONERROR);
 			return -1;
 		}
@@ -60,6 +64,6 @@ int main(int argc, char* argv[]) {
 	MyGame game;
 	
 	if (game.Init()) {
-		game.Run(1000.0);
+		game.Run(360.0);
 	}
 }

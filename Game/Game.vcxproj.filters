@@ -75,6 +75,9 @@
     <ClCompile Include="EnvironmentSetup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Data\AutoReplay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyGame.h">
@@ -135,6 +138,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EnvironmentSetup.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\AutoReplay.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
