@@ -10,7 +10,7 @@ struct NoteAudioSample {
 	AudioSample* Sample;
 };
 
-namespace {
+namespace GameAudioSampleCache {
 	std::vector<NoteAudioSample> samples;
 	std::vector<NoteAudioSample> events;
 
@@ -48,12 +48,22 @@ void GameAudioSampleCache::Load(Chart* chart) {
 		}
 
 		bool found = false;
-		for (auto& fileExt : ext) {
-			std::string tmpPath = path + "." + fileExt;
-			if (std::filesystem::exists(tmpPath)) {
-				path = tmpPath;
-				found = true;
-				break;
+		if (!alreadyHasExt) {
+			for (auto& fileExt : ext) {
+				std::string tmpPath = path + "." + fileExt;
+				if (std::filesystem::exists(tmpPath)) {
+					path = tmpPath;
+					found = true;
+					break;
+				}
+			}
+		}
+
+		if (!found) {
+			found = std::filesystem::exists(it.FileName);
+
+			if (found) {
+				path = it.FileName;
 			}
 		}
 
@@ -65,7 +75,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 				continue;
 			}
 
-			events.push_back(sample);
+			samples.push_back(sample);
 		}
 		else {
 			sample.FilePath = it.FileName;
@@ -75,7 +85,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 				continue;
 			}
 
-			events.push_back(sample);
+			samples.push_back(sample);
 		}
 	}
 
@@ -127,7 +137,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 }
 
 AudioSampleChannel* GameAudioSampleCache::Play(int index, int volume) {
-	return nullptr;
+	//return nullptr;
 
 	auto& sample = samples[index];
 	auto channel = sample.Sample->CreateChannel().release();

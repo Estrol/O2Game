@@ -11,10 +11,7 @@ enum class RendererMode {
 
 class Renderer {
 public:
-	Renderer();
-	~Renderer();
-
-	bool Create(RendererMode mode, Window* window, RECT& internalResolution);
+	bool Create(RendererMode mode, Window* window);
 	bool Destroy();
 
 	bool BeginRender();
@@ -35,6 +32,9 @@ public:
 	static void Release();
 
 private:
+	Renderer();
+	~Renderer();
+
 	static Renderer* s_instance;
 
 	ID3D11RasterizerState* m_scissorState;

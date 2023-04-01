@@ -56,9 +56,7 @@ RhythmEngine::RhythmEngine() {
 }
 
 RhythmEngine::~RhythmEngine() {
-	for (auto& it : m_tracks) {
-		delete it;
-	}
+	Release();
 }
 
 bool RhythmEngine::Load(Chart* chart) {
@@ -111,9 +109,17 @@ bool RhythmEngine::Load(Chart* chart) {
 	});
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
+	m_audioLength = chart->GetLength();
 
 	GameAudioSampleCache::Load(chart);
+	
 	CreateTimingMarkers();
+	UpdateVirtualResolution();
+	UpdateGamePosition();
+	UpdateNotes();
+
+	m_timingLineManager = new TimingLineManager(this);
+
 	m_state = GameState::NotGame;
 	return true;
 }
@@ -137,6 +143,8 @@ bool RhythmEngine::Stop() {
 void RhythmEngine::Update(double delta) {
 	if (m_state == GameState::NotGame) return;
 
+	// Since I'm coming from Roblox, and I had no idea how to Real-Time sync the audio
+	// I decided to use this method again from Roblox project I did in past.
 	m_currentAudioPosition += (delta * m_rate) * 1000;
 
 	if (m_currentAudioPosition >= 0 && !m_started) {
@@ -152,10 +160,13 @@ void RhythmEngine::Update(double delta) {
 	UpdateGamePosition();
 	UpdateNotes();
 
+	m_timingLineManager->Update(delta);
+
 	for (auto& it : m_tracks) {
 		it->Update(delta);
 	}
 
+	// Sample event updates
 	for (int i = m_currentSampleIndex; i < m_autoSamples.size(); i++) {
 		auto& sample = m_autoSamples[i];
 
@@ -168,6 +179,7 @@ void RhythmEngine::Update(double delta) {
 		}
 	}
 
+	// Autoplay updates
 	for (int i = 0; i < 7; i++) {
 		int& index = m_autoHitIndex[i];
 
@@ -210,6 +222,8 @@ void RhythmEngine::Render(double delta) {
 		}
 	);
 
+	m_timingLineManager->Render(delta);
+
 	for (auto& it : m_tracks) {
 		it->Render(delta);
 	}
@@ -231,7 +245,9 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 		if (key.second.key == state.key) {
 			key.second.isPressed = true;
 
-			m_tracks[key.first]->OnKeyDown();
+			if (key.first < m_tracks.size()) {
+				m_tracks[key.first]->OnKeyDown();
+			}
 		}
 	}
 }
@@ -243,7 +259,9 @@ void RhythmEngine::OnKeyUp(const KeyState& state) {
 		if (key.second.key == state.key) {
 			key.second.isPressed = false;
 
-			m_tracks[key.first]->OnKeyUp();
+			if (key.first < m_tracks.size()) {
+				m_tracks[key.first]->OnKeyUp();
+			}
 		}
 	}
 }
@@ -274,16 +292,32 @@ double RhythmEngine::GetPrebufferTiming() const {
 
 double RhythmEngine::GetNotespeed() const {
 	double speed = static_cast<double>(m_scrollSpeed);
-	double scrollingFactor = 1920.0 / 1366.0;
+	double scrollingFactor = 800.0 / 480.0;
 	float virtualRatio = m_virtualResolution.Y / 600.0;
 
 	return (speed / 10.0) / (20.0 / m_rate) * scrollingFactor * virtualRatio;
+}
+
+int RhythmEngine::GetAudioLength() const {
+	return m_audioLength;
+}
+
+std::vector<TimingInfo> RhythmEngine::GetBPMs() const {
+	return m_currentChart->m_bpms;
+}
+
+std::vector<TimingInfo> RhythmEngine::GetSVs() const {
+	return m_currentChart->m_svs;
 }
 
 void RhythmEngine::UpdateNotes() {
 	for (int i = m_currentNoteIndex; i < m_notes.size(); i++) {
 		auto& note = m_notes[i];
 		double startTime = GetPositionFromOffset(note.StartTime);
+		double endTime = 0;
+		if (note.EndTime != -1) {
+			endTime = GetPositionFromOffset(note.EndTime);
+		}
 		
 		if (m_currentAudioGamePosition + (3000.0 / GetNotespeed()) > note.StartTime
 			|| (m_currentTrackPosition - startTime > GetPrebufferTiming())) {
@@ -296,10 +330,11 @@ void RhythmEngine::UpdateNotes() {
 			desc.Type = note.Type;
 			desc.EndTime = -1;
 			desc.InitialTrackPosition = startTime;
+			desc.EndTrackPosition = -1;
 
 			if (note.Type == NoteType::HOLD) {
 				desc.EndTime = note.EndTime;
-				desc.EndTrackPosition = GetPositionFromOffset(note.EndTime);
+				desc.EndTrackPosition = endTime;
 			}
 			
 			m_tracks[note.LaneIndex]->AddNote(&desc);
@@ -324,8 +359,8 @@ void RhythmEngine::UpdateGamePosition() {
 }
 
 void RhythmEngine::UpdateVirtualResolution() {
-	double width = Window::GetInstance()->GetHeight();
-	double height = Window::GetInstance()->GetHeight();
+	double width = Window::GetInstance()->GetBufferHeight();
+	double height = Window::GetInstance()->GetBufferHeight();
 
 	float ratio = (float)width / (float)height;
 	if (ratio >= 16.0f / 9.0f) {
@@ -343,7 +378,7 @@ void RhythmEngine::CreateTimingMarkers() {
 		m_timingPositionMarkers.push_back(pos);
 
 		for (int i = 1; i < svs.size(); i++) {
-			pos += std::round(svs[i].StartTime - svs[i - 1].StartTime) * (svs[i - 1].Value * 100);
+			pos += std::round((svs[i].StartTime - svs[i - 1].StartTime) * (svs[i - 1].Value * 100));
 
 			m_timingPositionMarkers.push_back(pos);
 		}
@@ -373,4 +408,12 @@ double RhythmEngine::GetPositionFromOffset(double offset, int index) {
 	pos += (offset - m_currentChart->m_svs[index].StartTime) * (m_currentChart->m_svs[index].Value * 100);
 
 	return pos;
+}
+
+void RhythmEngine::Release() {
+	for (int i = 0; i < m_tracks.size(); i++) {
+		delete m_tracks[i];
+	}
+
+	delete m_timingLineManager;
 }

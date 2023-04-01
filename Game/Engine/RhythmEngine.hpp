@@ -4,6 +4,7 @@
 #include "../Data/Chart.hpp"
 #include "../Data/AutoReplay.hpp"
 #include "GameTrack.hpp"
+#include "TimingLineManager.hpp"
 
 enum class GameState {
 	NotGame,
@@ -35,14 +36,21 @@ public:
 	double GetTrackPosition() const;
 	double GetPrebufferTiming() const;
 	double GetNotespeed() const;
+	int GetAudioLength() const;
+
+	double GetPositionFromOffset(double offset);
+	double GetPositionFromOffset(double offset, int index);
+
+	std::vector<TimingInfo> GetBPMs() const;
+	std::vector<TimingInfo> GetSVs() const;
 
 private:
 	void UpdateNotes();
 	void UpdateGamePosition();
 	void UpdateVirtualResolution();
 	void CreateTimingMarkers();
-	double GetPositionFromOffset(double offset);
-	double GetPositionFromOffset(double offset, int index);
+
+	void Release();
 
 	double m_rate, m_offset, m_beatmapOffset;
 	double m_currentAudioPosition;
@@ -54,6 +62,7 @@ private:
 	int m_currentNoteIndex = 0;
 	int m_currentSVIndex = 0;
 	int m_scrollSpeed = 0;
+	int m_audioLength = 0;
 
 	bool m_started = false;
 	GameState m_state = GameState::NotGame;
@@ -69,5 +78,6 @@ private:
 	std::unordered_map<int, int> m_autoHitIndex;
 	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
 
+	TimingLineManager* m_timingLineManager;
 	std::function<void(int, bool)> m_eventCallback;
 };

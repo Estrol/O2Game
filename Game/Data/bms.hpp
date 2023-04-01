@@ -4,18 +4,24 @@
 #include <unordered_map>
 
 namespace BMS {
-	struct BMSTiming {
+	struct BMSRawTiming {
 		int section = 0;
 		double offset = 0.0;
 		double time = 0.0;
 		double bpm = -1.0;
-		bool changed = false;
+		bool changed = true;
 		double timeSignature = 1.0;
 	};
 
-	struct BMSNote {
+	struct BMSTiming {
 		double StartTime;
-		double EndTime;
+		double Value;
+		float TimeSignature;
+	};
+
+	struct BMSNote {
+		int StartTime;
+		int EndTime;
 		int Lane;
 		int SampleIndex;
 	};
@@ -30,9 +36,15 @@ namespace BMS {
 
 		std::string Title = "";
 		std::string Artist = "";
+		std::string FileDirectory = "";
 		int Level = 0;
 		float BPM = 0.0f;
 		float TimeSignature = 0.0f;
+		
+		std::vector<BMSNote> Notes;
+		std::vector<BMSTiming> Timings;
+		std::unordered_map<int, std::string> Samples;
+
 	private:
 		bool m_valid = false;
 
@@ -46,11 +58,8 @@ namespace BMS {
 		std::unordered_map<std::string, std::string> m_wavs;
 		std::unordered_map<std::string, double> m_bpms;
 		std::unordered_map<std::string, bool> m_noteDicts;
+		std::vector<BMSRawTiming> m_rawTimings;
 
 		BMSNote* m_holdState[7];
-
-		/* idk */
-		std::vector<BMSTiming> m_timings;
-		std::vector<BMSNote> m_notes;
 	};
 }

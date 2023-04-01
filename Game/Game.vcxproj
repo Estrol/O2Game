@@ -135,6 +135,8 @@
     <ClCompile Include="Data\bms.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
     <ClCompile Include="Data\osu.cpp" />
+    <ClCompile Include="Engine\DrawableLine.cpp" />
+    <ClCompile Include="Engine\DrawableLine.hpp" />
     <ClCompile Include="Engine\DrawableTile.cpp" />
     <ClCompile Include="EnvironmentSetup.cpp" />
     <ClCompile Include="Engine\GameAudioSampleCache.cpp" />
@@ -151,6 +153,8 @@
     <ClCompile Include="MyGame.cpp" />
     <ClCompile Include="Engine\DrawableNote.cpp" />
     <ClCompile Include="Resources\GameResources.cpp" />
+    <ClCompile Include="Engine\TimingLineManager.cpp" />
+    <ClCompile Include="Engine\TimingLine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data\AutoReplay.hpp" />
@@ -174,6 +178,9 @@
     <ClInclude Include="MyGame.h" />
     <ClInclude Include="Engine\DrawableNote.hpp" />
     <ClInclude Include="Resources\GameResources.hpp" />
+    <ClInclude Include="Engine\TimingLineManager.hpp" />
+    <ClInclude Include="Engine\TimingLine.hpp" />
+    <ClInclude Include="Resources\iterable_queue.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

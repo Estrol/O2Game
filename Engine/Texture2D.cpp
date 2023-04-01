@@ -61,7 +61,7 @@ Texture2D::Texture2D(ID3D11ShaderResourceView* texture) {
 	Rotation = 0;
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
-	m_bDisposeTexture = true;
+	m_bDisposeTexture = false;
 }
 
 Texture2D::~Texture2D() {

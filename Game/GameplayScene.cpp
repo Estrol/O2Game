@@ -103,18 +103,41 @@ bool GameplayScene::Attach() {
 
 	{
 		std::string file = EnvironmentSetup::Get("FILE");
-		Osu::Beatmap beatmap(file);
+		const char* bmsfile[] = {".bms", ".bme", ".bml"};
 
-		if (!beatmap.IsValid()) {
-			MessageBoxA(NULL, "Failed to load beatmap!", "EstEngine Error", MB_ICONERROR);
+		Chart* chart = nullptr;
+		if (file.find(bmsfile[0]) != std::string::npos || file.find(bmsfile[1]) != std::string::npos || file.find(bmsfile[2]) != std::string::npos) {
+			BMS::BMSFile beatmap;
+			beatmap.Load(file);
+			
+			if (!beatmap.IsValid()) {
+				MessageBoxA(NULL, "Failed to load BMS!", "EstEngine Error", MB_ICONERROR);
+				return false;
+			}
+
+			chart = new Chart(beatmap);
+			m_game = new RhythmEngine();
+		}
+		else {
+			Osu::Beatmap beatmap(file);
+
+			if (!beatmap.IsValid()) {
+				MessageBoxA(NULL, "Failed to load beatmap!", "EstEngine Error", MB_ICONERROR);
+				return false;
+			}
+
+			std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
+			Window::GetInstance()->SetWindowTitle(title);
+
+			Chart* chart = new Chart(beatmap);
+			m_game = new RhythmEngine();
+		}
+
+		if (!m_game) {
+			MessageBoxA(NULL, "Failed to load game!", "EstEngine Error", MB_ICONERROR);
 			return false;
 		}
 
-		std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
-		Window::GetInstance()->SetWindowTitle(title);
-
-		Chart* chart = new Chart(beatmap);
-		m_game = new RhythmEngine();
 		m_game->ListenKeyEvent([&](int lane, bool state) {
 			m_keyState[lane] = state;
 		});

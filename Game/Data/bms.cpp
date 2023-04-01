@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <filesystem>
 
 uint64_t Base36_Decode(const std::string& str) {
 	std::string CharList = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -21,18 +22,18 @@ uint64_t Base36_Decode(const std::string& str) {
 	return result;
 }
 
-int BMSTiming_Compare(const BMS::BMSTiming& a, const BMS::BMSTiming& b) {
-	if (a.section < b.section) {
+int BMSRawTiming_Compare(const BMS::BMSRawTiming& a, const BMS::BMSRawTiming& b) {
+	if (a.section > b.section) {
 		return 1;
 	}
-	else if (a.section > b.section) {
+	else if (a.section < b.section) {
 		return -1;
 	}
 	else {
-		if (a.offset < b.offset) {
+		if (a.offset > b.offset) {
 			return 1;
 		}
-		else if (a.offset > b.offset) {
+		else if (a.offset < b.offset) {
 			return -1;
 		}
 		else {
@@ -40,6 +41,28 @@ int BMSTiming_Compare(const BMS::BMSTiming& a, const BMS::BMSTiming& b) {
 		}
 	}
 }
+
+bool compareTimingBMS(const BMS::BMSRawTiming& x, const BMS::BMSRawTiming& y) {
+	if (x.section < y.section)
+		return true;
+	else if (x.section > y.section)
+		return false;
+	else
+	{
+		if (x.offset < y.offset)
+			return true;
+		else if (x.offset > y.offset)
+			return false;
+		else
+			return false;
+	}
+}
+
+struct BSMRawTimingComparer {
+	bool operator()(const BMS::BMSRawTiming& a, const BMS::BMSRawTiming& b) {
+		return compareTimingBMS(a, b);
+	}
+};
 
 std::vector<std::string> SplitString(const std::string& str, char delimiter) {
 	std::vector<std::string> result;
@@ -87,10 +110,10 @@ bool BMS::BMSFile::LoadMetadata(std::vector<std::string>& lines) {
 				Level = std::stoi(value);
 			}
 			else if (data[0] == "#BPM") {
-				BMSTiming timing = {};
+				BMSRawTiming timing = {};
 				timing.bpm = std::stof(value);
 
-				m_timings.push_back(timing);
+				m_rawTimings.push_back(timing);
 			}
 			else if (data[0].size() >= 6) {
 				if (data[0].substr(0, 4) == "#WAV") {
@@ -111,6 +134,9 @@ bool BMS::BMSFile::LoadMetadata(std::vector<std::string>& lines) {
 bool BMS::BMSFile::LoadTimingField(std::vector<std::string>& lines) {
 	for (std::string s : lines) {
 		auto data = SplitString(s, ':');
+		if (data.size() != 2) {
+			continue;
+		}
 
 		auto& _time = data[0];
 		auto& _note = data[1];
@@ -120,70 +146,72 @@ bool BMS::BMSFile::LoadTimingField(std::vector<std::string>& lines) {
 
 		switch (channel) {
 			case 2: { // BPM Change
-				auto exist = std::find_if(m_timings.begin(), m_timings.end(), [measure](BMSTiming& t) {
+				auto exist = std::find_if(m_rawTimings.begin(), m_rawTimings.end(), [measure](BMSRawTiming& t) {
 					return t.section == measure && t.offset == 0 && t.changed == false;
 				});
 
 				std::string val_str = _note;
 				std::replace(val_str.begin(), val_str.end(), ',', '.');
 
-				if (exist == m_timings.end()) {
-					BMSTiming t = {};
+				if (exist == m_rawTimings.end()) {
+					BMSRawTiming t = {};
 					t.timeSignature = std::stof(val_str);
 					t.section = measure;
 					t.offset = 0;
 					t.changed = false;
 
-					m_timings.push_back(t);
+					m_rawTimings.push_back(t);
 				}
 				else {
 					exist->timeSignature = std::stof(val_str);
 				}
 
-				BMSTiming t = {};
+				BMSRawTiming t = {};
 				t.section = measure + 1;
 				t.offset = 0;
 				t.changed = false;
 				
-				m_timings.push_back(t);
+				m_rawTimings.push_back(t);
 				break;
 			}
 
 			case 3: {
+				int sz = _note.size() / 2;
+
 				for (int i = 0; i < _note.size(); i += 2) {
 					std::string sbpm = _note.substr(i, 2);
 					if (sbpm == "00") {
 						continue;
 					}
 
-					BMSTiming t = {};
+					BMSRawTiming t = {};
 					t.section = measure;
-					t.offset = 1.0 * i / _note.size();
+					t.offset = 1.0 * (i / 2) / sz;
 					t.bpm = std::stoul(sbpm, nullptr, 16);
 
-					m_timings.push_back(t);
+					m_rawTimings.push_back(t);
 				}
 
 				break;
 			}
 
 			case 8: {
+				int sz = _note.size() / 2;
+
 				for (int i = 0; i < _note.size(); i += 2) {
 					std::string index = _note.substr(i, 2);
 					if (index == "00") {
 						continue;
 					}
 
-					
-
-					/*if (std::find(m_bpms.begin(), m_bpms.end(), index) != m_bpms.end()) {
-						BMSTiming t = {};
+					if (m_bpms.find(index) != m_bpms.end()) {
+						BMSRawTiming t = {};
 						t.section = measure;
 						t.bpm = m_bpms[index];
-						t.offset = 1.0 * i / _note.size();
+						t.offset = 1.0 * (i / 2) / sz;
 
-						m_timings.push_back(t);
-					}*/
+						m_rawTimings.push_back(t);
+					}
 				}
 
 				break;
@@ -197,6 +225,9 @@ bool BMS::BMSFile::LoadTimingField(std::vector<std::string>& lines) {
 bool BMS::BMSFile::LoadNoteData(std::vector<std::string>& lines) {
 	for (std::string s : lines) {
 		auto data = SplitString(s, ':');
+		if (data.size() != 2) {
+			continue;
+		}
 
 		auto& _time = data[0];
 		auto& _note = data[1];
@@ -211,27 +242,44 @@ bool BMS::BMSFile::LoadNoteData(std::vector<std::string>& lines) {
 		int note_channels[] = { 1, 2, 3, 4, 5, 8, 9 };
 
 		switch (channel) {
+			case 0: {
+				break;
+			}
 			case 1: {
 				
-
 				break;
 			}
 
-			default: {
+			case 11:
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+			case 16:
+			case 18:
+			case 19:
+			case 51:
+			case 52:
+			case 53:
+			case 54:
+			case 55:
+			case 56:
+			case 58:
+			case 59: {
 				bool Scratch = false;
 				bool LN = false;
-				int channel = -1;
+				int xchannel = -1;
 				int column = 0;
 
 				for (int i = 0; i < 7; i++) {
 					column = i;
 
 					if (note_channels[i] + NORMAL_NOTE_CHANNEL == channel) {
-						channel = note_channels[i] + NORMAL_NOTE_CHANNEL;
+						xchannel = note_channels[i] + NORMAL_NOTE_CHANNEL;
 						break;
 					}
 					else if (note_channels[i] + LONG_NOTE_CHANNEL == channel) {
-						channel = note_channels[i] + LONG_NOTE_CHANNEL;
+						xchannel = note_channels[i] + LONG_NOTE_CHANNEL;
 						LN = true;
 						break;
 					}
@@ -241,40 +289,36 @@ bool BMS::BMSFile::LoadNoteData(std::vector<std::string>& lines) {
 					continue;
 				}
 
-				if (Scratch) {
+				int sz = _note.size() / 2;
+				for (int i = 0; i < _note.size(); i += 2) {
+					std::string note = _note.substr(i, 2);
+					if (note == "00") {
+						continue;
+					}
 
-				}
-				else {
-					for (int i = 0; i < _note.size(); i += 2) {
-						std::string note = _note.substr(i, 2);
-						if (note == "00") {
-							continue;
-						}
-
-						if (LN) {
-							if (m_holdState[column] != nullptr) {
-								m_holdState[column]->EndTime = GetTimeFromMeasure(measure, 1.0 * i / _note.size());
-								m_holdState[column] = nullptr;
-							}
-							else {
-								BMSNote n = {};
-								n.SampleIndex = Base36_Decode(note);
-								n.Lane = column;
-								n.StartTime = GetTimeFromMeasure(measure, 1.0 * i / _note.size());
-								m_notes.push_back(n);
-
-								m_holdState[column] = &m_notes.back();
-							}
+					if (LN) {
+						if (m_holdState[column] != nullptr) {
+							m_holdState[column]->EndTime = GetTimeFromMeasure(measure, 1.0 * (i/2) / sz);
+							m_holdState[column] = nullptr;
 						}
 						else {
 							BMSNote n = {};
 							n.SampleIndex = Base36_Decode(note);
 							n.Lane = column;
-							n.StartTime = GetTimeFromMeasure(measure, 1.0 * i / _note.size());
-							n.EndTime = -1;
+							n.StartTime = GetTimeFromMeasure(measure, 1.0 * (i / 2) / sz);
+							Notes.push_back(n);
 
-							m_notes.push_back(n);
+							m_holdState[column] = &Notes.back();
 						}
+					}
+					else {
+						BMSNote n = {};
+						n.SampleIndex = Base36_Decode(note);
+						n.Lane = column;
+						n.StartTime = GetTimeFromMeasure(measure, 1.0 * (i / 2) / sz);
+						n.EndTime = -1;
+
+						Notes.push_back(n);
 					}
 				}
 			}
@@ -291,10 +335,10 @@ bool BMS::BMSFile::LoadNoteData(std::vector<std::string>& lines) {
 }
 
 void BMS::BMSFile::CalculateTime() {
-	BMSTiming current = m_timings[0];
+	BMSRawTiming current = m_rawTimings[0];
 
-	for (int i = 0; i < m_timings.size(); i++) {
-		auto& t = m_timings[i];
+	for (int i = 0; i < m_rawTimings.size(); i++) {
+		auto& t = m_rawTimings[i];
 
 		t.time = ((t.section + t.offset) - (current.section + current.offset)) * (60000.0 * 4.0 / current.bpm) * current.timeSignature + current.time;
 		current.time = t.time;
@@ -314,22 +358,33 @@ void BMS::BMSFile::CalculateTime() {
 	}
 }
 
-double BMS::BMSFile::GetTimeFromMeasure(int measure, double offset) {
-	BMSTiming t = {};
-	t.section = measure;
+double BMS::BMSFile::GetTimeFromMeasure(int section, double offset) {
+	BMSRawTiming t = {};
+	t.section = section;
 	t.offset = offset;
-
-	auto it = std::lower_bound(m_timings.begin(), m_timings.end(), t, BMSTiming_Compare);
-	if (it == m_timings.end()) {
-		it = m_timings.end() - 1;
+	auto it = std::lower_bound(m_rawTimings.begin(), m_rawTimings.end(), t, compareTimingBMS);
+	int index = (it - m_rawTimings.begin());
+	if (index < 0) {
+		index = ~index;
 	}
-	
-	return ((t.section + t.offset) - (it->section + it->section)) * (60000.0 * 4.0 / it->bpm) * it->timeSignature * it->time;
+
+	if (index > m_rawTimings.size()) {
+		index = m_rawTimings.size();
+	}
+
+	if (index == 0) {
+		BMSRawTiming target = m_rawTimings[0];
+		return ((t.section + t.offset) - (target.section + target.offset))* (60000 * 4 / target.bpm)* target.timeSignature + target.time;
+	}
+	else {
+		BMSRawTiming target = m_rawTimings[index - 1];
+		return ((t.section + t.offset) - (target.section + target.offset)) * (60000 * 4 / target.bpm) * target.timeSignature + target.time;
+	}
 }
 
 void BMS::BMSFile::Load(std::string& path) {
 	std::vector<std::string> lines;
-	
+
 	std::fstream fs(path, std::ios::in);
 	if (!fs.is_open()) {
 		return;
@@ -338,6 +393,9 @@ void BMS::BMSFile::Load(std::string& path) {
 	std::stringstream _buffer;
 	_buffer << fs.rdbuf();
 	fs.close();
+
+	std::filesystem::path filePath = path;
+	FileDirectory = filePath.parent_path().string();
 
 	std::string buffer = _buffer.str();
 	{
@@ -358,10 +416,30 @@ void BMS::BMSFile::Load(std::string& path) {
 	LoadMetadata(lines);
 	LoadTimingField(lines);
 
-	
+	std::sort(m_rawTimings.begin(), m_rawTimings.end(), BSMRawTimingComparer());
 
 	CalculateTime();
 	LoadNoteData(lines);
+
+	for (int i = 0; i < m_rawTimings.size(); i++) {
+		auto& t = m_rawTimings[i];
+
+		BMSTiming cp = {};
+		cp.StartTime = t.time;
+		cp.Value = t.changed ? t.bpm : 1;
+		cp.TimeSignature = t.timeSignature * 4;
+		Timings.push_back(cp);
+	}
+
+	// sort Notes based on StartTime
+	std::sort(Notes.begin(), Notes.end(), [](const BMSNote& x, const BMSNote& y) {
+		return x.Lane < y.Lane;
+	});
+
+	for (auto& it : m_wavs) {
+		int index = Base36_Decode(it.first);
+		Samples[index] = it.second;
+	}
 
 	m_valid = true;
 }

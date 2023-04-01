@@ -46,11 +46,8 @@ void GameTrack::Update(double delta) {
 }
 
 void GameTrack::Render(double delta) {
-	std::vector<Note*> copy = m_notes;
-	for (auto& note : copy) {
-		if (note && note->IsDrawable()) {
-			note->Render(delta);
-		}
+	for (auto& note : m_notes) {
+		note->Render(delta);
 	}
 }
 

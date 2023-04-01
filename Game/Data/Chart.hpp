@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "osu.hpp"
+#include "bms.hpp"
 #include <map>
 
 class AudioSample;
@@ -26,6 +27,7 @@ struct NoteInfo {
 struct TimingInfo {
 	double StartTime;
 	float Value;
+	float TimeSignature;
 	TimingType Type;
 };
 
@@ -42,10 +44,13 @@ class Chart {
 public:
 	Chart();
 	Chart(Osu::Beatmap& beatmap);
+	Chart(BMS::BMSFile& bmsfile);
 	~Chart();
 
 	float InitialSvMultiplier;
 	int m_keyCount;
+	
+	int GetLength();
 
 	std::string m_backgroundFile;
 	std::string m_title;

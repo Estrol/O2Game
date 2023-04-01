@@ -49,5 +49,5 @@ protected:
 
 	RECT m_actualSize;
 	ID3D11ShaderResourceView* m_pTexture;
-	DirectX::SpriteBatch* m_pSpriteBatch;
+	DirectX::SpriteBatch* m_pSpriteBatch = nullptr;
 };

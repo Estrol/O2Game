@@ -33,7 +33,7 @@ Renderer::~Renderer() {
 
 Renderer* Renderer::s_instance = nullptr;
 
-bool Renderer::Create(RendererMode mode, Window* window, RECT& internalResolution) {
+bool Renderer::Create(RendererMode mode, Window* window) {
     HMODULE d3d11 = NULL;
 
     if (mode == RendererMode::VULKAN) {
@@ -69,8 +69,8 @@ bool Renderer::Create(RendererMode mode, Window* window, RECT& internalResolutio
     DXGI_SWAP_CHAIN_DESC scd = { 0 };
     scd.BufferCount = 1;
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scd.BufferDesc.Width = internalResolution.right;
-    scd.BufferDesc.Height = internalResolution.bottom;
+    scd.BufferDesc.Width = window->GetBufferWidth();
+    scd.BufferDesc.Height = window->GetBufferHeight();
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.OutputWindow = handle;
     scd.SampleDesc.Count = 4;

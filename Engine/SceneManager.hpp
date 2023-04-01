@@ -8,9 +8,6 @@ struct KeyState;
 
 class SceneManager {
 public:
-	SceneManager();
-	~SceneManager();
-
 	void Update(double delta);
 	void Render(double delta);
 	void Input(double delta);
@@ -30,6 +27,9 @@ public:
 	static void Release();
 
 private:
+	SceneManager();
+	~SceneManager();
+
 	static SceneManager* s_instance;
 	
 	std::unordered_map<int, Scene*> m_scenes;

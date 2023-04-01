@@ -1,6 +1,7 @@
 #include "chart.hpp"
 #include "../../Engine/EstEngine.hpp"
 #include <algorithm>
+#include <fstream>
 #include <filesystem>
 
 Chart::Chart() {
@@ -55,10 +56,12 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	}
 
 	for (auto& timing : beatmap.TimingPoints) {
-		if (timing.BeatLength <= 0) {
+		bool IsSV = timing.Inherited == 0 || timing.BeatLength < 0;
+
+		if (IsSV) {
 			TimingInfo info = {};
 			info.StartTime = timing.Offset;
-			info.Value = -100.0f / timing.BeatLength;
+			info.Value = std::clamp(-100.0f / timing.BeatLength, 0.1f, 10.0f);
 			info.Type = TimingType::SV;
 
 			m_svs.push_back(info);
@@ -67,6 +70,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 			TimingInfo info = {};
 			info.StartTime = timing.Offset;
 			info.Value = 60000 / timing.BeatLength;
+			info.TimeSignature = timing.TimeSignature;
 			info.Type = TimingType::BPM;
 
 			m_bpms.push_back(info);
@@ -98,11 +102,111 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		m_notes.push_back(info);
 	}
 
+	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	std::sort(m_svs.begin(), m_svs.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	NormalizeTimings();
+}
+
+Chart::Chart(BMS::BMSFile& file) {
+	if (!file.IsValid()) {
+		throw std::invalid_argument("Invalid BMS file!");
+	}
+
+	m_beatmapDirectory = file.FileDirectory;
+	m_title = file.Title;
+	m_audio = "";// file.FileDirectory + "/" + "test.mp3";
+	m_keyCount = 7;
+
+	int lastTime[7] = {};
+	std::sort(file.Notes.begin(), file.Notes.end(), [](const BMS::BMSNote& note1, const BMS::BMSNote note2) {
+		return note1.StartTime < note2.StartTime;
+	});
+
+	for (auto& note : file.Notes) {
+		NoteInfo info = {};
+		info.StartTime = note.StartTime;
+		info.Type = NoteType::NORMAL;
+		info.LaneIndex = note.Lane;
+		info.Keysound = note.SampleIndex - 1;
+		
+		if (note.EndTime != -1) {
+			info.Type = NoteType::HOLD;
+			info.EndTime = note.EndTime;
+		}
+
+		// check if overlap lastTime
+		if (info.StartTime < lastTime[info.LaneIndex]) {
+			std::cout << "[Warning] overlapped note found at " << info.StartTime << "ms" << std::endl;
+		}
+		else {
+			lastTime[info.LaneIndex] = info.StartTime;
+			m_notes.push_back(info);
+		}
+	}
+
+	for (auto& timing : file.Timings) {
+		bool IsSV = timing.Value < 0;
+
+		if (IsSV) {
+			TimingInfo info = {};
+			info.StartTime = timing.StartTime;
+			info.Value = std::clamp(timing.Value, 0.1, 10.0);
+			info.Type = TimingType::SV;
+
+			m_svs.push_back(info);
+		}
+		else {
+			TimingInfo info = {};
+			info.StartTime = timing.StartTime;
+			info.Value = timing.Value;
+			info.Type = TimingType::BPM;
+
+			m_bpms.push_back(info);
+		}
+	}
+
+	for (auto& sample : file.Samples) {
+		Sample sm = {};
+		sm.FileName = file.FileDirectory + "\\" + sample.second;
+
+		m_samples.push_back(sm);
+	}
+
+	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	std::sort(m_svs.begin(), m_svs.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
 	NormalizeTimings();
 }
 
 Chart::~Chart() {
 	
+}
+
+int Chart::GetLength() {
+	int length = 0;
+
+	for (auto& note : m_notes) {
+		if (note.StartTime > length) {
+			length = note.StartTime;
+		}
+
+		if (note.EndTime > length) {
+			length = note.EndTime;
+		}
+	}
+
+	return length;
 }
 
 float Chart::GetCommonBPM() {
@@ -118,7 +222,7 @@ float Chart::GetCommonBPM() {
 	auto& lastObject = orderedByDescending[0];
 	double lastTime = lastObject.Type == NoteType::HOLD ? lastObject.EndTime : lastObject.StartTime;
 
-	std::map<float, int> durations;
+	std::unordered_map<float, int> durations;
 	for (int i = (int)m_bpms.size() - 1; i >= 0; i--) {
 		auto& tp = m_bpms[i];
 
@@ -129,7 +233,7 @@ float Chart::GetCommonBPM() {
 		int duration = (int)(lastTime - (i == 0 ? 0 : tp.StartTime));
 		lastTime = tp.StartTime;
 
-		if (durations.count(tp.Value) == 1) {
+		if (durations.find(tp.Value) != durations.end()) {
 			durations[tp.Value] += duration;
 		}
 		else {
@@ -160,17 +264,19 @@ void Chart::NormalizeTimings() {
 	float baseBPM = GetCommonBPM();
 	float currentBPM = m_bpms[0].Value;
 	int currentSvIdx = 0;
-	double currentSvStartTime = -1.0f;
+
 	double currentSvMultiplier = 1.0f;
+
+	double currentSvStartTime = -1.0f;
 	double currentAdjustedSvMultiplier = -1.0f;
 	double initialSvMultiplier = -1.0f;
 
 	for (int i = 0; i < m_bpms.size(); i++) {
 		auto& tp = m_bpms[i];
 
-		bool hasTimingHaveSameTime = false;
-		if (i + 1 < m_bpms.size() && m_bpms[i + 1].StartTime == tp.StartTime) {
-			hasTimingHaveSameTime = true;
+		bool exist = false;
+		if ((i + 1) < m_bpms.size() && m_bpms[i + 1].StartTime == tp.StartTime) {
+			exist = true;
 		}
 
 		while (true) {
@@ -183,7 +289,7 @@ void Chart::NormalizeTimings() {
 				break;
 			}
 
-			if (hasTimingHaveSameTime && sv.StartTime == tp.StartTime) {
+			if (exist && sv.StartTime == tp.StartTime) {
 				break;
 			}
 
@@ -249,6 +355,18 @@ void Chart::NormalizeTimings() {
 			currentAdjustedSvMultiplier = multiplier;
 		}
 	}
+
+	std::stringstream ss;
+	ss << "Time,Multiplier\n";
+	
+	for (int i = 0; i < result.size(); i++) {
+		auto& tp = result[i];
+		ss << tp.StartTime << "," << tp.Value << "\n";
+	}
+
+	std::ofstream file("F:/o2yes.csv");
+	file << ss.str();
+	file.close();
 
 	InitialSvMultiplier = initialSvMultiplier == -1.0f ? 1 : initialSvMultiplier;
 

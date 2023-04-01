@@ -18,7 +18,11 @@ LoadingScene::~LoadingScene() {
 void LoadingScene::Update(double delta) {
 	m_counter += delta;
 
-	if (m_counter > 5) {
+#ifdef _DEBUG
+	m_counter = 5;
+#endif
+
+	if (m_counter > 2.5) {
 		SceneManager::ChangeScene(GameScene::GAME);
 	}
 }
@@ -30,12 +34,18 @@ void LoadingScene::Render(double delta) {
 }
 
 bool LoadingScene::Attach() {
+#ifndef _DEBUG
 	try {
 		std::string file = EnvironmentSetup::Get("FILE");
 		Osu::Beatmap beatmap(file);
 
 		if (!beatmap.IsValid()) {
 			MessageBoxA(NULL, "Failed to load beatmap!", "EstEngine Error", MB_ICONERROR);
+			return false;
+		}
+
+		if (beatmap.Mode != 3) {
+			MessageBoxA(NULL, "This beatmap is not a mania beatmap!", "EstEngine Error", MB_ICONERROR);
 			return false;
 		}
 
@@ -65,6 +75,7 @@ bool LoadingScene::Attach() {
 	catch (std::exception& e) {
 
 	}
+#endif
 
 	return true;
 }

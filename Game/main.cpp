@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 		file = argv[1];
 	}
 
-	if (!file.ends_with(".osu") || !std::filesystem::exists(file)) {
+	if (!std::filesystem::exists(file)) {
 		file = prompt();
 
 		if (file.size() == 0) {

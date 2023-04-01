@@ -11,7 +11,7 @@
 namespace {
 	float GetNotePositionAlpha(double Offset, double InitialTrackPosition, double HitPosOffset, double noteSpeed, bool upscroll = false) {
 		double pos = (HitPosOffset + ((InitialTrackPosition - Offset) * (upscroll ? noteSpeed : -noteSpeed) / 100.0)) / 1000.0;
-		return 1 + pos;
+		return -(1 - 0.8) + pos;
 	}
 }
 
@@ -38,6 +38,10 @@ Note::Note(RhythmEngine* engine) {
 	m_drawAble = false;
 	m_laneOffset = 0;
 	m_removeAble = false;
+
+	m_currentSample = nullptr;
+	m_didHitHead = false;
+	m_didHitTail = false;
 }
 
 Note::~Note() {
@@ -68,10 +72,15 @@ void Note::Load(NoteInfoDesc* desc) {
 	m_lane = desc->Lane;
 	m_initialTrackPosition = desc->InitialTrackPosition;
 	m_endTrackPosition = desc->EndTrackPosition;
+	m_keysoundIndex = desc->KeysoundIndex;
 
 	m_laneOffset = 0;
 	m_drawAble = false;
 	m_removeAble = false;
+
+	m_currentSample = nullptr;
+	m_didHitHead = false;
+	m_didHitTail = false;
 }
 
 void Note::Update(double delta) {
@@ -114,11 +123,11 @@ void Note::Render(double delta) {
 	}
 
 	UDim2 startOffset = UDim2::fromOffset(0, 0);
-	UDim2 endOffset = UDim2::fromOffset(0, 480);
+	UDim2 endOffset = UDim2::fromOffset(0, 600);
 
 	if (m_type == NoteType::HOLD) {
-		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1 - 1);
-		m_tail->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a2 - 1);
+		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
+		m_tail->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a2);
 
 		if (m_state == NoteState::HOLD_ON_HOLDING) {
 			m_head->Position.Y.Offset = 480;
@@ -136,12 +145,14 @@ void Note::Render(double delta) {
 		m_body->Position = UDim2::fromOffset(m_laneOffset, position);
 		m_body->Size = { 1, 0, 0, height };
 
-		m_body->Draw(false);
-		m_head->Draw(false);
-		m_tail->Draw(false);
+		if (!m_didHitTail) {
+			m_body->Draw(false);
+			m_head->Draw(false);
+			m_tail->Draw(false);
+		}
 	}
 	else {
-		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1 - 1);
+		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
 		m_head->Draw(false);
 	}
 }
@@ -164,6 +175,8 @@ std::tuple<bool, NoteResult> Note::CheckHit() {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
 			return TimeToResult(time_to_end);
 		}
+
+		return { false, NoteResult::MISS };
 	}
 }
 

@@ -6,7 +6,4 @@ struct NoteImage;
 class DrawableNote : public Texture2D {
 public:
 	DrawableNote(NoteImage* frame);
-
-protected:
-	void LoadResources(RECT& rect);
 };

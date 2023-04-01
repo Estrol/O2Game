@@ -8,9 +8,6 @@ class Window;
 
 class AudioManager {
 public:
-	AudioManager();
-	~AudioManager();
-
 	bool Init(Window* window);
 
 	bool Create(std::string id, uint8_t*, size_t size, Audio** out);
@@ -30,6 +27,9 @@ public:
 	static void Release();
 
 private:
+	AudioManager();
+	~AudioManager();
+
 	static AudioManager* s_instance;
 	bool m_initialized;
 

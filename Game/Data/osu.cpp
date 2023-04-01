@@ -219,15 +219,21 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 				continue;
 			}
 
-			OsuTimingPoint tp;
-			tp.Offset = std::stof(timingPoint[0]);
-			tp.BeatLength = std::stof(timingPoint[1]);
-			tp.TimeSignature = std::stoi(timingPoint[2]);
-			tp.SampleSet = std::stoi(timingPoint[3]);
-			tp.SampleIndex = std::stoi(timingPoint[4]);
-			tp.Volume = std::stoi(timingPoint[5]);
-			tp.Inherited = std::stoi(timingPoint[6]);
-			tp.KiaiMode = std::stoi(timingPoint[7]);
+			OsuTimingPoint tp = {};
+			try {
+				tp.Offset = std::stod(timingPoint[0]);
+				tp.BeatLength = std::stod(timingPoint[1]);
+				tp.TimeSignature = std::stof(timingPoint[2]);
+				tp.SampleSet = std::stoi(timingPoint[3]);
+				tp.SampleIndex = std::stoi(timingPoint[4]);
+				tp.Volume = std::stoi(timingPoint[5]);
+				tp.Inherited = std::stoi(timingPoint[6]) == 1;
+				tp.KiaiMode = std::stoi(timingPoint[7]);
+			}
+			catch (std::invalid_argument& e) {
+				std::cout << "[osu::TimingPoints] Syntax error: " << line << std::endl;
+				continue;
+			}
 
 			TimingPoints.push_back(tp);
 			continue;

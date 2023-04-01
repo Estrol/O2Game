@@ -16,13 +16,15 @@ Window::~Window() {
 
 Window* Window::s_instance = nullptr;
 
-bool Window::Create(std::string title, int width, int height) {
+bool Window::Create(std::string title, int width, int height, int bufferWidth, int bufferHeight) {
 	if (m_window != nullptr) {
 		return false;
 	}
 
 	m_width = width;
 	m_height = height;
+	m_bufferWidth = bufferWidth;
+	m_bufferHeight = bufferHeight;
 
 	m_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
 
@@ -67,6 +69,14 @@ int Window::GetWidth() const {
 
 int Window::GetHeight() const {
 	return m_height;
+}
+
+int Window::GetBufferWidth() const {
+	return m_bufferWidth;
+}
+
+int Window::GetBufferHeight() const {
+	return m_bufferHeight;
 }
 
 Window* Window::GetInstance() {

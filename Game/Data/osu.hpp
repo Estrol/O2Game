@@ -8,7 +8,7 @@ namespace Osu {
 	struct OsuTimingPoint {
 		float Offset;
 		float BeatLength;
-		int32_t TimeSignature;
+		float TimeSignature;
 		int32_t SampleSet;
 		int32_t SampleIndex;
 		int32_t Volume;

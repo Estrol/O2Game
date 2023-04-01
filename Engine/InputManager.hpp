@@ -13,9 +13,6 @@ typedef std::function<void(const KeyState&)> key_event_callback;
 
 class InputManager {
 public:
-	InputManager();
-	~InputManager();
-	
 	void Update(SDL_Event& event);
 
 	bool IsKeyDown(Keys key);
@@ -28,6 +25,9 @@ public:
 	static InputManager* GetInstance();
 	static void Release();
 private:
+	InputManager();
+	~InputManager();
+
 	static InputManager* s_instance;
 
 	void OnKeyEvent(SDL_Event& event, bool isDown);

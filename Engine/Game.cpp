@@ -74,13 +74,12 @@ bool Game::Init() {
 	}
 
 	m_window = Window::GetInstance();
-	if (!m_window->Create("Game", 1920, 1080)) {
+	if (!m_window->Create("Game", 1920, 1080, 800, 600)) {
 		return false;
 	}
 	
-	RECT rc(0, 0, 800, 600);
 	m_renderer = Renderer::GetInstance();
-	if (!m_renderer->Create(RendererMode::DIRECTX, m_window, rc)) {
+	if (!m_renderer->Create(RendererMode::DIRECTX, m_window)) {
 		return false;
 	}
 
