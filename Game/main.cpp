@@ -3,6 +3,7 @@
 #include <commdlg.h>
 #include "MyGame.h"
 #include "EnvironmentSetup.hpp"
+#include "Data/bms.hpp"
 #include <filesystem>
 
 extern "C" {
@@ -38,6 +39,9 @@ int main(int argc, char* argv[]) {
 	if (argc > 1) {
 		file = argv[1];
 	}
+
+	/*BMS::BMSFile xfile = {};
+	xfile.Load(file);*/
 
 	if (!std::filesystem::exists(file)) {
 		file = prompt();

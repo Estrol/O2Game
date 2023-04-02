@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
-#include "Hash/md5.h"
+#include "Util/md5.h"
 
 Chart::Chart() {
 	InitialSvMultiplier = 1.0f;
@@ -46,7 +46,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 				if (std::filesystem::exists(path)) {
 					AutoSample sample = {};
 					sample.StartTime = event.StartTime;
-					//sample.FileName = path;
+					sample.Index = beatmap.GetCustomSampleIndex(fileName);
 
 					m_autoSamples.push_back(sample);
 				}
@@ -54,6 +54,21 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 				break;
 			}
 		}
+	}
+
+	for (auto& note : beatmap.HitObjects) {
+		NoteInfo info = {};
+		info.StartTime = note.StartTime;
+		info.Type = NoteType::NORMAL;
+		info.Keysound = note.KeysoundIndex;
+		info.LaneIndex = static_cast<int>(std::floorf(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
+
+		if (note.Type == 128) {
+			info.Type = NoteType::HOLD;
+			info.EndTime = note.EndTime;
+		}
+
+		m_notes.push_back(info);
 	}
 
 	for (auto& timing : beatmap.TimingPoints) {
@@ -86,21 +101,9 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 
 		Sample sm = {};
 		sm.FileName = path;
-	}
-
-	for (auto& note : beatmap.HitObjects) {
-		NoteInfo info = {};
-		info.StartTime = note.StartTime;
-		info.Type = NoteType::NORMAL;
-		info.Keysound = note.KeysoundIndex;
-		info.LaneIndex = static_cast<int>(std::floorf(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
-
-		if (note.Type == 128) {
-			info.Type = NoteType::HOLD;
-			info.EndTime = note.EndTime;
-		}
-
-		m_notes.push_back(info);
+		sm.Index = i;
+		
+		m_samples.push_back(sm);
 	}
 
 	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
@@ -144,7 +147,8 @@ Chart::Chart(BMS::BMSFile& file) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			std::cout << "[Warning] overlapped note found at " << info.StartTime << "ms" << std::endl;
+			//std::cout << "[Warning] overlapped note found at " << info.StartTime << "ms" << std::endl;
+			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
 		}
 		else {
 			lastTime[info.LaneIndex] = info.StartTime;

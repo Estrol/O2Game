@@ -5,20 +5,9 @@
 #include <unordered_map>
 
 namespace BMS {
-	struct BMSRawTiming {
-		int section = 0;
-		double offset = 0.0;
-		double time = 0.0;
-		double bpm = -1.0;
-		bool changed = true;
-		double timeSignature = 1.0;
-	};
-
-	struct BMSStopTiming {
-		int section = 0;
-		double offset = 0.0;
-		int Value;
-	};
+	struct BMSRawTiming;
+	struct BMSStop;
+	struct BMSEvent;
 
 	struct BMSTiming {
 		double StartTime;
@@ -59,22 +48,14 @@ namespace BMS {
 		std::map<int, std::string> Samples;
 
 	private:
+		void CompileData(std::vector<std::string>& lines);
+		void CompileNoteData();
+		void VerifyNote();
 		bool m_valid = false;
 
-		bool LoadMetadata(std::vector<std::string>& lines);
-		bool LoadTimingField(std::vector<std::string>& lines);
-		bool LoadNoteData(std::vector<std::string>& lines);
-		void CalculateTime();
-
-		double GetTimeFromMeasure(int measure, double offset);
-
-		std::unordered_map<std::string, std::string> m_wavs;
 		std::unordered_map<std::string, double> m_bpms;
-		std::unordered_map<std::string, bool> m_noteDicts;
-		std::unordered_map<std::string, int> m_stops;
-		std::vector<BMSRawTiming> m_rawTimings;
-
-		std::vector<BMSStopTiming> m_timingStops;
-		BMSNote* m_holdState[8];
+		std::unordered_map<std::string, double> m_stops;
+		std::unordered_map<std::string, std::string> m_wavs;
+		std::unordered_map<int, std::vector<BMSEvent>> m_events;
 	};
 }

@@ -159,6 +159,10 @@ double Note::GetInitialTrackPosition() const {
 	return m_initialTrackPosition;
 }
 
+int Note::GetKeysoundId() const {
+	return m_keysoundIndex;
+}
+
 std::tuple<bool, NoteResult> Note::CheckHit() {
 	if (m_type == NoteType::NORMAL) {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
@@ -202,7 +206,7 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 }
 
 void Note::OnHit(NoteResult result) {
-	GameAudioSampleCache::Play(m_keysoundIndex, 50);
+	//GameAudioSampleCache::Play(m_keysoundIndex, 50);
 
 	if (m_type == NoteType::HOLD) {
 		if (m_state == NoteState::HOLD_PRE) {

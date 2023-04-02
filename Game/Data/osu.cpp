@@ -5,19 +5,22 @@
 
 Osu::Beatmap::Beatmap(std::string& file) {
 	if (!std::filesystem::exists(file)) {
+		std::wstring ws(file.begin(), file.end());
+
 		bIsValid = false;
 		return;
 	}
+	else {
+		std::fstream fs(file, std::ios::in);
+		std::stringstream ss;
 
-	std::fstream fs(file, std::ios::in);
-	std::stringstream ss;
+		ss << fs.rdbuf();
+		fs.close();
 
-	ss << fs.rdbuf();
-	fs.close();
-
-	// get directory info
-	FileDirectory = file.substr(0, file.find_last_of("\\/"));
-	ParseString(ss);
+		// get directory info
+		FileDirectory = std::filesystem::path(file).parent_path().string();
+		ParseString(ss);
+	}
 }
 
 void Osu::Beatmap::ParseString(std::stringstream& ss) {

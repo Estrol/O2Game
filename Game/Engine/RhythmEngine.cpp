@@ -51,7 +51,7 @@ RhythmEngine::RhythmEngine() {
 	m_currentTrackPosition = 0;
 	m_rate = 1;
 	m_offset = 0;
-	m_scrollSpeed = 250;
+	m_scrollSpeed = 180;
 
 	m_timingPositionMarkers = std::vector<double>();
 }

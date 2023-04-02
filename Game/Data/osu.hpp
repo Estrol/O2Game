@@ -99,9 +99,10 @@ namespace Osu {
 		std::vector<OsuEvent> Events;
 		std::vector<std::string> HitSamples;
 
+		int GetCustomSampleIndex(std::string);
+
 	private:
 		void ParseString(std::stringstream& ss);
-		int GetCustomSampleIndex(std::string);
 
 		bool bIsValid;
 	};

@@ -56,7 +56,7 @@ void GameTrack::OnKeyUp() {
 		m_callback(m_laneIndex, false);
 	}
 
-	std::vector<Note*> copy = m_notes;
+	/*std::vector<Note*> copy = m_notes;
 	for (auto& it : copy) {
 		auto result = it->CheckRelease();
 
@@ -64,7 +64,18 @@ void GameTrack::OnKeyUp() {
 			it->OnRelease(std::get<NoteResult>(result));
 			break;
 		}
+	}*/
+
+	if (m_notes.size() > 0) {
+		auto note = m_notes.front();
+		auto result = note->CheckRelease();
+
+		if (std::get<bool>(result)) {
+			note->OnRelease(std::get<NoteResult>(result));
+		}
 	}
+
+	//GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
 }
 
 void GameTrack::OnKeyDown() {
@@ -72,7 +83,7 @@ void GameTrack::OnKeyDown() {
 		m_callback(m_laneIndex, true);
 	}
 
-	std::vector<Note*> copy = m_notes;
+	/*std::vector<Note*> copy = m_notes;
 	for (auto& it : copy) {
 		auto result = it->CheckHit();
 
@@ -80,6 +91,17 @@ void GameTrack::OnKeyDown() {
 			it->OnHit(std::get<NoteResult>(result));
 			break;
 		}
+	}*/
+
+	if (m_notes.size() > 0) {
+		auto note = m_notes.front();
+		auto result = note->CheckHit();
+
+		if (std::get<bool>(result)) {
+			note->OnHit(std::get<NoteResult>(result));
+		}
+
+		GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
 	}
 }
 

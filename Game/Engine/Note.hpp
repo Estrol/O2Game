@@ -48,6 +48,7 @@ public:
 	void Render(double delta);
 
 	double GetInitialTrackPosition() const;
+	int GetKeysoundId() const;
 
 	std::tuple<bool, NoteResult> CheckHit();
 	std::tuple<bool, NoteResult> CheckRelease();

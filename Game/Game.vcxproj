@@ -133,11 +133,15 @@
   <ItemGroup>
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
+    <ClCompile Include="Data\bms_calculation.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
-    <ClCompile Include="Data\Hash\md5.cpp" />
+    <ClCompile Include="Data\Util\md5.cpp" />
+    <ClCompile Include="Data\Util\Util.cpp" />
     <ClCompile Include="Data\osu.cpp" />
     <ClCompile Include="Engine\DrawableLine.cpp" />
-    <ClCompile Include="Engine\DrawableLine.hpp" />
+    <ClInclude Include="Data\bms_calculation.hpp" />
+    <ClInclude Include="Data\bms_struct.hpp" />
+    <ClInclude Include="Engine\DrawableLine.hpp" />
     <ClCompile Include="Engine\DrawableTile.cpp" />
     <ClCompile Include="EnvironmentSetup.cpp" />
     <ClCompile Include="Engine\GameAudioSampleCache.cpp" />
@@ -161,7 +165,8 @@
     <ClInclude Include="Data\AutoReplay.hpp" />
     <ClInclude Include="Data\bms.hpp" />
     <ClInclude Include="Data\Chart.hpp" />
-    <ClInclude Include="Data\Hash\md5.h" />
+    <ClInclude Include="Data\Util\md5.h" />
+    <ClInclude Include="Data\Util\Util.hpp" />
     <ClInclude Include="Data\osu.hpp" />
     <ClInclude Include="Engine\DrawableTile.hpp" />
     <ClInclude Include="EnvironmentSetup.hpp" />

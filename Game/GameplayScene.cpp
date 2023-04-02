@@ -131,7 +131,7 @@ bool GameplayScene::Attach() {
 			std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
 			Window::GetInstance()->SetWindowTitle(title);
 
-			Chart* chart = new Chart(beatmap);
+			chart = new Chart(beatmap);
 			m_game = new RhythmEngine();
 		}
 

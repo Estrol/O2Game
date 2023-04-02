@@ -78,6 +78,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 		}
 		else {
 			sample.FilePath = path;
+			::printf("Cannot find audio: %s, at index: %d, Creating a silent audio\n", path.c_str(), it.Index);
 
 			if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
 				if (!audioManager->CreateSample(path + std::to_string(it.Index), "", &sample.Sample)) {
@@ -88,6 +89,13 @@ void GameAudioSampleCache::Load(Chart* chart) {
 				samples[it.Index] = sample;
 			}
 		}
+	}
+
+	/* Pre-load the BASS Audio */
+	if (samples.size()) {
+		auto ch = samples[0].Sample->CreateChannel();
+		ch->SetVolume(0);
+		ch->Play();
 	}
 }
 
