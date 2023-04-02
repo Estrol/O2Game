@@ -11,10 +11,8 @@ struct NoteAudioSample {
 };
 
 namespace GameAudioSampleCache {
-	std::vector<NoteAudioSample> samples;
-	std::vector<NoteAudioSample> events;
-
-	std::vector<AudioSampleChannel*> channels;
+	std::unordered_map<int, NoteAudioSample> samples;
+	std::unordered_map<int, AudioSampleChannel*> sampleIndex;
 }
 
 int LastIndexOf(std::string& str, char c) {
@@ -48,14 +46,12 @@ void GameAudioSampleCache::Load(Chart* chart) {
 		}
 
 		bool found = false;
-		if (!alreadyHasExt) {
-			for (auto& fileExt : ext) {
-				std::string tmpPath = path + "." + fileExt;
-				if (std::filesystem::exists(tmpPath)) {
-					path = tmpPath;
-					found = true;
-					break;
-				}
+		for (auto& fileExt : ext) {
+			std::string tmpPath = path + fileExt;
+			if (std::filesystem::exists(tmpPath)) {
+				path = tmpPath;
+				found = true;
+				break;
 			}
 		}
 
@@ -68,143 +64,104 @@ void GameAudioSampleCache::Load(Chart* chart) {
 		}
 
 		if (found) {
-			sample.FilePath = it.FileName;
+			sample.FilePath = path;
 
-			if (!audioManager->CreateSample(path, path, &sample.Sample)) {
-				std::cout << "Failed to load auto sample: " << it.FileName << std::endl;
-				continue;
+			if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
+				if (!audioManager->CreateSample(path + std::to_string(it.Index), path, &sample.Sample)) {
+					std::cout << "Failed to load sample: " << it.FileName << std::endl;
+					continue;
+				}
+
+				::printf("Loading audio: %s, at index: %d\n", path.c_str(), it.Index);
+				samples[it.Index] = sample;
 			}
-
-			samples.push_back(sample);
 		}
 		else {
-			sample.FilePath = it.FileName;
+			sample.FilePath = path;
 
-			if (!audioManager->CreateSample(path, "", &sample.Sample)) {
-				std::cout << "Failed to load auto sample: " << it.FileName << std::endl;
-				continue;
+			if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
+				if (!audioManager->CreateSample(path + std::to_string(it.Index), "", &sample.Sample)) {
+					std::cout << "Failed to load sample: " << it.FileName << std::endl;
+					continue;
+				}
+
+				samples[it.Index] = sample;
 			}
-
-			samples.push_back(sample);
-		}
-	}
-
-	for (auto& it : chart->m_autoSamples) {
-		NoteAudioSample sample = {};
-		std::string path = it.FileName;
-
-		// check if given path has ext
-		bool alreadyHasExt = false;
-		int lastIndex = LastIndexOf(path, '.');
-		if (lastIndex > 0) {
-			path = it.FileName.substr(0, lastIndex);
-
-			std::string extensions = it.FileName.substr(lastIndex);
-			ext.push_back(extensions);
-		}
-
-		bool found = false;
-		for (auto& fileExt : ext) {
-			std::string tmpPath = path + "." + fileExt;
-			if (std::filesystem::exists(tmpPath)) {
-				path = tmpPath;
-				found = true;
-				break;
-			}
-		}
-
-		if (found) {
-			sample.FilePath = it.FileName;
-
-			if (!audioManager->CreateSample(path, path, &sample.Sample)) {
-				std::cout << "Failed to load auto sample: " << it.FileName << std::endl;
-				continue;
-			}
-
-			events.push_back(sample);
-		}
-		else {
-			sample.FilePath = it.FileName;
-
-			if (!audioManager->CreateSample(path, "", &sample.Sample)) {
-				std::cout << "Failed to load auto sample: " << it.FileName << std::endl;
-				continue;
-			}
-
-			events.push_back(sample);
 		}
 	}
 }
 
-AudioSampleChannel* GameAudioSampleCache::Play(int index, int volume) {
-	//return nullptr;
+void GameAudioSampleCache::Play(int index, int volume) {
+	if (samples.find(index) == samples.end()) {
+		return;
+	}
+
+	::printf("Playing index at: %d\n", index);
 
 	auto& sample = samples[index];
 	auto channel = sample.Sample->CreateChannel().release();
 
+	if (sampleIndex.find(index) != sampleIndex.end()) {
+		auto ch = sampleIndex[index];
+		if (ch->IsPlaying()) {
+			ch->Stop();
+		}
+	}
+	
+	sampleIndex[index] = channel;
 	channel->SetVolume(volume);
 	channel->Play();
-
-	channels.push_back(channel);
-
-	return channel;
 }
 
-AudioSampleChannel* GameAudioSampleCache::PlayEvent(int index, int volume) {
-	return nullptr;
+void GameAudioSampleCache::Stop(int index) {
+	if (sampleIndex.find(index) != sampleIndex.end()) {
+		auto& it = sampleIndex[index];
 
-	auto& sample = events[index];
-	auto channel = sample.Sample->CreateChannel().release();
+		if (it->IsPlaying()) {
+			it->Stop();
+		}
 
-	channel->SetVolume(volume);
-	channel->Play();
-
-	channels.push_back(channel);
-
-	return channel;
+		sampleIndex.erase(index);
+	}
 }
 
 void GameAudioSampleCache::ResumeAll() {
-	for (auto& it : channels) {
-		it->Play();
+	for (auto& kv : sampleIndex) {
+		kv.second->Play();
 	}
 }
 
 void GameAudioSampleCache::PauseAll() {
-	for (auto it = channels.begin(); it != channels.end();) {
-		(*it)->Pause();
-
-		if ((*it)->IsStopped()) {
-			delete* it;
-			it = channels.erase(it);
+	for (auto& kv : sampleIndex) {
+		if (kv.second->IsPlaying()) {
+			kv.second->Pause();
 		}
 		else {
-			it++;
+			sampleIndex.erase(kv.first);
 		}
 	}
 }
 
 void GameAudioSampleCache::StopAll() {
-	for (auto& it : channels) {
-		it->Stop();
+	for (auto& kv : sampleIndex) {
+		if (kv.second->IsPlaying()) {
+			kv.second->Stop();
+		}
+
+		sampleIndex.erase(kv.first);
 	}
 }
 
 void GameAudioSampleCache::Dispose() {
-	for (auto& it : channels) {
-		delete it;
+	for (auto& kv : sampleIndex) {
+		delete kv.second;
 	}
 
 	auto audioManager = AudioManager::GetInstance();
 	for (auto& it : samples) {
-		audioManager->RemoveSample(it.FilePath);
+		audioManager->RemoveSample(it.second.FilePath + std::to_string(it.first));
 	}
 
-	for (auto& it : events) {
-		audioManager->RemoveSample(it.FilePath);
-	}
-
-	channels.clear();
+	sampleIndex.clear();
 	samples.clear();
-	events.clear();
 }

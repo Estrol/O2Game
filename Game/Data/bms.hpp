@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
 
 namespace BMS {
@@ -13,6 +14,12 @@ namespace BMS {
 		double timeSignature = 1.0;
 	};
 
+	struct BMSStopTiming {
+		int section = 0;
+		double offset = 0.0;
+		int Value;
+	};
+
 	struct BMSTiming {
 		double StartTime;
 		double Value;
@@ -23,6 +30,11 @@ namespace BMS {
 		int StartTime;
 		int EndTime;
 		int Lane;
+		int SampleIndex;
+	};
+
+	struct BMSAutoSample {
+		int StartTime;
 		int SampleIndex;
 	};
 
@@ -43,7 +55,8 @@ namespace BMS {
 		
 		std::vector<BMSNote> Notes;
 		std::vector<BMSTiming> Timings;
-		std::unordered_map<int, std::string> Samples;
+		std::vector<BMSAutoSample> AutoSamples;
+		std::map<int, std::string> Samples;
 
 	private:
 		bool m_valid = false;
@@ -58,8 +71,10 @@ namespace BMS {
 		std::unordered_map<std::string, std::string> m_wavs;
 		std::unordered_map<std::string, double> m_bpms;
 		std::unordered_map<std::string, bool> m_noteDicts;
+		std::unordered_map<std::string, int> m_stops;
 		std::vector<BMSRawTiming> m_rawTimings;
 
-		BMSNote* m_holdState[7];
+		std::vector<BMSStopTiming> m_timingStops;
+		BMSNote* m_holdState[8];
 	};
 }

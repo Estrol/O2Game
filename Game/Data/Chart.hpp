@@ -2,7 +2,7 @@
 #include <iostream>
 #include "osu.hpp"
 #include "bms.hpp"
-#include <map>
+#include <unordered_map>
 
 class AudioSample;
 
@@ -33,11 +33,12 @@ struct TimingInfo {
 
 struct Sample {
 	std::string FileName;
+	uint32_t Index;
 };
 
 struct AutoSample {
 	uint32_t StartTime;
-	std::string FileName;
+	uint32_t Index;
 };
 
 class Chart {
@@ -49,8 +50,10 @@ public:
 
 	float InitialSvMultiplier;
 	int m_keyCount;
+	float BaseBPM;
 	
 	int GetLength();
+	std::string MD5Hash;
 
 	std::string m_backgroundFile;
 	std::string m_title;
@@ -64,6 +67,8 @@ public:
 	std::vector<Sample> m_samples;
 	std::vector<AutoSample> m_autoSamples;
 private:
+	void ComputeHash();
+
 	float GetCommonBPM();
 	void NormalizeTimings();
 };

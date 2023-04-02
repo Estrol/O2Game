@@ -7,6 +7,7 @@
 #include "TimingLineManager.hpp"
 
 enum class GameState {
+	PreParing,
 	NotGame,
 	PreGame,
 	Playing,
@@ -21,6 +22,7 @@ public:
 	bool Load(Chart* chart);
 	bool Start();
 	bool Stop();
+	bool Ready();
 
 	void Update(double delta);
 	void Render(double delta);
@@ -41,6 +43,7 @@ public:
 	double GetPositionFromOffset(double offset);
 	double GetPositionFromOffset(double offset, int index);
 
+	std::vector<double> GetTimingWindow();
 	std::vector<TimingInfo> GetBPMs() const;
 	std::vector<TimingInfo> GetSVs() const;
 
@@ -57,9 +60,11 @@ private:
 	double m_currentVisualPosition;
 	double m_currentAudioGamePosition;
 	double m_currentTrackPosition;
+	float m_baseBPM, m_currentBPM;
 
 	int m_currentSampleIndex = 0;
 	int m_currentNoteIndex = 0;
+	int m_currentBPMIndex = 0;
 	int m_currentSVIndex = 0;
 	int m_scrollSpeed = 0;
 	int m_audioLength = 0;

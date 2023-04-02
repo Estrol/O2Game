@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
+#include "Hash/md5.h"
 
 Chart::Chart() {
 	InitialSvMultiplier = 1.0f;
@@ -45,7 +46,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 				if (std::filesystem::exists(path)) {
 					AutoSample sample = {};
 					sample.StartTime = event.StartTime;
-					sample.FileName = path;
+					//sample.FileName = path;
 
 					m_autoSamples.push_back(sample);
 				}
@@ -111,6 +112,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	});
 
 	NormalizeTimings();
+	ComputeHash();
 }
 
 Chart::Chart(BMS::BMSFile& file) {
@@ -174,9 +176,22 @@ Chart::Chart(BMS::BMSFile& file) {
 	for (auto& sample : file.Samples) {
 		Sample sm = {};
 		sm.FileName = file.FileDirectory + "\\" + sample.second;
+		sm.Index = sample.first - 1;
 
 		m_samples.push_back(sm);
 	}
+
+	for (auto& autoSample : file.AutoSamples) {
+		AutoSample sm = {};
+		sm.StartTime = autoSample.StartTime;
+		sm.Index = autoSample.SampleIndex - 1;
+
+		m_autoSamples.push_back(sm);
+	}
+
+	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
+		return a.StartTime < b.StartTime;
+	});
 
 	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
 		return a.StartTime < b.StartTime;
@@ -187,6 +202,7 @@ Chart::Chart(BMS::BMSFile& file) {
 	});
 
 	NormalizeTimings();
+	ComputeHash();
 }
 
 Chart::~Chart() {
@@ -207,6 +223,25 @@ int Chart::GetLength() {
 	}
 
 	return length;
+}
+
+void Chart::ComputeHash() {
+	std::string result;
+	for (int i = 0; i < m_notes.size(); i++) {
+		result += std::to_string(m_notes[i].StartTime + m_notes[i].EndTime);
+	}
+
+	uint8_t data[16];
+	md5String((char*)result.c_str(), data);
+
+	std::stringstream ss;
+	ss << std::hex << std::setfill('0');
+	for (int i = 0; i < 16; i++) {
+		ss << std::setw(2) << static_cast<int>(data[i]);
+	}
+
+	MD5Hash = ss.str();
+	std::cout << "Map hash: " << MD5Hash << std::endl;
 }
 
 float Chart::GetCommonBPM() {
@@ -264,6 +299,9 @@ void Chart::NormalizeTimings() {
 	float baseBPM = GetCommonBPM();
 	float currentBPM = m_bpms[0].Value;
 	int currentSvIdx = 0;
+
+	// Ambigous
+	BaseBPM = baseBPM;
 
 	double currentSvMultiplier = 1.0f;
 

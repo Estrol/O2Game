@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include "EnvironmentSetup.hpp"
+#include <future>
 
 GameplayScene::GameplayScene() : Scene::Scene() {
 	m_keyLighting = {};
@@ -14,10 +15,11 @@ GameplayScene::GameplayScene() : Scene::Scene() {
 void GameplayScene::Update(double delta) {
 	static bool started = false;
 	
-	if (!started) {
+	if (!started && m_game->Ready()) {
 		started = true;
 
-		m_game->Start();
+		std::async(std::launch::async | std::launch::deferred, &RhythmEngine::Start, m_game);
+		std::cout << "async func" << std::endl;
 	}
 
 	m_game->Update(delta);

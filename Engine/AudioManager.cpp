@@ -123,14 +123,14 @@ bool AudioManager::CreateSample(std::string id, std::string path, AudioSample** 
 	}
 
 	AudioSample* audio = new AudioSample(id);
-	if (path.size() > 0) {
-		if (!audio->Create(path)) {
+	if (path.size() == 0) {
+		if (!audio->CreateSilent()) {
 			delete audio;
 			return false;
 		}
 	}
 	else {
-		if (!audio->CreateSilent()) {
+		if (!audio->Create(path)) {
 			delete audio;
 			return false;
 		}

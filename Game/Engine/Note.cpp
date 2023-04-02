@@ -39,7 +39,6 @@ Note::Note(RhythmEngine* engine) {
 	m_laneOffset = 0;
 	m_removeAble = false;
 
-	m_currentSample = nullptr;
 	m_didHitHead = false;
 	m_didHitTail = false;
 }
@@ -78,7 +77,6 @@ void Note::Load(NoteInfoDesc* desc) {
 	m_drawAble = false;
 	m_removeAble = false;
 
-	m_currentSample = nullptr;
 	m_didHitHead = false;
 	m_didHitTail = false;
 }
@@ -164,16 +162,16 @@ double Note::GetInitialTrackPosition() const {
 std::tuple<bool, NoteResult> Note::CheckHit() {
 	if (m_type == NoteType::NORMAL) {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-		return TimeToResult(time_to_end);
+		return TimeToResult(m_engine, time_to_end);
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-			return TimeToResult(time_to_end);
+			return TimeToResult(m_engine, time_to_end);
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
-			return TimeToResult(time_to_end);
+			return TimeToResult(m_engine, time_to_end);
 		}
 
 		return { false, NoteResult::MISS };
@@ -185,7 +183,7 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
 
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
-			auto result = TimeToResult(time_to_end);
+			auto result = TimeToResult(m_engine, time_to_end);
 
 			if (std::get<bool>(result)) {
 				return result;
@@ -204,7 +202,7 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 }
 
 void Note::OnHit(NoteResult result) {
-	m_currentSample = GameAudioSampleCache::Play(m_keysoundIndex, 50);
+	GameAudioSampleCache::Play(m_keysoundIndex, 50);
 
 	if (m_type == NoteType::HOLD) {
 		if (m_state == NoteState::HOLD_PRE) {
@@ -227,11 +225,8 @@ void Note::OnRelease(NoteResult result) {
 	if (m_type == NoteType::HOLD) {
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			if (result == NoteResult::MISS) {
-				if (m_currentSample) {
-					m_currentSample->Stop();
-					m_currentSample = nullptr;
-				}
-
+				GameAudioSampleCache::Stop(m_keysoundIndex);
+				
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 			}
 			else {

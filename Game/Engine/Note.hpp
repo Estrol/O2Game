@@ -77,8 +77,6 @@ private:
 	int m_laneOffset;
 	double m_startTime;
 	double m_endTime;
-	
-	AudioSampleChannel* m_currentSample;
 
 	int m_keysoundIndex;
 	int m_lane;

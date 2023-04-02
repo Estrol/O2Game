@@ -13,6 +13,7 @@ public:
 	bool Stop();
 	bool Pause();
 
+	bool IsPlaying();
 	bool IsStopped();
 
 private:

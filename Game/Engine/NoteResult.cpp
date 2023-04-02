@@ -1,26 +1,21 @@
 #include "NoteResult.hpp"
 #include <iostream>
+#include "RhythmEngine.hpp"
 
-namespace {
-	const double kNoteCoolHitWindowMax = 25;
-	const double kNoteGoodHitWindowMax = 97;
-	const double kNoteBadHitWindowMax = 150;
-	const double kNoteEarlyMissWindowMin = 200;
-}
-
-std::tuple<bool, NoteResult> TimeToResult(double time) {
+std::tuple<bool, NoteResult> TimeToResult(RhythmEngine* engine, double time) {
+	auto timings = engine->GetTimingWindow();
 	time = std::abs(time);
 
-	if (time <= kNoteCoolHitWindowMax) {
+	if (time <= timings[0]) {
 		return { true, NoteResult::COOL };
 	}
-	else if (time <= kNoteGoodHitWindowMax) {
+	else if (time <= timings[1]) {
 		return { true, NoteResult::GOOD };
 	}
-	else if (time <= kNoteBadHitWindowMax) {
+	else if (time <= timings[2]) {
 		return { true, NoteResult::BAD };
 	}
-	else if (time <= kNoteEarlyMissWindowMin) {
+	else if (time <= timings[3]) {
 		return { true, NoteResult::MISS };
 	}
 

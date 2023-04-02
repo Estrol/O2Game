@@ -87,6 +87,10 @@ bool AudioSampleChannel::Pause() {
 	return true;
 }
 
+bool AudioSampleChannel::IsPlaying() {
+	return BASS_ChannelIsActive(m_hCurrentSample) == BASS_ACTIVE_PLAYING;
+}
+
 bool AudioSampleChannel::IsStopped() {
 	return m_silent || BASS_ChannelIsActive(m_hCurrentSample) == BASS_ACTIVE_STOPPED;
 }

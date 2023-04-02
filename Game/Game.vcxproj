@@ -134,6 +134,7 @@
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
+    <ClCompile Include="Data\Hash\md5.cpp" />
     <ClCompile Include="Data\osu.cpp" />
     <ClCompile Include="Engine\DrawableLine.cpp" />
     <ClCompile Include="Engine\DrawableLine.hpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="Data\AutoReplay.hpp" />
     <ClInclude Include="Data\bms.hpp" />
     <ClInclude Include="Data\Chart.hpp" />
+    <ClInclude Include="Data\Hash\md5.h" />
     <ClInclude Include="Data\osu.hpp" />
     <ClInclude Include="Engine\DrawableTile.hpp" />
     <ClInclude Include="EnvironmentSetup.hpp" />

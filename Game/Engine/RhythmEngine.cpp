@@ -4,6 +4,7 @@
 #include "../../Engine/EstEngine.hpp"
 #include <filesystem>
 #include <unordered_map>
+#include "NoteResult.hpp"
 
 struct ManiaKeyState {
 	Keys key;
@@ -60,6 +61,7 @@ RhythmEngine::~RhythmEngine() {
 }
 
 bool RhythmEngine::Load(Chart* chart) {
+	m_state = GameState::PreParing;
 	m_currentChart = chart;
 
 	m_autoHitIndex.clear();
@@ -79,7 +81,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;
 
-	if (std::filesystem::exists(audioPath)) {
+	if (std::filesystem::exists(audioPath) && !audioPath.string().ends_with("\\")) {
 		m_audioPath = audioPath.string();
 	}
 
@@ -110,6 +112,8 @@ bool RhythmEngine::Load(Chart* chart) {
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
 	m_audioLength = chart->GetLength();
+	m_baseBPM = chart->BaseBPM;
+	m_currentBPM = m_baseBPM;
 
 	GameAudioSampleCache::Load(chart);
 	
@@ -125,19 +129,27 @@ bool RhythmEngine::Load(Chart* chart) {
 }
 
 bool RhythmEngine::Start() {
-	if (m_audioPath.size() > 0) {
-		if (!AudioManager::GetInstance()->Create("main_audio", m_audioPath, &m_currentAudio)) {
-			MessageBoxA(NULL, "Failed to load audio", "EstEngine Error", MB_OK);
+	std::thread([&] {
+		std::cout << "Starting Engine 1" << std::endl;
+		if (m_audioPath.size() > 0) {
+			AudioManager::GetInstance()->Create("main_audio", m_audioPath, &m_currentAudio);
 		}
-	}
 
-	m_currentAudioPosition -= 3000;
-	m_state = GameState::Playing;
+		m_currentAudioPosition -= 3000;
+		m_state = GameState::Playing;
+
+		std::cout << "Starting Engine 2" << std::endl;
+	}).detach();
+	
 	return true;
 }
 
 bool RhythmEngine::Stop() {
 	return true;
+}
+
+bool RhythmEngine::Ready() {
+	return m_state == GameState::NotGame;
 }
 
 void RhythmEngine::Update(double delta) {
@@ -170,8 +182,8 @@ void RhythmEngine::Update(double delta) {
 	for (int i = m_currentSampleIndex; i < m_autoSamples.size(); i++) {
 		auto& sample = m_autoSamples[i];
 
-		if (sample.StartTime >= m_currentAudioPosition) {
-			GameAudioSampleCache::PlayEvent(i, 100);
+		if (m_currentVisualPosition >= sample.StartTime) {
+			GameAudioSampleCache::Play(sample.Index, 50);
 			m_currentSampleIndex++;
 		}
 		else {
@@ -302,6 +314,16 @@ int RhythmEngine::GetAudioLength() const {
 	return m_audioLength;
 }
 
+std::vector<double> RhythmEngine::GetTimingWindow() {
+	if (m_currentBPMIndex >= m_currentChart->m_bpms.size()) {
+		m_currentBPMIndex = m_currentChart->m_bpms.size() - 1;
+	}
+
+	float ratio = m_baseBPM / (60000.0f / m_currentChart->m_bpms[m_currentBPMIndex].Value);
+
+	return { kNoteCoolHitWindowMax * ratio, kNoteGoodHitWindowMax * ratio, kNoteBadHitWindowMax * ratio, kNoteEarlyMissWindowMin * ratio };
+}
+
 std::vector<TimingInfo> RhythmEngine::GetBPMs() const {
 	return m_currentChart->m_bpms;
 }
@@ -331,6 +353,7 @@ void RhythmEngine::UpdateNotes() {
 			desc.EndTime = -1;
 			desc.InitialTrackPosition = startTime;
 			desc.EndTrackPosition = -1;
+			desc.KeysoundIndex = note.Keysound;
 
 			if (note.Type == NoteType::HOLD) {
 				desc.EndTime = note.EndTime;
@@ -350,6 +373,10 @@ void RhythmEngine::UpdateNotes() {
 void RhythmEngine::UpdateGamePosition() {
 	m_currentAudioGamePosition = m_currentAudioPosition + m_offset;
 	m_currentVisualPosition = m_currentAudioGamePosition * m_rate;
+
+	while (m_currentBPMIndex < m_currentChart->m_bpms.size() && m_currentVisualPosition >= m_currentChart->m_bpms[m_currentBPMIndex].StartTime) {
+		m_currentBPMIndex += 1;
+	}
 
 	while (m_currentSVIndex < m_currentChart->m_svs.size() && m_currentVisualPosition >= m_currentChart->m_svs[m_currentSVIndex].StartTime) {
 		m_currentSVIndex += 1;
