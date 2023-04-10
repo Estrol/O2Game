@@ -12,6 +12,7 @@ enum class RendererMode {
 class Renderer {
 public:
 	bool Create(RendererMode mode, Window* window);
+	bool Resize();
 	bool Destroy();
 
 	bool BeginRender();

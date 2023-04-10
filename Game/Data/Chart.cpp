@@ -26,6 +26,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	m_audio = beatmap.AudioFilename;
 	m_title = beatmap.Title;
 	m_keyCount = beatmap.CircleSize;
+	m_artist = beatmap.Artist;
 	m_beatmapDirectory = beatmap.FileDirectory;
 
 	for (auto& event : beatmap.Events) {
@@ -105,6 +106,10 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		
 		m_samples.push_back(sm);
 	}
+	
+	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
+		return a.StartTime < b.StartTime;
+	});
 
 	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
 		return a.StartTime < b.StartTime;
@@ -127,6 +132,9 @@ Chart::Chart(BMS::BMSFile& file) {
 	m_title = file.Title;
 	m_audio = "";// file.FileDirectory + "/" + "test.mp3";
 	m_keyCount = 7;
+	m_artist = file.Artist;
+	m_backgroundFile = file.StageFile;
+	BaseBPM = file.BPM;
 
 	int lastTime[7] = {};
 	std::sort(file.Notes.begin(), file.Notes.end(), [](const BMS::BMSNote& note1, const BMS::BMSNote note2) {
@@ -138,7 +146,15 @@ Chart::Chart(BMS::BMSFile& file) {
 		info.StartTime = note.StartTime;
 		info.Type = NoteType::NORMAL;
 		info.LaneIndex = note.Lane;
-		info.Keysound = note.SampleIndex - 1;
+		info.Keysound = note.SampleIndex;
+
+		/*if (note.SampleIndex != -1) {
+			AutoSample sm = {};
+			sm.StartTime = note.StartTime;
+			sm.Index = note.SampleIndex;
+
+			m_autoSamples.push_back(sm);
+		}*/
 		
 		if (note.EndTime != -1) {
 			info.Type = NoteType::HOLD;
@@ -147,7 +163,6 @@ Chart::Chart(BMS::BMSFile& file) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			//std::cout << "[Warning] overlapped note found at " << info.StartTime << "ms" << std::endl;
 			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
 		}
 		else {
@@ -172,6 +187,7 @@ Chart::Chart(BMS::BMSFile& file) {
 			info.StartTime = timing.StartTime;
 			info.Value = timing.Value;
 			info.Type = TimingType::BPM;
+			info.TimeSignature = 4.0 * timing.TimeSignature;
 
 			m_bpms.push_back(info);
 		}
@@ -180,7 +196,7 @@ Chart::Chart(BMS::BMSFile& file) {
 	for (auto& sample : file.Samples) {
 		Sample sm = {};
 		sm.FileName = file.FileDirectory + "\\" + sample.second;
-		sm.Index = sample.first - 1;
+		sm.Index = sample.first;
 
 		m_samples.push_back(sm);
 	}
@@ -188,9 +204,23 @@ Chart::Chart(BMS::BMSFile& file) {
 	for (auto& autoSample : file.AutoSamples) {
 		AutoSample sm = {};
 		sm.StartTime = autoSample.StartTime;
-		sm.Index = autoSample.SampleIndex - 1;
+		sm.Index = autoSample.SampleIndex;
 
 		m_autoSamples.push_back(sm);
+	}
+
+	if (m_bpms.size() == 0) {
+		TimingInfo info = {};
+		info.StartTime = 0;
+		info.Value = file.BPM;
+		info.Type = TimingType::BPM;
+
+		m_bpms.push_back(info);
+	}
+
+	m_bpms[0].Beat = 0;
+	for (int i = 1; i < m_bpms.size(); i++) {
+		m_bpms[i].Beat = m_bpms[i - 1].Beat + (m_bpms[i].StartTime - m_bpms[i - 1].StartTime) * (m_bpms[i - 1].Value / 60000.0f);
 	}
 
 	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
@@ -397,18 +427,6 @@ void Chart::NormalizeTimings() {
 			currentAdjustedSvMultiplier = multiplier;
 		}
 	}
-
-	std::stringstream ss;
-	ss << "Time,Multiplier\n";
-	
-	for (int i = 0; i < result.size(); i++) {
-		auto& tp = result[i];
-		ss << tp.StartTime << "," << tp.Value << "\n";
-	}
-
-	std::ofstream file("F:/o2yes.csv");
-	file << ss.str();
-	file.close();
 
 	InitialSvMultiplier = initialSvMultiplier == -1.0f ? 1 : initialSvMultiplier;
 

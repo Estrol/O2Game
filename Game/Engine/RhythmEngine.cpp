@@ -67,16 +67,26 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_autoHitIndex.clear();
 	m_autoHitInfos.clear();
 
+	int startX = 4;
+	int currentX = startX;
 	for (int i = 0; i < chart->m_keyCount; i++) {
-		m_tracks.push_back(new GameTrack( this, i, trackOffset[i] ));
+		m_tracks.push_back(new GameTrack( this, i, currentX ));
 		m_autoHitIndex[i] = 0;
 
 		if (m_eventCallback) {
-			m_tracks[i]->ListenEvent([&](int lane, bool state) {
-				m_eventCallback(lane, state);
+			m_tracks[i]->ListenEvent([&](GameTrackEvent e) {
+				m_eventCallback(e);
 			});
 		}
+
+		int size = GameNoteResource::GetNoteTexture(Key2Type[i])->TextureRect.right;
+		
+		m_lanePos[i] = currentX;
+		m_laneSize[i] = size;
+		currentX += size;
 	}
+
+	m_playRectangle = { 0, 0, currentX, 480 };
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;
@@ -123,6 +133,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	UpdateNotes();
 
 	m_timingLineManager = new TimingLineManager(this);
+	m_scoreManager = new ScoreManager();
 
 	m_state = GameState::NotGame;
 	return true;
@@ -153,7 +164,7 @@ bool RhythmEngine::Ready() {
 }
 
 void RhythmEngine::Update(double delta) {
-	if (m_state == GameState::NotGame) return;
+	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
 	// Since I'm coming from Roblox, and I had no idea how to Real-Time sync the audio
 	// I decided to use this method again from Roblox project I did in past.
@@ -166,6 +177,10 @@ void RhythmEngine::Update(double delta) {
 		if (m_currentAudio) {
 			m_currentAudio->Play();
 		}
+	}
+
+	if (m_currentAudioPosition + 2500 > m_audioLength) {
+		m_state = GameState::PosGame;
 	}
 
 	UpdateVirtualResolution();
@@ -213,7 +228,7 @@ void RhythmEngine::Update(double delta) {
 }
 
 void RhythmEngine::Render(double delta) {
-	if (m_state == GameState::NotGame) return;
+	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
 	RECT playArea = { 0, 0, 198, 480 };
 
@@ -244,7 +259,7 @@ void RhythmEngine::Render(double delta) {
 }
 
 void RhythmEngine::OnKeyDown(const KeyState& state) {
-	if (m_state == GameState::NotGame) return;
+	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
 	if (state.key == Keys::O) {
 		m_scrollSpeed -= 10;
@@ -265,7 +280,7 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 }
 
 void RhythmEngine::OnKeyUp(const KeyState& state) {
-	if (m_state == GameState::NotGame) return;
+	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
 	for (auto& key : KeyMapping) {
 		if (key.second.key == state.key) {
@@ -278,7 +293,7 @@ void RhythmEngine::OnKeyUp(const KeyState& state) {
 	}
 }
 
-void RhythmEngine::ListenKeyEvent(std::function<void(int,bool)> callback) {
+void RhythmEngine::ListenKeyEvent(std::function<void(GameTrackEvent)> callback) {
 	m_eventCallback = callback;
 }
 
@@ -310,8 +325,38 @@ double RhythmEngine::GetNotespeed() const {
 	return (speed / 10.0) / (20.0 / m_rate) * scrollingFactor * virtualRatio;
 }
 
+bool CompareBeatOffset(const TimingInfo& a, const TimingInfo& b) {
+	return a.StartTime <= b.StartTime;
+}
+
+double RhythmEngine::GetBeat(double offset) const {
+	TimingInfo toSearch = {};
+	toSearch.StartTime = offset;
+
+	auto& bpms = m_currentChart->m_bpms;
+
+	auto it = std::lower_bound(bpms.begin(), bpms.end(), toSearch, CompareBeatOffset);
+	if (it == bpms.end()) {
+		it = bpms.begin();
+	}
+	
+	double beat = it->Beat;
+	double bpm = it->Value;
+	double startTime = it->StartTime;
+
+	return beat + (offset - startTime) * (bpm / 60000.0);
+}
+
 int RhythmEngine::GetAudioLength() const {
 	return m_audioLength;
+}
+
+GameState RhythmEngine::GetState() const {
+	return m_state;
+}
+
+ScoreManager* RhythmEngine::GetScoreManager() const {
+	return m_scoreManager;
 }
 
 std::vector<double> RhythmEngine::GetTimingWindow() {
@@ -319,7 +364,9 @@ std::vector<double> RhythmEngine::GetTimingWindow() {
 		m_currentBPMIndex = m_currentChart->m_bpms.size() - 1;
 	}
 
-	float ratio = m_baseBPM / (60000.0f / m_currentChart->m_bpms[m_currentBPMIndex].Value);
+	float bpm = std::clamp(m_currentChart->m_bpms[m_currentBPMIndex].Value, 1.0f, 800.0f);
+	float signature = m_currentChart->m_bpms[m_currentBPMIndex].TimeSignature;
+	float ratio = (m_baseBPM / bpm) * signature;
 
 	return { kNoteCoolHitWindowMax * ratio, kNoteGoodHitWindowMax * ratio, kNoteBadHitWindowMax * ratio, kNoteEarlyMissWindowMin * ratio };
 }
@@ -374,7 +421,7 @@ void RhythmEngine::UpdateGamePosition() {
 	m_currentAudioGamePosition = m_currentAudioPosition + m_offset;
 	m_currentVisualPosition = m_currentAudioGamePosition * m_rate;
 
-	while (m_currentBPMIndex < m_currentChart->m_bpms.size() && m_currentVisualPosition >= m_currentChart->m_bpms[m_currentBPMIndex].StartTime) {
+	while (m_currentBPMIndex + 1 < m_currentChart->m_bpms.size() && m_currentVisualPosition >= m_currentChart->m_bpms[m_currentBPMIndex + 1].StartTime) {
 		m_currentBPMIndex += 1;
 	}
 
@@ -435,6 +482,14 @@ double RhythmEngine::GetPositionFromOffset(double offset, int index) {
 	pos += (offset - m_currentChart->m_svs[index].StartTime) * (m_currentChart->m_svs[index].Value * 100);
 
 	return pos;
+}
+
+int* RhythmEngine::GetLaneSizes() const {
+	return (int*)&m_laneSize;
+}
+
+int* RhythmEngine::GetLanePos() const {
+	return (int*)&m_lanePos;
 }
 
 void RhythmEngine::Release() {

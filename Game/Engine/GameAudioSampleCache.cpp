@@ -40,7 +40,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 		int lastIndex = LastIndexOf(path, '.');
 		if (lastIndex > 0) {
 			path = it.FileName.substr(0, lastIndex);
-			
+
 			std::string extensions = it.FileName.substr(lastIndex);
 			ext.push_back(extensions);
 		}
@@ -72,7 +72,7 @@ void GameAudioSampleCache::Load(Chart* chart) {
 					continue;
 				}
 
-				::printf("Loading audio: %s, at index: %d\n", path.c_str(), it.Index);
+				//::printf("Loading audio: %s, at index: %d\n", path.c_str(), it.Index);
 				samples[it.Index] = sample;
 			}
 		}
@@ -90,35 +90,28 @@ void GameAudioSampleCache::Load(Chart* chart) {
 			}
 		}
 	}
-
-	/* Pre-load the BASS Audio */
-	if (samples.size()) {
-		auto ch = samples[0].Sample->CreateChannel();
-		ch->SetVolume(0);
-		ch->Play();
-	}
 }
 
 void GameAudioSampleCache::Play(int index, int volume) {
+	if (index == -1) {
+		return;
+	}
+
 	if (samples.find(index) == samples.end()) {
 		return;
 	}
 
-	::printf("Playing index at: %d\n", index);
+	//::printf("Playing index at: %d\n", index);
+	Stop(index);
 
-	auto& sample = samples[index];
-	auto channel = sample.Sample->CreateChannel().release();
-
-	if (sampleIndex.find(index) != sampleIndex.end()) {
-		auto ch = sampleIndex[index];
-		if (ch->IsPlaying()) {
-			ch->Stop();
-		}
-	}
+	auto channel = samples[index].Sample->CreateChannel().release();
 	
 	sampleIndex[index] = channel;
 	channel->SetVolume(volume);
-	channel->Play();
+	bool result = channel->Play();
+	if (!result) {
+		::printf("Failed to play index %d\n", index);
+	}
 }
 
 void GameAudioSampleCache::Stop(int index) {
@@ -129,6 +122,7 @@ void GameAudioSampleCache::Stop(int index) {
 			it->Stop();
 		}
 
+		delete it;
 		sampleIndex.erase(index);
 	}
 }

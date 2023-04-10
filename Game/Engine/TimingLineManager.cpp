@@ -36,7 +36,6 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 				desc.ImagePos = 3;
 				desc.ImageSize = 193;
 
-				std::cout << "Adding\n";
 				m_timingInfos.push(desc);
 			}
 

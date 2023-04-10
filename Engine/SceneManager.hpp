@@ -19,6 +19,7 @@ public:
 	void IChangeScene(int idx);
 
 	void SetParent(Game* parent);
+	void StopGame();
 
 	static void AddScene(int idx, Scene* scene);
 	static void ChangeScene(int idx);

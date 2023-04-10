@@ -4,6 +4,15 @@
 #include <functional>
 #include "Note.hpp"
 
+struct GameTrackEvent {
+	int Lane = -1;
+	
+	bool State = false;
+	bool IsKeyEvent = false;
+	bool IsHitEvent = false;
+	bool IsHitLongEvent = false;
+};
+
 class GameTrack {
 public:
 	GameTrack(RhythmEngine* engine, int laneIndex, int offset);
@@ -15,7 +24,7 @@ public:
 	void OnKeyDown();
 
 	void AddNote(NoteInfoDesc* note);
-	void ListenEvent(std::function<void(int, bool)> callback);
+	void ListenEvent(std::function<void(GameTrackEvent)> callback);
 
 private:
 	std::vector<Note*> m_notes;
@@ -24,8 +33,9 @@ private:
 	RhythmEngine* m_engine;
 	int m_laneOffset;
 	int m_laneIndex;
+	int m_keySound;
 
 	double m_deleteDelay;
 
-	std::function<void(int, bool)> m_callback;
+	std::function<void(GameTrackEvent)> m_callback;
 };

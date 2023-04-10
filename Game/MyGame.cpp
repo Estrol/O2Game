@@ -8,14 +8,16 @@
 #include "Resources/GameResources.hpp"
 
 MyGame::~MyGame() {
-	GamePlayingResource::Dispose();
+	/*GamePlayingResource::Dispose();*/
 	GameNoteResource::Dispose();
 }
 
 bool MyGame::Init() {
+	SetRenderMode(RendererMode::DIRECTX);
+
 	bool result = Game::Init();
 	if (result) {
-		if (!GamePlayingResource::Load()) return false;
+		//if (!GamePlayingResource::Load()) return false;
 		if (!GameNoteResource::Load()) return false;
 
 		SceneManager::AddScene(GameScene::INTRO, new LoadingScene());

@@ -19,6 +19,7 @@ public:
 	void virtual Stop();
 
 	void SetThreadMode(ThreadMode mode);
+	void SetRenderMode(RendererMode mode);
 	void SetFramelimit(double frameRate);
 	
 protected:
@@ -37,6 +38,7 @@ private:
 	double m_frameLimit;
 
 	ThreadMode m_threadMode;
+	RendererMode m_renderMode;
 	std::thread m_audioThread;
 	std::thread m_renderThread;
 };

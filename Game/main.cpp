@@ -1,4 +1,4 @@
-#define _CRTDBG_MAP_ALLOC
+﻿#define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <commdlg.h>
 #include "MyGame.h"
@@ -41,7 +41,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	/*BMS::BMSFile xfile = {};
-	xfile.Load(file);*/
+	xfile.Load(file);
+
+	return 0;*/
 
 	if (!std::filesystem::exists(file)) {
 		file = prompt();

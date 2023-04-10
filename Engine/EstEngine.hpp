@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Data/estring.hpp"
+
 #include "Audio.hpp"
 #include "AudioSample.hpp"
 #include "AudioManager.hpp"
@@ -8,6 +10,8 @@
 #include "UDim2.hpp"
 #include "Tile2D.hpp"
 #include "Texture2D.hpp"
+#include "Sprite2D.hpp"
+#include "NumericTexture.hpp"
 #include "Scene.hpp"
 #include "SceneManager.hpp"
 #include "InputManager.hpp"

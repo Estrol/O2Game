@@ -2,7 +2,11 @@
 #include "Window.hpp"
 #include <bass.h>
 #include <bass_fx.h>
+#include <sstream>
+#include <fstream>
+#include <vector>
 #include "AudioSample.hpp"
+#include "Data/bass_ogg_silent.hpp"
 
 #define DEFAULT_SAMPLE_RATE 44100
 
@@ -53,8 +57,22 @@ bool AudioManager::Init(Window* window) {
 
 	::printf("BASS and BASS_FX initialized\n");
 
+	// Prepare the BASS thread to play without delay.
+	PrepareBASS();
 	m_initialized = true;
 	return true;
+}
+
+void AudioManager::PrepareBASS() {
+	Create("BOOT", BASS_AUDIO_BOOT_DATA, BASS_AUDIO_BOOT_SIZE, &m_bootAudio);
+	m_bootAudio->SetVolume(0);
+	m_bootAudio->Play();
+	m_bootAudio->Pause();
+
+	CreateSample("BOOT_SAMPLE", BASS_AUDIO_BOOT_DATA, BASS_AUDIO_BOOT_SIZE, &m_bootSample);
+	auto t = m_bootSample->CreateChannel();
+	t->SetVolume(0);
+	t->Play();
 }
 
 bool AudioManager::Create(std::string id, uint8_t* buffer, size_t size, Audio** out) {
@@ -111,6 +129,7 @@ bool AudioManager::CreateSample(std::string id, uint8_t* buffer, size_t size, Au
 	}
 
 	m_audioSamples[id] = audio;
+	*out = m_audioSamples[id];
 
 	return true;
 }

@@ -31,6 +31,8 @@ public:
 	Vector2 AbsoluteSize;
 	Vector2 AbsolutePosition;
 
+	RECT GetOriginalRECT();
+
 	static Texture2D* FromTexture2D(Texture2D* tex);
 
 	static Texture2D* FromBMP(uint8_t* fileData, size_t size);

@@ -21,7 +21,8 @@ Calculation::Timing::Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::
 		switch (event.Channel) {
 			case 2: { // Measure change
 				try {
-					double value = std::atoi(mergeVector(event.Params, 0).c_str());
+					auto msg = mergeVector(event.Params, 0);
+					double value = std::atof(msg.c_str());
 					if (value > 0) {
 						currentMeasure = value;
 					}
@@ -38,10 +39,19 @@ Calculation::Timing::Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::
 					auto& msg = event.Params[i];
 					if (msg == "00") continue;
 
+					int value;
+					try {
+						value = std::stoi(msg, nullptr, 16);
+					}
+					catch (std::invalid_argument&) {
+						::printf("[BMS] [ERROR] Failed to parse BPM, undefined behavior may occured!");
+						continue;
+					}
+
 					BPMInfo info = {};
-					info.Value = std::atof(msg.c_str());
+					info.Value = value;
 					info.Measure = event.Measure;
-					info.Offset = 1.0 * static_cast<int>(i) / static_cast<int>(event.Params.size());
+					info.Offset = 1.0 * static_cast<float>(i) / static_cast<float>(event.Params.size());
 
 					bpms.push_back(info);
 				}
@@ -58,7 +68,7 @@ Calculation::Timing::Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::
 						BPMInfo info = {};
 						info.Value = vbpms[msg];
 						info.Measure = event.Measure;
-						info.Offset = 1.0 * static_cast<int>(i) / static_cast<int>(event.Params.size());
+						info.Offset = 1.0 * static_cast<float>(i) / static_cast<float>(event.Params.size());
 
 						bpms.push_back(info);
 					}
@@ -76,7 +86,7 @@ Calculation::Timing::Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::
 						STOPInfo info = {};
 						info.Value = vstops[msg];
 						info.Measure = event.Measure;
-						info.Offset = 1.0 * static_cast<int>(i) / static_cast<int>(event.Params.size());
+						info.Offset = 1.0 * static_cast<float>(i) / static_cast<float>(event.Params.size());
 
 						stops.push_back(info);
 					}
@@ -101,63 +111,74 @@ double Calculation::Timing::GetStartTimeFromOffset(double bpm, double offset, bo
 
 	auto trackDuration = GetTrackDuration(bpm, currentMeasure);
 	auto duration = trackDuration * offset;
-	if (bpmChanges.size() == 0) {
+	if (!bpmChanges.size()) {
 		return duration + GetStopTimeFromOffset(bpm, offset, inc);
 	}
 
 	double curBPM = bpm;
 	auto beforePos = trackDuration * bpmChanges[0].Offset;
 
-	for (int i = 0; i < bpmChanges.size(); i++) {
-		auto& bc = bpmChanges[i];
+	auto it = bpmChanges.begin();
+	while (it != bpmChanges.end()) {
+		curBPM = it->Value;
 
-		curBPM = bc.Value;
-		beforePos += GetTrackDuration(curBPM, currentMeasure) * (i + 1 < bpmChanges.size() ? bpmChanges[i + 1].Offset - bc.Offset : offset - bc.Offset);
+		if (it + 1 == bpmChanges.end()) {
+			beforePos += GetTrackDuration(curBPM, currentMeasure) * (offset - it->Offset);
+			break;
+		}
+
+		auto next = it + 1;
+		beforePos += GetTrackDuration(curBPM, currentMeasure) * (next->Offset - it->Offset);
+		it++;
 	}
 
-	auto db = beforePos + GetStopTimeFromOffset(bpm, offset, inc);
-	return db;
+	return beforePos + GetStopTimeFromOffset(bpm, offset, inc);
 }
 
 double Calculation::Timing::GetStopTimeFromOffset(double bpm, double offset, bool inc) {
 	if (stops.size() == 0) return 0;
 
 	double duration = 0;
+	auto it = stops.begin();
 
-	for (auto& stop : stops) {
-		if (inc ? stop.Offset <= offset : stop.Offset < offset) {
-			double curBPM = bpm;
+	while (it != stops.end() && (inc ? it->Offset <= offset : it->Offset < offset)) {
+		double currentBPM = bpm;
 
-			for (auto& bpm : bpms) {
-				if (bpm.Offset <= offset) {
-					curBPM = bpm.Value;
-				}
-				else {
-					break;
-				}
-			}
-
-			duration += GetStopDuration(curBPM, stop.Value);
+		auto bpmIt = bpms.begin();
+		while (bpmIt != bpms.end() && bpmIt->Offset <= it->Offset) {
+			currentBPM = bpmIt->Value;
+			bpmIt++;
 		}
-		else {
-			break;
-		}
+
+		duration += GetStopDuration(currentBPM, it->Value);
+		it++;
 	}
 
 	return duration;
 }
 
-std::vector<std::pair<double, double>> Calculation::Timing::GetTimings(double timePos, double BPM) {
-	std::vector<std::pair<double, double>> timings = {};
+
+std::vector<Calculation::Info> Calculation::Timing::GetTimings(double timePos, double BPM) {
+	std::vector<Info> timings = {};
+
+	if (bpms.size() == 0 && stops.size() == 0) {
+		return timings;
+	}
 
 	for (auto& bpm : bpms) {
 		double time = GetStartTimeFromOffset(BPM, bpm.Offset, false);
-		timings.push_back({ timePos + time, bpm.Value });
+
+		Info t = {};
+		t.StartTime = timePos + time;
+		t.Value = bpm.Value;
+		t.CurrentMeasure = currentMeasure;
+
+		timings.push_back(t);
 	}
 
 	for (auto& stop : stops) {
-		double stopTime = GetStartTimeFromOffset(BPM, stop.Offset, true);
 		double time = GetStartTimeFromOffset(BPM, stop.Offset, false);
+		double stopTime = GetStopTimeFromOffset(BPM, stop.Offset);
 
 		double tBPM = BPM;
 		for (auto& bpm : bpms) {
@@ -169,8 +190,19 @@ std::vector<std::pair<double, double>> Calculation::Timing::GetTimings(double ti
 			}
 		}
 
-		timings.push_back({ timePos + time, 0 });
-		timings.push_back({ timePos + time + stopTime, tBPM });
+		Info t = {};
+		t.StartTime = timePos + time;
+		t.Value = 0;
+		t.CurrentMeasure = currentMeasure;
+
+		timings.push_back(t);
+
+		Info t2 = {};
+		t2.StartTime = timePos + time + stopTime;
+		t2.Value = tBPM;
+		t2.CurrentMeasure = currentMeasure;
+
+		timings.push_back(t2);
 	}
 
 	return timings;

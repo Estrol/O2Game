@@ -23,18 +23,22 @@
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="AudioSample.cpp" />
     <ClCompile Include="AudioSampleChannel.cpp" />
+    <ClCompile Include="Data\estring.cpp" />
     <ClCompile Include="InputEvent.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="MathUtils.cpp" />
+    <ClCompile Include="NumericTexture.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Sprite2D.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="Tile2D.cpp" />
     <ClCompile Include="UDim.cpp" />
     <ClCompile Include="UDim2.cpp" />
     <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="Win32ErrorHandling.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +46,10 @@
     <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="AudioSample.hpp" />
     <ClInclude Include="AudioSampleChannel.hpp" />
+    <ClInclude Include="Sprite2D.hpp" />
+    <ClInclude Include="Win32ErrorHandling.h" />
+    <ClInclude Include="Data\bass_ogg_silent.hpp" />
+    <ClInclude Include="Data\estring.hpp" />
     <ClInclude Include="EstEngine.hpp" />
     <ClInclude Include="InputEvent.hpp" />
     <ClInclude Include="framework.h" />
@@ -49,6 +57,7 @@
     <ClInclude Include="InputManager.hpp" />
     <ClInclude Include="Keys.h" />
     <ClInclude Include="MathUtils.hpp" />
+    <ClInclude Include="NumericTexture.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="SceneManager.hpp" />
@@ -162,6 +171,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -186,6 +196,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>

@@ -139,10 +139,15 @@
     <ClCompile Include="Data\Util\Util.cpp" />
     <ClCompile Include="Data\osu.cpp" />
     <ClCompile Include="Engine\DrawableLine.cpp" />
+    <ClCompile Include="Engine\FrameTimer.cpp" />
+    <ClCompile Include="Resources\SkinManager.cpp" />
+    <ClCompile Include="Resources\SkinConfig.cpp" />
     <ClInclude Include="Data\bms_calculation.hpp" />
     <ClInclude Include="Data\bms_struct.hpp" />
+    <ClInclude Include="Data\Util\mINI.h" />
     <ClInclude Include="Engine\DrawableLine.hpp" />
     <ClCompile Include="Engine\DrawableTile.cpp" />
+    <ClCompile Include="Engine\ScoreManager.cpp" />
     <ClCompile Include="EnvironmentSetup.cpp" />
     <ClCompile Include="Engine\GameAudioSampleCache.cpp" />
     <ClCompile Include="Engine\GameTrack.cpp" />
@@ -157,9 +162,14 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyGame.cpp" />
     <ClCompile Include="Engine\DrawableNote.cpp" />
+    <ClCompile Include="Data\OJN.cpp" />
+    <ClCompile Include="Engine\O2NumericTexture.cpp" />
     <ClCompile Include="Resources\GameResources.cpp" />
     <ClCompile Include="Engine\TimingLineManager.cpp" />
     <ClCompile Include="Engine\TimingLine.cpp" />
+    <ClInclude Include="Engine\FrameTimer.hpp" />
+    <ClInclude Include="Resources\SkinManager.hpp" />
+    <ClInclude Include="Resources\SkinConfig.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data\AutoReplay.hpp" />
@@ -169,6 +179,7 @@
     <ClInclude Include="Data\Util\Util.hpp" />
     <ClInclude Include="Data\osu.hpp" />
     <ClInclude Include="Engine\DrawableTile.hpp" />
+    <ClInclude Include="Engine\ScoreManager.hpp" />
     <ClInclude Include="EnvironmentSetup.hpp" />
     <ClInclude Include="Engine\GameAudioSampleCache.hpp" />
     <ClInclude Include="Engine\GameTrack.hpp" />
@@ -184,6 +195,8 @@
     <ClInclude Include="ManiaKeys.h" />
     <ClInclude Include="MyGame.h" />
     <ClInclude Include="Engine\DrawableNote.hpp" />
+    <ClInclude Include="Data\OJN.h" />
+    <ClInclude Include="Engine\O2NumericTexture.hpp" />
     <ClInclude Include="Resources\GameResources.hpp" />
     <ClInclude Include="Engine\TimingLineManager.hpp" />
     <ClInclude Include="Engine\TimingLine.hpp" />

@@ -45,6 +45,7 @@ Game::Game() {
 	m_inputManager = nullptr;
 	m_sceneManager = nullptr;
 
+	m_renderMode = RendererMode::DIRECTX;
 	m_threadMode = ThreadMode::MULTI_THREAD;
 }
 
@@ -74,12 +75,12 @@ bool Game::Init() {
 	}
 
 	m_window = Window::GetInstance();
-	if (!m_window->Create("Game", 1920, 1080, 800, 600)) {
+	if (!m_window->Create(m_renderMode, "Game", 1920, 1080, 800, 600)) {
 		return false;
 	}
 	
 	m_renderer = Renderer::GetInstance();
-	if (!m_renderer->Create(RendererMode::DIRECTX, m_window)) {
+	if (!m_renderer->Create(m_renderMode, m_window)) {
 		return false;
 	}
 
@@ -179,6 +180,10 @@ void Game::Stop() {
 
 void Game::SetThreadMode(ThreadMode mode) {
 	m_threadMode = mode;
+}
+
+void Game::SetRenderMode(RendererMode mode) {
+	m_renderMode = mode;
 }
 
 void Game::SetFramelimit(double frameRate) {

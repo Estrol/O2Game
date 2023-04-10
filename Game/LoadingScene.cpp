@@ -5,6 +5,7 @@
 #include "EnvironmentSetup.hpp"
 #include "GameScenes.h"
 #include "Data/osu.hpp"
+#include "Data/Chart.hpp"
 
 LoadingScene::LoadingScene() {
 	m_background = nullptr;
@@ -18,10 +19,6 @@ LoadingScene::~LoadingScene() {
 void LoadingScene::Update(double delta) {
 	m_counter += delta;
 
-#ifdef _DEBUG
-	m_counter = 5;
-#endif
-
 	if (m_counter > 2.5) {
 		SceneManager::ChangeScene(GameScene::GAME);
 	}
@@ -34,9 +31,22 @@ void LoadingScene::Render(double delta) {
 }
 
 bool LoadingScene::Attach() {
-#ifndef _DEBUG
-	try {
-		std::string file = EnvironmentSetup::Get("FILE");
+	std::string file = EnvironmentSetup::Get("FILE");
+	const char* bmsfile[] = { ".bms", ".bme", ".bml" };
+
+	Chart* chart = nullptr;
+	if (file.find(bmsfile[0]) != std::string::npos || file.find(bmsfile[1]) != std::string::npos || file.find(bmsfile[2]) != std::string::npos) {
+		BMS::BMSFile beatmap;
+		beatmap.Load(file);
+
+		if (!beatmap.IsValid()) {
+			MessageBoxA(NULL, "Failed to load BMS!", "EstEngine Error", MB_ICONERROR);
+			return false;
+		}
+
+		chart = new Chart(beatmap);
+	}
+	else {
 		Osu::Beatmap beatmap(file);
 
 		if (!beatmap.IsValid()) {
@@ -44,39 +54,26 @@ bool LoadingScene::Attach() {
 			return false;
 		}
 
-		if (beatmap.Mode != 3) {
-			MessageBoxA(NULL, "This beatmap is not a mania beatmap!", "EstEngine Error", MB_ICONERROR);
-			return false;
-		}
+		std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
+		Window::GetInstance()->SetWindowTitle(title);
 
-		Osu::OsuEvent* bg = nullptr;
-		for (auto it = beatmap.Events.begin(); it != beatmap.Events.end();) {
-			auto& event = *it;
-
-			if (event.Type == Osu::OsuEventType::Background) {
-				bg = &(*it);
-				break;
-			}
-			else {
-				it++;
-			}
-		}
-
-		if (bg) {
-			std::filesystem::path imgPath = beatmap.FileDirectory;
-			imgPath /= bg->params[0];
-
-			if (std::filesystem::exists(imgPath)) {
-				m_background = new Texture2D(imgPath.string());
-				m_background->Size = UDim2::fromOffset(800, 600);
-			}
-		}
+		chart = new Chart(beatmap);
 	}
-	catch (std::exception& e) {
 
+	std::filesystem::path dirPath = chart->m_beatmapDirectory;
+	dirPath /= chart->m_backgroundFile;
+
+	if (std::filesystem::exists(dirPath)) {
+		Window* window = Window::GetInstance();
+
+		m_background = new Texture2D(dirPath.string());
+		m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
 	}
-#endif
 
+	std::string subTitle = chart->m_artist + " - " + chart->m_title;
+	Window::GetInstance()->SetWindowSubTitle(subTitle);
+
+	EnvironmentSetup::SetObj("SONG", chart);
 	return true;
 }
 

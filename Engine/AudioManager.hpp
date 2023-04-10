@@ -30,10 +30,15 @@ private:
 	AudioManager();
 	~AudioManager();
 
+	void PrepareBASS();
+
 	static AudioManager* s_instance;
 	bool m_initialized;
 
 	double nextUpdate;
+
+	Audio* m_bootAudio;
+	AudioSample* m_bootSample;
 
 	Window* m_currentWindow;
 	std::unordered_map<std::string, Audio*> m_audios;

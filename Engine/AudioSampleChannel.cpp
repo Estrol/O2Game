@@ -1,4 +1,5 @@
 #include "AudioSampleChannel.hpp"
+#include <iostream>
 #include <bass.h>
 
 AudioSampleChannel::AudioSampleChannel() {
@@ -12,6 +13,10 @@ AudioSampleChannel::AudioSampleChannel() {
 
 AudioSampleChannel::AudioSampleChannel(DWORD sampleHandle, float rate, float vol, bool pitch) {
 	m_hCurrentSample = BASS_SampleGetChannel(sampleHandle, 0);
+	if (!m_hCurrentSample) {
+		::printf("[BASS] Error: %d\n", BASS_ErrorGetCode());
+	}
+
 	m_rate = rate;
 	m_vol = vol;
 	m_pitch = pitch;
@@ -29,6 +34,7 @@ bool AudioSampleChannel::HasPlayed() {
 
 bool AudioSampleChannel::Play() {
 	if (m_silent) {
+		::printf("Playing silent audio!\n");
 		m_hasPlayed = true;
 
 		return true;

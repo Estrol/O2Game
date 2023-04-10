@@ -9,6 +9,7 @@ GameTrack::GameTrack(RhythmEngine* engine, int laneIndex, int offset) {
 	m_laneIndex = laneIndex;
 	m_laneOffset = offset;
 	m_deleteDelay = 0;
+	m_keySound = -1;
 }
 
 GameTrack::~GameTrack() {
@@ -39,6 +40,10 @@ void GameTrack::Update(double delta) {
 				}
 			}
 
+			if (note->GetStartTime() <= m_engine->GetGameAudioPosition()) {
+				m_keySound = note->GetKeysoundId();
+			}
+
 			note->Update(delta);
 			_note++;
 		}
@@ -53,56 +58,68 @@ void GameTrack::Render(double delta) {
 
 void GameTrack::OnKeyUp() {
 	if (m_callback) {
-		m_callback(m_laneIndex, false);
+		GameTrackEvent e = {};
+		e.Lane = m_laneIndex;
+		e.State = false;
+		e.IsKeyEvent = true;
+
+		m_callback(e);
 	}
 
-	/*std::vector<Note*> copy = m_notes;
-	for (auto& it : copy) {
-		auto result = it->CheckRelease();
-
-		if (std::get<bool>(result)) {
-			it->OnRelease(std::get<NoteResult>(result));
-			break;
-		}
-	}*/
-
-	if (m_notes.size() > 0) {
-		auto note = m_notes.front();
+	for (auto& note : m_notes) {
 		auto result = note->CheckRelease();
-
 		if (std::get<bool>(result)) {
 			note->OnRelease(std::get<NoteResult>(result));
+
+			if (std::get<NoteResult>(result) == NoteResult::MISS) {
+				GameAudioSampleCache::Stop(m_keySound);
+			}
+			
+			if (m_callback) {
+				GameTrackEvent e = {};
+				e.Lane = m_laneIndex;
+				e.State = false;
+				e.IsHitLongEvent = true;
+				e.IsHitEvent = true;
+
+				m_callback(e);
+			}
+
+			break;
 		}
 	}
-
-	//GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
 }
 
 void GameTrack::OnKeyDown() {
 	if (m_callback) {
-		m_callback(m_laneIndex, true);
+		GameTrackEvent e = {};
+		e.Lane = m_laneIndex;
+		e.State = true;
+		e.IsKeyEvent = true;
+
+		m_callback(e);
 	}
 
-	/*std::vector<Note*> copy = m_notes;
-	for (auto& it : copy) {
-		auto result = it->CheckHit();
-
-		if (std::get<bool>(result)) {
-			it->OnHit(std::get<NoteResult>(result));
-			break;
-		}
-	}*/
-
-	if (m_notes.size() > 0) {
-		auto note = m_notes.front();
+	for (auto& note : m_notes) {
 		auto result = note->CheckHit();
-
 		if (std::get<bool>(result)) {
 			note->OnHit(std::get<NoteResult>(result));
-		}
 
-		GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
+			if (m_callback) {
+				GameTrackEvent e = {};
+				e.Lane = m_laneIndex;
+				e.State = true;
+				e.IsHitLongEvent = note->GetType() == NoteType::HOLD;
+				e.IsHitEvent = true;
+
+				m_callback(e);
+			}
+
+			break;
+		}
 	}
+
+	GameAudioSampleCache::Play(m_keySound, 50);
 }
 
 void GameTrack::AddNote(NoteInfoDesc* desc) {
@@ -121,6 +138,6 @@ void GameTrack::AddNote(NoteInfoDesc* desc) {
 	m_notes.push_back(note);
 }
 
-void GameTrack::ListenEvent(std::function<void(int, bool)> callback) {
+void GameTrack::ListenEvent(std::function<void(GameTrackEvent)> callback) {
 	m_callback = callback;
 }

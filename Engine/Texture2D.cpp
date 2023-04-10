@@ -6,6 +6,8 @@
 #include "Renderer.hpp"
 #include "MathUtils.hpp"
 
+#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
+
 using namespace DirectX;
 
 Texture2D::Texture2D() {
@@ -18,6 +20,10 @@ Texture2D::Texture2D() {
 }
 
 Texture2D::Texture2D(std::string fileName) {
+	if (!std::filesystem::exists(fileName)) {
+		fileName = std::filesystem::current_path().string() + fileName;
+	}
+
 	if (!std::filesystem::exists(fileName)) {
 		throw std::runtime_error(fileName + " not found!");
 	}
@@ -66,9 +72,7 @@ Texture2D::Texture2D(ID3D11ShaderResourceView* texture) {
 
 Texture2D::~Texture2D() {
 	if (m_bDisposeTexture) {
-		if (m_pTexture) {
-			m_pTexture->Release();
-		}
+		SAFE_RELEASE(m_pTexture)
 	}
 }
 
@@ -98,7 +102,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 
 	if (manualDraw) {
 		batch->Begin(
-			SpriteSortMode_Deferred,
+			SpriteSortMode_Immediate,
 			states->NonPremultiplied(),
 			nullptr,
 			nullptr,
@@ -162,6 +166,10 @@ void Texture2D::CalculateSize() {
 
 	AbsolutePosition = { (double)xPos, (double)yPos };
 	AbsoluteSize = { (double)width, (double)height };
+}
+
+RECT Texture2D::GetOriginalRECT() {
+	return m_actualSize;
 }
 
 Texture2D* Texture2D::FromTexture2D(Texture2D* tex) {

@@ -98,6 +98,10 @@ void SceneManager::SetParent(Game* parent) {
 	m_parent = parent;
 }
 
+void SceneManager::StopGame() {
+	m_parent->Stop();
+}
+
 SceneManager* SceneManager::GetInstance() {
 	if (s_instance == nullptr) {
 		s_instance = new SceneManager();

@@ -87,7 +87,8 @@ namespace BMS {
 				}
 
 				if (command.starts_with("STAGEFILE")) {
-					continue; // TODO:
+					StageFile = mergeVectorWith(data, 1);
+					continue;
 				}
 
 				if (command.starts_with("BPM") 
@@ -100,9 +101,9 @@ namespace BMS {
 				if (command.starts_with("WAV") 
 					&& command.size() == 5) {
 					std::string index = command.substr(3, 2);
-					std::string file = mergeVector(data, 1);
+					std::string file = mergeVectorWith(data, 1);
 
-					m_wavs[index] = file;
+					m_wavs.push_back({ index, file });
 					continue;
 				}
 
@@ -121,6 +122,14 @@ namespace BMS {
 
 					m_stops[index] = duration;
 					continue;
+				}
+
+				if (command.starts_with("LNTYPE")) {
+					m_lnType = std::atoi(data[1].c_str());
+				}
+
+				if (command.starts_with("LNOBJ")) {
+					m_lnObj = data[1];
 				}
 
 				// FIELD DATA parsing
@@ -174,6 +183,13 @@ namespace BMS {
 		double startOffset = 0.0;
 		double initBPM = BPM;
 
+		BMSTiming startTiming = {};
+		startTiming.StartTime = 0;
+		startTiming.Value = initBPM;
+		startTiming.TimeSignature = 1;
+
+		Timings.push_back(startTiming);
+
 		// measure
 		for (auto& track : m_events) {
 			Calculation::Timing t = { track.second, m_bpms, m_stops };
@@ -187,13 +203,24 @@ namespace BMS {
 						auto& msg = event.Params[i];
 						if (msg == "00") continue;
 
-						BMSNote note = {};
-						note.StartTime = startOffset + t.GetStartTimeFromOffset(initBPM, 1.0 * i / event.Params.size(), false);
-						note.EndTime = -1;
-						note.Lane = laneIndex;
-						note.SampleIndex = Base36_Decode(msg);
+						double offset = t.GetStartTimeFromOffset(initBPM, 1.0 * i / event.Params.size(), false);
 
-						Notes.push_back(note);
+						if (m_lnObj == msg) {
+							auto& note = m_perLaneNotes[laneIndex].back();
+							note.EndTime = startOffset + offset;
+						}
+						else {
+							BMSNote note = {};
+							note.StartTime = startOffset + offset;
+							note.EndTime = -1;
+							note.Lane = laneIndex;
+							note.SampleIndex = GetSampleIndex(msg);
+							if (note.SampleIndex == -1) {
+								::printf("[BMS] [Warning] Sample not found for message: %s\n", msg.c_str());
+							}
+
+							m_perLaneNotes[laneIndex].push_back(note);
+						}
 					}
 				}
 
@@ -212,9 +239,13 @@ namespace BMS {
 							note.StartTime = startOffset + t.GetStartTimeFromOffset(initBPM, 1.0 * i / event.Params.size(), false);
 							note.EndTime = -1;
 							note.Lane = laneIndex;
-							note.SampleIndex = Base36_Decode(msg);
+							note.SampleIndex = GetSampleIndex(msg);
+							if (note.SampleIndex == -1) {
+								::printf("[BMS] [Warning] Sample not found for message: %s\n", msg.c_str());
+							}
 
-							Notes.push_back(note);
+							m_perLaneNotes[laneIndex].push_back(note);
+							PendingHold[laneIndex] = &m_perLaneNotes[laneIndex].back();
 						}
 					}
 				}
@@ -225,10 +256,11 @@ namespace BMS {
 						auto& msg = event.Params[i];
 						if (msg == "00") continue;
 
-						if (m_wavs.find(msg) != m_wavs.end()) {
+						int sampleIndex = GetSampleIndex(msg);
+						if (sampleIndex != -1) {
 							BMSAutoSample at = {};
 							at.StartTime = startOffset + t.GetStartTimeFromOffset(initBPM, 1.0 * i / event.Params.size(), false);
-							at.SampleIndex = Base36_Decode(msg);
+							at.SampleIndex = sampleIndex;
 
 							AutoSamples.push_back(at);
 						}
@@ -238,18 +270,17 @@ namespace BMS {
 
 			double trackDuration = t.GetStartTimeFromOffset(initBPM, 1);
 			auto timings = t.GetTimings(startOffset, initBPM);
-			if (timings.size() > 0) {
-				auto it = timings.end() - 1;
-				initBPM = it->second;
+			for (auto& it : timings) {
+				BMSTiming t = {};
+				t.StartTime = it.StartTime;
+				t.Value = it.Value;
+				t.TimeSignature = it.CurrentMeasure;
 
-				for (auto& it : timings) {
-					BMSTiming t = {};
-					t.StartTime = it.first;
-					t.Value = it.second;
-					t.TimeSignature = 4.0 / 4.0;
+				Timings.push_back(t);
+			}
 
-					Timings.push_back(t);
-				}
+			if (t.bpms.size() > 0) {
+				initBPM = t.bpms.back().Value;
 			}
 
 			startOffset += trackDuration;
@@ -257,17 +288,46 @@ namespace BMS {
 	}
 
 	void BMSFile::VerifyNote() {
+		for (auto& [index, noteVector] : m_perLaneNotes) {
+			for (auto& note : noteVector) {
+				Notes.push_back(note);
+			}
+		}
+
 		std::sort(Notes.begin(), Notes.end(), [](BMSNote& a, BMSNote& b) {
-			return a.StartTime < b.StartTime;
+			if (a.StartTime != b.StartTime) {
+				return a.StartTime < b.StartTime;
+			}
+			else {
+				return a.Lane < b.Lane;
+			}
 		});
 
 		std::sort(Timings.begin(), Timings.end(), [](BMSTiming& a, BMSTiming& b) {
 			return a.StartTime < b.StartTime;
 		});
 
-		for (auto& sample : m_wavs) {
-			int index = Base36_Decode(sample.first);
-			Samples[index] = sample.second;
+		std::sort(AutoSamples.begin(), AutoSamples.end(), [](BMSAutoSample& a, BMSAutoSample& b) {
+			if (a.StartTime != b.StartTime) {
+				return a.StartTime < b.StartTime;
+			}
+			else {
+				return a.SampleIndex < b.SampleIndex;
+			}
+		});
+
+		for (int i = 0; i < m_wavs.size(); i++) {
+			auto& wav = m_wavs[i];
+			Samples[i] = wav.second;
 		}
+	}
+	int BMSFile::GetSampleIndex(std::string msg) {
+		for (int i = 0; i < m_wavs.size(); i++) {
+			if (m_wavs[i].first == msg) {
+				return i;
+			}
+		}
+
+		return -1;
 	}
 }

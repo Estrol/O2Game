@@ -5,6 +5,7 @@
 #include "../Data/AutoReplay.hpp"
 #include "GameTrack.hpp"
 #include "TimingLineManager.hpp"
+#include "ScoreManager.hpp"
 
 enum class GameState {
 	PreParing,
@@ -30,7 +31,7 @@ public:
 	void OnKeyDown(const KeyState& key);
 	void OnKeyUp(const KeyState& key);
 
-	void ListenKeyEvent(std::function<void(int,bool)> callback);
+	void ListenKeyEvent(std::function<void(GameTrackEvent)> callback);
 
 	double GetAudioPosition() const;
 	double GetVisualPosition() const;
@@ -38,11 +39,16 @@ public:
 	double GetTrackPosition() const;
 	double GetPrebufferTiming() const;
 	double GetNotespeed() const;
+	double GetBeat(double offset) const;
 	int GetAudioLength() const;
 
 	double GetPositionFromOffset(double offset);
 	double GetPositionFromOffset(double offset, int index);
 
+	int* GetLaneSizes() const;
+	int* GetLanePos() const;
+	GameState GetState() const;
+	ScoreManager* GetScoreManager() const;
 	std::vector<double> GetTimingWindow();
 	std::vector<TimingInfo> GetBPMs() const;
 	std::vector<TimingInfo> GetSVs() const;
@@ -71,6 +77,9 @@ private:
 
 	bool m_started = false;
 	GameState m_state = GameState::NotGame;
+	RECT m_playRectangle;
+	int m_laneSize[7];
+	int m_lanePos[7];
 
 	std::string m_audioPath = "";
 	Audio* m_currentAudio;
@@ -83,6 +92,7 @@ private:
 	std::unordered_map<int, int> m_autoHitIndex;
 	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
 
+	ScoreManager* m_scoreManager;
 	TimingLineManager* m_timingLineManager;
-	std::function<void(int, bool)> m_eventCallback;
+	std::function<void(GameTrackEvent)> m_eventCallback;
 };

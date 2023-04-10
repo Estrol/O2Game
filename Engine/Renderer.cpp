@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <d3d11.h>
 #include <wrl.h>
+#include "Win32ErrorHandling.h"
 
 #pragma comment(lib, "dxguid.lib")
 typedef HRESULT(*D3D11_CreateDeviceAndSwapChain)(
@@ -34,125 +35,177 @@ Renderer::~Renderer() {
 Renderer* Renderer::s_instance = nullptr;
 
 bool Renderer::Create(RendererMode mode, Window* window) {
-    HMODULE d3d11 = NULL;
+    try {
+        HMODULE d3d11 = NULL;
 
-    if (mode == RendererMode::VULKAN) {
-		std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
+        if (mode == RendererMode::VULKAN) {
+            std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
 
-		// This is so cheating!!
-        if (std::filesystem::exists(dxvkPath / "dxgi.dll") && std::filesystem::exists(dxvkPath / "d3d11.dll")) {
-            LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
-            d3d11 = LoadLibraryA((dxvkPath / "d3d11.dll").string().c_str());
+            // This is so cheating!!
+            if (std::filesystem::exists(dxvkPath / "dxgi.dll") && std::filesystem::exists(dxvkPath / "d3d11.dll")) {
+                LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
+                d3d11 = LoadLibraryA((dxvkPath / "d3d11.dll").string().c_str());
+            }
+            else {
+                MessageBoxA(NULL, "Failed to load Vulkan DLLs", "EstEngine Error", MB_OK);
+                return false;
+            }
         }
         else {
-			MessageBoxA(NULL, "Failed to load Vulkan DLLs", "EstEngine Error", MB_OK);
+            d3d11 = LoadLibraryA("d3d11.dll");
+        }
+
+        if (d3d11 == NULL) {
+            MessageBoxA(NULL, "Failed to load D3D11 DLLs", "EstEngine Error", MB_ICONERROR);
             return false;
         }
-    }
-    else {
-        d3d11 = LoadLibraryA("d3d11.dll");
-    }
 
-	if (d3d11 == NULL) {
-		MessageBoxA(NULL, "Failed to load D3D11 DLLs", "EstEngine Error", MB_ICONERROR);
-		return false;
-	}
+        D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
+        if (!createDeviceAndSwapChain) {
+            MessageBoxA(NULL, "D3D11CreateDeviceAndSwapChain function exports symbols not found in D3D11.dll", "EstEngine Error", MB_ICONERROR);
+            return false;
+        }
 
-	D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
-    if (!createDeviceAndSwapChain) {
-		MessageBoxA(NULL, "D3D11CreateDeviceAndSwapChain function exports symbols not found in D3D11.dll", "EstEngine Error", MB_ICONERROR);
-		return false;
-    }
-	
-	HWND handle = window->GetHandle();
-	
-    DXGI_SWAP_CHAIN_DESC scd = { 0 };
-    scd.BufferCount = 1;
-    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scd.BufferDesc.Width = window->GetBufferWidth();
-    scd.BufferDesc.Height = window->GetBufferHeight();
-    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    scd.OutputWindow = handle;
-    scd.SampleDesc.Count = 4;
-    scd.Windowed = TRUE;
+        HWND handle = window->GetHandle();
 
-    UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+        DXGI_SWAP_CHAIN_DESC scd = { 0 };
+        scd.BufferCount = 1;
+        scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        scd.BufferDesc.Width = window->GetBufferWidth();
+        scd.BufferDesc.Height = window->GetBufferHeight();
+        scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        scd.OutputWindow = handle;
+        scd.SampleDesc.Count = 4;
+        scd.Windowed = TRUE;
+
+        UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #if _DEBUG
-    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_11_1;
-    D3D_FEATURE_LEVEL level2 = D3D_FEATURE_LEVEL_11_1;
+        D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_11_1;
+        D3D_FEATURE_LEVEL level2 = D3D_FEATURE_LEVEL_11_1;
 
-	HRESULT result = createDeviceAndSwapChain(
-        nullptr, 
-        D3D_DRIVER_TYPE_HARDWARE, 
-        nullptr, 
-        creationFlags, 
-        &level, 
-        1, 
-        D3D11_SDK_VERSION, 
-        &scd, 
-        &m_swapChain, 
-        &m_device, 
-        &level2, 
-        &m_immediateContext
-    );
+        HRESULT result = createDeviceAndSwapChain(
+            nullptr,
+            D3D_DRIVER_TYPE_HARDWARE,
+            nullptr,
+            creationFlags,
+            &level,
+            1,
+            D3D11_SDK_VERSION,
+            &scd,
+            &m_swapChain,
+            &m_device,
+            &level2,
+            &m_immediateContext
+        );
 
-	if (FAILED(result)) {
-		MessageBoxA(NULL, "Failed to create device and swap chain", "EstEngine Error", MB_ICONERROR);
-		return false;
-	}
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to create device and swap chain"
+        );
 
-	ID3D11Texture2D* backBuffer = nullptr;
-	result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);
+        ID3D11Texture2D* backBuffer = nullptr;
+        result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to get back buffer"
+        );
 
-    if (FAILED(result)) {
-        MessageBoxA(NULL, "Failed to get back buffer", "EstEngine Error", MB_ICONERROR);
+        result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
+
+        backBuffer->Release();
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to create render target view"
+        );
+
+        m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
+
+        D3D11_VIEWPORT pViewport;
+        ZeroMemory(&pViewport, sizeof(D3D11_VIEWPORT));
+        pViewport.TopLeftX = 0;
+        pViewport.TopLeftY = 0;
+        pViewport.Width = window->GetWidth();
+        pViewport.Height = window->GetHeight();
+
+        m_immediateContext->RSSetViewports(1, &pViewport);
+
+        CD3D11_RASTERIZER_DESC rsDesc(
+            D3D11_FILL_SOLID,
+            D3D11_CULL_BACK,
+            FALSE,
+            0,
+            0.f,
+            0.f,
+            TRUE,
+            TRUE,
+            TRUE,
+            FALSE
+        );
+
+        result = m_device->CreateRasterizerState(&rsDesc, &m_scissorState);
+
+		Win32Exception::ThrowIfError(
+            result, 
+            "Failed to create rasterizer state"
+        );
+
+        m_states = new DirectX::CommonStates(m_device);
+        return true;
+    }
+    catch (Win32Exception& e) {
+        MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
         return false;
     }
+}
 
-	result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
-    backBuffer->Release();
+bool Renderer::Resize() {
+    try {
+        Window* window = Window::GetInstance();
 
-	if (FAILED(result)) {
-		MessageBoxA(NULL, "Failed to create render target view", "EstEngine Error", MB_ICONERROR);
-		return false;
-	}
+        HRESULT result = m_swapChain->ResizeBuffers(0, window->GetBufferWidth(), window->GetBufferHeight(), DXGI_FORMAT_UNKNOWN, 0);
 
-	m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to resize swap chain buffer size"
+        );
 
-    D3D11_VIEWPORT pViewport;
-    ZeroMemory(&pViewport, sizeof(D3D11_VIEWPORT));
-    pViewport.TopLeftX = 0;
-    pViewport.TopLeftY = 0;
-    pViewport.Width = window->GetWidth();
-    pViewport.Height = window->GetHeight();
+        ID3D11Texture2D* backBuffer = nullptr;
+        result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);
 
-    m_immediateContext->RSSetViewports(1, &pViewport);
-	
-    CD3D11_RASTERIZER_DESC rsDesc(
-        D3D11_FILL_SOLID, 
-        D3D11_CULL_BACK, 
-        FALSE,
-        0, 
-        0.f, 
-        0.f, 
-        TRUE, 
-        TRUE, 
-        TRUE, 
-        FALSE
-    );
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to get back buffer"
+        );
 
-	result = m_device->CreateRasterizerState(&rsDesc, &m_scissorState);
-	if (FAILED(result)) {
-		MessageBoxA(NULL, "Failed to create rasterizer state", "EstEngine Error", MB_ICONERROR);
-		return false;
-	}
+        result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
 
-    m_states = new DirectX::CommonStates(m_device);
-    return true;
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to create render target view"
+        );
+
+        m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
+
+        D3D11_VIEWPORT pViewport;
+        ZeroMemory(&pViewport, sizeof(D3D11_VIEWPORT));
+        pViewport.TopLeftX = 0;
+        pViewport.TopLeftY = 0;
+        pViewport.Width = window->GetWidth();
+        pViewport.Height = window->GetHeight();
+
+        m_immediateContext->RSSetViewports(1, &pViewport);
+        backBuffer->Release();
+
+        return true;
+    }
+    catch (Win32Exception& e) {
+        MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
+        return false;
+    }
 }
 
 bool Renderer::BeginRender() {
@@ -238,22 +291,18 @@ bool Renderer::Destroy() {
     if (m_states) {
         delete m_states;
     }
+
+    SAFE_RELEASE(m_scissorState);
+
+    ID3D11RenderTargetView* nullview[] = {nullptr};
+	m_immediateContext->OMSetRenderTargets(1, nullview, nullptr);
 	
-    if (m_renderTargetView) {
-        m_renderTargetView->Release();
-    }
+    m_immediateContext->Flush();
 
-    if (m_immediateContext) {
-        m_immediateContext->Release();
-    }
-
-    if (m_swapChain) {
-        m_swapChain->Release();
-    }
-
-	if (m_device) {
-		m_device->Release();
-	}
+    SAFE_RELEASE(m_renderTargetView);
+    SAFE_RELEASE(m_immediateContext);
+    SAFE_RELEASE(m_swapChain);
+    SAFE_RELEASE(m_device);
 
     return true;
 }

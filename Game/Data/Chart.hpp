@@ -27,6 +27,7 @@ struct NoteInfo {
 struct TimingInfo {
 	double StartTime;
 	float Value;
+	float Beat;
 	float TimeSignature;
 	TimingType Type;
 };
@@ -58,6 +59,7 @@ public:
 	std::string m_backgroundFile;
 	std::string m_title;
 	std::string m_audio;
+	std::string m_artist;
 	std::string m_beatmapDirectory;
 
 	std::vector<NoteInfo> m_notes;

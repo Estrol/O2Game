@@ -7,6 +7,7 @@
 #include "GameAudioSampleCache.hpp"
 
 #define REMOVE_TIME 3000
+#define HOLD_COMBO_TICK 100
 
 namespace {
 	float GetNotePositionAlpha(double Offset, double InitialTrackPosition, double HitPosOffset, double noteSpeed, bool upscroll = false) {
@@ -41,6 +42,11 @@ Note::Note(RhythmEngine* engine) {
 
 	m_didHitHead = false;
 	m_didHitTail = false;
+
+	m_hitPos = 0;
+	m_relPos = 0;
+
+	m_lastScoreTime = -1;
 }
 
 Note::~Note() {
@@ -79,6 +85,11 @@ void Note::Load(NoteInfoDesc* desc) {
 
 	m_didHitHead = false;
 	m_didHitTail = false;
+
+	m_hitPos = 0;
+	m_relPos = 0;
+
+	m_lastScoreTime = -1;
 }
 
 void Note::Update(double delta) {
@@ -95,13 +106,31 @@ void Note::Update(double delta) {
 		if (m_state == NoteState::HOLD_PRE) {
 			if (audioPos > (m_startTime + REMOVE_TIME)) {
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
+
+				m_hitPos = m_startTime + REMOVE_TIME;
+				m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_hitPos });
 			}
 		}
 		else if (
 			m_state == NoteState::HOLD_ON_HOLDING || 
 			m_state == NoteState::HOLD_MISSED_ACTIVE || 
 			m_state == NoteState::HOLD_PASSED) {
+			if (m_state == NoteState::HOLD_ON_HOLDING) {
+				if (m_lastScoreTime != -1 && audioPos <= m_endTime && audioPos > m_startTime) {
+					if (audioPos - m_lastScoreTime > HOLD_COMBO_TICK) {
+						m_lastScoreTime += HOLD_COMBO_TICK;
+						m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
+					}
+				}
+			}
+
 			if (audioPos > (m_endTime + REMOVE_TIME)) {
+				if (m_state != NoteState::HOLD_PASSED) {
+					m_hitPos = m_endTime + REMOVE_TIME;
+					m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_relPos });
+					m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+				}
+
 				m_state = NoteState::DO_REMOVE;
 			}
 		}
@@ -159,23 +188,31 @@ double Note::GetInitialTrackPosition() const {
 	return m_initialTrackPosition;
 }
 
+double Note::GetStartTime() const {
+	return m_startTime;
+}
+
 int Note::GetKeysoundId() const {
 	return m_keysoundIndex;
+}
+
+NoteType Note::GetType() const {
+	return m_type;
 }
 
 std::tuple<bool, NoteResult> Note::CheckHit() {
 	if (m_type == NoteType::NORMAL) {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-		return TimeToResult(m_engine, time_to_end);
+		return TimeToResult(m_engine, m_startTime, time_to_end);
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-			return TimeToResult(m_engine, time_to_end);
+			return TimeToResult(m_engine, m_startTime, time_to_end);
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
-			return TimeToResult(m_engine, time_to_end);
+			return TimeToResult(m_engine, m_endTime, time_to_end);
 		}
 
 		return { false, NoteResult::MISS };
@@ -187,7 +224,7 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
 
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
-			auto result = TimeToResult(m_engine, time_to_end);
+			auto result = TimeToResult(m_engine, m_endTime, time_to_end);
 
 			if (std::get<bool>(result)) {
 				return result;
@@ -206,36 +243,41 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 }
 
 void Note::OnHit(NoteResult result) {
-	//GameAudioSampleCache::Play(m_keysoundIndex, 50);
-
 	if (m_type == NoteType::HOLD) {
 		if (m_state == NoteState::HOLD_PRE) {
 			m_didHitHead = true;
-			// m_currentResult
 			m_state = NoteState::HOLD_ON_HOLDING;
+			m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
+			m_lastScoreTime = m_engine->GetGameAudioPosition();
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			m_didHitHead = true;
 			m_state = NoteState::HOLD_PASSED;
+
+			m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+			m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
 		}
 	}
 	else {
 		m_state = NoteState::DO_REMOVE;
-		// TODO: scoring
+		m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
 	}
 }
 
 void Note::OnRelease(NoteResult result) {
 	if (m_type == NoteType::HOLD) {
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
+			m_lastScoreTime = -1;
+
 			if (result == NoteResult::MISS) {
 				GameAudioSampleCache::Stop(m_keysoundIndex);
-				
+				m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 			}
 			else {
 				m_state = NoteState::HOLD_PASSED;
 				m_didHitTail = true;
+				m_engine->GetScoreManager()->OnHit({ result, m_relPos });
 			}
 		}
 	}

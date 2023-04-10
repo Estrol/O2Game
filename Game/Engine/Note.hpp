@@ -48,7 +48,9 @@ public:
 	void Render(double delta);
 
 	double GetInitialTrackPosition() const;
+	double GetStartTime() const;
 	int GetKeysoundId() const;
+	NoteType GetType() const;
 
 	std::tuple<bool, NoteResult> CheckHit();
 	std::tuple<bool, NoteResult> CheckRelease();
@@ -89,4 +91,9 @@ private:
 
 	bool m_didHitHead;
 	bool m_didHitTail;
+
+	double m_hitPos;
+	double m_relPos;
+
+	double m_lastScoreTime;
 };

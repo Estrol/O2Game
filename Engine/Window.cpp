@@ -1,4 +1,5 @@
 #include "Window.hpp"
+#include "Renderer.hpp"
 #include <SDL2/SDL_syswm.h>
 
 Window::Window() {
@@ -6,6 +7,11 @@ Window::Window() {
 
 	m_width = 0;
 	m_height = 0;
+	m_bufferWidth = 0;
+	m_bufferHeight = 0;
+
+	m_mainTitle = "";
+	m_subTitle = "";
 }
 
 Window::~Window() {
@@ -16,7 +22,7 @@ Window::~Window() {
 
 Window* Window::s_instance = nullptr;
 
-bool Window::Create(std::string title, int width, int height, int bufferWidth, int bufferHeight) {
+bool Window::Create(RendererMode mode, std::string title, int width, int height, int bufferWidth, int bufferHeight) {
 	if (m_window != nullptr) {
 		return false;
 	}
@@ -25,8 +31,10 @@ bool Window::Create(std::string title, int width, int height, int bufferWidth, i
 	m_height = height;
 	m_bufferWidth = bufferWidth;
 	m_bufferHeight = bufferHeight;
+	m_mainTitle = title;
 
-	m_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+	uint32_t flags = SDL_WINDOW_SHOWN;
+	m_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 
 	if (m_window == nullptr) {
 		MessageBoxA(NULL, SDL_GetError(), "EstEngine Error", MB_ICONERROR);
@@ -60,7 +68,25 @@ HWND Window::GetHandle() const {
 }
 
 void Window::SetWindowTitle(std::string& title) {
-	SDL_SetWindowTitle(m_window, title.c_str());
+	m_mainTitle = title;
+
+	if (m_subTitle.empty()) {
+		SDL_SetWindowTitle(m_window, m_mainTitle.c_str());
+	}
+	else {
+		SDL_SetWindowTitle(m_window, (m_mainTitle + " - " + m_subTitle).c_str());
+	}
+}
+
+void Window::SetWindowSubTitle(std::string& subTitle) {
+	m_subTitle = subTitle;
+
+	if (m_subTitle.empty()) {
+		SDL_SetWindowTitle(m_window, m_mainTitle.c_str());
+	}
+	else {
+		SDL_SetWindowTitle(m_window, (m_mainTitle + " - " + m_subTitle).c_str());
+	}
 }
 
 int Window::GetWidth() const {

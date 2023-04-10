@@ -32,8 +32,10 @@ OJSFrame::~OJSFrame() {
 OPIFile* InternalGetFile(std::string fileName, std::vector<OPIFile>& files) {
 	for (auto& f : files) {
 		std::string name(f.Name);
+		std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+		std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
 
-		if (name.find(fileName) != std::string::npos) {
+		if (name == fileName) {
 			return &f;
 		}
 	}
@@ -421,6 +423,7 @@ namespace GameNoteResource {
 			noteTextures[(NoteImageType)i] = noteImage;
 
 			texture->Release();
+			pResource->Release();
 		}
 		
 		return true;

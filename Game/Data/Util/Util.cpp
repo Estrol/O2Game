@@ -7,6 +7,11 @@ std::vector<std::string> splitString(std::string& input, char delimeter) {
 	return splitString(ss, delimeter);
 }
 
+std::vector<std::string> splitString(const std::string& input, char delimeter) {
+	std::stringstream ss(input);
+	return splitString(ss, delimeter);
+}
+
 std::vector<std::string> splitString(std::stringstream& input, char delimiter) {
 	std::vector<std::string> result;
 	std::string line;

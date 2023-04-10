@@ -18,6 +18,12 @@ Tile2D::Tile2D() {
 }
 
 Tile2D::Tile2D(std::string fileName) {
+	auto path = std::filesystem::current_path().string();
+
+	if (!fileName.starts_with(path)) {
+		fileName = path + fileName;
+	}
+
 	if (!std::filesystem::exists(fileName)) {
 		throw std::runtime_error(fileName + " not found!");
 	}
