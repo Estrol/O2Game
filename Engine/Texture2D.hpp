@@ -23,6 +23,7 @@ public:
 
 	float Transparency;
 	float Rotation;
+	bool AlphaBlend;
 
 	UDim2 Size;
 	UDim2 Position;

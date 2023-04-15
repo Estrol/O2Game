@@ -20,6 +20,10 @@ std::string mergeVector(std::vector<std::string>& vec, int starsAt = 0);
 
 uint64_t Base36_Decode(const std::string& str);
 
+std::string Base36_Encode(uint64_t num);
+
+void flipArray(uint8_t* arr, size_t size);
+
 template <typename T, typename Predicate>
 std::vector<T> FindWhere(std::vector<T>& vec, Predicate func) {
 	std::vector<T> result;

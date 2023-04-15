@@ -18,7 +18,7 @@ namespace {
 		double deltaTick = 1000.0 / MaxFrameRate - (newTick - lastTick);
 
 		if (floor(deltaTick) > 0) {
-			SDL_Delay(deltaTick);
+			SDL_Delay((DWORD)floor(deltaTick));
 		}
 
 		if (deltaTick < -30.0) {

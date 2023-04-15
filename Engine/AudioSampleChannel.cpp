@@ -25,7 +25,7 @@ AudioSampleChannel::AudioSampleChannel(DWORD sampleHandle, float rate, float vol
 }
 
 void AudioSampleChannel::SetVolume(int vol) {
-	m_vol = vol;
+	m_vol = static_cast<float>(vol);
 }
 
 bool AudioSampleChannel::HasPlayed() {

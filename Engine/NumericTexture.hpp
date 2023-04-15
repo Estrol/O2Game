@@ -24,6 +24,7 @@ public:
 	UDim2 ManipPosition;
 	NumericPosition NumberPosition = NumericPosition::MID;
 	bool FillWithZeros = false;
+	bool AlphaBlend = false;
 	int MaxDigits = 0;
 	int Offset = 0;
 

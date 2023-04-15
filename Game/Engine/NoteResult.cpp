@@ -4,17 +4,21 @@
 #include "RhythmEngine.hpp"
 
 std::tuple<bool, NoteResult> TimeToResult(RhythmEngine* engine, double noteTime, double time) {
+	time /= engine->GetSongRate();
+	
+	auto timings = engine->GetTimingWindow();
+
 	double beatDiff = std::abs(time);
-	if (beatDiff <= kNoteCoolHitWindowMax) {
+	if (beatDiff <= timings[0]) {
 		return { true, NoteResult::COOL };
 	}
-	else if (beatDiff <= kNoteGoodHitWindowMax) {
+	else if (beatDiff <= timings[1]) {
 		return { true, NoteResult::GOOD };
 	}
-	else if (beatDiff <= kNoteBadHitWindowMax) {
+	else if (beatDiff <= timings[2]) {
 		return { true, NoteResult::BAD };
 	}
-	else if (beatDiff <= kNoteEarlyMissWindowMin) {
+	else if (beatDiff <= timings[3]) {
 		return { true, NoteResult::MISS };
 	}
 

@@ -40,6 +40,7 @@ public:
 	double GetPrebufferTiming() const;
 	double GetNotespeed() const;
 	double GetBeat(double offset) const;
+	double GetSongRate() const;
 	int GetAudioLength() const;
 
 	double GetPositionFromOffset(double offset);
@@ -67,6 +68,7 @@ private:
 	double m_currentAudioGamePosition;
 	double m_currentTrackPosition;
 	float m_baseBPM, m_currentBPM;
+	float m_currentSVMultiplier;
 
 	int m_currentSampleIndex = 0;
 	int m_currentNoteIndex = 0;

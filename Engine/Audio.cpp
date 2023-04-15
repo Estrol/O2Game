@@ -49,7 +49,7 @@ bool Audio::Create(std::string fileName) {
 	}
 
 	fs.seekg(0, std::ios::end);
-	int size = fs.tellg();
+	size_t size = fs.tellg();
 	fs.seekg(0, std::ios::beg);
 
 	m_pBuffer = new uint8_t[size];
@@ -201,9 +201,9 @@ void Audio::SetPitch(bool enabled) {
 }
 
 int Audio::GetDuration() const {
-	int length = BASS_ChannelBytes2Seconds(m_hStream, BASS_ChannelGetLength(m_hStream, BASS_POS_BYTE));
+	double length = BASS_ChannelBytes2Seconds(m_hStream, BASS_ChannelGetLength(m_hStream, BASS_POS_BYTE));
 
-	return length;
+	return static_cast<int>(std::round(length));
 }
 
 std::string Audio::GetName() const {

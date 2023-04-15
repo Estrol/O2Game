@@ -53,7 +53,8 @@ bool AudioManager::Init(Window* window) {
 		return false;
 	}
 
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
+	//BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
+	BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);
 
 	::printf("BASS and BASS_FX initialized\n");
 

@@ -4,6 +4,8 @@
 #include <functional>
 #include "Note.hpp"
 
+struct NoteHitInfo;
+
 struct GameTrackEvent {
 	int Lane = -1;
 	
@@ -23,6 +25,9 @@ public:
 	void OnKeyUp();
 	void OnKeyDown();
 
+	void HandleScore(NoteHitInfo info);
+	void HandleHoldScore(HoldResult res);
+
 	void AddNote(NoteInfoDesc* note);
 	void ListenEvent(std::function<void(GameTrackEvent)> callback);
 
@@ -36,6 +41,9 @@ private:
 	int m_keySound;
 
 	double m_deleteDelay;
+
+	Note* m_currentHold;
+	bool m_onHold;
 
 	std::function<void(GameTrackEvent)> m_callback;
 };

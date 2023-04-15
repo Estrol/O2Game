@@ -4,7 +4,8 @@
 #include "Renderer.hpp"
 #include "NumericTexture.hpp"
 #include <directxtk/WICTextureLoader.h>
-#include <valarray>
+
+#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
 
 using namespace DirectX;
 
@@ -62,26 +63,52 @@ void NumericTexture::DrawNumber(int number) {
 		}
 	}
 
-	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), nullptr, nullptr, nullptr);
+	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->PointClamp(), nullptr, nullptr, [&] {
+		if (AlphaBlend) {
+			ID3D11SamplerState* samplerState = nullptr;
 
-	LONG xPos = (window->GetBufferWidth() * Position.X.Scale) + Position.X.Offset;
-	LONG yPos = (window->GetBufferHeight() * Position.Y.Scale) + Position.Y.Offset;
+			CD3D11_SAMPLER_DESC samplerDesc = {};
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.MipLODBias = 0.0f;
+			samplerDesc.MaxAnisotropy = 1;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+			samplerDesc.BorderColor[0] = 0;
+			samplerDesc.BorderColor[1] = 0;
+			samplerDesc.BorderColor[2] = 0;
+			samplerDesc.BorderColor[3] = 0;
+			samplerDesc.MinLOD = 0;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	LONG xMPos = (window->GetBufferWidth() * ManipPosition.X.Scale) + ManipPosition.X.Offset;
-	LONG yMPos = (window->GetBufferHeight() * ManipPosition.Y.Scale) + ManipPosition.Y.Offset;
+			renderer->GetDevice()->CreateSamplerState(&samplerDesc, &samplerState);
+
+			context->PSSetSamplers(0, 1, &samplerState);
+
+			SAFE_RELEASE(samplerState)
+		}
+	});
+
+	LONG xPos = static_cast<LONG>(window->GetBufferWidth() * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
+	LONG yPos = static_cast<LONG>(window->GetBufferHeight() * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
+
+	LONG xMPos = static_cast<LONG>(window->GetBufferWidth() * ManipPosition.X.Scale) + static_cast<LONG>(ManipPosition.X.Offset);
+	LONG yMPos = static_cast<LONG>(window->GetBufferHeight() * ManipPosition.Y.Scale) + static_cast<LONG>(ManipPosition.Y.Offset);
 
 	xPos += xMPos;
 	yPos += yMPos;
 
-	float offsetScl = (float)Offset / 100.0;
+	float offsetScl = (float)Offset / 100.0f;
 
 	switch (NumberPosition) {
 		case NumericPosition::LEFT: {
 			int tx = xPos;
-			for (int i = numberString.length() - 1; i >= 0; i--) {
+			for (int i = (int)numberString.length() - 1; i >= 0; i--) {
 				int digit = numberString[i] - '0';
 
-				tx -= m_numbericsWidth[digit].right + (m_numbericsWidth[digit].right * offsetScl);
+				tx -= (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
 				tex->Draw(false);
@@ -93,7 +120,7 @@ void NumericTexture::DrawNumber(int number) {
 			int totalWidth = 0;
 			for (int i = 0; i < numberString.length(); i++) {
 				int digit = numberString[i] - '0';
-				totalWidth += m_numbericsWidth[digit].right + (m_numbericsWidth[digit].right * offsetScl);
+				totalWidth += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
 			
 			int tx = xPos - totalWidth / 2 + (Offset * totalWidth) / 200;
@@ -103,7 +130,7 @@ void NumericTexture::DrawNumber(int number) {
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
 				tex->Draw(false);
-				tx += m_numbericsWidth[digit].right + (m_numbericsWidth[digit].right * offsetScl);
+				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
 			break;
 			break;
@@ -116,7 +143,7 @@ void NumericTexture::DrawNumber(int number) {
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
 				tex->Draw(false);
-				tx += m_numbericsWidth[digit].right + (m_numbericsWidth[digit].right * offsetScl);
+				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
 			break;
 		}

@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,6 +122,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +142,7 @@
     <ClCompile Include="Data\osu.cpp" />
     <ClCompile Include="Engine\DrawableLine.cpp" />
     <ClCompile Include="Engine\FrameTimer.cpp" />
+    <ClCompile Include="Data\OJM.cpp" />
     <ClCompile Include="Resources\SkinManager.cpp" />
     <ClCompile Include="Resources\SkinConfig.cpp" />
     <ClInclude Include="Data\bms_calculation.hpp" />
@@ -168,6 +171,7 @@
     <ClCompile Include="Engine\TimingLineManager.cpp" />
     <ClCompile Include="Engine\TimingLine.cpp" />
     <ClInclude Include="Engine\FrameTimer.hpp" />
+    <ClInclude Include="Data\OJM.hpp" />
     <ClInclude Include="Resources\SkinManager.hpp" />
     <ClInclude Include="Resources\SkinConfig.hpp" />
   </ItemGroup>

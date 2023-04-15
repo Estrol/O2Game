@@ -6,7 +6,7 @@
 #include "NoteImageCacheManager.hpp"
 #include "GameAudioSampleCache.hpp"
 
-#define REMOVE_TIME 3000
+#define REMOVE_TIME 800
 #define HOLD_COMBO_TICK 100
 
 namespace {
@@ -16,8 +16,9 @@ namespace {
 	}
 }
 
-Note::Note(RhythmEngine* engine) {
+Note::Note(RhythmEngine* engine, GameTrack* track) {
 	m_engine = engine;
+	m_track = track;
 
 	m_imageType = NoteImageType::WHITE;
 	m_imageBodyType = NoteImageType::HOLD_WHITE;
@@ -42,6 +43,7 @@ Note::Note(RhythmEngine* engine) {
 
 	m_didHitHead = false;
 	m_didHitTail = false;
+	m_shouldDrawHoldEffect = true;
 
 	m_hitPos = 0;
 	m_relPos = 0;
@@ -85,6 +87,7 @@ void Note::Load(NoteInfoDesc* desc) {
 
 	m_didHitHead = false;
 	m_didHitTail = false;
+	m_shouldDrawHoldEffect = true;
 
 	m_hitPos = 0;
 	m_relPos = 0;
@@ -98,17 +101,22 @@ void Note::Update(double delta) {
 	double audioPos = m_engine->GetGameAudioPosition();
 
 	if (m_type == NoteType::NORMAL) {
-		if (audioPos > (m_startTime + REMOVE_TIME)) {
+		if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
 			m_state = NoteState::DO_REMOVE;
+
+			m_hitPos = m_startTime + kNoteBadHitWindowMax;
+			//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_startTime + kNoteBadHitWindowMax });
+			OnHit(NoteResult::MISS);
 		}
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
-			if (audioPos > (m_startTime + REMOVE_TIME)) {
+			if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 
-				m_hitPos = m_startTime + REMOVE_TIME;
-				m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_hitPos });
+				m_hitPos = m_startTime + kNoteBadHitWindowMax;
+				//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_hitPos });
+				OnHit(NoteResult::MISS);
 			}
 		}
 		else if (
@@ -119,16 +127,22 @@ void Note::Update(double delta) {
 				if (m_lastScoreTime != -1 && audioPos <= m_endTime && audioPos > m_startTime) {
 					if (audioPos - m_lastScoreTime > HOLD_COMBO_TICK) {
 						m_lastScoreTime += HOLD_COMBO_TICK;
-						m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
+						m_track->HandleHoldScore(HoldResult::HoldAdd);
+						//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
 					}
 				}
 			}
 
-			if (audioPos > (m_endTime + REMOVE_TIME)) {
-				if (m_state != NoteState::HOLD_PASSED) {
-					m_hitPos = m_endTime + REMOVE_TIME;
-					m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_relPos });
-					m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+			if (audioPos > (m_endTime + kNoteBadHitWindowMax)) {
+				if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
+					m_hitPos = m_endTime + kNoteBadHitWindowMax;
+					//m_didHitTail = true;
+
+					//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_relPos });
+					//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+					if (m_state == NoteState::HOLD_ON_HOLDING) {
+						OnRelease(NoteResult::MISS);
+					}
 				}
 
 				m_state = NoteState::DO_REMOVE;
@@ -227,14 +241,18 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 			auto result = TimeToResult(m_engine, m_endTime, time_to_end);
 
 			if (std::get<bool>(result)) {
+				if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
+					return { true, NoteResult::BAD };
+				}
+
 				return result;
 			}
 
 			if (m_state == NoteState::HOLD_ON_HOLDING) {
-				return { false, NoteResult::MISS };
+				return { true, NoteResult::MISS };
 			}
 			else {
-				return { true, NoteResult::MISS };
+				return { false, NoteResult::MISS };
 			}
 		}
 	}
@@ -247,20 +265,43 @@ void Note::OnHit(NoteResult result) {
 		if (m_state == NoteState::HOLD_PRE) {
 			m_didHitHead = true;
 			m_state = NoteState::HOLD_ON_HOLDING;
-			m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
+			//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
 			m_lastScoreTime = m_engine->GetGameAudioPosition();
+			//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
+
+			m_track->HandleHoldScore(HoldResult::HoldAdd);
+			m_track->HandleScore({
+				result,
+				m_hitPos,
+				false,
+				2
+			});
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			m_didHitHead = true;
 			m_state = NoteState::HOLD_PASSED;
 
-			m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
-			m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
+			//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+			//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
+
+			m_track->HandleHoldScore(HoldResult::HoldBreak);
+			m_track->HandleScore({
+				result,
+				m_hitPos,
+				true,
+				2
+			});
 		}
 	}
 	else {
 		m_state = NoteState::DO_REMOVE;
-		m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
+		//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
+		m_track->HandleScore({
+				result,
+				m_hitPos,
+				false,
+				1
+			});
 	}
 }
 
@@ -271,13 +312,28 @@ void Note::OnRelease(NoteResult result) {
 
 			if (result == NoteResult::MISS) {
 				GameAudioSampleCache::Stop(m_keysoundIndex);
-				m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+				//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
+				//m_engine->GetScoreManager()->OnHit({ result, m_relPos });
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
+
+				m_track->HandleHoldScore(HoldResult::HoldBreak);
+				m_track->HandleScore({
+					result,
+					m_hitPos,
+					true,
+					2
+					});
 			}
 			else {
-				m_state = NoteState::HOLD_PASSED;
+ 				m_state = NoteState::HOLD_PASSED;
 				m_didHitTail = true;
-				m_engine->GetScoreManager()->OnHit({ result, m_relPos });
+				//m_engine->GetScoreManager()->OnHit({ result, m_relPos });
+				m_track->HandleScore({
+					result,
+					m_hitPos,
+					true,
+					2
+					});
 			}
 		}
 	}
@@ -289,6 +345,10 @@ void Note::SetXPosition(int x) {
 
 void Note::SetDrawable(bool drawable) {
 	m_drawAble = drawable;
+}
+
+bool Note::IsHoldEffectDrawable() {
+	return m_shouldDrawHoldEffect;
 }
 
 bool Note::IsDrawable() {
@@ -305,18 +365,20 @@ void Note::Release() {
 	m_state = NoteState::DO_REMOVE;
 	m_removeAble = true;
 
+	auto cacheManager = NoteImageCacheManager::GetInstance();
+
 	if (m_type == NoteType::HOLD) {
-		NoteImageCacheManager::GetInstance()->Repool(m_head, m_imageType);
+		cacheManager->Repool(m_head, m_imageType);
 		m_head = nullptr;
 
-		NoteImageCacheManager::GetInstance()->Repool(m_tail, m_imageType);
+		cacheManager->Repool(m_tail, m_imageType);
 		m_tail = nullptr;
 
-		NoteImageCacheManager::GetInstance()->RepoolTile(m_body, m_imageBodyType);
+		cacheManager->RepoolTile(m_body, m_imageBodyType);
 		m_body = nullptr;
 	}
 	else {
-		NoteImageCacheManager::GetInstance()->Repool(m_head, m_imageType);
+		cacheManager->Repool(m_head, m_imageType);
 		m_head = nullptr;
 	}
 }

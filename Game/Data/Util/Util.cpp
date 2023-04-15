@@ -72,3 +72,39 @@ uint64_t Base36_Decode(const std::string& str) {
 
 	return result;
 }
+
+std::string Base36_Encode(uint64_t num) {
+	static const std::string digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	std::stringstream ss;
+	std::string result;
+
+	while (num > 0) {
+		ss << digits[num % 36];
+		num /= 36;
+	}
+
+	result = ss.str();
+	std::reverse(result.begin(), result.end());
+
+	if (result.length() == 1) {
+		result = "0" + result;
+	}
+
+	return result;
+}
+
+void flipArray(uint8_t* arr, size_t size) {
+	uint8_t* start = arr;
+	uint8_t* end = arr + size - 1;
+
+	while (start < end) {
+		// flip the values using XOR bitwise operation
+		*start ^= *end;
+		*end ^= *start;
+		*start ^= *end;
+
+		// move the pointers inward
+		start++;
+		end--;
+	}
+}

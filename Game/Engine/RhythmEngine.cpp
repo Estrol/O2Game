@@ -49,7 +49,7 @@ RhythmEngine::RhythmEngine() {
 	m_currentAudioGamePosition = 0;
 	m_currentVisualPosition = 0;
 	m_currentTrackPosition = 0;
-	m_rate = 1;
+	m_rate = 1.25;
 	m_offset = 0;
 	m_scrollSpeed = 180;
 
@@ -113,7 +113,12 @@ bool RhythmEngine::Load(Chart* chart) {
 	}
 
 	std::sort(m_notes.begin(), m_notes.end(), [](const NoteInfo& a, const NoteInfo& b) {
-		return a.StartTime < b.StartTime;
+		if (a.StartTime != b.StartTime) {
+			return a.StartTime < b.StartTime;
+		}
+		else {
+			return a.EndTime < b.EndTime;
+		}
 	});
 
 	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
@@ -121,9 +126,10 @@ bool RhythmEngine::Load(Chart* chart) {
 	});
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
-	m_audioLength = chart->GetLength();
+	m_audioLength = m_notes[m_notes.size() - 1].EndTime != 0 ? m_notes[m_notes.size() - 1].EndTime : m_notes[m_notes.size() - 1].StartTime; //chart->GetLength();
 	m_baseBPM = chart->BaseBPM;
 	m_currentBPM = m_baseBPM;
+	m_currentSVMultiplier = chart->InitialSvMultiplier;
 
 	GameAudioSampleCache::Load(chart);
 	
@@ -149,6 +155,7 @@ bool RhythmEngine::Start() {
 		m_currentAudioPosition -= 3000;
 		m_state = GameState::Playing;
 
+		GameAudioSampleCache::SetRate(m_rate);
 		std::cout << "Starting Engine 2" << std::endl;
 	}).detach();
 	
@@ -175,12 +182,15 @@ void RhythmEngine::Update(double delta) {
 
 		::printf("AudioStarted at pos: %.0f\n", m_currentAudioPosition);
 		if (m_currentAudio) {
+			m_currentAudio->SetRate(m_rate);
+			m_currentAudio->SetVolume(100);
 			m_currentAudio->Play();
 		}
 	}
 
-	if (m_currentAudioPosition + 2500 > m_audioLength) {
+	if (m_currentAudioPosition > m_audioLength + 2500) {
 		m_state = GameState::PosGame;
+		::printf("AudioStopped!\n");
 	}
 
 	UpdateVirtualResolution();
@@ -214,7 +224,7 @@ void RhythmEngine::Update(double delta) {
 			&& m_currentAudioGamePosition >= m_autoHitInfos[i][index].Time) {
 			
 			auto& info = m_autoHitInfos[i][index];
-
+			
 			if (info.Type == ReplayHitType::KEY_DOWN) {
 				m_tracks[i]->OnKeyDown();
 			}
@@ -240,7 +250,7 @@ void RhythmEngine::Render(double delta) {
 	batch->Begin(
 		DirectX::SpriteSortMode_Deferred,
 		states->NonPremultiplied(),
-		nullptr,
+		states->PointWrap(),
 		nullptr,
 		rasterizerState,
 		[&] {
@@ -322,7 +332,7 @@ double RhythmEngine::GetNotespeed() const {
 	double scrollingFactor = 800.0 / 480.0;
 	float virtualRatio = m_virtualResolution.Y / 600.0;
 
-	return (speed / 10.0) / (20.0 / m_rate) * scrollingFactor * virtualRatio;
+	return (speed / 10.0) / (20.0 * m_rate) * scrollingFactor * virtualRatio;
 }
 
 bool CompareBeatOffset(const TimingInfo& a, const TimingInfo& b) {
@@ -347,6 +357,10 @@ double RhythmEngine::GetBeat(double offset) const {
 	return beat + (offset - startTime) * (bpm / 60000.0);
 }
 
+double RhythmEngine::GetSongRate() const {
+	return m_rate;
+}
+
 int RhythmEngine::GetAudioLength() const {
 	return m_audioLength;
 }
@@ -360,14 +374,8 @@ ScoreManager* RhythmEngine::GetScoreManager() const {
 }
 
 std::vector<double> RhythmEngine::GetTimingWindow() {
-	if (m_currentBPMIndex >= m_currentChart->m_bpms.size()) {
-		m_currentBPMIndex = m_currentChart->m_bpms.size() - 1;
-	}
-
-	float bpm = std::clamp(m_currentChart->m_bpms[m_currentBPMIndex].Value, 1.0f, 800.0f);
-	float signature = m_currentChart->m_bpms[m_currentBPMIndex].TimeSignature;
-	float ratio = (m_baseBPM / bpm) * signature;
-
+	float ratio = std::clamp(2.0f - m_currentSVMultiplier, 0.1f, 2.0f);
+	
 	return { kNoteCoolHitWindowMax * ratio, kNoteGoodHitWindowMax * ratio, kNoteBadHitWindowMax * ratio, kNoteEarlyMissWindowMin * ratio };
 }
 
@@ -419,7 +427,7 @@ void RhythmEngine::UpdateNotes() {
 
 void RhythmEngine::UpdateGamePosition() {
 	m_currentAudioGamePosition = m_currentAudioPosition + m_offset;
-	m_currentVisualPosition = m_currentAudioGamePosition * m_rate;
+	m_currentVisualPosition = m_currentAudioGamePosition;// * m_rate;
 
 	while (m_currentBPMIndex + 1 < m_currentChart->m_bpms.size() && m_currentVisualPosition >= m_currentChart->m_bpms[m_currentBPMIndex + 1].StartTime) {
 		m_currentBPMIndex += 1;
@@ -430,6 +438,15 @@ void RhythmEngine::UpdateGamePosition() {
 	}
 
 	m_currentTrackPosition = GetPositionFromOffset(m_currentVisualPosition, m_currentSVIndex);
+
+	if (m_currentSVIndex > 0) {
+		float svMultiplier = m_currentChart->m_svs[m_currentSVIndex - 1].Value;
+		if (svMultiplier != m_currentSVMultiplier) {
+			m_currentSVMultiplier = svMultiplier;
+
+			std::cout << "SV Multiplier changed to: " << svMultiplier << "\n";
+		}
+	}
 }
 
 void RhythmEngine::UpdateVirtualResolution() {

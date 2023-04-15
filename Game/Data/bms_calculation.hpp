@@ -32,7 +32,12 @@ namespace Calculation {
 
 	class Timing {
 	public:
-		Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::unordered_map<std::string, double> vbpms, std::unordered_map<std::string, double> vstops);
+		Timing(
+			std::vector<BMS::BMSEvent>& currentTrackEvent, 
+			std::unordered_map<std::string, double> vbpms, 
+			std::unordered_map<std::string, double> vstops,
+			bool IsOJN = false
+		);
 
 		double GetStartTimeFromOffset(double bpm, double offset, bool inc = true);
 		double GetStopTimeFromOffset(double bpm, double offset, bool inc = true);

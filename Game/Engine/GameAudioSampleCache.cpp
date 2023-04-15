@@ -13,6 +13,8 @@ struct NoteAudioSample {
 namespace GameAudioSampleCache {
 	std::unordered_map<int, NoteAudioSample> samples;
 	std::unordered_map<int, AudioSampleChannel*> sampleIndex;
+
+	double m_rate = 1.0;
 }
 
 int LastIndexOf(std::string& str, char c) {
@@ -33,41 +35,12 @@ void GameAudioSampleCache::Load(Chart* chart) {
 
 	for (auto& it : chart->m_samples) {
 		NoteAudioSample sample = {};
-		std::string path = it.FileName;
 
-		// check if given path has ext
-		bool alreadyHasExt = false;
-		int lastIndex = LastIndexOf(path, '.');
-		if (lastIndex > 0) {
-			path = it.FileName.substr(0, lastIndex);
-
-			std::string extensions = it.FileName.substr(lastIndex);
-			ext.push_back(extensions);
-		}
-
-		bool found = false;
-		for (auto& fileExt : ext) {
-			std::string tmpPath = path + fileExt;
-			if (std::filesystem::exists(tmpPath)) {
-				path = tmpPath;
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			found = std::filesystem::exists(it.FileName);
-
-			if (found) {
-				path = it.FileName;
-			}
-		}
-
-		if (found) {
-			sample.FilePath = path;
-
-			if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
-				if (!audioManager->CreateSample(path + std::to_string(it.Index), path, &sample.Sample)) {
+		if (it.Type == 2) {
+			sample.FilePath = "Internal" + std::to_string(it.Index);
+			
+			if (audioManager->GetSample(sample.FilePath) == nullptr) {
+				if (!audioManager->CreateSample(sample.FilePath, it.FileBuffer.data(), it.FileBuffer.size(), &sample.Sample)) {
 					std::cout << "Failed to load sample: " << it.FileName << std::endl;
 					continue;
 				}
@@ -77,17 +50,76 @@ void GameAudioSampleCache::Load(Chart* chart) {
 			}
 		}
 		else {
-			sample.FilePath = path;
-			::printf("Cannot find audio: %s, at index: %d, Creating a silent audio\n", path.c_str(), it.Index);
+			std::string path = it.FileName;
 
-			if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
-				if (!audioManager->CreateSample(path + std::to_string(it.Index), "", &sample.Sample)) {
-					std::cout << "Failed to load sample: " << it.FileName << std::endl;
-					continue;
-				}
+			// check if given path has ext
+			bool alreadyHasExt = false;
+			int lastIndex = LastIndexOf(path, '.');
+			if (lastIndex > 0) {
+				path = it.FileName.substr(0, lastIndex);
 
-				samples[it.Index] = sample;
+				std::string extensions = it.FileName.substr(lastIndex);
+				ext.push_back(extensions);
 			}
+
+			bool found = false;
+			for (auto& fileExt : ext) {
+				std::string tmpPath = path + fileExt;
+				if (std::filesystem::exists(tmpPath)) {
+					path = tmpPath;
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				found = std::filesystem::exists(it.FileName);
+
+				if (found) {
+					path = it.FileName;
+				}
+			}
+
+			if (found) {
+				sample.FilePath = path;
+
+				if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
+					if (!audioManager->CreateSample(path + std::to_string(it.Index), path, &sample.Sample)) {
+						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+						continue;
+					}
+
+					//::printf("Loading audio: %s, at index: %d\n", path.c_str(), it.Index);
+					samples[it.Index] = sample;
+				}
+			}
+			else {
+				sample.FilePath = path;
+				::printf("Cannot find audio: %s, at index: %d, Creating a silent audio\n", path.c_str(), it.Index);
+
+				if (audioManager->GetSample(path + std::to_string(it.Index)) == nullptr) {
+					if (!audioManager->CreateSample(path + std::to_string(it.Index), "", &sample.Sample)) {
+						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+						continue;
+					}
+
+					samples[it.Index] = sample;
+				}
+			}
+		}
+	}
+
+	// Preload the samples
+	if (samples.size() > 0) {
+		auto it = std::find_if(samples.begin(), samples.end(), [](auto& ptr) {
+			return ptr.second.Sample != nullptr;
+		});
+
+		// This is so bad!!
+		if (it != samples.end()) {
+			auto sample = it->second.Sample->CreateChannel();
+			sample->Play();
+			sample->Stop();
 		}
 	}
 }
@@ -104,6 +136,7 @@ void GameAudioSampleCache::Play(int index, int volume) {
 	//::printf("Playing index at: %d\n", index);
 	Stop(index);
 
+	samples[index].Sample->SetRate(m_rate);
 	auto channel = samples[index].Sample->CreateChannel().release();
 	
 	sampleIndex[index] = channel;
@@ -125,6 +158,10 @@ void GameAudioSampleCache::Stop(int index) {
 		delete it;
 		sampleIndex.erase(index);
 	}
+}
+
+void GameAudioSampleCache::SetRate(double rate) {
+	m_rate = rate;
 }
 
 void GameAudioSampleCache::ResumeAll() {

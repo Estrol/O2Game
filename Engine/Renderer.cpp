@@ -28,6 +28,7 @@ Renderer::Renderer() {
     m_spriteBatches = std::unordered_map<int, DirectX::SpriteBatch*>();
 }
 
+
 Renderer::~Renderer() {
     Destroy();  
 }
@@ -84,21 +85,30 @@ bool Renderer::Create(RendererMode mode, Window* window) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-        D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_11_1;
-        D3D_FEATURE_LEVEL level2 = D3D_FEATURE_LEVEL_11_1;
+        // Required for alpha blending
+        D3D_FEATURE_LEVEL level[] = {
+            D3D_FEATURE_LEVEL_12_2,
+            D3D_FEATURE_LEVEL_12_1,
+            D3D_FEATURE_LEVEL_12_0,
+            D3D_FEATURE_LEVEL_11_1,
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+			D3D_FEATURE_LEVEL_11_0,
+        };
 
+        D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
         HRESULT result = createDeviceAndSwapChain(
             nullptr,
             D3D_DRIVER_TYPE_HARDWARE,
             nullptr,
             creationFlags,
-            &level,
-            1,
+            level,
+            6,
             D3D11_SDK_VERSION,
             &scd,
             &m_swapChain,
             &m_device,
-            &level2,
+            &outLevel,
             &m_immediateContext
         );
 
@@ -106,6 +116,11 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             result,
             "Failed to create device and swap chain"
         );
+
+		if (outLevel < D3D_FEATURE_LEVEL_11_1) {
+			MessageBoxA(NULL, "Your graphics card driver does not support Alpha Blending required by the game for In-Game effects, please update your graphics card!", "EstEngine Error", MB_ICONERROR);
+            return false;
+		}
 
         ID3D11Texture2D* backBuffer = nullptr;
         result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);

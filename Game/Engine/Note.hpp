@@ -4,6 +4,7 @@
 #include "NoteResult.hpp"
 
 enum class NoteType : uint8_t;
+class GameTrack;
 class RhythmEngine;
 class DrawableNote;
 class DrawableTile;
@@ -39,7 +40,7 @@ struct NoteInfoDesc {
 
 class Note {
 public:
-	Note(RhythmEngine* engine);
+	Note(RhythmEngine* engine, GameTrack* track);
 	~Note();
 
 	void Load(NoteInfoDesc* desc);
@@ -60,6 +61,7 @@ public:
 	void SetXPosition(int x);
 	void SetDrawable(bool drawable);
 	
+	bool IsHoldEffectDrawable();
 	bool IsDrawable();
 	bool IsRemoveable();
 
@@ -70,6 +72,8 @@ private:
 	bool m_removeAble;
 
 	RhythmEngine* m_engine;
+	GameTrack* m_track;
+
 	DrawableNote* m_head;
 	DrawableTile* m_body;
 	DrawableNote* m_tail;
@@ -89,6 +93,7 @@ private:
 	double m_initialTrackPosition;
 	double m_endTrackPosition;
 
+	bool m_shouldDrawHoldEffect;
 	bool m_didHitHead;
 	bool m_didHitTail;
 

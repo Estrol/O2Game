@@ -34,7 +34,7 @@ Texture2D::Texture2D(std::string fileName) {
 	}
 
 	fs.seekg(0, std::ios::end);
-	int size = fs.tellg();
+	size_t size = fs.tellg();
 	fs.seekg(0, std::ios::beg);
 
 	uint8_t* buffer = new uint8_t[size];
@@ -104,7 +104,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Immediate,
 			states->NonPremultiplied(),
-			nullptr,
+			states->PointWrap(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
@@ -112,11 +112,37 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 					CD3D11_RECT rect(*clipRect);
 					context->RSSetScissorRects(1, &rect);
 				}
+
+				if (AlphaBlend) {
+					ID3D11SamplerState* samplerState = nullptr;
+
+					CD3D11_SAMPLER_DESC samplerDesc = {};
+					ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+					samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+					samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+					samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+					samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+					samplerDesc.MipLODBias = 0.0f;
+					samplerDesc.MaxAnisotropy = 1;
+					samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+					samplerDesc.BorderColor[0] = 0;
+					samplerDesc.BorderColor[1] = 0;
+					samplerDesc.BorderColor[2] = 0;
+					samplerDesc.BorderColor[3] = 0;
+					samplerDesc.MinLOD = 0;
+					samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+					renderer->GetDevice()->CreateSamplerState(&samplerDesc, &samplerState);
+
+					context->PSSetSamplers(0, 1, &samplerState);
+
+					SAFE_RELEASE(samplerState)
+				}
 			}
 		);
 	}
 
-	XMVECTOR position = { m_calculatedSize.left, m_calculatedSize.top, 0, 0 };
+	XMVECTOR position = { (float)m_calculatedSize.left, (float)m_calculatedSize.top, 0, 0 };
 	XMVECTOR origin = { 0.5, 0.5, 0, 0 };
 	XMVECTOR scale = { scaleX, scaleY, 1, 1 };
 
@@ -148,11 +174,11 @@ void Texture2D::CalculateSize() {
 	int wWidth = window->GetWidth();
 	int wHeight = window->GetHeight();
 
-	LONG xPos = (wWidth * Position.X.Scale) + Position.X.Offset;
-	LONG yPos = (wHeight * Position.Y.Scale) + Position.Y.Offset;
+	LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
+	LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
 
-	LONG width = (m_actualSize.right * Size.X.Scale) + Size.X.Offset;
-	LONG height = (m_actualSize.bottom * Size.Y.Scale) + Size.Y.Offset;
+	LONG width = static_cast<LONG>(m_actualSize.right * Size.X.Scale) + static_cast<LONG>(Size.X.Offset);
+	LONG height = static_cast<LONG>(m_actualSize.bottom * Size.Y.Scale) + static_cast<LONG>(Size.Y.Offset);
 
 	m_preAnchoredSize = { xPos, yPos, width, height };
 

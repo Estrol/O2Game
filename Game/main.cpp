@@ -11,21 +11,26 @@ extern "C" {
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-std::string prompt() {
+std::string prompt(std::string rootName) {
 	OPENFILENAME ofn;
 	wchar_t szFile[MAX_PATH] = { 0 };
 
 	ZeroMemory(&ofn, sizeof(ofn));   // clear the structure
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;   // set the parent window to be the desktop
-	ofn.lpstrFilter = L"Osu files (*.osu)\0*.osu\0All files (*.*)\0*.*\0";   // set the file filter
+	ofn.lpstrFilter = L"O2-JAM files (*.ojn)\0*.ojn\0Osu files (*.osu)\0*.osu\0BMS files (*.bms|*.bme|*.bml)\0*.bms|*.bme|*.bml\0All files (*.*)\0*.*\0";   // set the file filter
 	ofn.lpstrFile = szFile;   // set the buffer for the selected filename
 	ofn.nMaxFile = MAX_PATH;   // set the maximum size of the filename buffer
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;   // set the dialog flags
 
-	if (GetOpenFileName(&ofn)) {
+	if (GetOpenFileNameW(&ofn)) {
 		std::wstring ws(szFile);
 		std::string str(ws.begin(), ws.end());
+
+		if (SetCurrentDirectoryA((LPSTR)rootName.c_str()) == FALSE) {
+			MessageBoxA(NULL, "Failed to set directory!", "EstGame Warning", MB_ICONWARNING);
+		}
+		
 		return str;
 	}
 	else {
@@ -39,31 +44,11 @@ int main(int argc, char* argv[]) {
 	if (argc > 1) {
 		file = argv[1];
 	}
+	else {
+		std::filesystem::path currentDir = argv[0];
+		std::string rootName = currentDir.parent_path().string();
 
-	/*BMS::BMSFile xfile = {};
-	xfile.Load(file);
-
-	return 0;*/
-
-	if (!std::filesystem::exists(file)) {
-		file = prompt();
-
-		if (file.size() == 0) {
-			MessageBoxA(NULL, "You need select file, try again when open this game!", "EstGame Error", MB_ICONERROR);
-			return -1;
-		}
-		else if (!file.ends_with(".osu")) {
-			MessageBoxA(NULL, "Not an .osu file!", "EstGame Error", MB_ICONERROR);
-			return -1;
-		}
-	}
-
-	std::filesystem::path currentDir = argv[0];
-	std::string rootName = currentDir.parent_path().string();
-
-	if (SetCurrentDirectoryA((LPSTR)rootName.c_str()) == FALSE) {
-		MessageBoxA(NULL, "Failed to set directory!", "EstGame Error", MB_ICONERROR);
-		return -1;
+		file = prompt(rootName);
 	}
 
 	EnvironmentSetup::Set("FILE", file);

@@ -46,6 +46,7 @@ void Sprite2D::Draw(double delta, RECT* rect, bool manual) {
 	m_current += delta;
 	auto tex = m_textures[m_currentIndex];
 	tex->Position = Position;
+	tex->AlphaBlend = AlphaBlend;
 	tex->Size = Size;
 	tex->AnchorPoint = AnchorPoint;
 	tex->Draw(rect, manual ? false : true);
@@ -69,7 +70,7 @@ Texture2D* Sprite2D::GetTexture() {
 	return tex;
 }
 
-void Sprite2D::SetDelay(float delay) {
+void Sprite2D::SetDelay(double delay) {
 	m_delay = delay;
 }
 

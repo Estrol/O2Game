@@ -62,6 +62,6 @@ namespace BMS {
 		std::vector<std::pair<std::string, std::string>> m_wavs;
 		std::unordered_map<std::string, double> m_bpms;
 		std::unordered_map<std::string, double> m_stops;
-		std::unordered_map<int, std::vector<BMSEvent>> m_events;
+		std::map<int, std::vector<BMSEvent>> m_events;
 	};
 }

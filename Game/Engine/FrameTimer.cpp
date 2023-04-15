@@ -48,7 +48,7 @@ void FrameTimer::Draw(double delta) {
 		auto context = Renderer::GetInstance()->GetImmediateContext();
 		auto states = Renderer::GetInstance()->GetStates();
 
-		spriteBatch->Begin(DirectX::SpriteSortMode_Deferred, states->AlphaBlend(), nullptr, nullptr, nullptr, [&] {
+		spriteBatch->Begin(DirectX::SpriteSortMode_Deferred, states->AlphaBlend(), states->PointWrap(), nullptr, nullptr, [&] {
 			D3D11_BLEND_DESC blendDesc = {};
 			blendDesc.AlphaToCoverageEnable = false;
 			blendDesc.IndependentBlendEnable = false;
@@ -62,9 +62,11 @@ void FrameTimer::Draw(double delta) {
 			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 			ID3D11BlendState* blendState;
-			device->CreateBlendState(&blendDesc, &blendState);
-			context->OMSetBlendState(blendState, nullptr, 0xffffffff);
-			blendState->Release();
+			HRESULT hr = device->CreateBlendState(&blendDesc, &blendState);
+			if (SUCCEEDED(hr)) {
+				context->OMSetBlendState(blendState, nullptr, 0xffffffff);
+				blendState->Release();
+			}
 		});
 
 		m_frames[m_currentFrame]->AnchorPoint = AnchorPoint;

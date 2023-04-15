@@ -2,6 +2,7 @@
 #include <iostream>
 #include "osu.hpp"
 #include "bms.hpp"
+#include "OJN.h"
 #include <unordered_map>
 
 class AudioSample;
@@ -34,6 +35,9 @@ struct TimingInfo {
 
 struct Sample {
 	std::string FileName;
+	std::vector<uint8_t> FileBuffer;
+
+	uint32_t Type = 1;
 	uint32_t Index;
 };
 
@@ -47,6 +51,7 @@ public:
 	Chart();
 	Chart(Osu::Beatmap& beatmap);
 	Chart(BMS::BMSFile& bmsfile);
+	Chart(O2::OJN& ojnfile, int diffIndex = 2);
 	~Chart();
 
 	float InitialSvMultiplier;
@@ -57,6 +62,7 @@ public:
 	std::string MD5Hash;
 
 	std::string m_backgroundFile;
+	std::vector<char> m_backgroundBuffer;
 	std::string m_title;
 	std::string m_audio;
 	std::string m_artist;

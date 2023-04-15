@@ -9,6 +9,16 @@
 
 #define SAFE_DELETE(x) if (x) { delete x; x = nullptr; }
 
+bool CheckSkinComponent(std::string x) {
+	if (!std::filesystem::exists(x)) {
+		auto absolutePath = std::filesystem::current_path().string() + x;
+		bool result = std::filesystem::exists(absolutePath);
+		return result;
+	}
+
+	return true;
+}
+
 GameplayScene::GameplayScene() : Scene::Scene() {
 	m_keyLighting = {};
 	m_keyButtons = {};
@@ -162,6 +172,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> numComboPaths = {};
 	for (int i = 0; i < 10; i++) {
 		numComboPaths.push_back("/Skins/Default/Playing/ComboNum" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(numComboPaths.back())) {
+			MessageBoxA(NULL, "Failed to load Integer Images 0-9, please check your skin folder.", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_comboNum = new NumericTexture(numComboPaths);
@@ -175,6 +190,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> numJamPaths = {};
 	for (int i = 0; i < 10; i++) {
 		numJamPaths.push_back("/Skins/Default/Playing/JamNum" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(numJamPaths.back())) {
+			MessageBoxA(NULL, "Failed to load Integer Images 0-9, please check your skin folder.", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_jamNum = new NumericTexture(numJamPaths);
@@ -188,22 +208,34 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> numScorePaths = {};
 	for (int i = 0; i < 10; i++) {
 		numScorePaths.push_back("/Skins/Default/Playing/ScoreNum" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(numScorePaths.back())) {
+			MessageBoxA(NULL, "Failed to load Integer Images 0-9, please check your skin folder.", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_scoreNum = new NumericTexture(numScorePaths);
 	numPos = conf.GetNumeric("Score");
-
+	
 	m_scoreNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 	m_scoreNum->NumberPosition = IntToPos(numPos.Direction);
 	m_scoreNum->MaxDigits = numPos.MaxDigit;
 	m_scoreNum->FillWithZeros = numPos.FillWithZero;
+	m_scoreNum->AlphaBlend = true;
 
 	std::vector<std::string> judgeFileName = { "Miss", "Bad", "Good", "Cool" };
 	for (int i = 0; i < 4; i++) {
 		m_judgement[i] = new Texture2D("/Skins/Default/Playing/Judge" + judgeFileName[i] + ".png");
 
+		if (!CheckSkinComponent(numScorePaths.back())) {
+			MessageBoxA(NULL, "Failed to load Judge image!", "Error", MB_OK);
+			return false;
+		}
+
 		auto judgePos = conf.GetPosition("Judge" + judgeFileName[i]);
 		m_judgement[i]->Position = UDim2::fromOffset(judgePos.X, judgePos.Y);
+		m_judgement[i]->AlphaBlend = true;
 	}
 
 	m_jamGauge = new Tile2D("/Skins/Default/Playing/JamGauge.png");
@@ -214,6 +246,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> jamLogoFileName = {};
 	for (int i = 0; i < 8; i++) {
 		jamLogoFileName.push_back("/Skins/Default/Playing/JamLogo" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(jamLogoFileName.back())) {
+			MessageBoxA(NULL, "Failed to load Jam Logo image!", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_jamLogo = new Sprite2D(jamLogoFileName, 0.25);
@@ -224,6 +261,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> lifeBarFileName = {};
 	for (int i = 0; i < 9; i++) {
 		lifeBarFileName.push_back("/Skins/Default/Playing/LifeBar" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(lifeBarFileName.back())) {
+			MessageBoxA(NULL, "Failed to load Life Bar image!", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_lifeBar = new Sprite2D(lifeBarFileName, 0.15);
@@ -234,6 +276,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> lnLogoFileName = {};
 	for (int i = 0; i < 2; i++) {
 		lnLogoFileName.push_back("/Skins/Default/Playing/LongNoteLogo" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(lnLogoFileName.back())) {
+			MessageBoxA(NULL, "Failed to load Long Note Logo image!", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_lnLogo = new Sprite2D(lnLogoFileName, 0.25);
@@ -244,6 +291,11 @@ bool GameplayScene::Attach() {
 	std::vector<std::string> lnComboFileName = {};
 	for (int i = 0; i < 10; i++) {
 		lnComboFileName.push_back("/Skins/Default/Playing/LongNoteNum" + std::to_string(i) + ".png");
+
+		if (!CheckSkinComponent(lnComboFileName.back())) {
+			MessageBoxA(NULL, "Failed to load Long Note Combo image!", "Error", MB_OK);
+			return false;
+		}
 	}
 
 	m_lnComboNum = new NumericTexture(lnComboFileName);
@@ -252,7 +304,6 @@ bool GameplayScene::Attach() {
 	m_lnComboNum->NumberPosition = IntToPos(lnComboPos.Direction);
 	m_lnComboNum->MaxDigits = lnComboPos.MaxDigit;
 	m_lnComboNum->FillWithZeros = lnComboPos.FillWithZero;
-	m_lnComboNum->Offset = -30;
 
 	Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
 	if (chart == nullptr) {
@@ -277,6 +328,11 @@ bool GameplayScene::Attach() {
 					m_holdEffect[e.Lane]->ResetIndex();
 					m_drawHold[e.Lane] = e.State;
 					m_drawHit[e.Lane] = false;
+
+					if (!e.State) {
+						m_hitEffect[e.Lane]->ResetIndex();
+						m_drawHit[e.Lane] = true;
+					}
 				}
 				else {
 					m_hitEffect[e.Lane]->ResetIndex();
@@ -291,12 +347,24 @@ bool GameplayScene::Attach() {
 
 	std::vector<std::string> HitEffect = {};
 	for (int i = 0; i < 9; i++) {
-		HitEffect.push_back("Skins/Default/Playing/HitEffect" + std::to_string(i) + ".png");
+		std::string path = "/Skins/Default/Playing/HitEffect" + std::to_string(i) + ".png";
+
+		if (!CheckSkinComponent(path)) {
+			break;
+		}
+
+		HitEffect.push_back(path);
 	}
 
 	std::vector<std::string> holdEffect = {};
-	for (int i = 0; i < 3; i++) {
-		holdEffect.push_back("Skins/Default/Playing/HoldEffect" + std::to_string(i) + ".png");
+	for (int i = 0; i < 9; i++) {
+		std::string path = "/Skins/Default/Playing/HoldEffect" + std::to_string(i) + ".png";
+
+		if (!CheckSkinComponent(path)) {
+			break;
+		}
+
+		holdEffect.push_back(path);
 	}
 
 	auto lanePos = m_game->GetLanePos();

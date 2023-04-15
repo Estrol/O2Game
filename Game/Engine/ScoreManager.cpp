@@ -32,7 +32,7 @@ ScoreManager::~ScoreManager() {
 void ScoreManager::OnHit(NoteHitInfo info) {
     switch (info.Result) {
 		case NoteResult::COOL: {
-			m_life += 1;
+			AddLife(1);
 			m_jamGauge += 5;
 			m_score += 100;
 			m_cool++;
@@ -40,7 +40,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		}
 
 		case NoteResult::GOOD: {
-			m_life += 0.5;
+			AddLife(0.5);
 			m_jamGauge += 2;
 			m_score += 50;
 			m_good++;
@@ -56,7 +56,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 				info.Result = NoteResult::COOL;
 			}
 			else {
-				m_life -= 1;
+				AddLife(-1);
 				m_coolCombo = 0;
 				m_score += 25;
 				m_bad++;
@@ -67,7 +67,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		}
 
 		default: {
-			m_life -= 5;
+			AddLife(-1);
 			m_combo = 0;
 			m_jamCombo = 0;
 			m_jamGauge = 0;
@@ -77,7 +77,10 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		}
     }
 
-	m_life = std::clamp(m_life, 0, 100);
+	m_combo = std::clamp(m_combo, 0, INT_MAX);
+	m_jamCombo = std::clamp(m_jamCombo, 0, INT_MAX);
+	m_jamGauge = std::clamp(m_jamGauge, 0, 100);
+	m_score = std::clamp(m_score, 0, INT_MAX);
 
 	if (info.Result == NoteResult::COOL) {
 		m_coolCombo += 1;
@@ -107,6 +110,10 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 	}
 
 	if (m_callback) {
+		if (info.Result == NoteResult::MISS && m_life == 0) {
+			return;
+		}
+
 		m_callback(info);
 	}
 }
@@ -153,4 +160,11 @@ int ScoreManager::GetJamGauge() const {
 
 std::tuple<int, int, int, int, int, int, int, int, int, int, int> ScoreManager::GetScore() const {
     return { m_score, m_cool, m_good, m_bad, m_miss, m_jamCombo, m_maxJamCombo, m_combo, m_maxCombo, m_lnCombo, m_lnMaxCombo };
+}
+
+void ScoreManager::AddLife(int sz) {
+	if (m_life > 0) {
+		m_life += sz;
+		m_life = std::clamp(m_life, 0, 100);
+	}
 }

@@ -33,6 +33,7 @@ void LoadingScene::Render(double delta) {
 bool LoadingScene::Attach() {
 	std::string file = EnvironmentSetup::Get("FILE");
 	const char* bmsfile[] = { ".bms", ".bme", ".bml" };
+	const char* ojnfile = ".ojn";
 
 	Chart* chart = nullptr;
 	if (file.find(bmsfile[0]) != std::string::npos || file.find(bmsfile[1]) != std::string::npos || file.find(bmsfile[2]) != std::string::npos) {
@@ -45,6 +46,17 @@ bool LoadingScene::Attach() {
 		}
 
 		chart = new Chart(beatmap);
+	}
+	else if (file.find(ojnfile) != std::string::npos) {
+		O2::OJN o2jamFile;
+		o2jamFile.Load(file);
+
+		if (!o2jamFile.IsValid()) {
+			MessageBoxA(NULL, "Failed to load O2Jam!", "EstEngine Error", MB_ICONERROR);
+			return false;
+		}
+
+		chart = new Chart(o2jamFile);
 	}
 	else {
 		Osu::Beatmap beatmap(file);
@@ -63,10 +75,14 @@ bool LoadingScene::Attach() {
 	std::filesystem::path dirPath = chart->m_beatmapDirectory;
 	dirPath /= chart->m_backgroundFile;
 
-	if (std::filesystem::exists(dirPath)) {
-		Window* window = Window::GetInstance();
-
+	Window* window = Window::GetInstance();
+	if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
 		m_background = new Texture2D(dirPath.string());
+		m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+	}
+
+	if (chart->m_backgroundBuffer.size() > 0) {
+		m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
 		m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
 	}
 

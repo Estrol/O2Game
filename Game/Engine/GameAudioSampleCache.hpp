@@ -7,6 +7,7 @@ namespace GameAudioSampleCache {
 
 	void Play(int index, int volume);
 	void Stop(int index);
+	void SetRate(double rate);
 	void ResumeAll();
 	void PauseAll();
 	void StopAll();

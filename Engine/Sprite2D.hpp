@@ -16,6 +16,7 @@ public:
 
 	~Sprite2D();
 
+	bool AlphaBlend;
 	Vector2 AnchorPoint;
 	UDim2 Position;
 	UDim2 Size;
@@ -24,12 +25,12 @@ public:
 	void Draw(double delta, RECT* rect, bool manual = false);
 
 	Texture2D* GetTexture();
-	void SetDelay(float delay);
+	void SetDelay(double delay);
 	void Reset();
 
 private:
-	float m_delay = 1.0;
-	float m_current = 0.0;
+	double m_delay = 1.0;
+	double m_current = 0.0;
 	int m_currentIndex = 0;
 
 	std::vector<Texture2D*> m_textures;

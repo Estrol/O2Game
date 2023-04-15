@@ -10,6 +10,7 @@ public:
 	bool Create(uint8_t* buffer, size_t size);
 	bool Create(std::string path);
 	bool CreateSilent();
+	void SetRate(double rate);
 
 	std::string GetId() const;
 
@@ -17,9 +18,6 @@ public:
 
 private:
 	std::string m_id;
-
-	uint8_t* m_buffer;
-	size_t m_size;
 	
 	DWORD m_handle;
 	

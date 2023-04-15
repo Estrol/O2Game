@@ -101,11 +101,11 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	int wWidth = window->GetWidth();
 	int wHeight = window->GetHeight();
 
-	LONG xPos = (wWidth * Position.X.Scale) + Position.X.Offset;
-	LONG yPos = (wHeight * Position.Y.Scale) + Position.Y.Offset;
+	LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
+	LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
 
-	LONG width = (m_actualSize.right * Size.X.Scale) + Size.X.Offset;
-	LONG height = (m_actualSize.bottom * Size.Y.Scale) + Size.Y.Offset;
+	LONG width = static_cast<LONG>(m_actualSize.right * Size.X.Scale) + static_cast<LONG>(Size.X.Offset);
+	LONG height = static_cast<LONG>(m_actualSize.bottom * Size.Y.Scale) + static_cast<LONG>(Size.Y.Offset);
 
 	LONG xAnchor = (LONG)(width * std::clamp(AnchorPoint.X, 0.0, 1.0));
 	LONG yAnchor = (LONG)(height * std::clamp(AnchorPoint.Y, 0.0, 1.0));
@@ -123,7 +123,7 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Deferred,
 			states->NonPremultiplied(),
-			nullptr,
+			states->PointWrap(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
@@ -136,7 +136,7 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	}
 
 	RECT tileSize = { 0, 0, width, height };
-	XMVECTOR position = { xPos, yPos, 0, 0 };
+	XMVECTOR position = { (float)xPos, (float)yPos, 0, 0 };
 	XMVECTOR origin = { 0.5, 0.5, 0, 0 };
 	XMVECTOR scale = { 1, 1, 1, 1 };
 

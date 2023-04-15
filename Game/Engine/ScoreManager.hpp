@@ -8,6 +8,8 @@ constexpr int kMaxLife = 100;
 struct NoteHitInfo {
 	NoteResult Result;
 	double TimeToEnd;
+	bool IsRelease;
+	int Type;
 };
 
 class ScoreManager {
@@ -25,6 +27,8 @@ public:
 	int GetJamGauge() const;
 	std::tuple<int, int, int, int, int, int, int, int, int, int, int> GetScore() const;
 private:
+	void AddLife(int sz);
+
 	int m_score;
 	int m_cool;
 	int m_good;

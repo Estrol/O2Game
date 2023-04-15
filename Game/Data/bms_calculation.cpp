@@ -11,7 +11,12 @@ double Calculation::GetStopDuration(double bpm, double duration) {
 	return ((60000.0 / bpm) * 4.0) * (duration / 192.0);
 }
 
-Calculation::Timing::Timing(std::vector<BMS::BMSEvent>& currentTrackEvent, std::unordered_map<std::string, double> vbpms, std::unordered_map<std::string, double> vstops) {
+Calculation::Timing::Timing(
+	std::vector<BMS::BMSEvent>& currentTrackEvent, 
+	std::unordered_map<std::string, double> vbpms, 
+	std::unordered_map<std::string, double> vstops, 
+	bool IsOJN) {
+
 	bpms = {};
 	stops = {};
 

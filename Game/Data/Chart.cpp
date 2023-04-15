@@ -40,7 +40,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 			}
 
 			case Osu::OsuEventType::Sample: {
-				std::string fileName = event.params[0];
+				std::string fileName = event.params[1];
 				fileName.erase(std::remove(fileName.begin(), fileName.end(), '\"'), fileName.end());
 
 				std::string path = beatmap.FileDirectory + "/" + fileName;
@@ -221,6 +221,90 @@ Chart::Chart(BMS::BMSFile& file) {
 	m_bpms[0].Beat = 0;
 	for (int i = 1; i < m_bpms.size(); i++) {
 		m_bpms[i].Beat = m_bpms[i - 1].Beat + (m_bpms[i].StartTime - m_bpms[i - 1].StartTime) * (m_bpms[i - 1].Value / 60000.0f);
+	}
+
+	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	std::sort(m_bpms.begin(), m_bpms.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	std::sort(m_svs.begin(), m_svs.end(), [](const TimingInfo& a, const TimingInfo& b) {
+		return a.StartTime < b.StartTime;
+	});
+
+	NormalizeTimings();
+	ComputeHash();
+}
+
+Chart::Chart(O2::OJN& file, int diffIndex) {
+	auto& diff = file.Difficulties[diffIndex];
+
+	m_title = file.Header.title;
+	m_backgroundBuffer = file.BackgroundImage;
+	m_keyCount = 7;
+
+	int lastTime[7] = {};
+	for (auto& note : diff.Notes) {
+		NoteInfo info = {};
+		info.StartTime = note.StartTime;
+		info.Keysound = note.SampleRefId;
+		info.LaneIndex = note.LaneIndex;
+		info.Type = NoteType::NORMAL;
+
+		if (note.IsLN) {
+			info.Type = NoteType::HOLD;
+			info.EndTime = note.EndTime;
+		}
+
+		if (info.LaneIndex > 7) {
+			__debugbreak();
+		}
+
+		// check if overlap lastTime
+		if (info.StartTime < lastTime[info.LaneIndex]) {
+			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
+		}
+		else {
+			lastTime[info.LaneIndex] = info.StartTime;
+			m_notes.push_back(info);
+		}
+	}
+
+	for (auto& timing : diff.Timings) {
+		float BPM = 240.0 / timing.MsPerMark * 1000.0;
+
+		TimingInfo info = {};
+		info.StartTime = timing.MsMarking;
+		info.Value = BPM;
+		info.TimeSignature = 4;
+		info.Type = TimingType::BPM;
+
+		m_bpms.push_back(info);
+	}
+
+	m_bpms[0].Beat = 0;
+	for (int i = 1; i < m_bpms.size(); i++) {
+		m_bpms[i].Beat = m_bpms[i - 1].Beat + (m_bpms[i].StartTime - m_bpms[i - 1].StartTime) * (m_bpms[i - 1].Value / 60000.0f);
+	}
+
+	for (auto& autoSample : diff.AutoSamples) {
+		AutoSample sm = {};
+		sm.StartTime = autoSample.StartTime;
+		sm.Index = autoSample.SampleRefId;
+
+		m_autoSamples.push_back(sm);
+	}
+
+	for (auto& sample : diff.Samples) {
+		Sample sm = {};
+		sm.FileBuffer = sample.AudioData;
+		sm.Index = sample.RefValue;
+		sm.Type = 2;
+		
+		m_samples.push_back(sm);
 	}
 
 	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {

@@ -40,6 +40,18 @@ void GameTrack::Update(double delta) {
 				}
 			}
 
+			/*if (note->GetType() == NoteType::HOLD && !note->IsHoldEffectDrawable()) {
+				if (m_callback) {
+					GameTrackEvent e = {};
+					e.Lane = m_laneIndex;
+					e.State = false;
+					e.IsHitLongEvent = true;
+					e.IsHitEvent = true;
+
+					m_callback(e);
+				}
+			}*/
+
 			if (note->GetStartTime() <= m_engine->GetGameAudioPosition()) {
 				m_keySound = note->GetKeysoundId();
 			}
@@ -72,19 +84,10 @@ void GameTrack::OnKeyUp() {
 			note->OnRelease(std::get<NoteResult>(result));
 
 			if (std::get<NoteResult>(result) == NoteResult::MISS) {
-				GameAudioSampleCache::Stop(m_keySound);
+				GameAudioSampleCache::Stop(note->GetKeysoundId());
 			}
 			
-			if (m_callback) {
-				GameTrackEvent e = {};
-				e.Lane = m_laneIndex;
-				e.State = false;
-				e.IsHitLongEvent = true;
-				e.IsHitEvent = true;
-
-				m_callback(e);
-			}
-
+			m_currentHold = nullptr;
 			break;
 		}
 	}
@@ -100,26 +103,56 @@ void GameTrack::OnKeyDown() {
 		m_callback(e);
 	}
 
+	bool found = false;
 	for (auto& note : m_notes) {
 		auto result = note->CheckHit();
 		if (std::get<bool>(result)) {
 			note->OnHit(std::get<NoteResult>(result));
 
-			if (m_callback) {
-				GameTrackEvent e = {};
-				e.Lane = m_laneIndex;
-				e.State = true;
-				e.IsHitLongEvent = note->GetType() == NoteType::HOLD;
-				e.IsHitEvent = true;
-
-				m_callback(e);
+			if (note->GetType() == NoteType::HOLD) {
+				m_currentHold = note;
 			}
 
+			GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
+			found = true;
 			break;
 		}
 	}
 
-	GameAudioSampleCache::Play(m_keySound, 50);
+	if (!found) {
+		GameAudioSampleCache::Play(m_keySound, 50);
+	}
+}
+
+void GameTrack::HandleScore(NoteHitInfo info) {
+	if (info.IsRelease) {
+		if (m_callback) {
+			GameTrackEvent e = {};
+			e.Lane = m_laneIndex;
+			e.State = false;
+			e.IsHitLongEvent = true;
+			e.IsHitEvent = true;
+
+			m_callback(e);
+		}
+	}
+	else {
+		if (m_callback) {
+			GameTrackEvent e = {};
+			e.Lane = m_laneIndex;
+			e.State = true;
+			e.IsHitLongEvent = info.Type == 2;
+			e.IsHitEvent = true;
+
+			m_callback(e);
+		}
+	}
+
+	m_engine->GetScoreManager()->OnHit(info);
+}
+
+void GameTrack::HandleHoldScore(HoldResult res) {
+	m_engine->GetScoreManager()->OnLongNoteHold(res);
 }
 
 void GameTrack::AddNote(NoteInfoDesc* desc) {
@@ -129,11 +162,15 @@ void GameTrack::AddNote(NoteInfoDesc* desc) {
 		m_noteCaches.pop_back();
 	}
 	else {
-		note = new Note(m_engine);
+		note = new Note(m_engine, this);
 	}
 
 	note->Load(desc);
 	note->SetXPosition(m_laneOffset);
+
+	if (m_keySound == -1) {
+		m_keySound = note->GetKeysoundId();
+	}
 
 	m_notes.push_back(note);
 }
