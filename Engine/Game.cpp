@@ -74,21 +74,26 @@ bool Game::Init() {
 		return false;
 	}
 
+	std::cout << "Window::Create << " << std::endl;
 	m_window = Window::GetInstance();
-	if (!m_window->Create(m_renderMode, "Game", 1920, 1080, 800, 600)) {
+	if (!m_window->Create(m_renderMode, "Game", m_windowWidth, m_windowHeight, m_bufferWidth, m_bufferHeight)) {
 		return false;
 	}
 	
+	std::cout << "Renderer::Create << " << std::endl;
 	m_renderer = Renderer::GetInstance();
 	if (!m_renderer->Create(m_renderMode, m_window)) {
 		return false;
 	}
 
+	std::cout << "InputManager::Create << " << std::endl;
 	m_inputManager = InputManager::GetInstance();
 
+	std::cout << "SceneManager::Create << " << std::endl;
 	m_sceneManager = SceneManager::GetInstance();
 	m_sceneManager->SetParent(this);
 
+	std::cout << "AudioManager::Create << " << std::endl;
 	AudioManager::GetInstance()->Init(m_window);
 	
 	return true;
@@ -188,6 +193,16 @@ void Game::SetRenderMode(RendererMode mode) {
 
 void Game::SetFramelimit(double frameRate) {
 	m_frameLimit = frameRate;
+}
+
+void Game::SetBufferSize(int width, int height) {
+	m_bufferWidth = width;
+	m_bufferHeight = height;
+}
+
+void Game::SetWindowSize(int width, int height) {
+	m_windowWidth = width;
+	m_windowHeight = height;
 }
 
 void Game::Update(double deltaTime) {

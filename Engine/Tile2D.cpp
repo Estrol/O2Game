@@ -15,6 +15,8 @@ Tile2D::Tile2D() {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+
+	TintColor = { 1.0, 1.0, 1.0 };
 }
 
 Tile2D::Tile2D(std::string fileName) {
@@ -45,6 +47,7 @@ Tile2D::Tile2D(std::string fileName) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+	TintColor = { 1.0, 1.0, 1.0 };
 
 	LoadImageResources(buffer, size);
 }
@@ -57,6 +60,7 @@ Tile2D::Tile2D(uint8_t* fileData, size_t size) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+	TintColor = { 1.0, 1.0, 1.0 };
 
 	LoadImageResources(buffer, size);
 }
@@ -68,6 +72,7 @@ Tile2D::Tile2D(ID3D11ShaderResourceView* texture) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = false;
+	TintColor = { 1.0, 1.0, 1.0 };
 }
 
 Tile2D::~Tile2D() {
@@ -123,7 +128,7 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Deferred,
 			states->NonPremultiplied(),
-			states->PointWrap(),
+			states->LinearClamp(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
@@ -141,11 +146,13 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	XMVECTOR scale = { 1, 1, 1, 1 };
 
 	try {
+		XMVECTORF32 color = { TintColor.R, TintColor.G, TintColor.B, 1.0f - Transparency };
+
 		batch->Draw(
 			m_pTexture,
 			position,
 			&tileSize,
-			Colors::White,
+			color,
 			Rotation,
 			origin,
 			scale
@@ -170,7 +177,7 @@ void Tile2D::LoadImageResources(uint8_t* buffer, size_t size) {
 	ID3D11Resource* resource = nullptr;
 	HRESULT hr = CreateWICTextureFromMemoryEx(
 		device,
-		context,
+		nullptr,//context,
 		buffer,
 		size,
 		0,

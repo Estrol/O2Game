@@ -31,12 +31,12 @@ void LoadingScene::Render(double delta) {
 }
 
 bool LoadingScene::Attach() {
-	std::string file = EnvironmentSetup::Get("FILE");
+	auto file = EnvironmentSetup::GetPath("FILE");
 	const char* bmsfile[] = { ".bms", ".bme", ".bml" };
 	const char* ojnfile = ".ojn";
 
 	Chart* chart = nullptr;
-	if (file.find(bmsfile[0]) != std::string::npos || file.find(bmsfile[1]) != std::string::npos || file.find(bmsfile[2]) != std::string::npos) {
+	if (file.extension() == bmsfile[0] || file.extension() == bmsfile[1] || file.extension() == bmsfile[2]) {
 		BMS::BMSFile beatmap;
 		beatmap.Load(file);
 
@@ -47,7 +47,7 @@ bool LoadingScene::Attach() {
 
 		chart = new Chart(beatmap);
 	}
-	else if (file.find(ojnfile) != std::string::npos) {
+	else if (file.extension() == ojnfile) {
 		O2::OJN o2jamFile;
 		o2jamFile.Load(file);
 

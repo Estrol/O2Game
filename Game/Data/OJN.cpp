@@ -24,16 +24,22 @@ OJN::~OJN() {
 	
 }
 
-void OJN::Load(std::string& file) {
+void OJN::Load(std::filesystem::path& file) {
 	char signature[] = {'o', 'j', 'n', '\0'};
 
-	CurrrentDir = std::filesystem::path(file).parent_path().string();
+	CurrrentDir = file.parent_path().string();
 
 	std::fstream fs(file, std::ios::binary | std::ios::in);
+	if (!fs.is_open()) {
+		::printf("Failed to open: %s\n", file.c_str());
+		return;
+	}
+
 	fs.read((char*)&Header, sizeof(Header));
 
 	if (memcmp(Header.signature, signature, 4) != 0) {
 		::printf("Invalid OJN file: %s\n", file.c_str());
+		::printf("Dumping 1-3 byte: %c%c%c\n", Header.signature[0], Header.signature[1], Header.signature[2]);
 		return;
 	}
 
@@ -65,6 +71,11 @@ void OJN::Load(std::string& file) {
 				difficulty[i].push_back(pkg);
 			}
 		}
+
+		// sort by measure
+		std::sort(difficulty[i].begin(), difficulty[i].end(), [](const Package& x, const Package& y) {
+			return x.Measure < y.Measure;
+		});
 	}
 
 	fs.seekg(Header.data_offset[3], std::ios::beg);
@@ -93,12 +104,14 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 	struct RawDiff {
 		std::vector<NoteEvent> Notes;
 		std::vector<BPMChange> BPMs;
+		std::vector<double> MeasureLists;
 	};
 
 	std::map<int, RawDiff> diffs;
 
+	// Parse note and timing data then calculate the timing list
 	for (auto& [diff, packages] : pkg) {
-		NoteEvent* hold[7] = {};
+		NoteEvent* hold[7] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 		std::vector<BPMChange> bpmChanges = {};
 		std::vector<NoteEvent> notes = {};
 
@@ -106,17 +119,46 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		initialBPM.Measure = 0;
 		initialBPM.BPM = ojn->Header.bpm;
 		bpmChanges.push_back(initialBPM);
+		std::map<int, float> TimeSignatureList = {};
+
+		std::vector<double> measureList = {};
+		measureList.push_back(0);
+
+		double currentBPM = initialBPM.BPM;
+		double currentMeasure = 0;
+		double time = 0;
+
+		const double BEATS_PER_MSEC = 4 * 60 * 1000;
+		double currentMeasureFraction = 1;
+		double currentPosition = 0;
 
 		for (auto& package : packages) {
+			while (package.Measure > currentMeasure) {
+				time += (BEATS_PER_MSEC * (currentMeasureFraction - currentPosition)) / currentBPM;
+				measureList.push_back(time);
+				currentMeasure++;
+
+				currentPosition = 0;
+			}
+
 			for (int i = 0; i < package.EventCount; i++) {
 				auto& ev = package.Events[i];
+				float position = (static_cast<float>(i) / package.EventCount);
 
-				if (package.Channel == 1 || package.Channel == 0) {
+				time += (BEATS_PER_MSEC * (position - currentPosition)) / currentBPM;
+				currentPosition = position;
+
+				if (package.Channel == 0) {
+					TimeSignatureList[package.Measure] = ev.BPM;
+				}
+				else if (package.Channel == 1) {
 					if (ev.BPM == 0) continue;
+					currentBPM = ev.BPM;
 
 					BPMChange t = {};
 					t.BPM = ev.BPM;
-					t.Measure = package.Measure + (static_cast<float>(i) / package.EventCount);
+					t.Measure = package.Measure;
+					t.Position = position;
 
 					bpmChanges.push_back(t);
 				}
@@ -125,7 +167,8 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 					NoteEvent note = {};
 					note.Value = ev.Value - 1;
-					note.Measure = package.Measure + (static_cast<float>(i) / package.EventCount);
+					note.Measure = package.Measure;
+					note.Position = position;
 
 					note.Vol = ((ev.VolPan >> 4) & 0x0F) / 16.0f;
 					note.Pan = (ev.VolPan & 0x0F);
@@ -156,6 +199,7 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						prev->Pan = note.Pan;
 						prev->Vol = note.Vol;
 						prev->MeasureEnd = note.Measure;
+						prev->PositionEnd = note.Position;
 						prev->Type = 3;
 
 						hold[package.Channel - 2] = nullptr;
@@ -171,12 +215,16 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			}
 		}
 
-		diffs[diff] = { notes, bpmChanges };
+		diffs[diff] = { notes, bpmChanges, measureList };
 	}
 
 	OJM ojm = {};
-	std::string path = (std::filesystem::path(ojn->CurrrentDir) / ojn->Header.ojm_file).string();
+	auto path = ojn->CurrrentDir / ojn->Header.ojm_file;
 	ojm.Load(path);
+
+	if (!ojm.IsValid()) {
+		std::cout << "[OJM] Failed to load: " << path.string() << std::endl;
+	}
 
 	std::map<int, std::vector<O2Timing>> perDifftiming;
 
@@ -193,14 +241,14 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			if (!prev) {
 				prev = &t;
 
-				timing.MesStart = t.Measure;
+				timing.MesStart = t.Measure + t.Position;
 				timing.MsMarking = 0;
 				timing.MsPerMark = 240.0 / t.BPM * 1000.0;
 				timings.push_back(timing);
 			}
 			else {
 				double msPerMe = 240.0 / prev->BPM * 1000.0;
-				double dt = t.Measure - prev->Measure;
+				double dt = (t.Measure + t.Position) - (prev->Measure + prev->Position);
 
 				msTime += dt * msPerMe;
 				prev = &t;
@@ -210,7 +258,7 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					timings.back().MsMarking--;
 				}
 
-				timing.MesStart = t.Measure;
+				timing.MesStart = t.Measure + t.Position;
 				timing.MsMarking = msTime;
 				timing.MsPerMark = 240.0 / t.BPM * 1000.0;
 				timings.push_back(timing);
@@ -230,7 +278,7 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			O2Timing* next = nullptr;
 
 			O2Timing toFind = {};
-			toFind.MesStart = note.Measure;
+			toFind.MesStart = note.Measure + note.Position;
 
 			auto it = std::lower_bound(timings.begin(), timings.end(), toFind, O2TimingComparer());
 			if (it == timings.begin()) {
@@ -241,7 +289,7 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			}
 
 			if (note.Type == 3) {
-				toFind.MesStart = note.MeasureEnd;
+				toFind.MesStart = note.MeasureEnd + note.PositionEnd;
 
 				it = std::lower_bound(timings.begin(), timings.end(), toFind, O2TimingComparer());
 				if (it == timings.begin()) {
@@ -255,14 +303,14 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			O2Note n = {};
 			n.LaneIndex = note.Channel;
 
-			double sdt = note.Measure - prev->MesStart;
+			double sdt = (note.Measure + note.Position) - prev->MesStart;
 			double startOffset = prev->MsPerMark * sdt;
 			double hitStart = prev->MsMarking + startOffset;
 
 			n.IsLN = false;
 			n.StartTime = hitStart;
 			if (note.Type == 3) {
-				double edt = note.MeasureEnd - next->MesStart;
+				double edt = (note.MeasureEnd + note.PositionEnd) - next->MesStart;
 				double endOffset = next->MsPerMark * edt;
 				double hitEnd = next->MsMarking + endOffset;
 
@@ -283,6 +331,7 @@ void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 		difficulty.Timings = timings;
 		difficulty.Samples = ojm.Samples;
+		difficulty.Measures = data.MeasureLists;
 		ojn->Difficulties[diff] = std::move(difficulty);
 	}
 }

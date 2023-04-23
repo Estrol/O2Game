@@ -372,7 +372,7 @@ namespace GameNoteResource {
 		};
 		
 		for (int i = 0; i < 6; i++) {
-			std::filesystem::path path = std::filesystem::current_path() / "Image" / "Notes" / textures[i];
+			std::filesystem::path path = std::filesystem::current_path() / "Skins" / "Default" / "Notes" / textures[i];
 			if (!std::filesystem::exists(path)) {
 				std::cout << "Missing: " << path << std::endl;
 

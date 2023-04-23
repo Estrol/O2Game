@@ -1,5 +1,6 @@
 #include "Sprite2D.hpp"
 #include "Texture2D.hpp"
+#include "Window.hpp"
 
 Sprite2D::Sprite2D(std::vector<Texture2D*> textures, float delay) {
 	m_textures = textures;
@@ -45,7 +46,18 @@ void Sprite2D::Draw(double delta, bool manual) {
 void Sprite2D::Draw(double delta, RECT* rect, bool manual) {
 	m_current += delta;
 	auto tex = m_textures[m_currentIndex];
-	tex->Position = Position;
+	Window* window = Window::GetInstance();
+
+	LONG xPos = static_cast<LONG>(window->GetBufferWidth() * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
+	LONG yPos = static_cast<LONG>(window->GetBufferHeight() * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
+
+	LONG xMPos = static_cast<LONG>(window->GetBufferWidth() * Position2.X.Scale) + static_cast<LONG>(Position2.X.Offset);
+	LONG yMPos = static_cast<LONG>(window->GetBufferHeight() * Position2.Y.Scale) + static_cast<LONG>(Position2.Y.Offset);
+
+	xPos += xMPos;
+	yPos += yMPos;
+
+	tex->Position = UDim2::fromOffset(xPos, yPos);
 	tex->AlphaBlend = AlphaBlend;
 	tex->Size = Size;
 	tex->AnchorPoint = AnchorPoint;

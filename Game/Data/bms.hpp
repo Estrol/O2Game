@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <filesystem>
 
 namespace BMS {
 	struct BMSRawTiming;
@@ -32,13 +33,13 @@ namespace BMS {
 		BMSFile();
 		~BMSFile();
 
-		void Load(std::string& path);
+		void Load(std::filesystem::path& path);
 		bool IsValid();
 
 		std::string Title = "";
 		std::string Artist = "";
-		std::string FileDirectory = "";
 		std::string StageFile = "";
+		std::filesystem::path CurrentDir;
 		int Level = 0;
 		float BPM = 130.0f;
 		float TimeSignature = 0.0f;

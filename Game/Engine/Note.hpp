@@ -30,6 +30,8 @@ struct NoteInfoDesc {
 	
 	double StartTime;
 	double EndTime;
+	double StartBPM;
+	double EndBPM;
 
 	int Lane;
 	NoteType Type;
@@ -50,6 +52,9 @@ public:
 
 	double GetInitialTrackPosition() const;
 	double GetStartTime() const;
+	double GetBPMTime() const;
+	double GetHitTime() const;
+
 	int GetKeysoundId() const;
 	NoteType GetType() const;
 
@@ -84,11 +89,14 @@ private:
 	int m_laneOffset;
 	double m_startTime;
 	double m_endTime;
+	double m_startBPM;
+	double m_endBPM;
 
 	int m_keysoundIndex;
 	int m_lane;
 	NoteType m_type;
 	NoteState m_state;
+	NoteResult m_hitResult;
 
 	double m_initialTrackPosition;
 	double m_endTrackPosition;
@@ -96,7 +104,9 @@ private:
 	bool m_shouldDrawHoldEffect;
 	bool m_didHitHead;
 	bool m_didHitTail;
+	bool m_ignore = true;
 
+	double m_hitTime;
 	double m_hitPos;
 	double m_relPos;
 

@@ -26,6 +26,8 @@ struct Package {
 struct BPMChange {
 	float BPM;
 	double Measure;
+	float TimeSignature;
+	float Position;
 };
 
 struct NoteEvent {
@@ -34,6 +36,7 @@ struct NoteEvent {
 	uint16_t Value;
 	float Pan, Vol;
 	float Position;
+	float PositionEnd;
 
 	uint8_t Type;
 
@@ -86,6 +89,7 @@ struct OJNDifficulty {
 	std::vector<O2Note> AutoSamples;
 	std::vector<O2Timing> Timings;
 	std::vector<O2Sample> Samples;
+	std::vector<double> Measures;
 };
 
 namespace O2 {
@@ -94,9 +98,9 @@ namespace O2 {
 		OJN();
 		~OJN();
 
-		void Load(std::string& filePath);
+		void Load(std::filesystem::path& filePath);
 
-		std::string CurrrentDir;
+		std::filesystem::path CurrrentDir;
 		Header Header;
 		bool IsValid();
 

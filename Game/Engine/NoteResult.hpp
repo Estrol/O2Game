@@ -2,6 +2,7 @@
 #include <tuple>
 
 class RhythmEngine;
+class Note;
 
 enum class NoteResult {
 	MISS,
@@ -27,6 +28,13 @@ namespace {
 	const double kNoteGoodHitWindowMax = 97;
 	const double kNoteBadHitWindowMax = 150;
 	const double kNoteEarlyMissWindowMin = 200;
+
+	const double kNoteCoolHitRatio = 0.2;
+	const double kNoteGoodHitRatio = 0.5;
+	const double kNoteBadHitRatio = 0.8;
+	const double kNoteEarlyMissRatio = 0.85;
 }
 
-std::tuple<bool, NoteResult> TimeToResult(RhythmEngine* engine, double noteTime, double time);
+bool IsMissed(RhythmEngine* engine, Note* note);
+bool IsAccept(RhythmEngine* engine, Note* note);
+std::tuple<bool, NoteResult> TimeToResult(RhythmEngine* engine, Note* note);

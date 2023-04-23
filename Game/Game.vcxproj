@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Resources\Configuration.cpp" />
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
     <ClCompile Include="Data\bms_calculation.cpp" />
@@ -143,8 +144,9 @@
     <ClCompile Include="Engine\DrawableLine.cpp" />
     <ClCompile Include="Engine\FrameTimer.cpp" />
     <ClCompile Include="Data\OJM.cpp" />
-    <ClCompile Include="Resources\SkinManager.cpp" />
     <ClCompile Include="Resources\SkinConfig.cpp" />
+    <ClCompile Include="ResultScene.cpp" />
+    <ClInclude Include="Resources\Configuration.hpp" />
     <ClInclude Include="Data\bms_calculation.hpp" />
     <ClInclude Include="Data\bms_struct.hpp" />
     <ClInclude Include="Data\Util\mINI.h" />
@@ -172,8 +174,8 @@
     <ClCompile Include="Engine\TimingLine.cpp" />
     <ClInclude Include="Engine\FrameTimer.hpp" />
     <ClInclude Include="Data\OJM.hpp" />
-    <ClInclude Include="Resources\SkinManager.hpp" />
     <ClInclude Include="Resources\SkinConfig.hpp" />
+    <ClInclude Include="ResultScene.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data\AutoReplay.hpp" />

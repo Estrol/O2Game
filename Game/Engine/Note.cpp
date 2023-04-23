@@ -29,6 +29,9 @@ Note::Note(RhythmEngine* engine, GameTrack* track) {
 
 	m_startTime = 0;
 	m_endTime = 0;
+	m_startBPM = 0;
+	m_endBPM = 0;
+
 	m_type = NoteType::NORMAL;
 	m_lane = 0;
 	m_initialTrackPosition = 0;
@@ -64,12 +67,16 @@ void Note::Load(NoteInfoDesc* desc) {
 		m_tail = NoteImageCacheManager::GetInstance()->Depool(m_imageType);
 		m_body = NoteImageCacheManager::GetInstance()->DepoolTile(m_imageBodyType);
 
+		m_startBPM = desc->StartBPM;
+		m_endBPM = desc->EndBPM;
 		m_state = NoteState::HOLD_PRE;
 	}
 	else {
 		m_tail = nullptr;
 		m_body = nullptr;
 
+		m_startBPM = desc->StartBPM;
+		m_endBPM = 0;
 		m_state = NoteState::NORMAL_NOTE;
 	}
 
@@ -84,6 +91,7 @@ void Note::Load(NoteInfoDesc* desc) {
 	m_laneOffset = 0;
 	m_drawAble = false;
 	m_removeAble = false;
+	m_ignore = true;
 
 	m_didHitHead = false;
 	m_didHitTail = false;
@@ -99,23 +107,24 @@ void Note::Update(double delta) {
 	if (IsRemoveable()) return;
 
 	double audioPos = m_engine->GetGameAudioPosition();
+	m_hitTime = m_startTime - audioPos; //static_cast<double>(SDL_GetPerformanceFrequency()) / 1000000.0;
 
 	if (m_type == NoteType::NORMAL) {
-		if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
+		//if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
+		if (IsMissed(m_engine, this)) {
 			m_state = NoteState::DO_REMOVE;
 
 			m_hitPos = m_startTime + kNoteBadHitWindowMax;
-			//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_startTime + kNoteBadHitWindowMax });
 			OnHit(NoteResult::MISS);
 		}
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
-			if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
+			//if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
+			if (IsMissed(m_engine, this)) {
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 
 				m_hitPos = m_startTime + kNoteBadHitWindowMax;
-				//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_hitPos });
 				OnHit(NoteResult::MISS);
 			}
 		}
@@ -128,18 +137,14 @@ void Note::Update(double delta) {
 					if (audioPos - m_lastScoreTime > HOLD_COMBO_TICK) {
 						m_lastScoreTime += HOLD_COMBO_TICK;
 						m_track->HandleHoldScore(HoldResult::HoldAdd);
-						//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
 					}
 				}
 			}
 
-			if (audioPos > (m_endTime + kNoteBadHitWindowMax)) {
+			//if (audioPos > (m_endTime + kNoteBadHitWindowMax)) {
+			if (IsMissed(m_engine, this)) {
 				if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
 					m_hitPos = m_endTime + kNoteBadHitWindowMax;
-					//m_didHitTail = true;
-
-					//m_engine->GetScoreManager()->OnHit({ NoteResult::MISS, m_relPos });
-					//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
 					if (m_state == NoteState::HOLD_ON_HOLDING) {
 						OnRelease(NoteResult::MISS);
 					}
@@ -170,8 +175,11 @@ void Note::Render(double delta) {
 		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
 		m_tail->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a2);
 
-		if (m_state == NoteState::HOLD_ON_HOLDING) {
+		float Transparency = 0.9f;
+
+		if (m_hitResult >= NoteResult::GOOD && m_state == NoteState::HOLD_ON_HOLDING) {
 			m_head->Position.Y.Offset = 480;
+			Transparency = 1.0f;
 		}
 
 		m_head->CalculateSize();
@@ -187,6 +195,8 @@ void Note::Render(double delta) {
 		m_body->Size = { 1, 0, 0, height };
 
 		if (!m_didHitTail) {
+			m_body->TintColor = { 1.0f * Transparency, 1.0f * Transparency, 1.0f * Transparency };
+
 			m_body->Draw(false);
 			m_head->Draw(false);
 			m_tail->Draw(false);
@@ -206,6 +216,34 @@ double Note::GetStartTime() const {
 	return m_startTime;
 }
 
+double Note::GetBPMTime() const {
+	if (GetType() == NoteType::HOLD) {
+		if (m_state == NoteState::HOLD_PRE) {
+			return m_startBPM;
+		}
+		else {
+			return m_endBPM;
+		}
+	}
+	else {
+		return m_startBPM;
+	}
+}
+
+double Note::GetHitTime() const {
+	if (GetType() == NoteType::HOLD) {
+		if (m_state == NoteState::HOLD_PRE) {
+			return m_startTime;
+		}
+		else {
+			return m_endTime;
+		}
+	}
+	else {
+		return m_startTime;
+	}
+}
+
 int Note::GetKeysoundId() const {
 	return m_keysoundIndex;
 }
@@ -217,16 +255,34 @@ NoteType Note::GetType() const {
 std::tuple<bool, NoteResult> Note::CheckHit() {
 	if (m_type == NoteType::NORMAL) {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-		return TimeToResult(m_engine, m_startTime, time_to_end);
+		//auto result = TimeToResult(m_engine, m_startTime, time_to_end);
+		auto result = TimeToResult(m_engine, this);
+		if (std::get<bool>(result)) {
+			m_ignore = false;
+		}
+
+		return result;
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-			return TimeToResult(m_engine, m_startTime, time_to_end);
+			//auto result = TimeToResult(m_engine, m_startTime, time_to_end);
+			auto result = TimeToResult(m_engine, this);
+			if (std::get<bool>(result)) {
+				m_ignore = false;
+			}
+
+			return result;
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
-			return TimeToResult(m_engine, m_endTime, time_to_end);
+			//auto result = TimeToResult(m_engine, m_endTime, time_to_end);
+			auto result = TimeToResult(m_engine, this);
+			if (std::get<bool>(result)) {
+				m_ignore = false;
+			}
+
+			return result;
 		}
 
 		return { false, NoteResult::MISS };
@@ -238,7 +294,8 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
 
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
-			auto result = TimeToResult(m_engine, m_endTime, time_to_end);
+			//auto result = TimeToResult(m_engine, m_endTime, time_to_end);
+			auto result = TimeToResult(m_engine, this);
 
 			if (std::get<bool>(result)) {
 				if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
@@ -265,15 +322,15 @@ void Note::OnHit(NoteResult result) {
 		if (m_state == NoteState::HOLD_PRE) {
 			m_didHitHead = true;
 			m_state = NoteState::HOLD_ON_HOLDING;
-			//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldAdd);
 			m_lastScoreTime = m_engine->GetGameAudioPosition();
-			//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
 
+			m_hitResult = result;
 			m_track->HandleHoldScore(HoldResult::HoldAdd);
 			m_track->HandleScore({
 				result,
 				m_hitPos,
 				false,
+				m_ignore,
 				2
 			});
 		}
@@ -281,14 +338,12 @@ void Note::OnHit(NoteResult result) {
 			m_didHitHead = true;
 			m_state = NoteState::HOLD_PASSED;
 
-			//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
-			//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
-
 			m_track->HandleHoldScore(HoldResult::HoldBreak);
 			m_track->HandleScore({
 				result,
 				m_hitPos,
 				true,
+				m_ignore,
 				2
 			});
 		}
@@ -300,6 +355,7 @@ void Note::OnHit(NoteResult result) {
 				result,
 				m_hitPos,
 				false,
+				m_ignore,
 				1
 			});
 	}
@@ -321,6 +377,7 @@ void Note::OnRelease(NoteResult result) {
 					result,
 					m_hitPos,
 					true,
+					m_ignore,
 					2
 					});
 			}
@@ -332,6 +389,7 @@ void Note::OnRelease(NoteResult result) {
 					result,
 					m_hitPos,
 					true,
+					m_ignore,
 					2
 					});
 			}

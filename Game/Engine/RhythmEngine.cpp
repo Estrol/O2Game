@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include "NoteResult.hpp"
+#include "../Resources/Configuration.hpp"
 
 struct ManiaKeyState {
 	Keys key;
@@ -49,7 +50,7 @@ RhythmEngine::RhythmEngine() {
 	m_currentAudioGamePosition = 0;
 	m_currentVisualPosition = 0;
 	m_currentTrackPosition = 0;
-	m_rate = 1.25;
+	m_rate = 1;
 	m_offset = 0;
 	m_scrollSpeed = 180;
 
@@ -91,8 +92,8 @@ bool RhythmEngine::Load(Chart* chart) {
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;
 
-	if (std::filesystem::exists(audioPath) && !audioPath.string().ends_with("\\")) {
-		m_audioPath = audioPath.string();
+	if (std::filesystem::exists(audioPath) && audioPath.has_extension()) {
+		m_audioPath = audioPath;
 	}
 
 	for (auto& note : chart->m_notes) {
@@ -103,13 +104,19 @@ bool RhythmEngine::Load(Chart* chart) {
 		m_autoSamples.push_back(sample);
 	}
 
-	auto replay = AutoReplay::CreateReplay(chart);
-	std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
-		return a.Time < b.Time;
-	});
+	if (Configuration::Load("Debug", "Autoplay") == "1") {
+		auto replay = AutoReplay::CreateReplay(chart);
+		std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
+			return a.Time < b.Time;
+		});
 
-	for (auto& hit : replay) {
-		m_autoHitInfos[hit.Lane].push_back(hit);
+		for (auto& hit : replay) {
+			m_autoHitInfos[hit.Lane].push_back(hit);
+		}
+	}
+
+	if (Configuration::Load("Debug", "Rate").size() > 0) {
+		m_rate = std::stod(Configuration::Load("Debug", "Rate"));
 	}
 
 	std::sort(m_notes.begin(), m_notes.end(), [](const NoteInfo& a, const NoteInfo& b) {
@@ -131,6 +138,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_currentBPM = m_baseBPM;
 	m_currentSVMultiplier = chart->InitialSvMultiplier;
 
+	GameAudioSampleCache::SetRate(m_rate);
 	GameAudioSampleCache::Load(chart);
 	
 	CreateTimingMarkers();
@@ -138,24 +146,30 @@ bool RhythmEngine::Load(Chart* chart) {
 	UpdateGamePosition();
 	UpdateNotes();
 
-	m_timingLineManager = new TimingLineManager(this);
+	m_timingLineManager = chart->m_customMeasures.size() > 0 ? new TimingLineManager(this, chart->m_customMeasures) : new TimingLineManager(this);
 	m_scoreManager = new ScoreManager();
 
+	m_timingLineManager->Init();
 	m_state = GameState::NotGame;
 	return true;
+}
+
+void RhythmEngine::SetKeys(Keys* keys) {
+	for (int i = 0; i < 7; i++) {
+		KeyMapping[i].key = keys[i];
+	}
 }
 
 bool RhythmEngine::Start() {
 	std::thread([&] {
 		std::cout << "Starting Engine 1" << std::endl;
-		if (m_audioPath.size() > 0) {
+		if (!m_audioPath.empty()) {
 			AudioManager::GetInstance()->Create("main_audio", m_audioPath, &m_currentAudio);
 		}
 
 		m_currentAudioPosition -= 3000;
 		m_state = GameState::Playing;
-
-		GameAudioSampleCache::SetRate(m_rate);
+		
 		std::cout << "Starting Engine 2" << std::endl;
 	}).detach();
 	
@@ -335,26 +349,36 @@ double RhythmEngine::GetNotespeed() const {
 	return (speed / 10.0) / (20.0 * m_rate) * scrollingFactor * virtualRatio;
 }
 
-bool CompareBeatOffset(const TimingInfo& a, const TimingInfo& b) {
-	return a.StartTime <= b.StartTime;
+double RhythmEngine::GetBPMAt(double offset) const {
+	auto bpms = m_currentChart->m_bpms;
+	int min = 0, max = bpms.size() - 1;
+
+	if (max == 0) {
+		return bpms[0].Value;
+	}
+
+	while (min <= max) {
+		int mid = (min + max) / 2;
+
+		bool afterMid = mid < 0 || bpms[mid].StartTime <= offset;
+		bool beforeMid = mid + 1 >= bpms.size() || bpms[mid + 1].StartTime > offset;
+
+		if (afterMid && beforeMid) {
+			return bpms[mid].Value;
+		}
+		else if (afterMid) {
+			max = mid - 1;
+		}
+		else {
+			min = mid + 1;
+		}
+	}
+
+	return bpms[0].Value;
 }
 
-double RhythmEngine::GetBeat(double offset) const {
-	TimingInfo toSearch = {};
-	toSearch.StartTime = offset;
-
-	auto& bpms = m_currentChart->m_bpms;
-
-	auto it = std::lower_bound(bpms.begin(), bpms.end(), toSearch, CompareBeatOffset);
-	if (it == bpms.end()) {
-		it = bpms.begin();
-	}
-	
-	double beat = it->Beat;
-	double bpm = it->Value;
-	double startTime = it->StartTime;
-
-	return beat + (offset - startTime) * (bpm / 60000.0);
+double RhythmEngine::GetCurrentBPM() const {
+	return m_currentBPM;
 }
 
 double RhythmEngine::GetSongRate() const {
@@ -374,7 +398,7 @@ ScoreManager* RhythmEngine::GetScoreManager() const {
 }
 
 std::vector<double> RhythmEngine::GetTimingWindow() {
-	float ratio = std::clamp(2.0f - m_currentSVMultiplier, 0.1f, 2.0f);
+	float ratio = std::clamp(2.0f - m_currentSVMultiplier, 0.3f, 2.0f);
 	
 	return { kNoteCoolHitWindowMax * ratio, kNoteGoodHitWindowMax * ratio, kNoteBadHitWindowMax * ratio, kNoteEarlyMissWindowMin * ratio };
 }
@@ -409,10 +433,12 @@ void RhythmEngine::UpdateNotes() {
 			desc.InitialTrackPosition = startTime;
 			desc.EndTrackPosition = -1;
 			desc.KeysoundIndex = note.Keysound;
+			desc.StartBPM = GetBPMAt(note.StartTime);
 
 			if (note.Type == NoteType::HOLD) {
 				desc.EndTime = note.EndTime;
 				desc.EndTrackPosition = endTime;
+				desc.EndBPM = GetBPMAt(note.EndTime);
 			}
 			
 			m_tracks[note.LaneIndex]->AddNote(&desc);
@@ -446,6 +472,10 @@ void RhythmEngine::UpdateGamePosition() {
 
 			std::cout << "SV Multiplier changed to: " << svMultiplier << "\n";
 		}
+	}
+
+	if (m_currentBPMIndex > 0) {
+		m_currentBPM = m_currentChart->m_bpms[m_currentBPMIndex - 1].Value;
 	}
 }
 

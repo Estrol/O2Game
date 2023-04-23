@@ -23,6 +23,8 @@
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="AudioSample.cpp" />
     <ClCompile Include="AudioSampleChannel.cpp" />
+    <ClCompile Include="BassFXSampleEncoding.cpp" />
+    <ClCompile Include="Color3.cpp" />
     <ClCompile Include="Data\estring.cpp" />
     <ClCompile Include="InputEvent.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -46,6 +48,8 @@
     <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="AudioSample.hpp" />
     <ClInclude Include="AudioSampleChannel.hpp" />
+    <ClInclude Include="BassFXSampleEncoding.hpp" />
+    <ClInclude Include="Color3.hpp" />
     <ClInclude Include="Sprite2D.hpp" />
     <ClInclude Include="Win32ErrorHandling.h" />
     <ClInclude Include="Data\bass_ogg_silent.hpp" />

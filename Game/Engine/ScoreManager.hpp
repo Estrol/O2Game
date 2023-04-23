@@ -9,6 +9,7 @@ struct NoteHitInfo {
 	NoteResult Result;
 	double TimeToEnd;
 	bool IsRelease;
+	bool Ignore;
 	int Type;
 };
 
@@ -23,6 +24,7 @@ public:
 	void ListenJam(std::function<void(int)>);
 	void ListenLongNote(std::function<void()>);
 
+	int GetPills() const;
 	int GetLife() const;
 	int GetJamGauge() const;
 	std::tuple<int, int, int, int, int, int, int, int, int, int, int> GetScore() const;

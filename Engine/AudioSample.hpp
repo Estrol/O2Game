@@ -1,6 +1,7 @@
 #pragma once
 #include "AudioSampleChannel.hpp"
 #include <iostream>
+#include <filesystem>
 
 class AudioSample {
 public:
@@ -8,7 +9,8 @@ public:
 	~AudioSample();
 
 	bool Create(uint8_t* buffer, size_t size);
-	bool Create(std::string path);
+	bool Create(std::filesystem::path path);
+	bool CreateFromData(int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData);
 	bool CreateSilent();
 	void SetRate(double rate);
 

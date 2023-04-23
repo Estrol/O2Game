@@ -5,6 +5,7 @@
 
 #include "UDim2.hpp"
 #include "Vector2.hpp"
+#include "Color3.hpp"
 
 class Tile2D {
 public:
@@ -24,6 +25,7 @@ public:
 
 	UDim2 Size;
 	UDim2 Position;
+	Color3 TintColor;
 
 	Vector2 AnchorPoint;
 	Vector2 AbsoluteSize;

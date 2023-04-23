@@ -125,26 +125,28 @@ void GameTrack::OnKeyDown() {
 }
 
 void GameTrack::HandleScore(NoteHitInfo info) {
-	if (info.IsRelease) {
-		if (m_callback) {
-			GameTrackEvent e = {};
-			e.Lane = m_laneIndex;
-			e.State = false;
-			e.IsHitLongEvent = true;
-			e.IsHitEvent = true;
+	if (!info.Ignore) {
+		if (info.IsRelease) {
+			if (m_callback) {
+				GameTrackEvent e = {};
+				e.Lane = m_laneIndex;
+				e.State = false;
+				e.IsHitLongEvent = true;
+				e.IsHitEvent = true;
 
-			m_callback(e);
+				m_callback(e);
+			}
 		}
-	}
-	else {
-		if (m_callback) {
-			GameTrackEvent e = {};
-			e.Lane = m_laneIndex;
-			e.State = true;
-			e.IsHitLongEvent = info.Type == 2;
-			e.IsHitEvent = true;
+		else {
+			if (m_callback) {
+				GameTrackEvent e = {};
+				e.Lane = m_laneIndex;
+				e.State = true;
+				e.IsHitLongEvent = info.Type == 2;
+				e.IsHitEvent = true;
 
-			m_callback(e);
+				m_callback(e);
+			}
 		}
 	}
 

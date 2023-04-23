@@ -39,10 +39,10 @@ bool Audio::Release() {
 	return true;
 }
 
-bool Audio::Create(std::string fileName) {
+bool Audio::Create(std::filesystem::path fileName) {
 	std::fstream fs(fileName, std::ios::binary | std::ios::in);
 	if (!fs.is_open()) {
-		std::string msg = "Failed to open file: " + fileName;
+		std::string msg = "Failed to open file: " + fileName.string();
 		MessageBoxA(NULL, msg.c_str(), "EstEngine Error", MB_ICONERROR);
 
 		return false;

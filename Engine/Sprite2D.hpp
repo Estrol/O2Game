@@ -19,6 +19,7 @@ public:
 	bool AlphaBlend;
 	Vector2 AnchorPoint;
 	UDim2 Position;
+	UDim2 Position2;
 	UDim2 Size;
 
 	void Draw(double delta, bool manual = false);

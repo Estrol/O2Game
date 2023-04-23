@@ -34,7 +34,7 @@ struct TimingInfo {
 };
 
 struct Sample {
-	std::string FileName;
+	std::filesystem::path FileName;
 	std::vector<uint8_t> FileBuffer;
 
 	uint32_t Type = 1;
@@ -66,11 +66,12 @@ public:
 	std::string m_title;
 	std::string m_audio;
 	std::string m_artist;
-	std::string m_beatmapDirectory;
+	std::filesystem::path m_beatmapDirectory;
 
 	std::vector<NoteInfo> m_notes;
 	std::vector<TimingInfo> m_bpms;
 	std::vector<TimingInfo> m_svs;
+	std::vector<double> m_customMeasures;
 
 	std::vector<Sample> m_samples;
 	std::vector<AutoSample> m_autoSamples;

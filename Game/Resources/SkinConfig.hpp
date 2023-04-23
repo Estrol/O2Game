@@ -19,6 +19,7 @@ struct NumericValue {
 
 // Value format: X, Y, AnchorPointX, AnchorPointY
 struct SpriteValue {
+	int numOfFrames;
 	int X, Y;
 	float AnchorPointX, AnchorPointY;
 };

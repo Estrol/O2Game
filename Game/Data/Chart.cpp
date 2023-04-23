@@ -27,7 +27,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	m_title = beatmap.Title;
 	m_keyCount = beatmap.CircleSize;
 	m_artist = beatmap.Artist;
-	m_beatmapDirectory = beatmap.FileDirectory;
+	m_beatmapDirectory = beatmap.CurrentDir;
 
 	for (auto& event : beatmap.Events) {
 		switch (event.Type) {
@@ -43,7 +43,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 				std::string fileName = event.params[1];
 				fileName.erase(std::remove(fileName.begin(), fileName.end(), '\"'), fileName.end());
 
-				std::string path = beatmap.FileDirectory + "/" + fileName;
+				auto path = beatmap.CurrentDir / fileName;
 				if (std::filesystem::exists(path)) {
 					AutoSample sample = {};
 					sample.StartTime = event.StartTime;
@@ -98,7 +98,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	for (int i = 0; i < beatmap.HitSamples.size(); i++) {
 		auto& keysound = beatmap.HitSamples[i];
 
-		std::string path = beatmap.FileDirectory + "/" + keysound;
+		auto path = beatmap.CurrentDir / keysound;
 
 		Sample sm = {};
 		sm.FileName = path;
@@ -128,7 +128,7 @@ Chart::Chart(BMS::BMSFile& file) {
 		throw std::invalid_argument("Invalid BMS file!");
 	}
 
-	m_beatmapDirectory = file.FileDirectory;
+	m_beatmapDirectory = file.CurrentDir;
 	m_title = file.Title;
 	m_audio = "";// file.FileDirectory + "/" + "test.mp3";
 	m_keyCount = 7;
@@ -147,14 +147,6 @@ Chart::Chart(BMS::BMSFile& file) {
 		info.Type = NoteType::NORMAL;
 		info.LaneIndex = note.Lane;
 		info.Keysound = note.SampleIndex;
-
-		/*if (note.SampleIndex != -1) {
-			AutoSample sm = {};
-			sm.StartTime = note.StartTime;
-			sm.Index = note.SampleIndex;
-
-			m_autoSamples.push_back(sm);
-		}*/
 		
 		if (note.EndTime != -1) {
 			info.Type = NoteType::HOLD;
@@ -164,9 +156,17 @@ Chart::Chart(BMS::BMSFile& file) {
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
 			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
+
+			if (note.SampleIndex != -1) {
+				AutoSample sm = {};
+				sm.StartTime = note.StartTime;
+				sm.Index = note.SampleIndex;
+
+				m_autoSamples.push_back(sm);
+			}
 		}
 		else {
-			lastTime[info.LaneIndex] = info.StartTime;
+			lastTime[info.LaneIndex] = info.Type == NoteType::HOLD ? info.EndTime : info.StartTime;
 			m_notes.push_back(info);
 		}
 	}
@@ -195,7 +195,7 @@ Chart::Chart(BMS::BMSFile& file) {
 
 	for (auto& sample : file.Samples) {
 		Sample sm = {};
-		sm.FileName = file.FileDirectory + "\\" + sample.second;
+		sm.FileName = file.CurrentDir / sample.second;
 		sm.Index = sample.first;
 
 		m_samples.push_back(sm);
@@ -245,6 +245,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	m_title = file.Header.title;
 	m_backgroundBuffer = file.BackgroundImage;
 	m_keyCount = 7;
+	m_customMeasures = diff.Measures;
 
 	int lastTime[7] = {};
 	for (auto& note : diff.Notes) {
@@ -259,16 +260,20 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 			info.EndTime = note.EndTime;
 		}
 
-		if (info.LaneIndex > 7) {
-			__debugbreak();
-		}
-
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
 			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
+
+			if (note.SampleRefId != -1) {
+				AutoSample sm = {};
+				sm.StartTime = note.StartTime;
+				sm.Index = note.SampleRefId;
+
+				m_autoSamples.push_back(sm);
+			}
 		}
 		else {
-			lastTime[info.LaneIndex] = info.StartTime;
+			lastTime[info.LaneIndex] = info.Type == NoteType::HOLD ? info.EndTime : info.StartTime;
 			m_notes.push_back(info);
 		}
 	}
@@ -287,7 +292,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 
 	m_bpms[0].Beat = 0;
 	for (int i = 1; i < m_bpms.size(); i++) {
-		m_bpms[i].Beat = m_bpms[i - 1].Beat + (m_bpms[i].StartTime - m_bpms[i - 1].StartTime) * (m_bpms[i - 1].Value / 60000.0f);
+		m_bpms[i].Beat = m_bpms[i - 1].Beat + (m_bpms[i].StartTime - m_bpms[i - 1].StartTime) * m_bpms[i - 1].Value / 60000.0f;
 	}
 
 	for (auto& autoSample : diff.AutoSamples) {

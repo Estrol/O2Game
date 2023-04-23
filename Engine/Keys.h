@@ -2,6 +2,8 @@
 #include <SDL2/SDL_scancode.h>
 
 enum class Keys : Uint8 {
+	INVALID_KEY = 0,
+
 	A = SDL_SCANCODE_A,
 	B = SDL_SCANCODE_B,
 	C = SDL_SCANCODE_C,
@@ -106,8 +108,6 @@ enum class Keys : Uint8 {
 	KeyPadEight = SDL_SCANCODE_KP_8,
 	KeyPadNine = SDL_SCANCODE_KP_9,
 	KeyPadZero = SDL_SCANCODE_KP_0,
-
-	INVALID_KEY
 };
 
 enum class KeyEventType { KEY_DOWN, KEY_UP, INVALID_BUTTON };

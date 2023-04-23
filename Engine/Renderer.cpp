@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include "Win32ErrorHandling.h"
+#include <iostream>
 
 #pragma comment(lib, "dxguid.lib")
 typedef HRESULT(*D3D11_CreateDeviceAndSwapChain)(
@@ -39,6 +40,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
     try {
         HMODULE d3d11 = NULL;
 
+		std::cout << "DLL LOAD" << std::endl;
         if (mode == RendererMode::VULKAN) {
             std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
 
@@ -53,7 +55,8 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             }
         }
         else {
-            d3d11 = LoadLibraryA("d3d11.dll");
+            LoadLibraryExA("dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+            d3d11 = LoadLibraryExA("d3d11.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
         }
 
         if (d3d11 == NULL) {
@@ -67,6 +70,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             return false;
         }
 
+		std::cout << "Window handle" << std::endl;
         HWND handle = window->GetHandle();
 
         DXGI_SWAP_CHAIN_DESC scd = { 0 };
@@ -96,6 +100,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
 			D3D_FEATURE_LEVEL_11_0,
         };
 
+		std::cout << "Create Device" << std::endl;
         D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
         HRESULT result = createDeviceAndSwapChain(
             nullptr,
@@ -129,6 +134,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             "Failed to get back buffer"
         );
 
+		std::cout << "Create Render Target View" << std::endl;
         result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
 
         backBuffer->Release();
@@ -137,6 +143,8 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             "Failed to create render target view"
         );
 
+		
+		std::cout << "Create Depth Stencil View" << std::endl;
         m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
 
         D3D11_VIEWPORT pViewport;
@@ -146,6 +154,8 @@ bool Renderer::Create(RendererMode mode, Window* window) {
         pViewport.Width = window->GetWidth();
         pViewport.Height = window->GetHeight();
 
+
+		std::cout << "Create Viewport" << std::endl;
         m_immediateContext->RSSetViewports(1, &pViewport);
 
         CD3D11_RASTERIZER_DESC rsDesc(
@@ -161,6 +171,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             FALSE
         );
 
+		std::cout << "Create Rasterizer State" << std::endl;
         result = m_device->CreateRasterizerState(&rsDesc, &m_scissorState);
 
 		Win32Exception::ThrowIfError(

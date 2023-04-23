@@ -12,7 +12,6 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 	double recycle = (300000.0 / 4.0) / engine->GetNotespeed();
 
 	for (int i = 0; i < bpms.size(); i++) {
-		double currentBeat = 0;
 		double target = (i + 1) < bpms.size() ? bpms[i + 1].StartTime - 1 : mapLength;
 		float signature = bpms[i].TimeSignature;
 		float maxBPM = 9999;
@@ -44,6 +43,25 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 	}
 }
 
+TimingLineManager::TimingLineManager(RhythmEngine* engine, std::vector<double> list) {
+	m_engine = engine;
+	m_timingLines = {};
+	m_timingInfos = {};
+
+	for (int i = 0; i < list.size(); i++) {
+		double offset = m_engine->GetPositionFromOffset(list[i]);
+
+		TimingLineDesc desc = {};
+		desc.Engine = engine;
+		desc.StartTime = list[i];
+		desc.Offset = offset;
+		desc.ImagePos = 3;
+		desc.ImageSize = 193;
+		
+		m_timingInfos.push(desc);
+	}
+}
+
 TimingLineManager::~TimingLineManager() {
 	for (int i = 0; i < m_timingInfos.size(); i++) {
 		m_timingInfos.pop();
@@ -52,6 +70,27 @@ TimingLineManager::~TimingLineManager() {
 	for (int i = 0; i < m_timingLines.size(); i++) {
 		delete m_timingLines.front();
 		m_timingLines.pop();
+	}
+}
+
+void TimingLineManager::Init() {
+	double recycle = (300000.0 / 4.0) / m_engine->GetNotespeed();
+
+	while (m_timingInfos.size() > 0) {
+		auto& info = m_timingInfos.front();
+		
+		if (m_engine->GetTrackPosition() - info.Offset > recycle) {
+			m_timingInfos.pop();
+		}
+		else if (m_engine->GetTrackPosition() - info.Offset < recycle) {
+			TimingLine* t = new TimingLine();
+			t->Load(&info);
+			m_timingLines.push(t);
+			m_timingInfos.pop();
+		}
+		else {
+			break;
+		}
 	}
 }
 
@@ -66,7 +105,7 @@ void TimingLineManager::Update(double delta) {
 
 	while (m_timingLines.size() > 0
 		&& m_timingLines.front()->GetTrackPosition() > recycle
-		&& m_timingLines.front()->GetStartTime() > m_engine->GetGameAudioPosition()) {
+		&& m_timingLines.front()->GetStartTime() < m_engine->GetGameAudioPosition()) {
 		TimingLine* t = m_timingLines.front();
 		m_timingLines.pop();
 

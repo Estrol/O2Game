@@ -382,6 +382,15 @@ namespace mINI
 				lineData = std::make_shared<T_LineData>();
 			}
 		}
+
+		INIReader(std::filesystem::path const path, bool keepLineData = false) {
+			fileReadStream.open(path, std::ios::in | std::ios::binary);
+			if (keepLineData)
+			{
+				lineData = std::make_shared<T_LineData>();
+			}
+		}
+
 		~INIReader() {}
 
 		bool operator>>(INIStructure& data) {
@@ -434,6 +443,11 @@ namespace mINI
 		INIGenerator(std::string const& filename) {
 			fileWriteStream.open(filename, std::ios::out | std::ios::binary);
 		}
+
+		INIGenerator(std::filesystem::path const path) {
+			fileWriteStream.open(path, std::ios::out | std::ios::binary);
+		}
+		
 		~INIGenerator() {}
 
 		bool operator<<(INIStructure const& data) {
@@ -496,6 +510,7 @@ namespace mINI
 		using T_LineDataPtr = std::shared_ptr<T_LineData>;
 
 		std::string filename;
+		std::filesystem::path path;
 
 		T_LineData getLazyOutput(T_LineDataPtr const& lineData, INIStructure& data, INIStructure& original) {
 			T_LineData output;
@@ -654,18 +669,23 @@ namespace mINI
 
 	public:
 		bool prettyPrint = false;
+		bool usingPath = false;
 
 		INIWriter(std::string const& filename)
 			: filename(filename) {
+		}
+		INIWriter(std::filesystem::path path) {
+			usingPath = true;
+			this->path = path;
 		}
 		~INIWriter() {}
 
 		bool operator<<(INIStructure& data) {
 			struct stat buf;
 			bool fileExists = (stat(filename.c_str(), &buf) == 0);
-			if (!fileExists)
+			if (!std::filesystem::exists(usingPath ? path : filename)) {}
 			{
-				INIGenerator generator(filename);
+				INIGenerator generator(usingPath ? path : filename);
 				generator.prettyPrint = prettyPrint;
 				return generator << data;
 			}
@@ -674,7 +694,7 @@ namespace mINI
 			bool readSuccess = false;
 			bool fileIsBOM = false;
 			{
-				INIReader reader(filename, true);
+				INIReader reader(usingPath ? path : filename, true);
 				if ((readSuccess = reader >> originalData))
 				{
 					lineData = reader.getLines();
@@ -686,7 +706,7 @@ namespace mINI
 				return false;
 			}
 			T_LineData output = getLazyOutput(lineData, data, originalData);
-			std::ofstream fileWriteStream(filename, std::ios::out | std::ios::binary);
+			std::ofstream fileWriteStream(usingPath ? path : filename, std::ios::out | std::ios::binary);
 			if (fileWriteStream.is_open())
 			{
 				if (fileIsBOM) {
@@ -720,6 +740,8 @@ namespace mINI
 	{
 	private:
 		std::string filename;
+		std::filesystem::path path;
+		bool usingPath = false;
 
 	public:
 		INIFile(std::string const& filename)
@@ -732,6 +754,10 @@ namespace mINI
 			}
 		}
 
+		INIFile(std::filesystem::path const& path) : usingPath(true) {
+			this->path = path;
+		}
+
 		~INIFile() {}
 
 		bool read(INIStructure& data) const {
@@ -739,28 +765,30 @@ namespace mINI
 			{
 				data.clear();
 			}
-			if (filename.empty())
+			if (filename.empty() && !usingPath)
 			{
 				return false;
 			}
-			INIReader reader(filename);
+			
+			INIReader reader(usingPath ? path : filename);
 			return reader >> data;
+
 		}
 		bool generate(INIStructure const& data, bool pretty = false) const {
-			if (filename.empty())
+			if (filename.empty() && !usingPath)
 			{
 				return false;
 			}
-			INIGenerator generator(filename);
+			INIGenerator generator(usingPath ? path : filename);
 			generator.prettyPrint = pretty;
 			return generator << data;
 		}
 		bool write(INIStructure& data, bool pretty = false) const {
-			if (filename.empty())
+			if (filename.empty() && !usingPath)
 			{
 				return false;
 			}
-			INIWriter writer(filename);
+			INIWriter writer(usingPath ? path : filename);
 			writer.prettyPrint = pretty;
 			return writer << data;
 		}

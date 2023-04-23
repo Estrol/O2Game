@@ -5,6 +5,7 @@
 #include "framework.h"
 #include <string>
 #include <mutex>
+#include <iostream>
 
 SceneManager::SceneManager() {
 	m_scenes = std::unordered_map<int, Scene*>();
@@ -70,12 +71,14 @@ void SceneManager::OnKeyUp(const KeyState& state) {
 void SceneManager::AddScene(int idx, Scene* scene) {
 	if (s_instance == nullptr) throw std::exception("SceneManager is not initialized");
 
+	std::cout << "Added scene: " << idx << std::endl;
 	s_instance->m_scenes[idx] = scene;
 }
 
 void SceneManager::ChangeScene(int idx) {
 	if (s_instance == nullptr) throw std::exception("SceneManager is not initialized");
 
+	std::cout << "Change scene: " << idx << std::endl;
 	s_instance->IChangeScene(idx);
 }
 

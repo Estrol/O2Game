@@ -3,24 +3,16 @@
 #include <sstream>
 #include <filesystem>
 
-Osu::Beatmap::Beatmap(std::string& file) {
-	if (!std::filesystem::exists(file)) {
-		std::wstring ws(file.begin(), file.end());
+Osu::Beatmap::Beatmap(std::filesystem::path& file) {
+	std::fstream fs(file, std::ios::in);
+	std::stringstream ss;
 
-		bIsValid = false;
-		return;
-	}
-	else {
-		std::fstream fs(file, std::ios::in);
-		std::stringstream ss;
+	ss << fs.rdbuf();
+	fs.close();
 
-		ss << fs.rdbuf();
-		fs.close();
-
-		// get directory info
-		FileDirectory = std::filesystem::path(file).parent_path().string();
-		ParseString(ss);
-	}
+	// get directory info
+	CurrentDir = file.parent_path();
+	ParseString(ss);
 }
 
 void Osu::Beatmap::ParseString(std::stringstream& ss) {

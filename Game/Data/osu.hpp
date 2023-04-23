@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <filesystem>
 
 namespace Osu {
 	struct OsuTimingPoint {
@@ -51,13 +52,13 @@ namespace Osu {
 
 	class Beatmap {
 	public:
-		Beatmap(std::string& file);
+		Beatmap(std::filesystem::path& file);
 
 		bool IsValid();
 
 		// [Format]
 		std::string PeppyFormat = ""; // L
-		std::string FileDirectory = "";
+		std::filesystem::path CurrentDir = "";
 
 		// [General]
 		std::string AudioFilename = "";

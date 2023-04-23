@@ -21,6 +21,8 @@ public:
 	~RhythmEngine();
 
 	bool Load(Chart* chart);
+	void SetKeys(Keys* keys);
+
 	bool Start();
 	bool Stop();
 	bool Ready();
@@ -39,7 +41,8 @@ public:
 	double GetTrackPosition() const;
 	double GetPrebufferTiming() const;
 	double GetNotespeed() const;
-	double GetBeat(double offset) const;
+	double GetBPMAt(double offset) const;
+	double GetCurrentBPM() const;
 	double GetSongRate() const;
 	int GetAudioLength() const;
 
@@ -83,7 +86,7 @@ private:
 	int m_laneSize[7];
 	int m_lanePos[7];
 
-	std::string m_audioPath = "";
+	std::filesystem::path m_audioPath = "";
 	Audio* m_currentAudio;
 	Chart* m_currentChart;
 	Vector2 m_virtualResolution;

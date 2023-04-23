@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "Audio.hpp"
 #include "AudioSample.hpp"
+#include <filesystem>
 
 class Window;
 
@@ -11,9 +12,10 @@ public:
 	bool Init(Window* window);
 
 	bool Create(std::string id, uint8_t*, size_t size, Audio** out);
-	bool Create(std::string id, std::string path, Audio** out);
+	bool Create(std::string id, std::filesystem::path path, Audio** out);
 	bool CreateSample(std::string id, uint8_t*, size_t size, AudioSample** out);
-	bool CreateSample(std::string id, std::string path, AudioSample** out);
+	bool CreateSample(std::string id, std::filesystem::path path, AudioSample** out);
+	bool CreateSampleFromData(std::string id, int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData, AudioSample** out);
 
 	void Update(double delta);
 

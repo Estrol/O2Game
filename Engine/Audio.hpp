@@ -1,6 +1,7 @@
 #pragma once
 #include "framework.h"
 #include <string>
+#include <filesystem>
 
 enum class AudioType {
 	STREAM,
@@ -13,7 +14,7 @@ public:
 	~Audio();
 	AudioType GetType() const;
 
-	bool Create(std::string fileName);
+	bool Create(std::filesystem::path fileName);
 	bool Create(uint8_t* buffer, size_t size);
 
 	bool Play(DWORD dwStartPosition = 0, BOOL bLoop = 0);

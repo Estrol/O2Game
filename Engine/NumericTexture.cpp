@@ -14,7 +14,8 @@ NumericTexture::NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsT
 		throw std::runtime_error("NumericTexture::NumericTexture: numericsTexture.size() != 10");
 	}
 
-	ManipPosition = UDim2::fromOffset(0, 0);
+	Position2 = UDim2::fromOffset(0, 0);
+	AnchorPoint = { 0, 0 };
 
 	m_numericsTexture.resize(10);
 	for (int i = 0; i < 10; i++) {
@@ -29,7 +30,8 @@ NumericTexture::NumericTexture(std::vector<std::string> numericsFiles) {
 		throw std::runtime_error("NumericTexture::NumericTexture: numericsFiles.size() != 10");
 	}
 
-	ManipPosition = UDim2::fromOffset(0, 0);
+	Position2 = UDim2::fromOffset(0, 0);
+	AnchorPoint = { 0, 0 };
 
 	m_numericsTexture.resize(10);
 	for (int i = 0; i < 10; i++) {
@@ -63,39 +65,33 @@ void NumericTexture::DrawNumber(int number) {
 		}
 	}
 
-	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->PointClamp(), nullptr, nullptr, [&] {
+	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->LinearWrap(), nullptr, nullptr, [&] {
 		if (AlphaBlend) {
-			ID3D11SamplerState* samplerState = nullptr;
+			CD3D11_BLEND_DESC blendDesc = {};
+			blendDesc.AlphaToCoverageEnable = false;
+			blendDesc.IndependentBlendEnable = false;
+			blendDesc.RenderTarget[0].BlendEnable = true;
+			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-			CD3D11_SAMPLER_DESC samplerDesc = {};
-			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
-			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			samplerDesc.MipLODBias = 0.0f;
-			samplerDesc.MaxAnisotropy = 1;
-			samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-			samplerDesc.BorderColor[0] = 0;
-			samplerDesc.BorderColor[1] = 0;
-			samplerDesc.BorderColor[2] = 0;
-			samplerDesc.BorderColor[3] = 0;
-			samplerDesc.MinLOD = 0;
-			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+			ID3D11BlendState* state = nullptr;
+			renderer->GetDevice()->CreateBlendState(&blendDesc, &state);
 
-			renderer->GetDevice()->CreateSamplerState(&samplerDesc, &samplerState);
-
-			context->PSSetSamplers(0, 1, &samplerState);
-
-			SAFE_RELEASE(samplerState)
+			context->OMSetBlendState(state, nullptr, 0xffffffff);
+			SAFE_RELEASE(state);
 		}
 	});
 
 	LONG xPos = static_cast<LONG>(window->GetBufferWidth() * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
 	LONG yPos = static_cast<LONG>(window->GetBufferHeight() * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
 
-	LONG xMPos = static_cast<LONG>(window->GetBufferWidth() * ManipPosition.X.Scale) + static_cast<LONG>(ManipPosition.X.Offset);
-	LONG yMPos = static_cast<LONG>(window->GetBufferHeight() * ManipPosition.Y.Scale) + static_cast<LONG>(ManipPosition.Y.Offset);
+	LONG xMPos = static_cast<LONG>(window->GetBufferWidth() * Position2.X.Scale) + static_cast<LONG>(Position2.X.Offset);
+	LONG yMPos = static_cast<LONG>(window->GetBufferHeight() * Position2.Y.Scale) + static_cast<LONG>(Position2.Y.Offset);
 
 	xPos += xMPos;
 	yPos += yMPos;
@@ -111,6 +107,7 @@ void NumericTexture::DrawNumber(int number) {
 				tx -= (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
+				tex->AnchorPoint = AnchorPoint;
 				tex->Draw(false);
 			}
 			break;
@@ -129,10 +126,10 @@ void NumericTexture::DrawNumber(int number) {
 				int digit = numberString[i] - '0';
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
+				tex->AnchorPoint = AnchorPoint;
 				tex->Draw(false);
 				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
-			break;
 			break;
 		}
 
@@ -142,6 +139,7 @@ void NumericTexture::DrawNumber(int number) {
 				int digit = numberString[i] - '0';
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
+				tex->AnchorPoint = AnchorPoint;
 				tex->Draw(false);
 				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}

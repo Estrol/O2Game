@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+#include <filesystem>
 #include <vector>
 
 struct O2Sample {
@@ -11,14 +11,13 @@ class OJM {
 public:
 	~OJM();
 
-	void Load(std::string fileName);
+	void Load(std::filesystem::path& fileName);
 	bool IsValid();
 
 	std::vector<O2Sample> Samples;
 private:
 	void LoadM30Data(std::fstream& fs);
 	void LoadOJMData(std::fstream& fs, bool encrypted);
-	
 	
 	bool m_valid;
 };

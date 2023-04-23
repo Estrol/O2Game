@@ -57,12 +57,12 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 			}
 			else {
 				AddLife(-1);
+				m_jamGauge = 0;
 				m_coolCombo = 0;
 				m_score += 25;
+				m_combo = 0;
 				m_bad++;
 			}
-
-			m_jamGauge += 1;
 			break;
 		}
 
@@ -148,6 +148,10 @@ void ScoreManager::ListenJam(std::function<void(int)> cb) {
 
 void ScoreManager::ListenLongNote(std::function<void()> cb) {
 	m_lncallback = cb;
+}
+
+int ScoreManager::GetPills() const {
+	return m_numOfPills;
 }
 
 int ScoreManager::GetLife() const {

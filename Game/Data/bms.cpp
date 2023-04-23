@@ -19,13 +19,13 @@ namespace BMS {
 
 	}
 
-	void BMSFile::Load(std::string& path) {
+	void BMSFile::Load(std::filesystem::path& path) {
 		std::fstream fs(path, std::ios::in);
 		if (!fs.is_open()) {
 			return;
 		}
 
-		FileDirectory = std::filesystem::path(path).parent_path().string();
+		CurrentDir = std::filesystem::path(path).parent_path();
 
 		std::stringstream ss;
 		ss << fs.rdbuf();

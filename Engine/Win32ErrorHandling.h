@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <string>
 #include <stdexcept>
+#include <iostream>
  
 // If necessary, use this to free raw pointers. 
 // Preferably, use Microsoft::WRL::ComPtr from client.h (http://msdn.microsoft.com/en-us/library/br244983.aspx)
@@ -23,13 +24,15 @@ public:
 
     static inline void ThrowIfError(HRESULT hr) {
         if (FAILED(hr)) {
-            throw new Win32Exception(hr);
+			std::cout << "Throwing error: " << hr << std::endl;
+            throw Win32Exception(hr);
         }
     }
 	
     static inline void ThrowIfError(HRESULT hr, std::string msg) {
         if (FAILED(hr)) {
-            throw new Win32Exception(hr, msg);
+			std::cout << "Throwing error: " << hr << std::endl;
+            throw Win32Exception(hr, msg);
         }
     }
 

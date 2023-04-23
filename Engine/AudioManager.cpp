@@ -55,6 +55,7 @@ bool AudioManager::Init(Window* window) {
 
 	//BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
 	BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);
+	BASS_SetConfig(BASS_CONFIG_DEV_NONSTOP, TRUE);
 
 	::printf("BASS and BASS_FX initialized\n");
 
@@ -95,15 +96,13 @@ bool AudioManager::Create(std::string id, uint8_t* buffer, size_t size, Audio** 
 	return true;
 }
 
-bool AudioManager::Create(std::string id, std::string path, Audio** out) {
-	if (path.size() == 0) return false;
-
+bool AudioManager::Create(std::string id, std::filesystem::path path, Audio** out) {
 	if (m_audios.find(id) != m_audios.end()) {
 		return false;
 	}
 
 	Audio* audio = new Audio(id);
-	if (path.size() > 0) {
+	if (!path.empty()) {
 		if (!audio->Create(path)) {
 			delete audio;
 			return false;
@@ -135,15 +134,13 @@ bool AudioManager::CreateSample(std::string id, uint8_t* buffer, size_t size, Au
 	return true;
 }
 
-bool AudioManager::CreateSample(std::string id, std::string path, AudioSample** out) {
-	if (path.size() == 0) return false;
-
+bool AudioManager::CreateSample(std::string id, std::filesystem::path path, AudioSample** out) {
 	if (m_audioSamples.find(id) != m_audioSamples.end()) {
 		return false;
 	}
 
 	AudioSample* audio = new AudioSample(id);
-	if (path.size() == 0) {
+	if (path.empty()) {
 		if (!audio->CreateSilent()) {
 			delete audio;
 			return false;
@@ -151,6 +148,31 @@ bool AudioManager::CreateSample(std::string id, std::string path, AudioSample** 
 	}
 	else {
 		if (!audio->Create(path)) {
+			delete audio;
+			return false;
+		}
+	}
+
+	m_audioSamples[id] = audio;
+	*out = audio;
+
+	return true;
+}
+
+bool AudioManager::CreateSampleFromData(std::string id, int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData, AudioSample** out) {
+	if (m_audioSamples.find(id) != m_audioSamples.end()) {
+		return false;
+	}
+
+	AudioSample* audio = new AudioSample(id);
+	if (sampleLength == 0) {
+		if (!audio->CreateSilent()) {
+			delete audio;
+			return false;
+		}
+	}
+	else {
+		if (!audio->CreateFromData(sampleFlags, sampleRate, sampleChannels, sampleLength, sampleData)) {
 			delete audio;
 			return false;
 		}

@@ -9,8 +9,10 @@ class RhythmEngine;
 class TimingLineManager {
 public:
 	TimingLineManager(RhythmEngine* engine);
+	TimingLineManager(RhythmEngine* engine, std::vector<double> list);
 	~TimingLineManager();
 
+	void Init();
 	void Update(double delta);
 	void Render(double delta);
 

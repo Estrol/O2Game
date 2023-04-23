@@ -21,7 +21,8 @@ public:
 	~NumericTexture();
 
 	UDim2 Position;
-	UDim2 ManipPosition;
+	UDim2 Position2;
+	Vector2 AnchorPoint;
 	NumericPosition NumberPosition = NumericPosition::MID;
 	bool FillWithZeros = false;
 	bool AlphaBlend = false;

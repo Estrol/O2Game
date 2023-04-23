@@ -1,10 +1,12 @@
 #include "Texture2D.hpp"
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 #include <directxtk/WICTextureLoader.h>
 #include "Renderer.hpp"
 #include "MathUtils.hpp"
+#include "Win32ErrorHandling.h"
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
 
@@ -12,6 +14,7 @@ using namespace DirectX;
 
 Texture2D::Texture2D() {
 	m_pTexture = nullptr;
+	TintColor = { 1.0f, 1.0f, 1.0f };
 
 	Rotation = 0;
 	Transparency = 0.0f;
@@ -45,6 +48,7 @@ Texture2D::Texture2D(std::string fileName) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+	TintColor = { 1.0f, 1.0f, 1.0f };
 	
 	LoadImageResources(buffer, size);
 }
@@ -57,6 +61,7 @@ Texture2D::Texture2D(uint8_t* fileData, size_t size) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+	TintColor = { 1.0f, 1.0f, 1.0f };
 
 	LoadImageResources(buffer, size);
 }
@@ -68,6 +73,7 @@ Texture2D::Texture2D(ID3D11ShaderResourceView* texture) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = false;
+	TintColor = { 1.0f, 1.0f, 1.0f };
 }
 
 Texture2D::~Texture2D() {
@@ -104,7 +110,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Immediate,
 			states->NonPremultiplied(),
-			states->PointWrap(),
+			states->LinearClamp(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
@@ -114,29 +120,24 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 				}
 
 				if (AlphaBlend) {
-					ID3D11SamplerState* samplerState = nullptr;
+					CD3D11_BLEND_DESC blendDesc = {};
+					blendDesc.AlphaToCoverageEnable = false;
+					blendDesc.IndependentBlendEnable = false;
+					blendDesc.RenderTarget[0].BlendEnable = true;
+					blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+					blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+					blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+					blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+					blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+					blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+					blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-					CD3D11_SAMPLER_DESC samplerDesc = {};
-					ZeroMemory(&samplerDesc, sizeof(samplerDesc));
-					samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-					samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-					samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-					samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-					samplerDesc.MipLODBias = 0.0f;
-					samplerDesc.MaxAnisotropy = 1;
-					samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-					samplerDesc.BorderColor[0] = 0;
-					samplerDesc.BorderColor[1] = 0;
-					samplerDesc.BorderColor[2] = 0;
-					samplerDesc.BorderColor[3] = 0;
-					samplerDesc.MinLOD = 0;
-					samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+					ID3D11BlendState* state = nullptr;
+					auto hr = renderer->GetDevice()->CreateBlendState(&blendDesc, &state);
+					Win32Exception::ThrowIfError(hr);
 
-					renderer->GetDevice()->CreateSamplerState(&samplerDesc, &samplerState);
-
-					context->PSSetSamplers(0, 1, &samplerState);
-
-					SAFE_RELEASE(samplerState)
+					context->OMSetBlendState(state, nullptr, 0xffffffff);
+					SAFE_RELEASE(state);
 				}
 			}
 		);
@@ -147,11 +148,13 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 	XMVECTOR scale = { scaleX, scaleY, 1, 1 };
 
 	try {
+		XMVECTORF32 color = { TintColor.R, TintColor.G, TintColor.B, 1.0f - Transparency };
+
 		batch->Draw(
 			m_pTexture,
 			position,
 			&m_actualSize,
-			Colors::White,
+			color,
 			Rotation,
 			origin,
 			scale
@@ -239,7 +242,7 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 	ID3D11Resource* resource = nullptr;
 	HRESULT hr = CreateWICTextureFromMemoryEx(
 		device,
-		context,
+		nullptr,//context,
 		buffer,
 		size,
 		0,

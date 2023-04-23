@@ -27,22 +27,28 @@ public:
 	bool Detach() override;
 	
 private:
+	void* CreateScreenshotWin32();
+
 	std::unordered_map<int, Texture2D*> m_keyLighting;
 	std::unordered_map<int, Texture2D*> m_keyButtons;
 	std::unordered_map<int, Texture2D*> m_judgement;
+	std::unordered_map<int, Texture2D*> m_pills;
 	std::unordered_map<int, FrameTimer*> m_hitEffect;
 	std::unordered_map<int, FrameTimer*> m_holdEffect;
 	std::unordered_map<int, bool> m_keyState;
+	std::unordered_map<int, UDim2> m_statsPos;
 
 	Texture2D* m_playBG;
-	Texture2D* m_playfieldBG;
 
 	Tile2D* m_jamGauge;
+	Tile2D* m_waveGage;
 
 	Sprite2D* m_jamLogo;
 	Sprite2D* m_lifeBar;
 	Sprite2D* m_lnLogo;
+	Sprite2D* m_comboLogo;
 	
+	NumericTexture* m_statsNum;
 	NumericTexture* m_lnComboNum;
 	NumericTexture* m_jamNum;
 	NumericTexture* m_scoreNum;

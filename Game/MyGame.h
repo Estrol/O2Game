@@ -7,6 +7,7 @@ public:
 
 	bool Init() override;
 	void Run(double frameRate) override;
+	void SelectSkin(std::string name);
 
 protected:
 	void Update(double deltaTime) override;

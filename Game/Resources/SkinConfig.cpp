@@ -90,15 +90,16 @@ SkinConfig::SkinConfig(std::string filePath) {
 		auto split = splitString(value, ',');
 
 		SpriteValue e = {};
-		e.X = std::stoi(split[0]);
-		e.Y = std::stoi(split[1]);
-
-		if (split.size() > 2) {
-			e.AnchorPointX = std::stof(split[2]);
-		}
+		e.numOfFrames = std::stoi(split[0]);
+		e.X = std::stoi(split[1]);
+		e.Y = std::stoi(split[2]);
 
 		if (split.size() > 3) {
-			e.AnchorPointY = std::stof(split[3]);
+			e.AnchorPointX = std::stof(split[3]);
+		}
+
+		if (split.size() > 4) {
+			e.AnchorPointY = std::stof(split[4]);
 		}
 
 		m_spriteValues[key] = std::move(e);

@@ -109,7 +109,7 @@ std::vector<char> XorDecrypt(std::vector<char>& data) {
 OJM::~OJM() {
 }
 
-void OJM::Load(std::string fileName) {
+void OJM::Load(std::filesystem::path& fileName) {
 	if (!std::filesystem::exists(fileName)) {
 		return;
 	}
