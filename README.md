@@ -1,11 +1,41 @@
-# Estrol's Rhythm Player
+# Unnamed O2 Clone Game
 This is experimental software for playing rhythm games.
 
-Written in C++ with SDL + DirectX11 (and Vulkan through DXVK)
+Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 
 # Features
 - BPM Changes with negative BPM.
-- Load BMS and osu file
+- OJN, BMS, and osu!mania files.
+- Beat-based judgement.
+- Audio sample non-pitched.
+
+# TODO List
+- Implement song selection list.
+- Implement more UI.
+- Add Text rendering into Game Engine.
+- Probably a lots.
+
+# Project directory
+- Engine, Game engine that powered this game.
+- Game, Game code for this game logic.
+
+# Compiling
+### Requirements
+- vcpkg
+- Visual Studio 2022 with CXX20
+- BASS Lib from https://www.un4seen.com/
+
+### Installing external library
+- Install DirectXTK and libcurl from vcpkg.
+- Put BASS x64 library (.lib) to Lib/x64
+
+### Compiling
+- Open project with visual studio
+- Click Compile
+- Copy BASS x64 DLL to build folder
+- Copy skins folder from my build in discord server :P
+- Run/Debug it
+- To able use Vulkan, download and extract D3D11.dll and DXVK.dll into vulkan folder.
 
 # License
-Not in Open Source License right now.
+MIT License.
