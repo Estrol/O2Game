@@ -236,6 +236,7 @@ Chart::Chart(BMS::BMSFile& file) {
 	});
 
 	NormalizeTimings();
+	ComputeKeyCount();
 	ComputeHash();
 }
 
@@ -325,6 +326,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	});
 
 	NormalizeTimings();
+	ComputeKeyCount();
 	ComputeHash();
 }
 
@@ -521,4 +523,41 @@ void Chart::NormalizeTimings() {
 
 	m_svs.clear();
 	m_svs = result;
+}
+
+void Chart::ComputeKeyCount() {
+	bool Lanes[7] = { false, false, false, false, false, false };
+
+	for (auto& note : m_notes) {
+		if (!Lanes[note.LaneIndex]) {
+			Lanes[note.LaneIndex] = true;
+		}
+	}
+
+	// BMS-O2 4K is: X X - - - X X
+	// BMS-O2 5K is: X X - X - X X
+	// BMS-O2 6K is: X X X X X X -
+	// BMS-O2 7K is: X X X X X X X
+
+	// Check for 7K first since it has the highest priority
+	if (Lanes[0] && Lanes[1] && Lanes[2] && Lanes[3] && Lanes[4] && Lanes[5] && Lanes[6]) {
+		m_keyCount = 7;
+	}
+	// Check for 6K
+	else if (Lanes[0] && Lanes[1] && Lanes[2] && Lanes[3] && Lanes[4] && Lanes[5] && !Lanes[6]) {
+		m_keyCount = 6;
+	}
+	// Check for 5K
+	else if (Lanes[0] && Lanes[1] && !Lanes[2] && Lanes[3] && !Lanes[4] && Lanes[5] && Lanes[6]) {
+		m_keyCount = 5;
+	}
+	// Check for 4K
+	else if (Lanes[0] && Lanes[1] && !Lanes[2] && !Lanes[3] && !Lanes[4] && Lanes[5] && Lanes[6]) {
+		m_keyCount = 4;
+	}
+	// Otherwise, the pattern does not match any of the known K values
+	else {
+		std::cout << "Unknown lane pattern, fallback to 7K" << std::endl;
+		m_keyCount = 7;
+	}
 }

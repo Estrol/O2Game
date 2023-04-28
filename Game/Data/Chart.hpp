@@ -77,6 +77,7 @@ public:
 	std::vector<AutoSample> m_autoSamples;
 private:
 	void ComputeHash();
+	void ComputeKeyCount();
 
 	float GetCommonBPM();
 	void NormalizeTimings();

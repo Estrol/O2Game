@@ -4,21 +4,21 @@
 #include <filesystem>
 #include <iostream>
 
-SkinConfig::SkinConfig(std::string filePath) {
+SkinConfig::SkinConfig(std::string filePath, int keyCount) {
 	auto path = std::filesystem::current_path().string();
 
 	if (!filePath.starts_with(path)) {
 		filePath = path + filePath;
 	}
 
-	Load(path);
+	Load(path, keyCount);
 }
 
-SkinConfig::SkinConfig(std::filesystem::path path) {
-	Load(path);
+SkinConfig::SkinConfig(std::filesystem::path path, int keyCount) {
+	Load(path, keyCount);
 }
 
-void SkinConfig::Load(std::filesystem::path path) {
+void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 	std::filesystem::path current = path.parent_path();
 	mINI::INIFile f(path);
 	mINI::INIStructure ini;

@@ -27,8 +27,8 @@ struct SpriteValue {
 
 class SkinConfig {
 public:
-	SkinConfig(std::string filePath);
-	SkinConfig(std::filesystem::path path);
+	SkinConfig(std::string filePath, int keyCount);
+	SkinConfig(std::filesystem::path path, int keyCount);
 	~SkinConfig();
 
 	PositionValue& GetPosition(std::string key);
@@ -36,7 +36,7 @@ public:
 	SpriteValue& GetSprite(std::string key);
 
 private:
-	void Load(std::filesystem::path path);
+	void Load(std::filesystem::path path, int keyCount);
 
 	std::unordered_map<std::string, PositionValue> m_positionValues;
 	std::unordered_map<std::string, NumericValue> m_numericValues;

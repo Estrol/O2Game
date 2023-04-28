@@ -2,24 +2,44 @@
 #include "framework.h"
 #include <filesystem>
 #include <d3d11.h>
+#include <dxgi1_3.h>
 #include <wrl.h>
 #include "Win32ErrorHandling.h"
 #include <iostream>
 
 #pragma comment(lib, "dxguid.lib")
-typedef HRESULT(*D3D11_CreateDeviceAndSwapChain)(
-    IDXGIAdapter*               pAdapter,
-    D3D_DRIVER_TYPE             DriverType,
-    HMODULE                     Software,
-    UINT                        Flags,
-    const D3D_FEATURE_LEVEL*    pFeatureLevels,
-    UINT                        FeatureLevels,
-    UINT                        SDKVersion,
-    const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
-    IDXGISwapChain**            ppSwapChain,
-    ID3D11Device**              ppDevice,
-    D3D_FEATURE_LEVEL*          pFeatureLevel,
-    ID3D11DeviceContext**       ppImmediateContext
+//typedef HRESULT(*D3D11_CreateDeviceAndSwapChain)(
+//    IDXGIAdapter*               pAdapter,
+//    D3D_DRIVER_TYPE             DriverType,
+//    HMODULE                     Software,
+//    UINT                        Flags,
+//    const D3D_FEATURE_LEVEL*    pFeatureLevels,
+//    UINT                        FeatureLevels,
+//    UINT                        SDKVersion,
+//    const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
+//    IDXGISwapChain**            ppSwapChain,
+//    ID3D11Device**              ppDevice,
+//    D3D_FEATURE_LEVEL*          pFeatureLevel,
+//    ID3D11DeviceContext**       ppImmediateContext
+//);
+
+typedef HRESULT(*DXGI_CreateFactory2)(
+    UINT   Flags,
+    REFIID riid,
+    void** ppFactory
+);
+
+typedef HRESULT(*D3D11_CreateDevice)(
+    IDXGIAdapter* pAdapter,
+    D3D_DRIVER_TYPE         DriverType,
+    HMODULE                 Software,
+    UINT                    Flags,
+    const D3D_FEATURE_LEVEL* pFeatureLevels,
+    UINT                    FeatureLevels,
+    UINT                    SDKVersion,
+    ID3D11Device** ppDevice,
+    D3D_FEATURE_LEVEL* pFeatureLevel,
+    ID3D11DeviceContext** ppImmediateContext
 );
 
 constexpr auto MAIN_SPRITE_BATCH = 0;
@@ -39,6 +59,7 @@ Renderer* Renderer::s_instance = nullptr;
 bool Renderer::Create(RendererMode mode, Window* window) {
     try {
         HMODULE d3d11 = NULL;
+        HMODULE dxgi = NULL;
 
 		std::cout << "DLL LOAD" << std::endl;
         if (mode == RendererMode::VULKAN) {
@@ -46,7 +67,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
 
             // This is so cheating!!
             if (std::filesystem::exists(dxvkPath / "dxgi.dll") && std::filesystem::exists(dxvkPath / "d3d11.dll")) {
-                LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
+                dxgi = LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
                 d3d11 = LoadLibraryA((dxvkPath / "d3d11.dll").string().c_str());
             }
             else {
@@ -55,7 +76,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             }
         }
         else {
-            LoadLibraryExA("dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+            dxgi = LoadLibraryExA("dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
             d3d11 = LoadLibraryExA("d3d11.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
         }
 
@@ -64,30 +85,37 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             return false;
         }
 
-        D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
+        /*D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
         if (!createDeviceAndSwapChain) {
             MessageBoxA(NULL, "D3D11CreateDeviceAndSwapChain function exports symbols not found in D3D11.dll", "EstEngine Error", MB_ICONERROR);
             return false;
+        }*/
+
+		DXGI_CreateFactory2 createFactory = (DXGI_CreateFactory2)GetProcAddress(dxgi, "CreateDXGIFactory2");
+		D3D11_CreateDevice createDevice = (D3D11_CreateDevice)GetProcAddress(d3d11, "D3D11CreateDevice");
+
+        if (!createDevice || !createFactory) {
+			MessageBoxA(NULL, "D3D11CreateDevice or CreateDXGIFactory2 function exports symbols not found in D3D11.dll or DXGI.dll", "EstEngine Error", MB_ICONERROR);
+			return false;
+		}
+
+        IDXGIFactory* dxgiFactory;
+        HRESULT result = createFactory(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgiFactory));
+        Win32Exception::ThrowIfError(result, "Failed to create DXGI Factory!");
+
+		IDXGIAdapter* dxgiAdapter;
+        result = dxgiFactory->EnumAdapters(0, &dxgiAdapter);
+        Win32Exception::ThrowIfError(result, "Failed to query Graphics Adapter to use!");
+
+        if (!dxgiAdapter) {
+            MessageBoxA(NULL, "Error, pDxgiAdapter is NULL", "EstEngine Error", MB_ICONERROR);
+            return false;
         }
 
-		std::cout << "Window handle" << std::endl;
         HWND handle = window->GetHandle();
-
-        DXGI_SWAP_CHAIN_DESC scd = { 0 };
-        scd.BufferCount = 1;
-        scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        scd.BufferDesc.Width = window->GetBufferWidth();
-        scd.BufferDesc.Height = window->GetBufferHeight();
-        scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        scd.OutputWindow = handle;
-        scd.SampleDesc.Count = 4;
-        scd.Windowed = TRUE;
-
-        UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-#if _DEBUG
+        UINT creationFlags = 0;
+		
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
 
         // Required for alpha blending
         D3D_FEATURE_LEVEL level[] = {
@@ -97,35 +125,44 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
-			D3D_FEATURE_LEVEL_11_0,
         };
 
 		std::cout << "Create Device" << std::endl;
         D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
-        HRESULT result = createDeviceAndSwapChain(
-            nullptr,
-            D3D_DRIVER_TYPE_HARDWARE,
-            nullptr,
-            creationFlags,
-            level,
-            6,
-            D3D11_SDK_VERSION,
-            &scd,
-            &m_swapChain,
+
+		result = createDevice(
+            dxgiAdapter, 
+            D3D_DRIVER_TYPE_UNKNOWN, 
+            NULL, 
+            creationFlags, 
+            level, 
+            6, 
+            D3D11_SDK_VERSION, 
             &m_device,
             &outLevel,
             &m_immediateContext
         );
-
+		
         Win32Exception::ThrowIfError(
             result,
-            "Failed to create device and swap chain"
+            "Failed to create D3D11 Device!"
         );
+		
+        DXGI_SWAP_CHAIN_DESC scd = { 0 };
+        scd.BufferCount = 1;
+        scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        scd.BufferDesc.Width = window->GetBufferWidth();
+        scd.BufferDesc.Height = window->GetBufferHeight();
+        scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        scd.OutputWindow = handle;
+        scd.SampleDesc.Count = 1;
+        scd.Windowed = TRUE;
 
-		if (outLevel < D3D_FEATURE_LEVEL_11_1) {
-			MessageBoxA(NULL, "Your graphics card driver does not support Alpha Blending required by the game for In-Game effects, please update your graphics card!", "EstEngine Error", MB_ICONERROR);
-            return false;
-		}
+		result = dxgiFactory->CreateSwapChain(m_device, &scd, &m_swapChain);
+        Win32Exception::ThrowIfError(
+            result,
+            "Failed to create D3D11 SwapChain!"
+        );
 
         ID3D11Texture2D* backBuffer = nullptr;
         result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);

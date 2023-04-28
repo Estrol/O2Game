@@ -185,7 +185,7 @@ bool GameplayScene::Attach() {
 
 	auto skinPath = Configuration::Skin_GetPath(SkinName);
 	auto playingPath = skinPath / "Playing";
-	SkinConfig conf(playingPath / "Playing.ini");
+	SkinConfig conf(playingPath / "Playing.ini", 7);
 
 	for (int i = 0; i < 7; i++) {
 		m_keyState[i] = false;
