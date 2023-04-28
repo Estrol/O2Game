@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <d3d11.h>
+#include <filesystem>
 #include "Vector2.hpp"
 #include "UDim2.hpp"
 class Texture2D;
@@ -12,6 +13,7 @@ public:
 
 	Sprite2D(std::vector<Texture2D*> textures, float delay = 1.0);
 	Sprite2D(std::vector<std::string> textures, float delay = 1.0);
+	Sprite2D(std::vector<std::filesystem::path> textures, float delay = 1.0);
 	Sprite2D(std::vector<ID3D11ShaderResourceView*> textures, float delay = 1.0);
 
 	~Sprite2D();

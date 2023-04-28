@@ -17,23 +17,19 @@ extern "C" {
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-std::filesystem::path prompt(std::wstring rootName) {
+std::filesystem::path prompt() {
 	OPENFILENAME ofn;
 	wchar_t szFile[MAX_PATH] = { 0 };
 
-	ZeroMemory(&ofn, sizeof(ofn));   // clear the structure
+	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = NULL;   // set the parent window to be the desktop
+	ofn.hwndOwner = NULL;
 	ofn.lpstrFilter = L"O2-JAM files (*.ojn)\0*.ojn\0Osu files (*.osu)\0*.osu\0BMS files (*.bms|*.bme|*.bml)\0*.bms;*.bme;*.bml\0All files (*.*)\0*.*\0";   // set the file filter
-	ofn.lpstrFile = szFile;   // set the buffer for the selected filename
-	ofn.nMaxFile = MAX_PATH;   // set the maximum size of the filename buffer
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;   // set the dialog flags
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
 	if (GetOpenFileNameW(&ofn)) {
-		if (SetCurrentDirectoryW((LPWSTR)rootName.c_str()) == FALSE) {
-			MessageBoxA(NULL, "Failed to set directory!", "EstGame Warning", MB_ICONWARNING);
-		}
-		
 		return szFile;
 	}
 	else {
@@ -42,6 +38,8 @@ std::filesystem::path prompt(std::wstring rootName) {
 }
 
 bool API_Query() {
+	std::cout << "[Auth] Authenticating session to /~estrol-game/authorize-access" << std::endl;
+
 	try {
 		curlpp::Cleanup myCleanup;
 		curlpp::Easy myRequest;
@@ -67,47 +65,10 @@ int Run(int argc, char* argv[]) {
 
 		std::filesystem::path filePath;
 		for (int i = 1; i < argc; i++) {
-			// --autoplay -a
-			// --vulkan -v
-			// --resolution 
-
-			if (strcmp(argv[i], "--autoplay") == 0 || strcmp(argv[i], "-a") == 0) {
-				EnvironmentSetup::Set("Autoplay", "1");
-			}
-			else if (strcmp(argv[i], "--vulkan") == 0 || strcmp(argv[i], "-v") == 0) {
-				EnvironmentSetup::Set("Vulkan", "1");
-			}
-			else if (strcmp(argv[i], "--resolution") == 0) {
-				// parse next 2 argv and check
-				// if they are numbers
-
-				try {
-					auto splits = splitString(argv[i + 1], 'x');
-					int width = std::stoi(splits[0]);
-					int height = std::stoi(splits[1]);
-					EnvironmentSetup::Set("Resolution", std::to_string(width) + "x" + std::to_string(height)); // probably useless thing
-				}
-				catch (std::invalid_argument) {
-					MessageBoxA(NULL, "Invalid resolution!", "EstGame Warning", MB_ICONWARNING);
-					return -1;
-				}
-			}
-			else if (strcmp(argv[i], "--rate") == 0) {
-				try {
-					float rate = std::stof(argv[i + 1]);
-					EnvironmentSetup::Set("Rate", std::to_string(rate));
-				}
-				catch (std::invalid_argument) {
-					MessageBoxA(NULL, "Invalid rate!", "EstGame Warning", MB_ICONWARNING);
-					return -1;
-				}
-			}
-			else {
-				// check if there any file
-				std::filesystem::path arg = argv[i];
-				if (std::filesystem::exists(arg)) {
-					filePath = arg;
-				}
+			std::filesystem::path arg = argv[i];
+			if (std::filesystem::exists(arg)) {
+				filePath = arg;
+				break;
 			}
 		}
 
@@ -117,7 +78,7 @@ int Run(int argc, char* argv[]) {
 		}
 
 		if (!filePath.has_extension() || filePath.empty()) {
-			filePath = prompt(std::filesystem::current_path().wstring());
+			filePath = prompt();
 		}
 
 		if (!filePath.has_extension() || filePath.empty()) {
@@ -127,6 +88,11 @@ int Run(int argc, char* argv[]) {
 		
 		EnvironmentSetup::SetPath("FILE", filePath);
 
+		std::filesystem::path parentPath = std::filesystem::path(argv[0]).parent_path();
+		if (SetCurrentDirectoryW((LPWSTR)parentPath.wstring().c_str()) == FALSE) {
+			MessageBoxA(NULL, "Failed to set directory!", "EstGame Warning", MB_ICONWARNING);
+		}
+		
 		MyGame game;
 
 		if (game.Init()) {

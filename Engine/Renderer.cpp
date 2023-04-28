@@ -179,6 +179,26 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             "Failed to create rasterizer state"
         );
 
+        CD3D11_BLEND_DESC blendDesc = {};
+        blendDesc.AlphaToCoverageEnable = false;
+        blendDesc.IndependentBlendEnable = false;
+        blendDesc.RenderTarget[0].BlendEnable = true;
+        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		std::cout << "Create Blend State" << std::endl;
+		result = m_device->CreateBlendState(&blendDesc, &m_blendState);
+		
+		Win32Exception::ThrowIfError(
+			result,
+			"Failed to create blend state"
+		);
+
         m_states = new DirectX::CommonStates(m_device);
         return true;
     }
@@ -272,6 +292,10 @@ IDXGISwapChain* Renderer::GetSwapChain() const {
 
 ID3D11RasterizerState* Renderer::GetRasterizerState() const {
     return m_scissorState;
+}
+
+ID3D11BlendState* Renderer::GetBlendState() const {
+    return m_blendState;
 }
 
 DirectX::SpriteBatch* Renderer::GetSpriteBatch() {

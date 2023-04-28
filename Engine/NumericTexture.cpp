@@ -41,6 +41,22 @@ NumericTexture::NumericTexture(std::vector<std::string> numericsFiles) {
 	}
 }
 
+NumericTexture::NumericTexture(std::vector<std::filesystem::path> numericsPath) {
+	if (numericsPath.size() != 10) {
+		throw std::runtime_error("NumericTexture::NumericTexture: numericsFiles.size() != 10");
+	}
+
+	Position2 = UDim2::fromOffset(0, 0);
+	AnchorPoint = { 0, 0 };
+
+	m_numericsTexture.resize(10);
+	for (int i = 0; i < 10; i++) {
+		auto path = numericsPath[i];
+		m_numericsTexture[i] = new Texture2D(path);
+		m_numbericsWidth[i] = m_numericsTexture[i]->GetOriginalRECT();
+	}
+}
+
 NumericTexture::~NumericTexture() {
 	for (auto& tex : m_numericsTexture) {
 		delete tex;
@@ -65,25 +81,9 @@ void NumericTexture::DrawNumber(int number) {
 		}
 	}
 
-	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->LinearWrap(), nullptr, nullptr, [&] {
+	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->PointWrap(), nullptr, nullptr, [&] {
 		if (AlphaBlend) {
-			CD3D11_BLEND_DESC blendDesc = {};
-			blendDesc.AlphaToCoverageEnable = false;
-			blendDesc.IndependentBlendEnable = false;
-			blendDesc.RenderTarget[0].BlendEnable = true;
-			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-			ID3D11BlendState* state = nullptr;
-			renderer->GetDevice()->CreateBlendState(&blendDesc, &state);
-
-			context->OMSetBlendState(state, nullptr, 0xffffffff);
-			SAFE_RELEASE(state);
+			context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
 		}
 	});
 

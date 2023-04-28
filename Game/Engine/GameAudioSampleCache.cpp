@@ -30,7 +30,7 @@ int LastIndexOf(std::string& str, char c) {
 	return -1;
 }
 
-void GameAudioSampleCache::Load(Chart* chart) {
+void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	auto audioManager = AudioManager::GetInstance();
 	Dispose();
 
@@ -43,9 +43,13 @@ void GameAudioSampleCache::Load(Chart* chart) {
 			sample.FilePath = "Internal" + std::to_string(it.Index);
 			
 			if (audioManager->GetSample(sample.FilePath) == nullptr) {
-				auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), m_rate);
+				if (!pitch && m_rate != 1.0f) {
+					auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), m_rate);
+					if (std::get<0>(data) == 0) {
+						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
+						continue;
+					}
 
-				if (std::get<0>(data) != 0) {
 					if (!audioManager->CreateSampleFromData(
 						sample.FilePath, 
 						std::get<0>(data), 
@@ -97,14 +101,54 @@ void GameAudioSampleCache::Load(Chart* chart) {
 			if (found) {
 				sample.FilePath = path.string();
 
-				if (audioManager->GetSample(path.string() + std::to_string(it.Index)) == nullptr) {
-					if (!audioManager->CreateSample(path.string() + std::to_string(it.Index), path, &sample.Sample)) {
+				if (!pitch && m_rate != 1.0f) {
+					std::fstream fs(path, std::ios::binary | std::ios::in);
+					if (!fs.is_open()) {
+						std::cout << "Failed to open file: " << path.string() << std::endl;
+						continue;
+					}
+
+					fs.seekg(0, std::ios::end);
+					size_t size = fs.tellg();
+					fs.seekg(0, std::ios::beg);
+
+					char* buffer = new char[size];
+					fs.read(buffer, size);
+					fs.close();
+
+					auto data = BASS_FX_SampleEncoding::Encode(buffer, size, m_rate);
+					delete[] buffer;
+
+					if (std::get<0>(data) == 0) {
+						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
+						continue;
+					}
+
+					if (!audioManager->CreateSampleFromData(
+						sample.FilePath + std::to_string(it.Index),
+						std::get<0>(data),
+						std::get<1>(data),
+						std::get<2>(data),
+						std::get<3>(data),
+						std::get<4>(data),
+						&sample.Sample)) {
+
 						std::cout << "Failed to load sample: " << it.FileName << std::endl;
 						continue;
 					}
 
-					//::printf("Loading audio: %s, at index: %d\n", path.c_str(), it.Index);
 					samples[it.Index] = sample;
+				}
+				else {
+					if (audioManager->GetSample(path.string() + std::to_string(it.Index)) == nullptr) {
+						if (!audioManager->CreateSample(path.string() + std::to_string(it.Index), path, &sample.Sample)) {
+							std::cout << "Failed to load sample: " << it.FileName << std::endl;
+							continue;
+						}
+
+						sample.Sample->SetRate(m_rate);
+						samples[it.Index] = sample;
+					}
 				}
 			}
 			else {
@@ -134,8 +178,7 @@ void GameAudioSampleCache::Play(int index, int volume) {
 	}
 
 	Stop(index);
-
-	//samples[index].Sample->SetRate(m_rate);
+	
 	auto channel = samples[index].Sample->CreateChannel().release();
 	
 	sampleIndex[index] = channel;

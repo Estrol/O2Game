@@ -68,8 +68,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_autoHitIndex.clear();
 	m_autoHitInfos.clear();
 
-	int startX = 4;
-	int currentX = startX;
+	int currentX = m_laneOffset;
 	for (int i = 0; i < chart->m_keyCount; i++) {
 		m_tracks.push_back(new GameTrack( this, i, currentX ));
 		m_autoHitIndex[i] = 0;
@@ -87,7 +86,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		currentX += size;
 	}
 
-	m_playRectangle = { 0, 0, currentX, 480 };
+	m_playRectangle = { 0, 0, currentX, m_hitPosition };
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;
@@ -139,7 +138,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_currentSVMultiplier = chart->InitialSvMultiplier;
 
 	GameAudioSampleCache::SetRate(m_rate);
-	GameAudioSampleCache::Load(chart);
+	GameAudioSampleCache::Load(chart, Configuration::Load("Game", "AudioPitch") == "1");
 	
 	CreateTimingMarkers();
 	UpdateVirtualResolution();
@@ -254,8 +253,6 @@ void RhythmEngine::Update(double delta) {
 void RhythmEngine::Render(double delta) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
-	RECT playArea = { 0, 0, 198, 480 };
-
 	auto batch = Renderer::GetInstance()->GetSpriteBatch(1);
 	auto states = Renderer::GetInstance()->GetStates();
 	auto context = Renderer::GetInstance()->GetImmediateContext();
@@ -268,7 +265,7 @@ void RhythmEngine::Render(double delta) {
 		nullptr,
 		rasterizerState,
 		[&] {
-			CD3D11_RECT rect(playArea);
+			CD3D11_RECT rect(m_playRectangle);
 			context->RSSetScissorRects(1, &rect);
 		}
 	);
@@ -469,8 +466,6 @@ void RhythmEngine::UpdateGamePosition() {
 		float svMultiplier = m_currentChart->m_svs[m_currentSVIndex - 1].Value;
 		if (svMultiplier != m_currentSVMultiplier) {
 			m_currentSVMultiplier = svMultiplier;
-
-			std::cout << "SV Multiplier changed to: " << svMultiplier << "\n";
 		}
 	}
 
@@ -482,6 +477,8 @@ void RhythmEngine::UpdateGamePosition() {
 void RhythmEngine::UpdateVirtualResolution() {
 	double width = Window::GetInstance()->GetBufferHeight();
 	double height = Window::GetInstance()->GetBufferHeight();
+
+	m_gameResolution = { width, height };
 
 	float ratio = (float)width / (float)height;
 	if (ratio >= 16.0f / 9.0f) {
@@ -537,6 +534,22 @@ int* RhythmEngine::GetLaneSizes() const {
 
 int* RhythmEngine::GetLanePos() const {
 	return (int*)&m_lanePos;
+}
+
+void RhythmEngine::SetHitPosition(int offset) {
+	m_hitPosition = offset;
+}
+
+void RhythmEngine::SetLaneOffset(int offset) {
+	m_laneOffset = offset;
+}
+
+int RhythmEngine::GetHitPosition() const {
+	return m_hitPosition;
+}
+
+Vector2 RhythmEngine::GetResolution() const {
+	return m_gameResolution;
 }
 
 void RhythmEngine::Release() {

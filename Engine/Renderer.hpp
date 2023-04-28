@@ -12,6 +12,7 @@ enum class RendererMode {
 class Renderer {
 public:
 	bool Create(RendererMode mode, Window* window);
+	bool Create2(RendererMode mode, Window* window);
 	bool Resize();
 	bool Destroy();
 
@@ -24,6 +25,7 @@ public:
 	ID3D11DeviceContext* GetImmediateContext() const;
 	IDXGISwapChain* GetSwapChain() const;
 	ID3D11RasterizerState* GetRasterizerState() const;
+	ID3D11BlendState* GetBlendState() const;
 	
 	DirectX::SpriteBatch* GetSpriteBatch();
 	DirectX::SpriteBatch* GetSpriteBatch(int index);
@@ -38,7 +40,8 @@ private:
 
 	static Renderer* s_instance;
 
-	ID3D11RasterizerState* m_scissorState;
+	ID3D11BlendState* m_blendState = nullptr;
+	ID3D11RasterizerState* m_scissorState = nullptr;
 	ID3D11Device* m_device = nullptr;
 	ID3D11DeviceContext* m_immediateContext = nullptr;
 	IDXGISwapChain* m_swapChain = nullptr;

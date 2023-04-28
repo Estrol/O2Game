@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <filesystem>
 #include "../../Engine/UDim2.hpp"
 #include "../../Engine/Vector2.hpp"
 
@@ -10,6 +11,7 @@ class FrameTimer {
 public:
 	FrameTimer(std::vector<Texture2D*> frames);
 	FrameTimer(std::vector<std::string> frames);
+	FrameTimer(std::vector<std::filesystem::path> frames);
 	~FrameTimer();
 
 	bool Repeat;
@@ -19,6 +21,8 @@ public:
 	void Draw(double delta);
 	void SetFPS(float fps);
 	void ResetIndex();
+	void LastIndex();
+	void SetIndexAt(int idx);
 
 private:
 	std::vector<Texture2D*> m_frames;

@@ -23,7 +23,7 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 ### Requirements
 - vcpkg
 - Visual Studio 2022 with CXX20
-- BASS Lib from https://www.un4seen.com/
+- BASS Library from https://www.un4seen.com/
 
 ### Installing external library
 - Install DirectXTK and libcurl from vcpkg.
@@ -33,9 +33,9 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - Open project with visual studio
 - Click Compile
 - Copy BASS x64 DLL to build folder
-- Copy skins folder from my build in discord server :P
+- Copy skins folder from my build in discord server :troll:
 - Run/Debug it
-- To able use Vulkan, download and extract D3D11.dll and DXVK.dll into vulkan folder.
+- To able use Vulkan, download and extract D3D11.dll and DXGI.dll into vulkan folder.
 
 # License
 MIT License.

@@ -23,6 +23,18 @@ FrameTimer::FrameTimer(std::vector<std::string> frames) {
 	Repeat = false;
 }
 
+FrameTimer::FrameTimer(std::vector<std::filesystem::path> frames) {
+	m_frames = std::vector<Texture2D*>();
+	for (auto frame : frames) {
+		m_frames.push_back(new Texture2D(frame));
+	}
+
+	m_currentFrame = 0;
+	m_frameTime = 1.0f / 60.0;
+	m_currentTime = 0;
+	Repeat = false;
+}
+
 FrameTimer::~FrameTimer() {
 	for (auto& f : m_frames) {
 		delete f;
@@ -83,4 +95,12 @@ void FrameTimer::SetFPS(float fps) {
 
 void FrameTimer::ResetIndex() {
 	m_currentFrame = 0;
+}
+
+void FrameTimer::LastIndex() {
+	m_currentFrame = m_frames.size() - 1;
+}
+
+void FrameTimer::SetIndexAt(int idx) {
+	m_currentFrame = idx;
 }

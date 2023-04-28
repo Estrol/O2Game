@@ -1,5 +1,5 @@
 #include "Configuration.hpp"
-#include <filesystem>
+#include <iostream>
 #include "../Data/Util/mINI.h"
 
 namespace {
@@ -13,6 +13,7 @@ namespace {
 		"Window = 1280x720\n"
 		"Vulkan = 0\n"
 		"Skin = Default\n"
+		"AudioPitch = 0\n"
 		"[KeyMapping]\n"
 		"Lane1 = S\n"
 		"Lane2 = D\n"
@@ -24,22 +25,22 @@ namespace {
 		"[Debug]\n"
 		"Autoplay = 0\n"
 		"Rate = 1.0\n";
-
 }
 
 void LoadConfiguration() {
 	if (IsLoaded) return;
 
-	std::filesystem::path path = std::filesystem::current_path();
-	path.append("Game.ini");
+	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
 
 	if (!std::filesystem::exists(path)) {
+		std::cout << "Creating default configuration at path: " << path.string() << std::endl;
+
 		std::fstream fs(path, std::ios::out);
 		fs << defaultConfig;
 		fs.close();
 	}
 
-	mINI::INIFile file(path.string());
+	mINI::INIFile file(path);
 	file.read(Config);
 
 	IsLoaded = true;
@@ -56,11 +57,14 @@ void Configuration::Set(std::string key, std::string prop, std::string value) {
 
 	Config[key][prop] = value;
 
-	std::filesystem::path path = std::filesystem::current_path();
-	path.append("Game.ini");
+	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
 	
-	mINI::INIFile file(path.string());
+	mINI::INIFile file(path);
 	file.write(Config, true);
+}
+
+std::filesystem::path Configuration::Skin_GetPath(std::string name) {
+	return std::filesystem::current_path() / "Skins" / name;
 }
 
 std::string Configuration::Skin_LoadValue(std::string name, std::string key, std::string prop) {

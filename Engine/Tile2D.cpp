@@ -52,6 +52,34 @@ Tile2D::Tile2D(std::string fileName) {
 	LoadImageResources(buffer, size);
 }
 
+Tile2D::Tile2D(std::filesystem::path path) {
+	if (!std::filesystem::exists(path)) {
+		throw std::runtime_error(path.string() + " not found!");
+	}
+
+	std::fstream fs(path, std::ios::binary | std::ios::in);
+	if (!fs.is_open()) {
+		throw std::runtime_error(path.string() + " cannot opened!");
+	}
+
+	fs.seekg(0, std::ios::end);
+	size_t size = fs.tellg();
+	fs.seekg(0, std::ios::beg);
+
+	uint8_t* buffer = new uint8_t[size];
+	fs.read((char*)buffer, size);
+	fs.close();
+
+	Rotation = 0;
+	Transparency = 0.0f;
+	m_actualSize = { 0, 0, 0, 0 };
+	m_bDisposeTexture = true;
+	AlphaBlend = false;
+	TintColor = { 1.0f, 1.0f, 1.0f };
+
+	LoadImageResources(buffer, size);
+}
+
 Tile2D::Tile2D(uint8_t* fileData, size_t size) {
 	uint8_t* buffer = new uint8_t[size];
 	memcpy(buffer, fileData, size);
@@ -60,6 +88,7 @@ Tile2D::Tile2D(uint8_t* fileData, size_t size) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
+	AlphaBlend = false;
 	TintColor = { 1.0, 1.0, 1.0 };
 
 	LoadImageResources(buffer, size);
@@ -72,6 +101,7 @@ Tile2D::Tile2D(ID3D11ShaderResourceView* texture) {
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = false;
+	AlphaBlend = false;
 	TintColor = { 1.0, 1.0, 1.0 };
 }
 
@@ -128,13 +158,17 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Deferred,
 			states->NonPremultiplied(),
-			states->LinearClamp(),
+			states->PointClamp(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
 				if (clipRect) {
 					CD3D11_RECT rect(*clipRect);
 					context->RSSetScissorRects(1, &rect);
+				}
+
+				if (AlphaBlend) {
+					context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
 				}
 			}
 		);
@@ -144,6 +178,9 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	XMVECTOR position = { (float)xPos, (float)yPos, 0, 0 };
 	XMVECTOR origin = { 0.5, 0.5, 0, 0 };
 	XMVECTOR scale = { 1, 1, 1, 1 };
+
+	static const XMVECTORF32 s_half = { { { 0.5f, 0.5f, 0.f, 0.f } } };
+	position = XMVectorAdd(XMVectorTruncate(position), s_half);
 
 	try {
 		XMVECTORF32 color = { TintColor.R, TintColor.G, TintColor.B, 1.0f - Transparency };

@@ -11,8 +11,8 @@
 
 namespace {
 	float GetNotePositionAlpha(double Offset, double InitialTrackPosition, double HitPosOffset, double noteSpeed, bool upscroll = false) {
-		double pos = (HitPosOffset + ((InitialTrackPosition - Offset) * (upscroll ? noteSpeed : -noteSpeed) / 100.0)) / 1000.0;
-		return -(1 - 0.8) + pos;
+		double pos = (1000.0 + ((InitialTrackPosition - Offset) * (upscroll ? noteSpeed : -noteSpeed) / 100.0)) / 1000.0;
+		return -(1 - HitPosOffset) + pos;
 	}
 }
 
@@ -160,16 +160,21 @@ void Note::Render(double delta) {
 	if (IsRemoveable()) return;
 	if (!m_drawAble) return;
 
+	auto resolution = m_engine->GetResolution();
+	auto hitPos = m_engine->GetHitPosition();
+
+	float hitPosRatio = static_cast<float>(hitPos) / resolution.Y;
+
 	double trackPosition = m_engine->GetTrackPosition();
-	float a1 = GetNotePositionAlpha(trackPosition, m_initialTrackPosition, 1000, m_engine->GetNotespeed());
+	float a1 = GetNotePositionAlpha(trackPosition, m_initialTrackPosition, hitPosRatio, m_engine->GetNotespeed());
 	float a2 = 0.0f;
 
 	if (m_endTrackPosition != -1) {
-		a2 = GetNotePositionAlpha(trackPosition, m_endTrackPosition, 1000, m_engine->GetNotespeed());
+		a2 = GetNotePositionAlpha(trackPosition, m_endTrackPosition, hitPosRatio, m_engine->GetNotespeed());
 	}
 
 	UDim2 startOffset = UDim2::fromOffset(0, 0);
-	UDim2 endOffset = UDim2::fromOffset(0, 600);
+	UDim2 endOffset = UDim2::fromOffset(0, resolution.Y);
 
 	if (m_type == NoteType::HOLD) {
 		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
@@ -178,7 +183,7 @@ void Note::Render(double delta) {
 		float Transparency = 0.9f;
 
 		if (m_hitResult >= NoteResult::GOOD && m_state == NoteState::HOLD_ON_HOLDING) {
-			m_head->Position.Y.Offset = 480;
+			m_head->Position.Y.Offset = hitPos;
 			Transparency = 1.0f;
 		}
 

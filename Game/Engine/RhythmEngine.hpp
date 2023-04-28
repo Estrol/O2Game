@@ -51,6 +51,12 @@ public:
 
 	int* GetLaneSizes() const;
 	int* GetLanePos() const;
+
+	void SetHitPosition(int offset);
+	void SetLaneOffset(int offset);
+	int GetHitPosition() const;
+	Vector2 GetResolution() const;
+
 	GameState GetState() const;
 	ScoreManager* GetScoreManager() const;
 	std::vector<double> GetTimingWindow();
@@ -79,6 +85,8 @@ private:
 	int m_currentSVIndex = 0;
 	int m_scrollSpeed = 0;
 	int m_audioLength = 0;
+	int m_hitPosition = 0;
+	int m_laneOffset = 0;
 
 	bool m_started = false;
 	GameState m_state = GameState::NotGame;
@@ -90,6 +98,7 @@ private:
 	Audio* m_currentAudio;
 	Chart* m_currentChart;
 	Vector2 m_virtualResolution;
+	Vector2 m_gameResolution;
 	std::vector<double> m_timingPositionMarkers;
 	std::vector<GameTrack*> m_tracks;
 	std::vector<NoteInfo> m_notes;

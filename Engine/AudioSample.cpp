@@ -29,6 +29,7 @@ bool AudioSample::Create(uint8_t* buffer, size_t size) {
 		return false;
 	}
 	
+	CheckAudioTime();
 	return true;
 }
 
@@ -46,7 +47,7 @@ bool AudioSample::Create(std::filesystem::path path) {
 	uint8_t* buffer = new uint8_t[size];
 	fs.read((char*)buffer, size);
 
-	m_handle = BASS_SampleLoad(TRUE, buffer, 0, size, 10, BASS_SAMPLE_OVER_POS);
+	m_handle = BASS_SampleLoad(TRUE, buffer, 0, size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
 	if (!m_handle) {
 		delete[] buffer;
 
@@ -54,12 +55,13 @@ bool AudioSample::Create(std::filesystem::path path) {
 		return false;
 	}
 
+	CheckAudioTime();
 	delete[] buffer;
 	return true;
 }
 
 bool AudioSample::CreateFromData(int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData) {
-	m_handle = BASS_SampleCreate(sampleLength, sampleRate, sampleChannels, 10, BASS_SAMPLE_OVER_POS);
+	m_handle = BASS_SampleCreate(sampleLength, sampleRate, sampleChannels, 10, BASS_MUSIC_PRESCAN | BASS_SAMPLE_OVER_POS | sampleFlags);
 	if (!m_handle) {
 		std::cout << "Failed to create blank sample: " << BASS_ErrorGetCode() << std::endl;
 		return false;
@@ -71,6 +73,7 @@ bool AudioSample::CreateFromData(int sampleFlags, int sampleRate, int sampleChan
 		return false;
 	}
 
+	CheckAudioTime();
 	delete[] sampleData;
 	return true;
 }
@@ -95,4 +98,13 @@ std::unique_ptr<AudioSampleChannel> AudioSample::CreateChannel() {
 	}
 
 	return std::make_unique<AudioSampleChannel>(m_handle, m_rate, m_vol, m_pitch);
+}
+
+void AudioSample::CheckAudioTime() {
+	int length = BASS_ChannelGetLength(m_handle, BASS_POS_BYTE);
+	double ms = BASS_ChannelBytes2Seconds(m_handle, length) * 1000;
+
+	if (ms < 25) {
+		
+	}
 }

@@ -19,6 +19,7 @@ public:
 	std::unique_ptr<AudioSampleChannel> CreateChannel();
 
 private:
+	void CheckAudioTime();
 	std::string m_id;
 	
 	DWORD m_handle;

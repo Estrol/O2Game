@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 // Value Format: X, Y, AnchorPointX?, AnchorPointY?, TintColor?
 struct PositionValue {
@@ -27,6 +28,7 @@ struct SpriteValue {
 class SkinConfig {
 public:
 	SkinConfig(std::string filePath);
+	SkinConfig(std::filesystem::path path);
 	~SkinConfig();
 
 	PositionValue& GetPosition(std::string key);
@@ -34,6 +36,8 @@ public:
 	SpriteValue& GetSprite(std::string key);
 
 private:
+	void Load(std::filesystem::path path);
+
 	std::unordered_map<std::string, PositionValue> m_positionValues;
 	std::unordered_map<std::string, NumericValue> m_numericValues;
 	std::unordered_map<std::string, SpriteValue> m_spriteValues;

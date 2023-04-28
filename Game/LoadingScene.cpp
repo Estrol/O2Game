@@ -66,9 +66,6 @@ bool LoadingScene::Attach() {
 			return false;
 		}
 
-		std::string title = "EstRhythm - " + beatmap.Artist + " - " + beatmap.Title;
-		Window::GetInstance()->SetWindowTitle(title);
-
 		chart = new Chart(beatmap);
 	}
 
@@ -87,7 +84,10 @@ bool LoadingScene::Attach() {
 	}
 
 	std::string subTitle = chart->m_artist + " - " + chart->m_title;
-	Window::GetInstance()->SetWindowSubTitle(subTitle);
+	std::string title = "UO2C";
+
+	window->SetWindowTitle(title);
+	window->SetWindowSubTitle(subTitle);
 
 	EnvironmentSetup::SetObj("SONG", chart);
 	return true;

@@ -3,7 +3,7 @@ class Chart;
 class AudioSampleChannel;
 
 namespace GameAudioSampleCache {
-	void Load(Chart* chart);
+	void Load(Chart* chart, bool pitch);
 
 	void Play(int index, int volume);
 	void Stop(int index);

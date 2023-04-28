@@ -18,6 +18,7 @@ public:
 	NumericTexture() = default;
 	NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsTexture);
 	NumericTexture(std::vector<std::string> numericsFiles);
+	NumericTexture(std::vector<std::filesystem::path> numericsPath);
 	~NumericTexture();
 
 	UDim2 Position;

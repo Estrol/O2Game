@@ -15,6 +15,8 @@ public:
 	int GetHeight() const;
 	int GetBufferWidth() const;
 	int GetBufferHeight() const;
+	float GetWidthScale();
+	float GetHeightScale();
 
 	void SetWindowTitle(std::string& title);
 	void SetWindowSubTitle(std::string& subTitle);

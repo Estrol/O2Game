@@ -53,6 +53,33 @@ Texture2D::Texture2D(std::string fileName) {
 	LoadImageResources(buffer, size);
 }
 
+Texture2D::Texture2D(std::filesystem::path path) {
+	if (!std::filesystem::exists(path)) {
+		throw std::runtime_error(path.string() + " not found!");
+	}
+
+	std::fstream fs(path, std::ios::binary | std::ios::in);
+	if (!fs.is_open()) {
+		throw std::runtime_error(path.string() + " cannot opened!");
+	}
+
+	fs.seekg(0, std::ios::end);
+	size_t size = fs.tellg();
+	fs.seekg(0, std::ios::beg);
+
+	uint8_t* buffer = new uint8_t[size];
+	fs.read((char*)buffer, size);
+	fs.close();
+
+	Rotation = 0;
+	Transparency = 0.0f;
+	m_actualSize = { 0, 0, 0, 0 };
+	m_bDisposeTexture = true;
+	TintColor = { 1.0f, 1.0f, 1.0f };
+
+	LoadImageResources(buffer, size);
+}
+
 Texture2D::Texture2D(uint8_t* fileData, size_t size) {
 	uint8_t* buffer = new uint8_t[size];
 	memcpy(buffer, fileData, size);
@@ -110,7 +137,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 		batch->Begin(
 			SpriteSortMode_Immediate,
 			states->NonPremultiplied(),
-			states->LinearClamp(),
+			states->PointWrap(),
 			nullptr,
 			clipRect ? rasterizerState : nullptr,
 			[&] {
@@ -120,24 +147,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 				}
 
 				if (AlphaBlend) {
-					CD3D11_BLEND_DESC blendDesc = {};
-					blendDesc.AlphaToCoverageEnable = false;
-					blendDesc.IndependentBlendEnable = false;
-					blendDesc.RenderTarget[0].BlendEnable = true;
-					blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-					blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-					blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-					blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-					blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-					blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-					blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-					ID3D11BlendState* state = nullptr;
-					auto hr = renderer->GetDevice()->CreateBlendState(&blendDesc, &state);
-					Win32Exception::ThrowIfError(hr);
-
-					context->OMSetBlendState(state, nullptr, 0xffffffff);
-					SAFE_RELEASE(state);
+					context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
 				}
 			}
 		);
@@ -146,6 +156,9 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 	XMVECTOR position = { (float)m_calculatedSize.left, (float)m_calculatedSize.top, 0, 0 };
 	XMVECTOR origin = { 0.5, 0.5, 0, 0 };
 	XMVECTOR scale = { scaleX, scaleY, 1, 1 };
+
+	static const XMVECTORF32 s_half = { { { 0.5f, 0.5f, 0.f, 0.f } } };
+	position = XMVectorAdd(XMVectorTruncate(position), s_half);
 
 	try {
 		XMVECTORF32 color = { TintColor.R, TintColor.G, TintColor.B, 1.0f - Transparency };

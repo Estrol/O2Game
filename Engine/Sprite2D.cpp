@@ -22,6 +22,17 @@ Sprite2D::Sprite2D(std::vector<std::string> textures, float delay) {
 	}
 }
 
+Sprite2D::Sprite2D(std::vector<std::filesystem::path> textures, float delay) {
+	m_delay = delay;
+	Size = UDim2::fromScale(1, 1);
+	Position = UDim2::fromOffset(0, 0);
+	AnchorPoint = { 0, 0 };
+
+	for (auto& it : textures) {
+		m_textures.push_back(new Texture2D(it));
+	}
+}
+
 Sprite2D::Sprite2D(std::vector<ID3D11ShaderResourceView*> textures, float delay) {
 	m_delay = delay;
 	Size = UDim2::fromScale(1, 1);

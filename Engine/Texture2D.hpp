@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <string>
 #include <directxtk/SpriteBatch.h>
+#include <filesystem>
 
 #include "UDim2.hpp"
 #include "Vector2.hpp"
@@ -11,6 +12,7 @@ class Texture2D {
 public:
 	Texture2D();
 	Texture2D(std::string fileName);
+	Texture2D(std::filesystem::path path);
 	Texture2D(uint8_t* fileData, size_t size);
 	Texture2D(ID3D11ShaderResourceView* texture);
 	~Texture2D();

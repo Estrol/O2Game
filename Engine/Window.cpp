@@ -70,22 +70,30 @@ HWND Window::GetHandle() const {
 void Window::SetWindowTitle(std::string& title) {
 	m_mainTitle = title;
 
+	std::u8string u8title(m_mainTitle.begin(), m_mainTitle.end());
+	std::u8string u8sub(m_subTitle.begin(), m_subTitle.end());
+
 	if (m_subTitle.empty()) {
-		SDL_SetWindowTitle(m_window, m_mainTitle.c_str());
+		SDL_SetWindowTitle(m_window, (const char*)u8title.c_str());
 	}
 	else {
-		SDL_SetWindowTitle(m_window, (m_mainTitle + " - " + m_subTitle).c_str());
+		SDL_SetWindowTitle(m_window, (const char*)(u8title + u8" - " + u8sub).c_str());
 	}
 }
 
 void Window::SetWindowSubTitle(std::string& subTitle) {
 	m_subTitle = subTitle;
 
+	std::u8string u8title(m_mainTitle.begin(), m_mainTitle.end());
+	std::u8string u8sub(m_subTitle.begin(), m_subTitle.end());
+
+	std::wstring ws(m_subTitle.begin(), m_subTitle.end());
+
 	if (m_subTitle.empty()) {
-		SDL_SetWindowTitle(m_window, m_mainTitle.c_str());
+		SDL_SetWindowTitle(m_window, (const char*)u8title.c_str());
 	}
 	else {
-		SDL_SetWindowTitle(m_window, (m_mainTitle + " - " + m_subTitle).c_str());
+		SDL_SetWindowTitle(m_window, (const char*)(u8title + u8" - " + u8sub).c_str());
 	}
 }
 
@@ -103,6 +111,14 @@ int Window::GetBufferWidth() const {
 
 int Window::GetBufferHeight() const {
 	return m_bufferHeight;
+}
+
+float Window::GetWidthScale() {
+	return static_cast<float>(m_width) / static_cast<float>(m_bufferWidth);
+}
+
+float Window::GetHeightScale() {
+	return static_cast<float>(m_height) / static_cast<float>(m_bufferHeight);
 }
 
 Window* Window::GetInstance() {

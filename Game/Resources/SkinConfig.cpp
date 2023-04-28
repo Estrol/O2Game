@@ -11,54 +11,65 @@ SkinConfig::SkinConfig(std::string filePath) {
 		filePath = path + filePath;
 	}
 
-	std::filesystem::path current = std::filesystem::path(filePath).parent_path();
-	mINI::INIFile f(filePath);
+	Load(path);
+}
+
+SkinConfig::SkinConfig(std::filesystem::path path) {
+	Load(path);
+}
+
+void SkinConfig::Load(std::filesystem::path path) {
+	std::filesystem::path current = path.parent_path();
+	mINI::INIFile f(path);
 	mINI::INIStructure ini;
 	f.read(ini);
 
 	for (auto const& [key, value] : ini["Numerics"]) {
-		auto split = splitString(value, ',');
+		auto rows = splitString(value, '|');
+		for (auto& value2 : rows) {
+			auto split = splitString(value2, ',');
 
-		NumericValue e = {};
-		e.X = std::stoi(split[0]);
-		e.Y = std::stoi(split[1]);
+			NumericValue e = {};
+			e.X = std::stoi(split[0]);
+			e.Y = std::stoi(split[1]);
 
-		if (split.size() > 2) {
-			e.MaxDigit = std::stoi(split[2]);
+			if (split.size() > 2) {
+				e.MaxDigit = std::stoi(split[2]);
+			}
+			else {
+				e.MaxDigit = 0;
+				e.Direction = 0;
+				e.FillWithZero = false;
+			}
+
+			if (split.size() > 3) {
+				auto direction = split[3];
+				std::transform(direction.begin(), direction.end(), direction.begin(), ::tolower);
+
+				if (direction == "mid") e.Direction = 0;
+				else if (direction == "left") e.Direction = -1;
+				else if (direction == "right") e.Direction = 1;
+			}
+			else {
+				e.Direction = 0;
+				e.FillWithZero = false;
+			}
+
+			if (split.size() > 4) {
+				auto direction = split[4];
+				std::transform(direction.begin(), direction.end(), direction.begin(), ::tolower);
+
+				if (direction == "true") e.FillWithZero = true;
+				else if (direction == "false") e.FillWithZero = false;
+				else if (direction == "1") e.FillWithZero = true;
+				else e.FillWithZero = false;
+			}
+			else {
+				e.FillWithZero = false;
+			}
+
+			m_numericValues[key] = std::move(e);
 		}
-		else {
-			e.MaxDigit = 0;
-			e.Direction = 0;
-			e.FillWithZero = false;
-		}
-
-		if (split.size() > 3) {
-			auto direction = split[3];
-			std::transform(direction.begin(), direction.end(), direction.begin(), ::tolower);
-
-			if (direction == "mid") e.Direction = 0;
-			else if (direction == "left") e.Direction = -1;
-			else if (direction == "right") e.Direction = 1;
-		}
-		else {
-			e.Direction = 0;
-			e.FillWithZero = false;
-		}
-
-		if (split.size() > 4) {
-			auto direction = split[4];
-			std::transform(direction.begin(), direction.end(), direction.begin(), ::tolower);
-
-			if (direction == "true") e.FillWithZero = true;
-			else if (direction == "false") e.FillWithZero = false;
-			else if (direction == "1") e.FillWithZero = true;
-			else e.FillWithZero = false;
-		}
-		else {
-			e.FillWithZero = false;
-		}
-
-		m_numericValues[key] = std::move(e);
 	}
 
 	for (auto const& [key, value] : ini["Positions"]) {

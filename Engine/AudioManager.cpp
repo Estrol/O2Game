@@ -148,6 +148,8 @@ bool AudioManager::CreateSample(std::string id, std::filesystem::path path, Audi
 	}
 	else {
 		if (!audio->Create(path)) {
+			int errCode = BASS_ErrorGetCode();
+
 			delete audio;
 			return false;
 		}
