@@ -106,6 +106,27 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		
 		m_samples.push_back(sm);
 	}
+
+	for (auto& note : m_notes) {
+		switch (m_keyCount) {
+			case 4: {
+				if (note.LaneIndex >= 2) {
+					note.LaneIndex += 3;
+				}
+				break;
+			}
+
+			case 5: {
+				if (note.LaneIndex == 3) {
+					note.LaneIndex += 1;
+				}
+				else if (note.LaneIndex >= 4) {
+					note.LaneIndex += 2;
+				}
+				break;
+			}
+		}
+	}
 	
 	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
 		return a.StartTime < b.StartTime;

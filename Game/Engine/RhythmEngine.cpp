@@ -69,7 +69,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_autoHitInfos.clear();
 
 	int currentX = m_laneOffset;
-	for (int i = 0; i < chart->m_keyCount; i++) {
+	for (int i = 0; i < 7; i++) {
 		m_tracks.push_back(new GameTrack( this, i, currentX ));
 		m_autoHitIndex[i] = 0;
 

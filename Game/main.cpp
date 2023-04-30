@@ -12,10 +12,10 @@
 #include "../Engine/Win32ErrorHandling.h"
 #include "Data/Util/Util.hpp"
 
-extern "C" {
-	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
+//extern "C" {
+//	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+//	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+//}
 
 std::filesystem::path prompt() {
 	OPENFILENAME ofn;
@@ -33,7 +33,7 @@ std::filesystem::path prompt() {
 		return szFile;
 	}
 	else {
-		return "";
+		return "";	
 	}
 }
 

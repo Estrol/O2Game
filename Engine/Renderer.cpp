@@ -30,16 +30,16 @@ typedef HRESULT(*DXGI_CreateFactory2)(
 );
 
 typedef HRESULT(*D3D11_CreateDevice)(
-    IDXGIAdapter* pAdapter,
+    IDXGIAdapter*           pAdapter,
     D3D_DRIVER_TYPE         DriverType,
     HMODULE                 Software,
     UINT                    Flags,
     const D3D_FEATURE_LEVEL* pFeatureLevels,
     UINT                    FeatureLevels,
     UINT                    SDKVersion,
-    ID3D11Device** ppDevice,
-    D3D_FEATURE_LEVEL* pFeatureLevel,
-    ID3D11DeviceContext** ppImmediateContext
+    ID3D11Device**          ppDevice,
+    D3D_FEATURE_LEVEL*      pFeatureLevel,
+    ID3D11DeviceContext**   ppImmediateContext
 );
 
 constexpr auto MAIN_SPRITE_BATCH = 0;
@@ -100,10 +100,17 @@ bool Renderer::Create(RendererMode mode, Window* window) {
 		}
 
         IDXGIFactory* dxgiFactory;
-        HRESULT result = createFactory(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgiFactory));
+
+        UINT factoryFlag = 0;
+		
+#ifdef _DEBUG
+        factoryFlag |= DXGI_CREATE_FACTORY_DEBUG;
+#endif // DEBUG
+
+        HRESULT result = createFactory(factoryFlag, IID_PPV_ARGS(&dxgiFactory));
         Win32Exception::ThrowIfError(result, "Failed to create DXGI Factory!");
 
-		IDXGIAdapter* dxgiAdapter;
+	    IDXGIAdapter* dxgiAdapter;
         result = dxgiFactory->EnumAdapters(0, &dxgiAdapter);
         Win32Exception::ThrowIfError(result, "Failed to query Graphics Adapter to use!");
 
@@ -115,28 +122,30 @@ bool Renderer::Create(RendererMode mode, Window* window) {
         HWND handle = window->GetHandle();
         UINT creationFlags = 0;
 		
+#ifdef _DEBUG
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif // DEBUG
 
-        // Required for alpha blending
-        D3D_FEATURE_LEVEL level[] = {
-            D3D_FEATURE_LEVEL_12_2,
-            D3D_FEATURE_LEVEL_12_1,
-            D3D_FEATURE_LEVEL_12_0,
+        const std::vector<D3D_FEATURE_LEVEL> level = {
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1
         };
 
-		std::cout << "Create Device" << std::endl;
+	    std::cout << "Create Device" << std::endl;
         D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
 
-		result = createDevice(
+	    result = createDevice(
             dxgiAdapter, 
             D3D_DRIVER_TYPE_UNKNOWN, 
             NULL, 
             creationFlags, 
-            level, 
-            6, 
+            level.data(),
+            level.size(),
             D3D11_SDK_VERSION, 
             &m_device,
             &outLevel,
@@ -155,6 +164,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
         scd.BufferDesc.Height = window->GetBufferHeight();
         scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         scd.OutputWindow = handle;
+        scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
         scd.SampleDesc.Count = 1;
         scd.Windowed = TRUE;
 
@@ -179,7 +189,6 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             result,
             "Failed to create render target view"
         );
-
 		
 		std::cout << "Create Depth Stencil View" << std::endl;
         m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);

@@ -87,7 +87,7 @@ bool LoadingScene::Attach() {
 	std::string title = "UO2C";
 
 	window->SetWindowTitle(title);
-	window->SetWindowSubTitle(subTitle);
+	//window->SetWindowSubTitle(subTitle);
 
 	EnvironmentSetup::SetObj("SONG", chart);
 	return true;

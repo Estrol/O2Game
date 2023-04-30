@@ -14,7 +14,7 @@ Win32Exception::Win32Exception(HRESULT hr) : std::runtime_error("Win32Exception:
 	);
 
 	if (len == 0) {
-		message = "Unsuspicied!";
+		message = "Unknown error code: " + std::to_string((int)hr);
 	}
 	else {
 		message = errMsg;
