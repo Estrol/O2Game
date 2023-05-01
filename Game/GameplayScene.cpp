@@ -72,7 +72,7 @@ void GameplayScene::Render(double delta) {
 		}
 
 		m_comboTimer += delta;
-		if (m_comboTimer > 2.0) {
+		if (m_comboTimer > 1) {
 			m_drawCombo = false;
 		}
 	}
@@ -83,7 +83,7 @@ void GameplayScene::Render(double delta) {
 		m_judgement[m_judgeIndex]->Draw();
 
 		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
-		if ((m_judgeTimer += delta) > 1) {
+		if ((m_judgeTimer += delta) > 0.60) {
 			m_drawJudge = false;
 		}
 	}
@@ -94,7 +94,7 @@ void GameplayScene::Render(double delta) {
 			m_jamLogo->Draw(delta);
 		}
 
-		if ((m_jamTimer += delta) > 1) {
+		if ((m_jamTimer += delta) > 0.60) {
 			m_drawJam = false;
 		}
 	}
@@ -107,7 +107,7 @@ void GameplayScene::Render(double delta) {
 			m_lnLogo->Draw(delta);
 		}
 
-		if ((m_lnTimer += delta) > 1) {
+		if ((m_lnTimer += delta) > 0.60) {
 			m_drawLN = false;
 		}
 	}
