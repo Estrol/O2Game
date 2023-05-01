@@ -1,4 +1,4 @@
-# Unnamed O2 Clone Game
+# Unnamed O2 Clone Game (Forked from Estrol/O2Game)
 This is experimental software for playing rhythm games.
 
 Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
