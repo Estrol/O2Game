@@ -64,7 +64,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
-			m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleAdd / 2);
+			m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleAdd / 2.5);
 			m_comboLogo->Draw(delta);
 
 			m_comboNum->Position2 = UDim2::fromOffset(0, m_wiggleAdd);
