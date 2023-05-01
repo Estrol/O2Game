@@ -64,7 +64,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
-			m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleAdd);
+			m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleAdd / 2);
 			m_comboLogo->Draw(delta);
 
 			m_comboNum->Position2 = UDim2::fromOffset(0, m_wiggleAdd);
@@ -154,7 +154,7 @@ void GameplayScene::Render(double delta) {
 		SceneManager::GetInstance()->StopGame();
 	}
 
-	m_wiggleAdd = std::clamp(m_wiggleAdd + delta * -0.5, 0.0, 10.0);
+	m_wiggleAdd = std::clamp(m_wiggleAdd + delta * -0.5, 0.0, 25.0);
 	m_lnWiggleAdd = std::clamp(m_lnWiggleAdd + delta * -0.5, 0.0, 10.0);
 }
 
@@ -172,7 +172,7 @@ void GameplayScene::OnKeyUp(const KeyState& state) {
 
 bool GameplayScene::Attach() {
 	auto SkinName = Configuration::Load("Game", "Skin");
-	int LaneOffset = 3;
+	int LaneOffset = 5;
 	int HitPos = 480;
 
 	try {
@@ -496,8 +496,8 @@ bool GameplayScene::Attach() {
 		m_holdEffect[i]->Repeat = true;
 
 		int pos = lanePos[i] + (laneSize[i] / 2);
-		m_hitEffect[i]->Position = UDim2::fromOffset(pos, 480);
-		m_holdEffect[i]->Position = UDim2::fromOffset(pos, 480);
+		m_hitEffect[i]->Position = UDim2::fromOffset(pos, 465);
+		m_holdEffect[i]->Position = UDim2::fromOffset(pos, 465);
 		m_hitEffect[i]->AnchorPoint = { .5, .45 };
 		m_holdEffect[i]->AnchorPoint = { .5, .45 };
 	}
@@ -510,7 +510,7 @@ bool GameplayScene::Attach() {
 
 		m_drawCombo = true;
 		m_drawJudge = true;
-		m_wiggleAdd = 10;
+		m_wiggleAdd = 25;
 
 		m_comboLogo->Reset();
 		m_judgeIndex = (int)info.Result;

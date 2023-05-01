@@ -19,7 +19,7 @@ ScoreManager::ScoreManager() {
 	m_maxJamCombo = 0;
 
 	m_numOfPills = 0;
-	m_life = 80;
+	m_life = 100;
 
 	m_lnCombo = 0;
 	m_lnMaxCombo = 0;
@@ -33,7 +33,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
     switch (info.Result) {
 		case NoteResult::COOL: {
 			AddLife(1);
-			m_jamGauge += 5;
+			m_jamGauge += 4;
 			m_score += 100;
 			m_cool++;
 			break;
