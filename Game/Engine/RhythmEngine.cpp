@@ -132,7 +132,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	});
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
-	m_audioLength = m_notes[m_notes.size() - 1].EndTime != 0 ? m_notes[m_notes.size() - 1].EndTime : m_notes[m_notes.size() - 1].StartTime; //chart->GetLength();
+	m_audioLength = chart->GetLength();
 	m_baseBPM = chart->BaseBPM;
 	m_currentBPM = m_baseBPM;
 	m_currentSVMultiplier = chart->InitialSvMultiplier;

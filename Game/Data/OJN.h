@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "bms_struct.hpp"
 #include <map>
 #include "OJM.hpp"
 
@@ -30,18 +29,19 @@ struct BPMChange {
 	float Position;
 };
 
+enum class NoteEventType {
+	Note,
+	HoldStart,
+	HoldEnd
+};
+
 struct NoteEvent {
-	uint32_t Channel;
-
-	uint16_t Value;
-	float Pan, Vol;
-	float Position;
-	float PositionEnd;
-
-	uint8_t Type;
-
 	double Measure;
-	double MeasureEnd;
+	double Position;
+	
+	float Value;
+	int Channel;
+	NoteEventType Type;
 };
 
 struct Header {
@@ -70,9 +70,8 @@ struct Header {
 };
 
 struct O2Timing {
-	double MesStart, MesEnd;
-	double MsMarking;
-	double MsPerMark;
+	double BPM;
+	double Time;
 };
 
 struct O2Note {
@@ -90,6 +89,8 @@ struct OJNDifficulty {
 	std::vector<O2Timing> Timings;
 	std::vector<O2Sample> Samples;
 	std::vector<double> Measures;
+
+	double AudioLength = 0;
 };
 
 namespace O2 {
@@ -102,12 +103,15 @@ namespace O2 {
 
 		std::filesystem::path CurrrentDir;
 		Header Header;
+
 		bool IsValid();
 
 		std::map<int, OJNDifficulty> Difficulties = {};
 		std::vector<char> BackgroundImage = {};
 		std::vector<char> ThumbnailImage = {};
 	private:
+		void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg);
+
 		bool m_valid = false;
 	};
 }

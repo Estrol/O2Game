@@ -138,7 +138,6 @@
     <ClCompile Include="Resources\Configuration.cpp" />
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
-    <ClCompile Include="Data\bms_calculation.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
     <ClCompile Include="Data\Util\md5.cpp" />
     <ClCompile Include="Data\Util\Util.cpp" />
@@ -149,8 +148,6 @@
     <ClCompile Include="Resources\SkinConfig.cpp" />
     <ClCompile Include="ResultScene.cpp" />
     <ClInclude Include="Resources\Configuration.hpp" />
-    <ClInclude Include="Data\bms_calculation.hpp" />
-    <ClInclude Include="Data\bms_struct.hpp" />
     <ClInclude Include="Data\Util\mINI.h" />
     <ClInclude Include="Engine\DrawableLine.hpp" />
     <ClCompile Include="Engine\DrawableTile.cpp" />

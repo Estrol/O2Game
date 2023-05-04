@@ -5,16 +5,9 @@
 #include "bms_calculation.hpp"
 #include <assert.h>
 
-struct O2TimingComparer {
-	bool operator() (const O2Timing& x, const O2Timing& y) const {
-		return x.MesStart < y.MesStart;
-	}
-};
-
 using namespace O2;
 
-void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg);
-std::stringstream LoadOJNFile(std::string path);
+//std::stringstream LoadOJNFile(std::string path);
 
 OJN::OJN() {
 	Header = {};
@@ -31,14 +24,14 @@ void OJN::Load(std::filesystem::path& file) {
 
 	std::fstream fs(file, std::ios::binary | std::ios::in);
 	if (!fs.is_open()) {
-		::printf("Failed to open: %s\n", file.c_str());
+		::printf("Failed to open: %s\n", file.string().c_str());
 		return;
 	}
 
 	fs.read((char*)&Header, sizeof(Header));
 
 	if (memcmp(Header.signature, signature, 4) != 0) {
-		::printf("Invalid OJN file: %s\n", file.c_str());
+		::printf("Invalid OJN file: %s\n", file.string().c_str());
 		::printf("Dumping 1-3 byte: %c%c%c\n", Header.signature[0], Header.signature[1], Header.signature[2]);
 		return;
 	}
@@ -59,6 +52,10 @@ void OJN::Load(std::filesystem::path& file) {
 			fs.read((char*)&pkg.Measure, 4);
 			fs.read((char*)&pkg.Channel, 2);
 			fs.read((char*)&pkg.EventCount, 2);
+
+			if (pkg.EventCount == 0) {
+				__debugbreak();
+			}
 
 			for (int i = 0; i < pkg.EventCount; i++) {
 				Event ev = {};
@@ -100,239 +97,173 @@ bool OJN::IsValid() {
 	return m_valid;
 }
 
-void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
-	struct RawDiff {
-		std::vector<NoteEvent> Notes;
-		std::vector<BPMChange> BPMs;
-		std::vector<double> MeasureLists;
-	};
-
-	std::map<int, RawDiff> diffs;
-
-	// Parse note and timing data then calculate the timing list
-	for (auto& [diff, packages] : pkg) {
-		NoteEvent* hold[7] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		std::vector<BPMChange> bpmChanges = {};
-		std::vector<NoteEvent> notes = {};
-
-		BPMChange initialBPM = {};
-		initialBPM.Measure = 0;
-		initialBPM.BPM = ojn->Header.bpm;
-		bpmChanges.push_back(initialBPM);
-		std::map<int, float> TimeSignatureList = {};
-
-		std::vector<double> measureList = {};
-		measureList.push_back(0);
-
-		double currentBPM = initialBPM.BPM;
-		double currentMeasure = 0;
-		double time = 0;
-
-		const double BEATS_PER_MSEC = 4 * 60 * 1000;
-		double currentMeasureFraction = 1;
-		double currentPosition = 0;
+void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
+	std::map<int, std::vector<NoteEvent>> events;
+	for (int i = 0; i < 3; i++) {
+		auto& packages = pkg[i];
 
 		for (auto& package : packages) {
-			while (package.Measure > currentMeasure) {
-				time += (BEATS_PER_MSEC * (currentMeasureFraction - currentPosition)) / currentBPM;
-				measureList.push_back(time);
-				currentMeasure++;
+			for (int f = 0; f < package.EventCount; f++) {
+				auto& event = package.Events[f];
+				double position = static_cast<float>(f) / static_cast<float>(package.EventCount);
 
-				currentPosition = 0;
-			}
+				if (package.Channel == 1 || package.Channel == 0) {
+					if (event.BPM == 0) {
+						continue;
+					}
 
-			for (int i = 0; i < package.EventCount; i++) {
-				auto& ev = package.Events[i];
-				float position = (static_cast<float>(i) / package.EventCount);
+					NoteEvent ev = {};
+					ev.Measure = package.Measure;
+					ev.Channel = package.Channel;
+					ev.Position = position;
+					ev.Value = event.BPM;
 
-				time += (BEATS_PER_MSEC * (position - currentPosition)) / currentBPM;
-				currentPosition = position;
-
-				if (package.Channel == 0) {
-					TimeSignatureList[package.Measure] = ev.BPM;
-				}
-				else if (package.Channel == 1) {
-					if (ev.BPM == 0) continue;
-					currentBPM = ev.BPM;
-
-					BPMChange t = {};
-					t.BPM = ev.BPM;
-					t.Measure = package.Measure;
-					t.Position = position;
-
-					bpmChanges.push_back(t);
+					events[i].push_back(ev);
 				}
 				else {
-					if (ev.Value == 0) continue;
-
-					NoteEvent note = {};
-					note.Value = ev.Value - 1;
-					note.Measure = package.Measure;
-					note.Position = position;
-
-					note.Vol = ((ev.VolPan >> 4) & 0x0F) / 16.0f;
-					note.Pan = (ev.VolPan & 0x0F);
-
-					if (note.Pan == 0) {
-						note.Pan = 8;
-					}
-
-					note.Pan = (note.Pan - 8) / 8;
-					note.Type = ev.Type;
-
-					if (ev.Type % 8 > 3) {
-						note.Value += 1000;
-					}
-
-					note.Type %= 4;
-					note.Channel = package.Channel;
-
-					if (note.Type == 2 && package.Channel < 9 && hold[package.Channel - 2] == nullptr) {
-						notes.push_back(note);
-						hold[package.Channel - 2] = &notes.back();
+					if (event.Value == 0) {
 						continue;
 					}
 
-					else if (note.Type == 3 && package.Channel < 9 && hold[package.Channel - 2] != nullptr) {
-						auto prev = hold[package.Channel - 2];
-						prev->Value = note.Value;
-						prev->Pan = note.Pan;
-						prev->Vol = note.Vol;
-						prev->MeasureEnd = note.Measure;
-						prev->PositionEnd = note.Position;
-						prev->Type = 3;
+					NoteEvent ev = {};
+					ev.Measure = package.Measure;
+					ev.Channel = package.Channel;
+					ev.Position = position;
+					ev.Value = event.Value - 1;
 
-						hold[package.Channel - 2] = nullptr;
-						continue;
+					if (event.Type % 8 > 3) {
+						ev.Value += 1000;
 					}
 
-					else if (note.Type == 0) {
-						note.MeasureEnd = -1;
+					// do we need parse the VolPan here?
+					// nowdays OJN/OJM do not use VolPan like BMS
+
+					int type = event.Type % 4;
+					switch (type) {
+						case 2: {
+							ev.Type = NoteEventType::HoldStart;
+							break;
+						}
+
+						case 3: {
+							ev.Type = NoteEventType::HoldEnd;
+							break;
+						}
+
+						default: {
+							ev.Type = NoteEventType::Note;
+							break;
+						}
 					}
 
-					notes.push_back(note);
+					events[i].push_back(ev);
 				}
 			}
 		}
-
-		diffs[diff] = { notes, bpmChanges, measureList };
 	}
 
 	OJM ojm = {};
-	auto path = ojn->CurrrentDir / ojn->Header.ojm_file;
+	auto path = CurrrentDir / Header.ojm_file;
 	ojm.Load(path);
 
 	if (!ojm.IsValid()) {
 		std::cout << "[OJM] Failed to load: " << path.string() << std::endl;
 	}
 
-	std::map<int, std::vector<O2Timing>> perDifftiming;
+	// default: 240 BPM
+	const int BEATS_PER_MSEC = 4 * 60 * 1000;
 
-	// Generate timings
-	for (auto& [diff, data] : diffs) {
-		BPMChange* prev = nullptr;
-		double msTime = 0;
+	for (int i = 0; i < 3; i++) {
+		std::vector<O2Note> notes;
+		std::vector<O2Note> autoSamples;
+		std::vector<O2Timing> bpmChanges;
+		std::vector<double> measureList;
 
-		std::vector<O2Timing> timings = {};
+		bpmChanges.push_back({ Header.bpm, 0 });
+		measureList.push_back(0);
 
-		for (auto& t : data.BPMs) {
-			O2Timing timing = {};
+		double currentBPM = Header.bpm;
+		double measureFraction = 1;
+		double measurePosition = 0;
+		double timer = 0;
+		
+		double holdNotes[7] = {};
+		int currentMeasure = 0;
 
-			if (!prev) {
-				prev = &t;
+		// sort based on measure + position
+		std::vector<NoteEvent> sortedEvents = events[i];
+		std::sort(sortedEvents.begin(), sortedEvents.end(), [=](NoteEvent& ev1, NoteEvent& ev2) {
+			return (ev1.Measure + ev1.Position) < (ev2.Measure + ev2.Position);
+		});
 
-				timing.MesStart = t.Measure + t.Position;
-				timing.MsMarking = 0;
-				timing.MsPerMark = 240.0 / t.BPM * 1000.0;
-				timings.push_back(timing);
+		for (auto& event : sortedEvents) {
+			while (event.Measure > currentMeasure) {
+				timer += (BEATS_PER_MSEC * (measureFraction - measurePosition)) / currentBPM;
+				measureList.push_back(timer);
+
+				currentMeasure++;
+				measurePosition = 0;
+			}
+
+			timer += (BEATS_PER_MSEC * (event.Position - measurePosition)) / currentBPM;
+			measurePosition = event.Position;
+
+			if (event.Channel == 1) {
+				bpmChanges.push_back({ event.Value, timer });
+				currentBPM = event.Value;
+			}
+			else if (event.Channel < 9) {
+				int laneIndex = event.Channel - 2;
+
+				switch (event.Type) {
+					case NoteEventType::HoldStart: {
+						holdNotes[laneIndex] = timer;
+						break;
+					}
+
+					case NoteEventType::HoldEnd: {
+						O2Note note = {};
+						note.StartTime = holdNotes[laneIndex];
+						note.EndTime = timer;
+						note.IsLN = true;
+						note.SampleRefId = static_cast<int>(event.Value);
+						note.LaneIndex = laneIndex;
+
+						notes.push_back(note);
+						break;
+					}
+
+					default: {
+						O2Note note = {};
+						note.StartTime = timer;
+						note.IsLN = false;
+						note.SampleRefId = static_cast<int>(event.Value);
+						note.LaneIndex = laneIndex;
+
+						notes.push_back(note);
+						break;
+					}
+				}
 			}
 			else {
-				double msPerMe = 240.0 / prev->BPM * 1000.0;
-				double dt = (t.Measure + t.Position) - (prev->Measure + prev->Position);
+				O2Note sample = {};
+				sample.StartTime = timer;
+				sample.LaneIndex = -1;
+				sample.SampleRefId = static_cast<int>(event.Value);
 
-				msTime += dt * msPerMe;
-				prev = &t;
-
-				float prevMS = timings.back().MsMarking;
-				if (msTime - prevMS < 1) {
-					timings.back().MsMarking--;
-				}
-
-				timing.MesStart = t.Measure + t.Position;
-				timing.MsMarking = msTime;
-				timing.MsPerMark = 240.0 / t.BPM * 1000.0;
-				timings.push_back(timing);
+				autoSamples.push_back(sample);
 			}
 		}
+		
+		OJNDifficulty diff = {};
+		diff.AutoSamples = autoSamples;
+		diff.Notes = notes;
+		diff.Timings = bpmChanges;
+		diff.Measures = measureList;
+		diff.Samples = ojm.Samples;
+		diff.AudioLength = timer + 1000;
 
-		perDifftiming[diff] = timings;
-	}
-
-	// Generate Notes
-	for (auto& [diff, data] : diffs) {
-		auto& timings = perDifftiming[diff];
-		OJNDifficulty difficulty = {};
-
-		for (auto& note : data.Notes) {
-			O2Timing* prev = &timings[0];
-			O2Timing* next = nullptr;
-
-			O2Timing toFind = {};
-			toFind.MesStart = note.Measure + note.Position;
-
-			auto it = std::lower_bound(timings.begin(), timings.end(), toFind, O2TimingComparer());
-			if (it == timings.begin()) {
-				prev = &(*it);
-			}
-			else {
-				prev = &(*(it - 1));
-			}
-
-			if (note.Type == 3) {
-				toFind.MesStart = note.MeasureEnd + note.PositionEnd;
-
-				it = std::lower_bound(timings.begin(), timings.end(), toFind, O2TimingComparer());
-				if (it == timings.begin()) {
-					next = &(*it);
-				}
-				else {
-					next = &(*(it - 1));
-				}
-			}
-
-			O2Note n = {};
-			n.LaneIndex = note.Channel;
-
-			double sdt = (note.Measure + note.Position) - prev->MesStart;
-			double startOffset = prev->MsPerMark * sdt;
-			double hitStart = prev->MsMarking + startOffset;
-
-			n.IsLN = false;
-			n.StartTime = hitStart;
-			if (note.Type == 3) {
-				double edt = (note.MeasureEnd + note.PositionEnd) - next->MesStart;
-				double endOffset = next->MsPerMark * edt;
-				double hitEnd = next->MsMarking + endOffset;
-
-				n.IsLN = true;
-				n.EndTime = hitEnd;
-			}
-
-			n.SampleRefId = note.Value;
-			if (note.Channel > 8) {
-				difficulty.AutoSamples.push_back(n);
-			}
-			else {
-				n.LaneIndex -= 2;
-
-				difficulty.Notes.push_back(n);
-			}
-		}
-
-		difficulty.Timings = timings;
-		difficulty.Samples = ojm.Samples;
-		difficulty.Measures = data.MeasureLists;
-		ojn->Difficulties[diff] = std::move(difficulty);
+		Difficulties[i] = std::move(diff);
 	}
 }
 

@@ -156,6 +156,7 @@ Chart::Chart(BMS::BMSFile& file) {
 	m_artist = file.Artist;
 	m_backgroundFile = file.StageFile;
 	BaseBPM = file.BPM;
+	m_customMeasures = file.Measures;
 
 	int lastTime[7] = {};
 	std::sort(file.Notes.begin(), file.Notes.end(), [](const BMS::BMSNote& note1, const BMS::BMSNote note2) {
@@ -256,6 +257,7 @@ Chart::Chart(BMS::BMSFile& file) {
 		return a.StartTime < b.StartTime;
 	});
 
+	PredefinedAudioLength = file.AudioLength;
 	NormalizeTimings();
 	ComputeKeyCount();
 	ComputeHash();
@@ -301,11 +303,11 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	}
 
 	for (auto& timing : diff.Timings) {
-		float BPM = 240.0 / timing.MsPerMark * 1000.0;
+		//float BPM = 240.0 / timing.MsPerMark * 1000.0;
 
 		TimingInfo info = {};
-		info.StartTime = timing.MsMarking;
-		info.Value = BPM;
+		info.StartTime = timing.Time;
+		info.Value = timing.BPM;
 		info.TimeSignature = 4;
 		info.Type = TimingType::BPM;
 
@@ -346,6 +348,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 		return a.StartTime < b.StartTime;
 	});
 
+	PredefinedAudioLength = diff.AudioLength;
 	NormalizeTimings();
 	ComputeKeyCount();
 	ComputeHash();
@@ -356,19 +359,13 @@ Chart::~Chart() {
 }
 
 int Chart::GetLength() {
-	int length = 0;
-
-	for (auto& note : m_notes) {
-		if (note.StartTime > length) {
-			length = note.StartTime;
-		}
-
-		if (note.EndTime > length) {
-			length = note.EndTime;
-		}
+	if (PredefinedAudioLength != -1) {
+		return PredefinedAudioLength;
 	}
 
-	return length;
+	return m_notes[m_notes.size() - 1].EndTime != 0 
+		? m_notes[m_notes.size() - 1].EndTime 
+		: m_notes[m_notes.size() - 1].StartTime;
 }
 
 void Chart::ComputeHash() {

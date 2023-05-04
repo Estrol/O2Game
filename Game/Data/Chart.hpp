@@ -76,6 +76,8 @@ public:
 	std::vector<Sample> m_samples;
 	std::vector<AutoSample> m_autoSamples;
 private:
+	double PredefinedAudioLength = -1;
+
 	void ComputeHash();
 	void ComputeKeyCount();
 

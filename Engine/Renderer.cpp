@@ -80,7 +80,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             d3d11 = LoadLibraryExA("d3d11.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
         }
 
-        if (d3d11 == NULL) {
+        if (d3d11 == NULL || dxgi == NULL) {
             MessageBoxA(NULL, "Failed to load D3D11 DLLs", "EstEngine Error", MB_ICONERROR);
             return false;
         }
@@ -181,6 +181,11 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             "Failed to get back buffer"
         );
 
+        if (backBuffer == nullptr) {
+			MessageBoxA(NULL, "Error, backBuffer is NULL", "EstEngine Fatal Error", MB_ICONERROR);
+			return false;
+        }
+
 		std::cout << "Create Render Target View" << std::endl;
         result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
 
@@ -272,6 +277,11 @@ bool Renderer::Resize() {
             result,
             "Failed to get back buffer"
         );
+
+        if (backBuffer == nullptr) {
+            MessageBoxA(NULL, "Error, backBuffer is NULL", "EstEngine Fatal Error", MB_ICONERROR);
+            return false;
+        }
 
         result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
 

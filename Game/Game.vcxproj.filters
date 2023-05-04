@@ -93,9 +93,6 @@
     <ClCompile Include="Engine\DrawableTile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Data\bms_calculation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Data\OJN.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -202,12 +199,6 @@
     </ClInclude>
     <ClInclude Include="Engine\DrawableLine.hpp">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Data\bms_calculation.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Data\bms_struct.hpp">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Data\OJN.h">
       <Filter>Header Files</Filter>
