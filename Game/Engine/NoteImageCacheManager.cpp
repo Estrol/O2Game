@@ -20,7 +20,7 @@ void NoteImageCacheManager::Repool(DrawableNote* image, NoteImageType noteType) 
 
 	auto& it = m_noteTextures[noteType];
 
-	it.push_back(image);
+	it.emplace_back(image);
 }
 
 void NoteImageCacheManager::RepoolTile(DrawableTile* image, NoteImageType noteType) {
@@ -28,7 +28,7 @@ void NoteImageCacheManager::RepoolTile(DrawableTile* image, NoteImageType noteTy
 
 	auto& it = m_tileTextures[noteType];
 
-	it.push_back(image);
+	it.emplace_back(image);
 }
 
 DrawableNote* NoteImageCacheManager::Depool(NoteImageType noteType) {

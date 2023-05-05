@@ -65,6 +65,10 @@
     </ClCompile>
     <ClCompile Include="Data\bms.cpp">
       <Filter>Source Files</Filter>
+	<ClCompile Include="Data\bms_struct.cpp">
+	  <Filter>Source Files</Filter>
+	<ClCompile Include="Data\bms_calculation.cpp">
+	  <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\GameAudioSampleCache.cpp">
       <Filter>Source Files</Filter>

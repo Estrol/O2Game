@@ -250,7 +250,7 @@ static void uivector_init(uivector* p) {
 }
 
 /*returns 1 if success, 0 if failure ==> nothing done*/
-static unsigned uivector_push_back(uivector* p, unsigned c) {
+static unsigned uivector_emplace_back(uivector* p, unsigned c) {
     if (!uivector_resize(p, p->size + 1)) return 0;
     p->data[p->size - 1] = c;
     return 1;
@@ -1720,7 +1720,7 @@ static unsigned encodeLZ77(uivector* out, Hash* hash,
                 if (pos == 0) ERROR_BREAK(81);
                 if (length > lazylength + 1) {
                     /*push the previous character as literal*/
-                    if (!uivector_push_back(out, in[pos - 1])) ERROR_BREAK(83 /*alloc fail*/);
+                    if (!uivector_emplace_back(out, in[pos - 1])) ERROR_BREAK(83 /*alloc fail*/);
                 }
                 else {
                     length = lazylength;
@@ -1735,12 +1735,12 @@ static unsigned encodeLZ77(uivector* out, Hash* hash,
 
         /*encode it as length/distance pair or literal value*/
         if (length < 3) /*only lengths of 3 or higher are supported as length/distance pair*/ {
-            if (!uivector_push_back(out, in[pos])) ERROR_BREAK(83 /*alloc fail*/);
+            if (!uivector_emplace_back(out, in[pos])) ERROR_BREAK(83 /*alloc fail*/);
         }
         else if (length < minmatch || (length == 3 && offset > 4096)) {
             /*compensate for the fact that longer offsets have more extra bits, a
             length of only 3 may be not worth it then*/
-            if (!uivector_push_back(out, in[pos])) ERROR_BREAK(83 /*alloc fail*/);
+            if (!uivector_emplace_back(out, in[pos])) ERROR_BREAK(83 /*alloc fail*/);
         }
         else {
             addLengthDistance(out, length, offset);

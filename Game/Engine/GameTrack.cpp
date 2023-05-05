@@ -27,7 +27,7 @@ void GameTrack::Update(double delta) {
 		auto& note = *_note;
 
 		if (note->IsRemoveable()) {
-			m_noteCaches.push_back(note);
+			m_noteCaches.emplace_back(note);
 			_note = m_notes.erase(_note);
 		}
 		else {
@@ -174,7 +174,7 @@ void GameTrack::AddNote(NoteInfoDesc* desc) {
 		m_keySound = note->GetKeysoundId();
 	}
 
-	m_notes.push_back(note);
+	m_notes.emplace_back(note);
 }
 
 void GameTrack::ListenEvent(std::function<void(GameTrackEvent)> callback) {
