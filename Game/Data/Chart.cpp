@@ -156,7 +156,6 @@ Chart::Chart(BMS::BMSFile& file) {
 	m_artist = file.Artist;
 	m_backgroundFile = file.StageFile;
 	BaseBPM = file.BPM;
-	m_customMeasures = file.Measures;
 
 	int lastTime[7] = {};
 	std::sort(file.Notes.begin(), file.Notes.end(), [](const BMS::BMSNote& note1, const BMS::BMSNote note2) {
@@ -257,7 +256,6 @@ Chart::Chart(BMS::BMSFile& file) {
 		return a.StartTime < b.StartTime;
 	});
 
-	PredefinedAudioLength = file.AudioLength;
 	NormalizeTimings();
 	ComputeKeyCount();
 	ComputeHash();
@@ -359,13 +357,19 @@ Chart::~Chart() {
 }
 
 int Chart::GetLength() {
-	if (PredefinedAudioLength != -1) {
-		return PredefinedAudioLength;
+	int length = 0;
+
+	for (auto& note : m_notes) {
+		if (note.StartTime > length) {
+			length = note.StartTime;
+		}
+
+		if (note.EndTime > length) {
+			length = note.EndTime;
+		}
 	}
 
-	return m_notes[m_notes.size() - 1].EndTime != 0 
-		? m_notes[m_notes.size() - 1].EndTime 
-		: m_notes[m_notes.size() - 1].StartTime;
+	return length;
 }
 
 void Chart::ComputeHash() {
@@ -377,7 +381,7 @@ void Chart::ComputeHash() {
 	uint8_t data[16];
 	md5String((char*)result.c_str(), data);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	ss << std::hex << std::setfill('0');
 	for (int i = 0; i < 16; i++) {
 		ss << std::setw(2) << static_cast<int>(data[i]);

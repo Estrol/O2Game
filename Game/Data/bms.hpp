@@ -6,24 +6,9 @@
 #include <filesystem>
 
 namespace BMS {
-	struct BPMInfo {
-		int Measure;
-		double Offset;
-		double Value;
-	};
-
-	struct STOPInfo {
-		int Measure;
-		double Offset;
-		double Value;
-	};
-
-	struct BMSEvent {
-		double Measure;
-		double Position;
-		int Channel;
-		double Value;
-	};
+	struct BMSRawTiming;
+	struct BMSStop;
+	struct BMSEvent;
 
 	struct BMSTiming {
 		double StartTime;
@@ -57,12 +42,11 @@ namespace BMS {
 		std::filesystem::path CurrentDir;
 		int Level = 0;
 		float BPM = 130.0f;
-		double AudioLength = 0;
+		float TimeSignature = 0.0f;
 		
 		std::vector<BMSNote> Notes;
 		std::vector<BMSTiming> Timings;
 		std::vector<BMSAutoSample> AutoSamples;
-		std::vector<double> Measures;
 		std::map<int, std::string> Samples;
 
 	private:
@@ -79,6 +63,6 @@ namespace BMS {
 		std::vector<std::pair<std::string, std::string>> m_wavs;
 		std::unordered_map<std::string, double> m_bpms;
 		std::unordered_map<std::string, double> m_stops;
-		std::vector<BMSEvent> m_events;
+		std::map<int, std::vector<BMSEvent>> m_events;
 	};
 }
