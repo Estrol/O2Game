@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Game/Data/AutoReplay.cpp
+/Game/Data/AutoReplay.cpp.new
