@@ -57,8 +57,6 @@ private:
 
 	bool m_starting;
 	int m_judgeIndex;
-	int m_wiggleAdd;
-	int m_lnWiggleAdd;
 
 	/* Scoring */
 	bool m_drawJam;
@@ -80,4 +78,8 @@ private:
 	/* Hit/Hold Effect */
 	bool m_drawHold[7];
 	bool m_drawHit[7];
+
+	/* Fixed Animation*/
+	double m_wiggleTime;
+	double m_wiggleOffsets;
 };

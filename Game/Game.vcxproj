@@ -209,6 +209,7 @@
     <ClInclude Include="Engine\TimingLineManager.hpp" />
     <ClInclude Include="Engine\TimingLine.hpp" />
     <ClInclude Include="Resources\iterable_queue.hpp" />
+	<ResourceCompile Include="icon.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
