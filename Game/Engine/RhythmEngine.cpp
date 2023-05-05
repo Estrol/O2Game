@@ -70,7 +70,7 @@ bool RhythmEngine::Load(Chart* chart) {
 
 	int currentX = m_laneOffset;
 	for (int i = 0; i < 7; i++) {
-		m_tracks.push_back(new GameTrack( this, i, currentX ));
+		m_tracks.emplace_back(new GameTrack( this, i, currentX ));
 		m_autoHitIndex[i] = 0;
 
 		if (m_eventCallback) {
@@ -96,11 +96,11 @@ bool RhythmEngine::Load(Chart* chart) {
 	}
 
 	for (auto& note : chart->m_notes) {
-		m_notes.push_back(note);
+		m_notes.emplace_back(note);
 	}
 
 	for (auto& sample : chart->m_autoSamples) {
-		m_autoSamples.push_back(sample);
+		m_autoSamples.emplace_back(sample);
 	}
 
 	if (Configuration::Load("Debug", "Autoplay") == "1") {
@@ -110,7 +110,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		});
 
 		for (auto& hit : replay) {
-			m_autoHitInfos[hit.Lane].push_back(hit);
+			m_autoHitInfos[hit.Lane].emplace_back(hit);
 		}
 	}
 
@@ -493,12 +493,12 @@ void RhythmEngine::CreateTimingMarkers() {
 	if (m_currentChart->m_svs.size() > 0) {
 		auto& svs = m_currentChart->m_svs;
 		double pos = std::round(svs[0].StartTime * m_currentChart->InitialSvMultiplier * 100);
-		m_timingPositionMarkers.push_back(pos);
+		m_timingPositionMarkers.emplace_back(pos);
 
 		for (int i = 1; i < svs.size(); i++) {
 			pos += std::round((svs[i].StartTime - svs[i - 1].StartTime) * (svs[i - 1].Value * 100));
 
-			m_timingPositionMarkers.push_back(pos);
+			m_timingPositionMarkers.emplace_back(pos);
 		}
 	}
 }

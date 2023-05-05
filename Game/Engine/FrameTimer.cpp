@@ -14,7 +14,7 @@ FrameTimer::FrameTimer(std::vector<Texture2D*> frames) {
 FrameTimer::FrameTimer(std::vector<std::string> frames) {
 	m_frames = std::vector<Texture2D*>();
 	for (auto frame : frames) {
-		m_frames.push_back(new Texture2D(frame));
+		m_frames.emplace_back(new Texture2D(frame));
 	}
 	
 	m_currentFrame = 0;
@@ -26,7 +26,7 @@ FrameTimer::FrameTimer(std::vector<std::string> frames) {
 FrameTimer::FrameTimer(std::vector<std::filesystem::path> frames) {
 	m_frames = std::vector<Texture2D*>();
 	for (auto frame : frames) {
-		m_frames.push_back(new Texture2D(frame));
+		m_frames.emplace_back(new Texture2D(frame));
 	}
 
 	m_currentFrame = 0;

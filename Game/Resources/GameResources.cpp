@@ -86,7 +86,7 @@ ESTHANDLE* InternalLoadFileData(OPIFile* file, std::ifstream* stream) {
 				*(int*)(buffer + offset + 12), // FrameSize
 			};
 
-			ojs->Frames.push_back(std::make_unique<OJSFrame>(frame));
+			ojs->Frames.emplace_back(std::make_unique<OJSFrame>(frame));
 
 			ojs->Frames[i].get()->Buffer = new uint8_t[ojs->Frames[i].get()->FrameSize];
 			memcpy(ojs->Frames[i].get()->Buffer, buffer + tmpStartOffset + ojs->Frames[i].get()->FrameOffset, ojs->Frames[i].get()->FrameSize);
@@ -116,7 +116,7 @@ ESTHANDLE* InternalLoadFileData(OPIFile* file, std::ifstream* stream) {
 			stream->read((char*)&bound.Width, 4);
 			stream->read((char*)&bound.Height, 4);
 
-			bnd->Coordinates.push_back(bound);
+			bnd->Coordinates.emplace_back(bound);
 		}
 
 		return (ESTHANDLE*)bnd;
@@ -217,7 +217,7 @@ namespace GameInterfaceResource {
 
 			file->seekg(8, std::ios::cur);
 
-			files.push_back(idx);
+			files.emplace_back(idx);
 		}
 
 		return true;
@@ -331,7 +331,7 @@ namespace GamePlayingResource {
 
 			file->seekg(8, std::ios::cur);
 
-			files.push_back(idx);
+			files.emplace_back(idx);
 		}
 
 		return true;
