@@ -13,12 +13,18 @@ namespace {
 		return SDL_Init(SDL_INIT_EVERYTHING) == 0;
 	}
 
+	//Improve accuracy frame limiter
 	double FrameLimit(double MaxFrameRate) {
 		double newTick = SDL_GetTicks();
 		double deltaTick = 1000.0 / MaxFrameRate - (newTick - lastTick);
 
-		if (floor(deltaTick) > 0) {
-			SDL_Delay((DWORD)floor(deltaTick));
+		if (deltaTick > 0.0) {
+			int delayTicks = (int)deltaTick;
+			if (delayTicks > 0) {
+				SDL_Delay(delayTicks);
+				newTick += delayTicks;
+				deltaTick -= delayTicks;
+			}
 		}
 
 		if (deltaTick < -30.0) {

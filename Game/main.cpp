@@ -24,7 +24,7 @@ std::filesystem::path prompt() {
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;
-	ofn.lpstrFilter = L"O2-JAM files (*.ojn)\0*.ojn\0Osu files (*.osu)\0*.osu\0BMS files (*.bms|*.bme|*.bml)\0*.bms;*.bme;*.bml\0All files (*.*)\0*.*\0";   // set the file filter
+	ofn.lpstrFilter = L"All Supported Files (*.ojn;*.osu;*.bms;*.bme;*.bml;*)\0*.ojn;*.osu;*.bms;*.bme;*.bml\0";
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;

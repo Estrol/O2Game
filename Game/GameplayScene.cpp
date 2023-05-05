@@ -20,8 +20,8 @@ GameplayScene::GameplayScene() : Scene::Scene() {
 	m_keyState = {};
 	m_game = nullptr;
 	m_drawJam = false;
-	m_wiggleAdd = 0;
-	m_lnWiggleAdd = 0;
+	m_wiggleTime = 0;
+	m_wiggleOffsets = 0;
 }
 
 void GameplayScene::Update(double delta) {
@@ -64,15 +64,29 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
-			m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleAdd);
-			m_comboLogo->Draw(delta);
+			double m_wiggleTime = m_comboTimer * 50; // Combo animated by Frame per second
+			double m_wiggleOffset = std::sin(m_wiggleTime) * 25.0; // Amplitude 
 
-			m_comboNum->Position2 = UDim2::fromOffset(0, m_wiggleAdd);
-			m_comboNum->DrawNumber(std::get<7>(scores));
+			if (m_wiggleTime < M_PI) {
+				m_comboLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
+				m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset / 2.5);
+				m_comboLogo->Draw(delta);
+
+				m_comboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_comboNum->DrawNumber(std::get<7>(scores));
+			}
+			else {
+				m_comboLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
+				m_comboLogo->Position2 = UDim2::fromOffset(0, 0);
+				m_comboLogo->Draw(delta);
+
+				m_comboNum->Position2 = UDim2::fromOffset(0, 0);
+				m_comboNum->DrawNumber(std::get<7>(scores));
+			}
 		}
 
 		m_comboTimer += delta;
-		if (m_comboTimer > 2.0) {
+		if (m_comboTimer > 1) {
 			m_drawCombo = false;
 		}
 	}
@@ -83,7 +97,7 @@ void GameplayScene::Render(double delta) {
 		m_judgement[m_judgeIndex]->Draw();
 
 		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
-		if ((m_judgeTimer += delta) > 1) {
+		if ((m_judgeTimer += delta) > 0.60) {
 			m_drawJudge = false;
 		}
 	}
@@ -94,20 +108,36 @@ void GameplayScene::Render(double delta) {
 			m_jamLogo->Draw(delta);
 		}
 
-		if ((m_jamTimer += delta) > 1) {
+		if ((m_jamTimer += delta) > 0.60) {
 			m_drawJam = false;
 		}
 	}
 
 	if (m_drawLN) {
 		if (std::get<9>(scores) > 0) {
-			m_lnComboNum->Position2 = UDim2::fromOffset(0, m_lnWiggleAdd);
-			m_lnComboNum->DrawNumber(std::get<9>(scores));
-			m_lnLogo->Position2 = UDim2::fromOffset(0, m_lnWiggleAdd);
-			m_lnLogo->Draw(delta);
+			double m_wiggleTime = m_lnTimer * 100; // LNCombo animated by Frame per second
+			double m_wiggleOffset = std::sin(m_wiggleTime) * 10.0; // Amplitude 
+
+			if (m_wiggleTime < M_PI) {
+				m_lnLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
+				m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_lnLogo->Draw(delta);
+
+				m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_lnComboNum->DrawNumber(std::get<9>(scores));
+			}
+			else {
+				m_lnLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
+				m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
+				m_lnLogo->Draw(delta);
+
+				m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
+				m_lnComboNum->DrawNumber(std::get<9>(scores));
+			}
 		}
 
-		if ((m_lnTimer += delta) > 1) {
+		m_lnTimer += delta;
+		if (m_lnTimer > 0.60) {
 			m_drawLN = false;
 		}
 	}
@@ -153,9 +183,6 @@ void GameplayScene::Render(double delta) {
 	if (m_game->GetState() == GameState::PosGame) {
 		SceneManager::GetInstance()->StopGame();
 	}
-
-	m_wiggleAdd = std::clamp(m_wiggleAdd + delta * -0.5, 0.0, 10.0);
-	m_lnWiggleAdd = std::clamp(m_lnWiggleAdd + delta * -0.5, 0.0, 10.0);
 }
 
 void GameplayScene::Input(double delta) {
@@ -172,7 +199,7 @@ void GameplayScene::OnKeyUp(const KeyState& state) {
 
 bool GameplayScene::Attach() {
 	auto SkinName = Configuration::Load("Game", "Skin");
-	int LaneOffset = 3;
+	int LaneOffset = 5;
 	int HitPos = 480;
 
 	try {
@@ -496,8 +523,8 @@ bool GameplayScene::Attach() {
 		m_holdEffect[i]->Repeat = true;
 
 		int pos = lanePos[i] + (laneSize[i] / 2);
-		m_hitEffect[i]->Position = UDim2::fromOffset(pos, 480);
-		m_holdEffect[i]->Position = UDim2::fromOffset(pos, 480);
+		m_hitEffect[i]->Position = UDim2::fromOffset(pos, 465);
+		m_holdEffect[i]->Position = UDim2::fromOffset(pos, 465);
 		m_hitEffect[i]->AnchorPoint = { .5, .45 };
 		m_holdEffect[i]->AnchorPoint = { .5, .45 };
 	}
@@ -510,7 +537,6 @@ bool GameplayScene::Attach() {
 
 		m_drawCombo = true;
 		m_drawJudge = true;
-		m_wiggleAdd = 10;
 
 		m_comboLogo->Reset();
 		m_judgeIndex = (int)info.Result;
@@ -523,7 +549,6 @@ bool GameplayScene::Attach() {
 
 	m_game->GetScoreManager()->ListenLongNote([&] {
 		m_lnTimer = 0;
-		m_lnWiggleAdd = 10;
 		m_drawLN = true;
 	});
 
