@@ -91,28 +91,6 @@ void GameplayScene::Render(double delta) {
 		}
 	}
 
-	if (m_drawJudge) {
-		m_judgement[m_judgeIndex]->Size = UDim2::fromScale(m_judgeSize, m_judgeSize);
-		m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
-		m_judgement[m_judgeIndex]->Draw();
-
-		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
-		if ((m_judgeTimer += delta) > 0.60) {
-			m_drawJudge = false;
-		}
-	}
-
-	if (m_drawJam) {
-		if (std::get<5>(scores) > 0) {
-			m_jamNum->DrawNumber(std::get<5>(scores));
-			m_jamLogo->Draw(delta);
-		}
-
-		if ((m_jamTimer += delta) > 0.60) {
-			m_drawJam = false;
-		}
-	}
-
 	if (m_drawLN) {
 		if (std::get<9>(scores) > 0) {
 			double m_wiggleTime = m_lnTimer * 100; // LNCombo animated by Frame per second
@@ -139,6 +117,28 @@ void GameplayScene::Render(double delta) {
 		m_lnTimer += delta;
 		if (m_lnTimer > 0.60) {
 			m_drawLN = false;
+		}
+	}
+
+	if (m_drawJam) {
+		if (std::get<5>(scores) > 0) {
+			m_jamNum->DrawNumber(std::get<5>(scores));
+			m_jamLogo->Draw(delta);
+		}
+
+		if ((m_jamTimer += delta) > 0.60) {
+			m_drawJam = false;
+		}
+	}
+
+	if (m_drawJudge) {
+		m_judgement[m_judgeIndex]->Size = UDim2::fromScale(m_judgeSize, m_judgeSize);
+		m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
+		m_judgement[m_judgeIndex]->Draw();
+
+		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
+		if ((m_judgeTimer += delta) > 0.60) {
+			m_drawJudge = false;
 		}
 	}
 
@@ -543,8 +543,8 @@ bool GameplayScene::Attach() {
 	});
 
 	m_game->GetScoreManager()->ListenJam([&](int combo) {
-		m_drawJam = true;
 		m_jamTimer = 0;
+		m_drawJam = true;
 	});
 
 	m_game->GetScoreManager()->ListenLongNote([&] {
