@@ -2,9 +2,9 @@
 #undef NDEBUG
 #include <windows.h>
 #include <commdlg.h>
-//#include <curlpp/cURLpp.hpp>
-//#include <curlpp/Easy.hpp>
-//#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
 #include "MyGame.h"
 #include "EnvironmentSetup.hpp"
 #include "Data/bms.hpp"
@@ -37,26 +37,26 @@ std::filesystem::path prompt() {
 	}
 }
 
-//bool API_Query() {
-//	std::cout << "[Auth] Authenticating session to /~estrol-game/authorize-access" << std::endl;
-//
-//	try {
-//		curlpp::Cleanup myCleanup;
-//		curlpp::Easy myRequest;
-//
-//		curlpp::options::Url url("https://cdn.estrol.dev/~estrol-game/authorize-access");
-//		myRequest.setOpt(url);
-//		
-//		std::ostringstream os;
-//		os << myRequest;
-//		std::string response = os.str();
-//
-//		return response == "{\"error\": 200, \"message\": \"OK\"}";
-//	}
-//	catch (curlpp::RuntimeError) {
-//		return false;
-//	}
-//}
+bool API_Query() {
+	std::cout << "[Auth] Authenticating session to /~estrol-game/authorize-access" << std::endl;
+
+	try {
+		curlpp::Cleanup myCleanup;
+		curlpp::Easy myRequest;
+
+		curlpp::options::Url url("https://cdn.estrol.dev/~estrol-game/authorize-access");
+		myRequest.setOpt(url);
+		
+		std::ostringstream os;
+		os << myRequest;
+		std::string response = os.str();
+
+		return response == "{\"error\": 200, \"message\": \"OK\"}";
+	}
+	catch (curlpp::RuntimeError) {
+		return false;
+	}
+}
 
 int Run(int argc, char* argv[]) {
 	try {
@@ -72,10 +72,10 @@ int Run(int argc, char* argv[]) {
 			}
 		}
 
-		//if (!API_Query()) {
-		//	MessageBoxA(NULL, "Failed to authenticate!", "EstGame Error", MB_ICONERROR);
-		//	return -1;
-		//}
+		if (!API_Query()) {
+			MessageBoxA(NULL, "Failed to authenticate!", "EstGame Error", MB_ICONERROR);
+			return -1;
+		}
 
 		if (!filePath.has_extension() || filePath.empty()) {
 			filePath = prompt();
