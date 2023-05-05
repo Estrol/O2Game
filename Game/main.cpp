@@ -96,7 +96,7 @@ int Run(int argc, char* argv[]) {
 		MyGame game;
 
 		if (game.Init()) {
-			game.Run(360.0);
+			game.Run(2000.0);
 		}
 
 		CoUninitialize();
