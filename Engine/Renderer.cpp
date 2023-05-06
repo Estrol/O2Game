@@ -5,6 +5,8 @@
 #include <dxgi1_3.h>
 #include <wrl.h>
 #include "Win32ErrorHandling.h"
+#include "Imgui/imgui_impl_sdl2.h"
+#include "Imgui/imgui_impl_dx11.h"
 #include <iostream>
 
 #pragma comment(lib, "dxguid.lib")
@@ -249,6 +251,28 @@ bool Renderer::Create(RendererMode mode, Window* window) {
 			result,
 			"Failed to create blend state"
 		);
+
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+        // Manually set the display size
+        io.DisplaySize.x = window->GetBufferWidth();
+        io.DisplaySize.y = window->GetBufferHeight();
+        io.DisplayOutputSize.x = window->GetWidth();
+        io.DisplayOutputSize.y = window->GetHeight();
+
+        ImGui::StyleColorsDark();
+
+        if (!ImGui_ImplSDL2_InitForD3D(window->GetWindow())) {
+			std::cout << "Failed to init ImGui SDL2" << std::endl;
+			return false;
+        }
+		
+        if (!ImGui_ImplDX11_Init(m_device, m_immediateContext)) {
+			std::cout << "Failed to init ImGui DX11" << std::endl;
+			return false;
+        }
 
         m_states = new DirectX::CommonStates(m_device);
         return true;

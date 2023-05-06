@@ -62,6 +62,11 @@ void GameplayScene::Render(double delta) {
 		m_statsNum->DrawNumber(std::get<8>(scores));
 	}
 
+	int numOfPills = m_game->GetScoreManager()->GetPills();
+	for (int i = 0; i < numOfPills; i++) {
+		m_pills[i]->Draw();
+	}
+
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
 			double m_wiggleTime = m_comboTimer * 50; // Combo animated by Frame per second
@@ -175,10 +180,11 @@ void GameplayScene::Render(double delta) {
 		m_hitEffect[i]->Draw(delta);
 	}
 
-	int numOfPills = m_game->GetScoreManager()->GetPills();
-	for (int i = 0; i < numOfPills; i++) {
-		m_pills[i]->Draw();
-	}
+	m_text->Position = UDim2::fromOffset(437, 539);
+	//m_text->Position = UDim2::fromOffset(50, 50);
+	//m_text->AnchorPoint = { 0.0, 1.0 };
+	//m_text->Size = UDim2::fromOffset(200, 13);
+	m_text->Draw(m_game->GetTitle());
 
 	if (m_game->GetState() == GameState::PosGame) {
 		SceneManager::GetInstance()->StopGame();
@@ -219,6 +225,8 @@ bool GameplayScene::Attach() {
 		m_drawHold[i] = false;
 		m_drawHit[i] = false;
 	}
+
+	m_text = new Text(skinPath / "Fonts" / "CourierNew.spritefont");
 
 	m_playBG = new Texture2D(playingPath / "PlayingBG.png");
 	for (int i = 0; i < 7; i++) {

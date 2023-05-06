@@ -4,6 +4,8 @@
 #include "framework.h"
 #include "Window.hpp"
 #include "AudioManager.hpp"
+#include "Imgui/imgui_impl_sdl2.h"
+#include "Imgui/imgui_impl_dx11.h"
 
 namespace {
 	thread_local double curTick = 0.0;
@@ -100,7 +102,9 @@ bool Game::Init() {
 	m_sceneManager->SetParent(this);
 
 	std::cout << "AudioManager::Create << " << std::endl;
-	AudioManager::GetInstance()->Init(m_window);
+	if (!AudioManager::GetInstance()->Init(m_window)) {
+		return false;
+	}
 	
 	return true;
 }
@@ -123,6 +127,7 @@ void Game::Run(double frameRate) {
 		}
 	});
 
+	bool show_demo_window = true;
 	m_renderThread = std::thread([&] {
 		while (m_running) {
 			if (m_threadMode == ThreadMode::MULTI_THREAD) {
@@ -131,7 +136,15 @@ void Game::Run(double frameRate) {
 				Update(delta);
 				
 				m_renderer->BeginRender();
+				ImGui_ImplDX11_NewFrame();
+				ImGui::NewFrame();
+
 				Render(delta);
+
+				ImGui::ShowDemoWindow(&show_demo_window);
+
+				ImGui::Render();
+				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 				m_renderer->EndRender();
 			}
 			else {
@@ -160,6 +173,7 @@ void Game::Run(double frameRate) {
 					break;
 			}
 
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}
 

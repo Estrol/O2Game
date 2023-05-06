@@ -261,7 +261,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		diff.Timings = bpmChanges;
 		diff.Measures = measureList;
 		diff.Samples = ojm.Samples;
-		diff.AudioLength = timer + 1000;
+		diff.AudioLength = timer + 500;
 
 		Difficulties[i] = std::move(diff);
 	}

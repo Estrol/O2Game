@@ -40,18 +40,6 @@ void GameTrack::Update(double delta) {
 				}
 			}
 
-			/*if (note->GetType() == NoteType::HOLD && !note->IsHoldEffectDrawable()) {
-				if (m_callback) {
-					GameTrackEvent e = {};
-					e.Lane = m_laneIndex;
-					e.State = false;
-					e.IsHitLongEvent = true;
-					e.IsHitEvent = true;
-
-					m_callback(e);
-				}
-			}*/
-
 			if (note->GetStartTime() <= m_engine->GetGameAudioPosition()) {
 				m_keySound = note->GetKeysoundId();
 			}

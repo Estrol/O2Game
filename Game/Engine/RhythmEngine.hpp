@@ -56,6 +56,7 @@ public:
 	void SetLaneOffset(int offset);
 	int GetHitPosition() const;
 	Vector2 GetResolution() const;
+	std::wstring GetTitle() const;
 
 	GameState GetState() const;
 	ScoreManager* GetScoreManager() const;

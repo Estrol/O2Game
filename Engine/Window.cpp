@@ -1,6 +1,7 @@
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include <SDL2/SDL_syswm.h>
+#include "Imgui/imgui_impl_sdl2.h"
 
 Window::Window() {
 	m_window = nullptr;
@@ -41,7 +42,7 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 
 		return false;
 	}
-
+	
 	return true;
 }
 

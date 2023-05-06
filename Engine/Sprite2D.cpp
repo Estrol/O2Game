@@ -76,9 +76,8 @@ void Sprite2D::Draw(double delta, RECT* rect, bool manual) {
 
 	if (m_current >= m_delay) {
 		m_current = 0;
-		m_currentIndex += 1;
-
-		if (m_currentIndex >= m_textures.size()) {
+		
+		if (++m_currentIndex >= m_textures.size()) {
 			m_currentIndex = 0;
 		}
 	}

@@ -6,6 +6,7 @@
 #include "Engine/RhythmEngine.hpp"
 #include "Engine/O2NumericTexture.hpp"
 #include "Engine/FrameTimer.hpp"
+#include "../Engine/Text.hpp"
 
 struct ManiaKeyState {
 	Keys key;
@@ -53,6 +54,9 @@ private:
 	NumericTexture* m_jamNum;
 	NumericTexture* m_scoreNum;
 	NumericTexture* m_comboNum;
+
+	Text* m_text;
+
 	RhythmEngine* m_game;
 
 	bool m_starting;

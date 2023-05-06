@@ -1,5 +1,6 @@
 ﻿#define _CRTDBG_MAP_ALLOC
 #undef NDEBUG
+#include <algorithm>
 #include <windows.h>
 #include <commdlg.h>
 #include <curlpp/cURLpp.hpp>
@@ -11,6 +12,7 @@
 #include <filesystem>
 #include "../Engine/Win32ErrorHandling.h"
 #include "Data/Util/Util.hpp"
+#include "Resources/Configuration.hpp"
 
 //extern "C" {
 //	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -96,7 +98,8 @@ int Run(int argc, char* argv[]) {
 		MyGame game;
 
 		if (game.Init()) {
-			game.Run(2000.0);
+			double frameLimit = std::atof(Configuration::Load("Game", "FrameLimit").c_str());
+			game.Run(frameLimit);
 		}
 
 		CoUninitialize();

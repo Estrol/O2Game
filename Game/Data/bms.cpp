@@ -248,7 +248,6 @@ namespace BMS {
 		const std::vector<int> PlayfieldChannel = { 11, 12, 13, 14, 15, 18, 19 };
 		const std::vector<int> PlayfieldHoldChannel = { 51, 52, 53, 54, 55, 58, 59 };
 		const std::vector<int> ScratchChannel = { 16, 56 };
-		BMSNote* PendingHold[7] = {};
 
 		constexpr auto IsExist = [](const std::vector<int>& vec, int value, int* index) {
 			auto it = std::find(vec.begin(), vec.end(), value);
@@ -277,16 +276,17 @@ namespace BMS {
 		double measurePosition = 0;
 		double timer = 0;
 
-		double holdNotes[7] = {};
+		double holdNotes[7] = { -1, -1, -1, -1, -1, -1, -1 };
 		int currentMeasure = 0;
 		
 		std::sort(m_events.begin(), m_events.end(), [](const auto& a, const auto& b) {
 			float aPos = (a.Measure + a.Position), bPos = (b.Measure + b.Position);
 
-			// Check if it's STOP channel to prevent note in same position hit after STOP channel.
+			// Any scrolling modifier must be behind the notes if same position
+			// I hope there will no be any conflict with this :troll:
 			if (aPos == bPos) {
-				if (a.Channel == 9) return false;
-				if (b.Channel == 9) return true;
+				if (a.Channel == 3 || a.Channel == 8 || a.Channel == 9) return false;
+				if (b.Channel == 3 || b.Channel == 8 || b.Channel == 9) return true;
 
 				return a.Channel < b.Channel;
 			}
@@ -406,7 +406,13 @@ namespace BMS {
 			}
 		}
 
-		AudioLength = timer + 1000;
+		AudioLength = timer + 500;
+
+		for (int i = 0; i < 7; i++) {
+			if (holdNotes[i] != -1) {
+				std::cout << "[BMS] [Warning] Unreleased hold note at index: " << i << ", time: " << holdNotes[i] << std::endl;
+			}
+		}
 	}
 
 	void BMSFile::VerifyNote() {

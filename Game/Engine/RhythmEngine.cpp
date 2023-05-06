@@ -552,6 +552,18 @@ Vector2 RhythmEngine::GetResolution() const {
 	return m_gameResolution;
 }
 
+std::wstring RhythmEngine::GetTitle() const {
+	std::string originText = m_currentChart->m_title;
+	std::wstring resultText = { originText.begin(), originText.end() };
+
+	if (m_rate != 1.0) {
+		float rouned = std::round(m_rate * 100.0f) / 100.0f;
+		resultText = L"[" + std::to_wstring(rouned) + L"x] " + resultText;
+	}
+
+	return resultText;
+}
+
 void RhythmEngine::Release() {
 	for (int i = 0; i < m_tracks.size(); i++) {
 		delete m_tracks[i];

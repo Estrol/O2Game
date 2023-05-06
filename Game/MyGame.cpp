@@ -72,6 +72,8 @@ bool MyGame::Init() {
 }
 
 void MyGame::Run(double frameRate) {
+	frameRate = std::clamp(frameRate, 15.0, 1500.0);
+
 	Game::Run(frameRate);
 }
 
