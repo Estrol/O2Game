@@ -17,10 +17,10 @@ IntroScene::IntroScene() {
 }
 
 void IntroScene::Render(double delta) {
-	m_text->Position = UDim2::fromOffset(5, 50);
-	m_text->Draw("Unnamed O2 Clone Alpha version 0.5");
+	m_text->Position = UDim2::fromOffset(5, 5);
+	m_text->Draw("Unnamed O2 Clone (Beta 3)");
 
-	m_text->Position = UDim2::fromOffset(5, 65);
+	m_text->Position = UDim2::fromOffset(5, 15);
 	if (IsReady) {
 		m_text->Draw("Press Any key to continue");
 	}
