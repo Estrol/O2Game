@@ -16,7 +16,7 @@ NoteInfo* GetNextHitObject(std::vector<NoteInfo>& hitObject, int index) {
 
 double CalculateReleaseTime(NoteInfo* currentHitObject, NoteInfo* nextHitObject) {
 	if (currentHitObject->Type == NoteType::HOLD) {
-		return currentHitObject->EndTime;
+		return currentHitObject->EndTime - 1;
 	}
 
 	double Time = currentHitObject->StartTime;

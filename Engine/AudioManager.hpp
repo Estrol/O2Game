@@ -24,6 +24,7 @@ public:
 
 	bool Remove(std::string id);
 	bool RemoveSample(std::string id);
+	bool RemoveAll();
 
 	static AudioManager* GetInstance();
 	static void Release();

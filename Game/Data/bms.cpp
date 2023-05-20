@@ -285,8 +285,8 @@ namespace BMS {
 			// Any scrolling modifier must be behind the notes if same position
 			// I hope there will no be any conflict with this :troll:
 			if (aPos == bPos) {
-				if (a.Channel == 3 || a.Channel == 8 || a.Channel == 9) return false;
-				if (b.Channel == 3 || b.Channel == 8 || b.Channel == 9) return true;
+				if (a.Channel == 9) return false;
+				if (b.Channel == 9) return true;
 
 				return a.Channel < b.Channel;
 			}
@@ -340,6 +340,26 @@ namespace BMS {
 					break;
 				}
 
+				case 9: {
+					BMSTiming startTiming = {};
+					startTiming.StartTime = timer;
+					startTiming.Value = 0;
+					startTiming.TimeSignature = measureFraction;
+
+					double stopTime = (event.Value / 192.0) * BEATS_PER_MSEC / currentBPM;
+
+					BMSTiming endTiming = {};
+					endTiming.StartTime = timer + stopTime;
+					endTiming.Value = currentBPM;
+					endTiming.TimeSignature = measureFraction;
+
+					Timings.push_back(startTiming);
+					Timings.push_back(endTiming);
+
+					timer += stopTime;
+					break;
+				}
+
 				default: {
 					int laneIndex = -1;
 
@@ -381,25 +401,6 @@ namespace BMS {
 							AutoSamples.push_back(sample);
 						}
 						break;
-					}
-
-					if (event.Channel == 9) {
-						BMSTiming startTiming = {};
-						startTiming.StartTime = timer;
-						startTiming.Value = 0;
-						startTiming.TimeSignature = measureFraction;
-
-						double stopTime = (event.Value / 192.0) * BEATS_PER_MSEC / currentBPM;
-
-						BMSTiming endTiming = {};
-						endTiming.StartTime = timer + stopTime;
-						endTiming.Value = currentBPM;
-						endTiming.TimeSignature = measureFraction;
-
-						Timings.push_back(startTiming);
-						Timings.push_back(endTiming);
-
-						timer += stopTime;
 					}
 					break;
 				}

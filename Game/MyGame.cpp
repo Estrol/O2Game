@@ -1,15 +1,22 @@
 #include "MyGame.h"
 #include "GameScenes.h"
+#include <fstream>
 
-/* Scenes */
-#include "GameplayScene.h"
-#include "LoadingScene.h"
+#include "../Engine/FontResources.hpp"
 
-#include "Resources/GameResources.hpp"
+#include "./Resources/GameResources.hpp"
+#include "./Resources/Configuration.hpp"
+#include "./Data/Util/Util.hpp"
+#include "./Data/MusicDatabase.h"
 #include "EnvironmentSetup.hpp"
 
-#include "Data/Util/Util.hpp"
-#include "Resources/Configuration.hpp"
+/* Scenes */
+#include "./Scenes/GameplayScene.h"
+#include "./Scenes/LoadingScene.h"
+#include "./Scenes/SongSelectScene.h"
+#include "./Scenes/IntroScene.hpp"
+#include "./Scenes/ResultScene.hpp"
+
 
 MyGame::~MyGame() {
 	GameNoteResource::Dispose();
@@ -63,9 +70,21 @@ bool MyGame::Init() {
 	if (result) {
 		if (!GameNoteResource::Load()) return false;
 
-		SceneManager::AddScene(GameScene::INTRO, new LoadingScene());
+		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
+		SceneManager::AddScene(GameScene::MAINMENU, new SongSelectScene());
+		SceneManager::AddScene(GameScene::LOADING, new LoadingScene());
+		SceneManager::AddScene(GameScene::RESULT, new ResultScene());
 		SceneManager::AddScene(GameScene::GAME, new GameplayScene());
-		SceneManager::ChangeScene(GameScene::INTRO);
+
+		std::string title = "Unnamed O2 Clone (Beta 3)";
+		m_window->SetWindowTitle(title);
+
+		if (EnvironmentSetup::GetPath("FILE").empty()) {
+			SceneManager::ChangeScene(GameScene::INTRO);
+		}
+		else {
+			SceneManager::ChangeScene(GameScene::LOADING);
+		}
 	}
 
 	return result;
@@ -78,7 +97,7 @@ void MyGame::Run(double frameRate) {
 }
 
 void MyGame::SelectSkin(std::string name) {
-	
+
 }
 
 void MyGame::Update(double delta) {

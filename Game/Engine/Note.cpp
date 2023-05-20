@@ -10,9 +10,12 @@
 #define HOLD_COMBO_TICK 100
 
 namespace {
-	float GetNotePositionAlpha(double Offset, double InitialTrackPosition, double HitPosOffset, double noteSpeed, bool upscroll = false) {
-		double pos = (1000.0 + ((InitialTrackPosition - Offset) * (upscroll ? noteSpeed : -noteSpeed) / 100.0)) / 1000.0;
-		return -(1 - HitPosOffset) + pos;
+	double CalculateNotePosition(double offset, double initialTrackPos, double hitPosition, double noteSpeed, bool upscroll) {
+		return hitPosition + ((initialTrackPos - offset) * (upscroll ? noteSpeed : -noteSpeed) / 100);
+	}
+
+	bool isWithinRange(int point, int minRange, int maxRange) {
+		return (point >= minRange && point <= maxRange);
 	}
 }
 
@@ -162,23 +165,16 @@ void Note::Render(double delta) {
 
 	auto resolution = m_engine->GetResolution();
 	auto hitPos = m_engine->GetHitPosition();
-
-	float hitPosRatio = static_cast<float>(hitPos) / resolution.Y;
-
 	double trackPosition = m_engine->GetTrackPosition();
-	float a1 = GetNotePositionAlpha(trackPosition, m_initialTrackPosition, hitPosRatio, m_engine->GetNotespeed());
-	float a2 = 0.0f;
 
-	if (m_endTrackPosition != -1) {
-		a2 = GetNotePositionAlpha(trackPosition, m_endTrackPosition, hitPosRatio, m_engine->GetNotespeed());
-	}
-
-	UDim2 startOffset = UDim2::fromOffset(0, 0);
-	UDim2 endOffset = UDim2::fromOffset(0, resolution.Y);
+	int min = 0, max = hitPos + 10;
 
 	if (m_type == NoteType::HOLD) {
-		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
-		m_tail->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a2);
+		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, hitPos, m_engine->GetNotespeed(), false);
+		double y2 = CalculateNotePosition(trackPosition, m_endTrackPosition, hitPos, m_engine->GetNotespeed(), false);
+
+		m_head->Position = UDim2::fromOffset(m_laneOffset, y1);
+		m_tail->Position = UDim2::fromOffset(m_laneOffset, y2) ;
 
 		float Transparency = 0.9f;
 
@@ -198,18 +194,35 @@ void Note::Render(double delta) {
 
 		m_body->Position = UDim2::fromOffset(m_laneOffset, position);
 		m_body->Size = { 1, 0, 0, height };
-
+		
 		if (!m_didHitTail) {
-			m_body->TintColor = { 1.0f * Transparency, 1.0f * Transparency, 1.0f * Transparency };
+			m_body->TintColor = { Transparency, Transparency, Transparency }; 
 
-			m_body->Draw(false);
-			m_head->Draw(false);
-			m_tail->Draw(false);
+			bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
+			bool b2 = isWithinRange(m_tail->Position.Y.Offset, min, max);
+
+			if (b1 || b2) {
+				m_body->Draw(false);
+			}
+			
+			if (b1) {
+				m_head->Draw(false);
+			}
+			
+			if (b2) {
+				m_tail->Draw(false);
+			}
 		}
 	}
 	else {
-		m_head->Position = UDim2::fromOffset(m_laneOffset, 0) + startOffset.Lerp(endOffset, a1);
-		m_head->Draw(false);
+		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, hitPos, m_engine->GetNotespeed(), false);
+		m_head->Position = UDim2::fromOffset(m_laneOffset, y1);
+		
+		bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
+
+		if (b1) {
+			m_head->Draw(false);
+		}
 	}
 }
 
@@ -260,7 +273,6 @@ NoteType Note::GetType() const {
 std::tuple<bool, NoteResult> Note::CheckHit() {
 	if (m_type == NoteType::NORMAL) {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-		//auto result = TimeToResult(m_engine, m_startTime, time_to_end);
 		auto result = TimeToResult(m_engine, this);
 		if (std::get<bool>(result)) {
 			m_ignore = false;
@@ -271,7 +283,6 @@ std::tuple<bool, NoteResult> Note::CheckHit() {
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_startTime;
-			//auto result = TimeToResult(m_engine, m_startTime, time_to_end);
 			auto result = TimeToResult(m_engine, this);
 			if (std::get<bool>(result)) {
 				m_ignore = false;
@@ -281,7 +292,6 @@ std::tuple<bool, NoteResult> Note::CheckHit() {
 		}
 		else if (m_state == NoteState::HOLD_MISSED_ACTIVE) {
 			double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
-			//auto result = TimeToResult(m_engine, m_endTime, time_to_end);
 			auto result = TimeToResult(m_engine, this);
 			if (std::get<bool>(result)) {
 				m_ignore = false;

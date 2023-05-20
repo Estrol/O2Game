@@ -1,106 +1,125 @@
 #include "Text.hpp"
 #include "Renderer.hpp"
+#include "Imgui/imgui_internal.h"
+#include "Imgui/ImguiUtil.hpp"
+#include "FontResources.hpp"
+#include <codecvt>
 
-Text::Text(std::filesystem::path textPath) {
-	if (!std::filesystem::exists(textPath)) {
-		throw std::runtime_error(("SpriteFont file: " + textPath.filename().string() + " is not found!").c_str());
-	}
+Text::Text() {
+    ImGuiContext& g = *ImGui::GetCurrentContext();
+    m_font_ptr = g.Font;
 
-	auto device = Renderer::GetInstance()->GetDevice();
-	m_font = new DirectX::SpriteFont(device, textPath.wstring().c_str());
+    Rotation = 0.0f;
+    Transparency = 0.0f;
+    Size = m_font_ptr ? m_font_ptr->FontSize : 13;
+    Color3 = { 1.0, 1.0, 1.0 };
+    rotation_start_index = 0;
+    m_current_font_size = Size;
+    DrawOverEverything = false;
+}
 
-	Size = UDim2::fromScale(1, 1);
-	TintColor = { 1, 1, 1 };
+Text::Text(std::string fontName, int sz) : Text() {
+    m_current_font_name = fontName;
+    m_current_font_size = sz;
+    Size = sz;
+
+    ImFont* font = FontResources::Load(fontName, Size);
+    if (font) {
+        m_font_ptr = font;
+    }
+}
+
+void Text::SetFont(ImFont* fontPtr) {
+    m_font_ptr = fontPtr;
+}
+
+void Text::SetFont(std::string fontName) {
+    m_current_font_name = fontName;
+    m_font_ptr = FontResources::Load(fontName, Size);
+}
+
+void Text::Draw(std::string text) {
+    Draw(std::u8string(text.begin(), text.end()));
 }
 
 void Text::Draw(std::wstring text) {
-	Draw(text, true);
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> mcov;
+	Draw(mcov.to_bytes(text));
 }
 
-void Text::Draw(std::wstring text, bool manualDraw) {
-	Draw(text, nullptr, manualDraw);
-}
+void Text::Draw(std::u8string text) {
+    Size = std::clamp(Size, 5, 36);
 
-void Text::Draw(std::wstring text, RECT* clipRect) {
-	Draw(text, clipRect, true);
-}
+    if (m_current_font_size != Size) {
+        m_current_font_size = Size;
+        m_font_ptr = FontResources::Load(m_current_font_name, Size);
+    }
 
-void Text::Draw(std::wstring text, RECT* clipRect, bool manualDraw) {
-	using namespace DirectX;
+    float radians = ((Rotation + 90.0f) * ((22.0f / 7.0f) / 180.0f));
+    float red = Color3.R;
+    float green = Color3.G;
+    float blue = Color3.B;
+    float alpha = Transparency;
 
-	RECT textSize = m_font->MeasureDrawBounds(text.c_str(), DirectX::XMFLOAT2(0, 0));
+    auto& displaySize = ImGui::GetIO().DisplaySize;
+
+    ImguiUtil::BeginText();
+
+    ImDrawList* draw_list;
+    if (DrawOverEverything) {
+        draw_list = ImGui::GetForegroundDrawList();
+    }
+    else {
+        draw_list = ImGui::GetWindowDrawList();
+    }
 	
-	auto renderer = Renderer::GetInstance();
-	auto batch = renderer->GetSpriteBatch();
-	auto states = renderer->GetStates();
-	auto context = renderer->GetImmediateContext();
-	auto rasterizerState = renderer->GetRasterizerState();
+    auto textSize = ImGui::CalcTextSizeWithSize((const char*)text.c_str(), Size);
+
+    Window* window = Window::GetInstance();
+    int wWidth = window->GetWidth();
+    int wHeight = window->GetHeight();
+
+    LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
+    LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
 	
+    ImRotationStart();
 
-	Window* window = Window::GetInstance();
-	int wWidth = window->GetWidth();
-	int wHeight = window->GetHeight();
+    draw_list->AddText(
+        m_font_ptr, 
+        Size, 
+        ImVec2(xPos, yPos), 
+        ImColor(255 * red, 255 * green, 255 * blue), 
+        (const char*)text.c_str()
+    );
 
-	LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
-	LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
-
-	LONG width = static_cast<LONG>(textSize.right * Size.X.Scale) + static_cast<LONG>(Size.X.Offset);
-	LONG height = static_cast<LONG>(textSize.bottom * Size.Y.Scale) + static_cast<LONG>(Size.Y.Offset);
-
-	LONG xAnchor = (LONG)(width * std::clamp(AnchorPoint.X, 0.0, 1.0));
-	LONG yAnchor = (LONG)(height * std::clamp(AnchorPoint.Y, 0.0, 1.0));
-
-	xPos -= xAnchor;
-	yPos -= yAnchor;
-
-	AbsolutePosition = { (double)xPos, (double)yPos };
-	AbsoluteSize = { (double)width, (double)height };
-
-	float scaleX = static_cast<float>(width) / static_cast<float>(textSize.right);
-	float scaleY = static_cast<float>(height) / static_cast<float>(textSize.bottom);
-
-	if (manualDraw) {
-		batch->Begin(
-			SpriteSortMode_Immediate,
-			states->NonPremultiplied(),
-			states->PointWrap(),
-			nullptr,
-			clipRect ? rasterizerState : nullptr,
-			[&] {
-				if (clipRect) {
-					CD3D11_RECT rect(*clipRect);
-					context->RSSetScissorRects(1, &rect);
-				}
-			}
-		);
-	}
-
-	/*
-		_In_ SpriteBatch* spriteBatch, 
-		_In_z_ wchar_t const* text, 
-		FXMVECTOR position, 
-		FXMVECTOR color, 
-		float rotation, 
-		FXMVECTOR origin, 
-		GXMVECTOR scale, 
-		SpriteEffects effects = SpriteEffects_None, 
-		float layerDepth = 0
-	*/
-
-	XMVECTOR position = XMVectorSet((float)xPos, (float)yPos, 0, 0);
-	XMVECTOR color = XMVectorSet(TintColor.R, TintColor.G, TintColor.B, 1);
-	XMVECTOR origin = XMVectorSet(0, 0, 0, 0);
-	XMVECTOR scale = XMVectorSet((float)scaleX, (float)scaleY, 0, 0);
-	
-	m_font->DrawString(batch, text.c_str(), position, color, 0, origin, scale);
-
-	if (manualDraw) {
-		batch->End();
-	}
+    ImRotationEnd(radians, ImRotationCenter());
+    ImguiUtil::EndText();
 }
+
 
 Text::~Text() {
-	if (m_font) {
-		delete m_font;
-	}
+
+}
+
+void Text::ImRotationStart() {
+    rotation_start_index = ImGui::GetWindowDrawList()->VtxBuffer.Size;
+}
+
+ImVec2 Text::ImRotationCenter() {
+    ImVec2 l(FLT_MAX, FLT_MAX), u(-FLT_MAX, -FLT_MAX); // bounds
+
+    const auto& buf = ImGui::GetWindowDrawList()->VtxBuffer;
+    for (int i = rotation_start_index; i < buf.Size; i++)
+        l = ImMin(l, buf[i].pos), u = ImMax(u, buf[i].pos);
+
+    return ImVec2((l.x + u.x) / 2, (l.y + u.y) / 2); // or use _ClipRectStack?
+}
+
+void Text::ImRotationEnd(float rad, ImVec2 center) {
+    float s = sin(rad), c = cos(rad);
+    center = ImRotate(center, s, c) - center;
+
+    auto& buf = ImGui::GetWindowDrawList()->VtxBuffer;
+    for (int i = rotation_start_index; i < buf.Size; i++)
+        buf[i].pos = ImRotate(buf[i].pos, s, c) - center;
 }

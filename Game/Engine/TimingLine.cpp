@@ -2,9 +2,8 @@
 #include "RhythmEngine.hpp"
 
 namespace {
-	float GetLinePositionAlpha(double trackOffset, double currentTrackPos, double noteSpeed, bool upscroll = false) {
-		double pos = (trackOffset + (currentTrackPos * (upscroll ? -noteSpeed : noteSpeed) / 100.0)) / 1000.0;
-		return -(1 - 0.8) + pos;
+	double CalculateLinePosition(double trackOffset, double offset, double noteSpeed, bool upscroll = false) {
+		return trackOffset + (offset * (upscroll ? -noteSpeed : noteSpeed) / 100.0);
 	}
 }
 
@@ -44,14 +43,17 @@ double TimingLine::GetTrackPosition() const {
 }
 
 void TimingLine::Render(double delta) {
-	float alpha = GetLinePositionAlpha(1000, m_currentTrackPosition, m_engine->GetNotespeed());
-
-	UDim2 start = UDim2::fromOffset(0, 0);
-	UDim2 end = UDim2::fromOffset(0, 600);
+	auto resolution = m_engine->GetResolution();
+	auto hitPos = m_engine->GetHitPosition();
+	
+	double y = CalculateLinePosition(hitPos, m_currentTrackPosition, m_engine->GetNotespeed());
 
 	m_line->Size = UDim2::fromOffset(m_imageSize, 1);
-	m_line->Position = UDim2::fromOffset(m_imagePos, 0) + start.Lerp(end, alpha);
-	m_line->Draw(false);
+	m_line->Position = UDim2::fromOffset(m_imagePos, y); //+ start.Lerp(end, alpha);
+
+	if (m_line->Position.Y.Offset >= 0 && m_line->Position.Y.Offset < hitPos + 10) {
+		m_line->Draw(false);
+	}
 }
 
 void TimingLine::Release() {

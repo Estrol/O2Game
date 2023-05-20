@@ -29,6 +29,7 @@ public:
 
 	void Update(double delta);
 	void Render(double delta);
+	void Input(double delta);
 
 	void OnKeyDown(const KeyState& key);
 	void OnKeyUp(const KeyState& key);
@@ -56,8 +57,9 @@ public:
 	void SetLaneOffset(int offset);
 	int GetHitPosition() const;
 	Vector2 GetResolution() const;
-	std::wstring GetTitle() const;
-
+	RECT GetPlayRectangle() const;
+	std::string GetTitle() const;
+	
 	GameState GetState() const;
 	ScoreManager* GetScoreManager() const;
 	std::vector<double> GetTimingWindow();
@@ -96,13 +98,13 @@ private:
 	int m_lanePos[7];
 
 	std::filesystem::path m_audioPath = "";
-	Audio* m_currentAudio;
 	Chart* m_currentChart;
 	Vector2 m_virtualResolution;
 	Vector2 m_gameResolution;
 	std::vector<double> m_timingPositionMarkers;
 	std::vector<GameTrack*> m_tracks;
-	std::vector<NoteInfo> m_notes;
+	//std::vector<NoteInfo> m_notes;
+	std::vector<NoteInfoDesc> m_noteDescs;
 	std::vector<AutoSample> m_autoSamples;
 	std::unordered_map<int, int> m_autoHitIndex;
 	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;

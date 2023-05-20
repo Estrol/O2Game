@@ -20,6 +20,10 @@ SkinConfig::SkinConfig(std::filesystem::path path, int keyCount) {
 
 void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 	std::filesystem::path current = path.parent_path();
+	if (!std::filesystem::exists(path)) {
+		throw std::exception("File does not exist");
+	}
+
 	mINI::INIFile f(path);
 	mINI::INIStructure ini;
 	f.read(ini);
@@ -68,33 +72,41 @@ void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 				e.FillWithZero = false;
 			}
 
-			m_numericValues[key] = std::move(e);
+			m_numericValues[key].push_back(std::move(e));
 		}
 	}
 
-	for (auto const& [key, value] : ini["Positions"]) {
-		auto split = splitString(value, ',');
+	std::string keyName = "positions";
+	if (keyCount != -1) {
+		keyName += "#" + std::to_string(keyCount);
+	}
 
-		PositionValue e = {};
-		e.X = std::stoi(split[0]);
-		e.Y = std::stoi(split[1]);
+	for (auto const& [key, value] : ini[keyName]) {
+		auto rows = splitString(value, '|');
+		for (auto& value2 : rows) {
+			auto split = splitString(value2, ',');
+			
+			PositionValue e = {};
+			e.X = std::stoi(split[0]);
+			e.Y = std::stoi(split[1]);
 
-		if (split.size() > 2) {
-			e.AnchorPointX = std::stof(split[2]);
+			if (split.size() > 2) {
+				e.AnchorPointX = std::stof(split[2]);
+			}
+
+			if (split.size() > 3) {
+				e.AnchorPointY = std::stof(split[3]);
+			}
+
+			if (split.size() > 4) {
+				auto splitRGB = splitString(split[4], ':');
+				e.RGB[0] = std::stoi(splitRGB[0]);
+				e.RGB[1] = std::stoi(splitRGB[1]);
+				e.RGB[2] = std::stoi(splitRGB[2]);
+			}
+
+			m_positionValues[key].push_back(std::move(e));
 		}
-
-		if (split.size() > 3) {
-			e.AnchorPointY = std::stof(split[3]);
-		}
-
-		if (split.size() > 4) {
-			auto splitRGB = splitString(split[4], ':');
-			e.RGB[0] = std::stoi(splitRGB[0]);
-			e.RGB[1] = std::stoi(splitRGB[1]);
-			e.RGB[2] = std::stoi(splitRGB[2]);
-		}
-
-		m_positionValues[key] = std::move(e);
 	}
 
 	for (auto const& [key, value] : ini["Sprites"]) {
@@ -115,6 +127,21 @@ void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 
 		m_spriteValues[key] = std::move(e);
 	}
+
+	for (auto const& [key, value] : ini["rects"]) {
+		auto rows = splitString(value, '|');
+		for (auto& value2 : rows) {
+			auto split = splitString(value2, ',');
+
+			RectInfo e = {};
+			e.X = std::stoi(split[0]);
+			e.Y = std::stoi(split[1]);
+			e.Width = std::stoi(split[2]);
+			e.Height = std::stoi(split[3]);
+
+			m_rectValues[key].push_back(std::move(e));
+		}
+	}
 }
 
 SkinConfig::~SkinConfig() {
@@ -122,7 +149,7 @@ SkinConfig::~SkinConfig() {
 	m_numericValues.clear();
 }
 
-PositionValue& SkinConfig::GetPosition(std::string key) {
+std::vector<PositionValue>& SkinConfig::GetPosition(std::string key) {
 	std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
 	if (m_positionValues.find(key) == m_positionValues.end()) {
@@ -132,7 +159,18 @@ PositionValue& SkinConfig::GetPosition(std::string key) {
 	return m_positionValues[key];
 }
 
-NumericValue& SkinConfig::GetNumeric(std::string key) {
+std::vector<RectInfo>& SkinConfig::GetRect(std::string key) {
+	std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+
+	if (m_rectValues.find(key) == m_rectValues.end()) {
+		throw std::runtime_error("Rect key not found: " + key);
+	}
+
+	return m_rectValues[key];
+}
+
+
+std::vector<NumericValue>& SkinConfig::GetNumeric(std::string key) {
 	std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
 	if (m_numericValues.find(key) == m_numericValues.end()) {

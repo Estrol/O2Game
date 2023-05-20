@@ -122,5 +122,6 @@ struct MouseState {
 	int posX;
 	int posY;
 
+	bool isDown;
 	MouseButton button;
 };

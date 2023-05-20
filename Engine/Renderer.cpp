@@ -7,6 +7,7 @@
 #include "Win32ErrorHandling.h"
 #include "Imgui/imgui_impl_sdl2.h"
 #include "Imgui/imgui_impl_dx11.h"
+#include "Imgui/ImguiUtil.hpp"
 #include <iostream>
 
 #pragma comment(lib, "dxguid.lib")
@@ -25,6 +26,8 @@
 //    ID3D11DeviceContext**       ppImmediateContext
 //);
 
+// if windows
+#if defined(_WIN32) || defined(_WIN64)
 typedef HRESULT(*DXGI_CreateFactory2)(
     UINT   Flags,
     REFIID riid,
@@ -43,6 +46,7 @@ typedef HRESULT(*D3D11_CreateDevice)(
     D3D_FEATURE_LEVEL*      pFeatureLevel,
     ID3D11DeviceContext**   ppImmediateContext
 );
+#endif
 
 constexpr auto MAIN_SPRITE_BATCH = 0;
 
@@ -60,222 +64,240 @@ Renderer* Renderer::s_instance = nullptr;
 
 bool Renderer::Create(RendererMode mode, Window* window) {
     try {
-        HMODULE d3d11 = NULL;
-        HMODULE dxgi = NULL;
+        if (mode == RendererMode::OPENGL) {
+			// set renderer hint to opengl
+			
 
-		std::cout << "DLL LOAD" << std::endl;
-        if (mode == RendererMode::VULKAN) {
-            std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
+			// create context
+			SDL_Renderer* renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-            // This is so cheating!!
-            if (std::filesystem::exists(dxvkPath / "dxgi.dll") && std::filesystem::exists(dxvkPath / "d3d11.dll")) {
-                dxgi = LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
-                d3d11 = LoadLibraryA((dxvkPath / "d3d11.dll").string().c_str());
-            }
-            else {
-                MessageBoxA(NULL, "Failed to load Vulkan DLLs", "EstEngine Error", MB_OK);
-                return false;
-            }
+            return false; // Not implemented yet
         }
         else {
-            dxgi = LoadLibraryExA("dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-            d3d11 = LoadLibraryExA("d3d11.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-        }
+#if defined(_WIN32) || defined(_WIN64)
+            HMODULE d3d11 = NULL;
+            HMODULE dxgi = NULL;
 
-        if (d3d11 == NULL || dxgi == NULL) {
-            MessageBoxA(NULL, "Failed to load D3D11 DLLs", "EstEngine Error", MB_ICONERROR);
-            return false;
-        }
+            std::cout << "DLL LOAD" << std::endl;
+            if (mode == RendererMode::VULKAN) {
+                std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
 
-        /*D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
-        if (!createDeviceAndSwapChain) {
-            MessageBoxA(NULL, "D3D11CreateDeviceAndSwapChain function exports symbols not found in D3D11.dll", "EstEngine Error", MB_ICONERROR);
-            return false;
-        }*/
+                // This is so cheating!!
+                if (std::filesystem::exists(dxvkPath / "dxgi.dll") && std::filesystem::exists(dxvkPath / "d3d11.dll")) {
+                    dxgi = LoadLibraryA((dxvkPath / "dxgi.dll").string().c_str());
+                    d3d11 = LoadLibraryA((dxvkPath / "d3d11.dll").string().c_str());
+                }
+                else {
+                    MessageBoxA(NULL, "Failed to load Vulkan DLLs", "EstEngine Error", MB_OK);
+                    return false;
+                }
+            }
+            else {
+                dxgi = LoadLibraryExA("dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+                d3d11 = LoadLibraryExA("d3d11.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+            }
 
-		DXGI_CreateFactory2 createFactory = (DXGI_CreateFactory2)GetProcAddress(dxgi, "CreateDXGIFactory2");
-		D3D11_CreateDevice createDevice = (D3D11_CreateDevice)GetProcAddress(d3d11, "D3D11CreateDevice");
+            if (d3d11 == NULL || dxgi == NULL) {
+                MessageBoxA(NULL, "Failed to load D3D11 DLLs", "EstEngine Error", MB_ICONERROR);
+                return false;
+            }
 
-        if (!createDevice || !createFactory) {
-			MessageBoxA(NULL, "D3D11CreateDevice or CreateDXGIFactory2 function exports symbols not found in D3D11.dll or DXGI.dll", "EstEngine Error", MB_ICONERROR);
-			return false;
-		}
+            /*D3D11_CreateDeviceAndSwapChain createDeviceAndSwapChain = (D3D11_CreateDeviceAndSwapChain)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
+            if (!createDeviceAndSwapChain) {
+                MessageBoxA(NULL, "D3D11CreateDeviceAndSwapChain function exports symbols not found in D3D11.dll", "EstEngine Error", MB_ICONERROR);
+                return false;
+            }*/
 
-        IDXGIFactory* dxgiFactory;
+            DXGI_CreateFactory2 createFactory = (DXGI_CreateFactory2)GetProcAddress(dxgi, "CreateDXGIFactory2");
+            D3D11_CreateDevice createDevice = (D3D11_CreateDevice)GetProcAddress(d3d11, "D3D11CreateDevice");
 
-        UINT factoryFlag = 0;
-		
+            if (!createDevice || !createFactory) {
+                MessageBoxA(NULL, "D3D11CreateDevice or CreateDXGIFactory2 function exports symbols not found in D3D11.dll or DXGI.dll", "EstEngine Error", MB_ICONERROR);
+                return false;
+            }
+
+            IDXGIFactory* dxgiFactory;
+
+            UINT factoryFlag = 0;
+
 #ifdef _DEBUG
-        factoryFlag |= DXGI_CREATE_FACTORY_DEBUG;
+            factoryFlag |= DXGI_CREATE_FACTORY_DEBUG;
 #endif // DEBUG
 
-        HRESULT result = createFactory(factoryFlag, IID_PPV_ARGS(&dxgiFactory));
-        Win32Exception::ThrowIfError(result, "Failed to create DXGI Factory!");
+            HRESULT result = createFactory(factoryFlag, IID_PPV_ARGS(&dxgiFactory));
+            Win32Exception::ThrowIfError(result, "Failed to create DXGI Factory!");
 
-	    IDXGIAdapter* dxgiAdapter;
-        result = dxgiFactory->EnumAdapters(0, &dxgiAdapter);
-        Win32Exception::ThrowIfError(result, "Failed to query Graphics Adapter to use!");
+            IDXGIAdapter* dxgiAdapter;
+            result = dxgiFactory->EnumAdapters(0, &dxgiAdapter);
+            Win32Exception::ThrowIfError(result, "Failed to query Graphics Adapter to use!");
 
-        if (!dxgiAdapter) {
-            MessageBoxA(NULL, "Error, pDxgiAdapter is NULL", "EstEngine Error", MB_ICONERROR);
-            return false;
-        }
+            if (!dxgiAdapter) {
+                MessageBoxA(NULL, "Error, pDxgiAdapter is NULL", "EstEngine Error", MB_ICONERROR);
+                return false;
+            }
 
-        HWND handle = window->GetHandle();
-        UINT creationFlags = 0;
-		
+            HWND handle = window->GetHandle();
+            UINT creationFlags = 0;
+
 #ifdef _DEBUG
-        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+            creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif // DEBUG
 
-        const std::vector<D3D_FEATURE_LEVEL> level = {
-            D3D_FEATURE_LEVEL_11_1,
-            D3D_FEATURE_LEVEL_11_0,
-            D3D_FEATURE_LEVEL_10_1,
-            D3D_FEATURE_LEVEL_10_0,
-            D3D_FEATURE_LEVEL_9_3,
-            D3D_FEATURE_LEVEL_9_2,
-            D3D_FEATURE_LEVEL_9_1
-        };
+            const std::vector<D3D_FEATURE_LEVEL> level = {
+                D3D_FEATURE_LEVEL_11_1,
+                D3D_FEATURE_LEVEL_11_0,
+                D3D_FEATURE_LEVEL_10_1,
+                D3D_FEATURE_LEVEL_10_0,
+                D3D_FEATURE_LEVEL_9_3,
+                D3D_FEATURE_LEVEL_9_2,
+                D3D_FEATURE_LEVEL_9_1
+            };
 
-	    std::cout << "Create Device" << std::endl;
-        D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
+            std::cout << "Create Device" << std::endl;
+            D3D_FEATURE_LEVEL outLevel = D3D_FEATURE_LEVEL_11_1;
 
-	    result = createDevice(
-            dxgiAdapter, 
-            D3D_DRIVER_TYPE_UNKNOWN, 
-            NULL, 
-            creationFlags, 
-            level.data(),
-            level.size(),
-            D3D11_SDK_VERSION, 
-            &m_device,
-            &outLevel,
-            &m_immediateContext
-        );
-		
-        Win32Exception::ThrowIfError(
-            result,
-            "Failed to create D3D11 Device!"
-        );
-		
-        DXGI_SWAP_CHAIN_DESC scd = { 0 };
-        scd.BufferCount = 1;
-        scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        scd.BufferDesc.Width = window->GetBufferWidth();
-        scd.BufferDesc.Height = window->GetBufferHeight();
-        scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        scd.OutputWindow = handle;
-        scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-        scd.SampleDesc.Count = 1;
-        scd.Windowed = TRUE;
+            result = createDevice(
+                dxgiAdapter,
+                D3D_DRIVER_TYPE_UNKNOWN,
+                NULL,
+                creationFlags,
+                level.data(),
+                level.size(),
+                D3D11_SDK_VERSION,
+                &m_device,
+                &outLevel,
+                &m_immediateContext
+            );
 
-		result = dxgiFactory->CreateSwapChain(m_device, &scd, &m_swapChain);
-        Win32Exception::ThrowIfError(
-            result,
-            "Failed to create D3D11 SwapChain!"
-        );
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to create D3D11 Device!"
+            );
 
-        ID3D11Texture2D* backBuffer = nullptr;
-        result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);
-        Win32Exception::ThrowIfError(
-            result,
-            "Failed to get back buffer"
-        );
+            DXGI_SWAP_CHAIN_DESC scd = { 0 };
+            scd.BufferCount = 1;
+            scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            scd.BufferDesc.Width = window->GetBufferWidth();
+            scd.BufferDesc.Height = window->GetBufferHeight();
+            scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            scd.OutputWindow = handle;
+            scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+            scd.SampleDesc.Count = 1;
+            scd.Windowed = TRUE;
 
-        if (backBuffer == nullptr) {
-			MessageBoxA(NULL, "Error, backBuffer is NULL", "EstEngine Fatal Error", MB_ICONERROR);
-			return false;
+            result = dxgiFactory->CreateSwapChain(m_device, &scd, &m_swapChain);
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to create D3D11 SwapChain!"
+            );
+
+            ID3D11Texture2D* backBuffer = nullptr;
+            result = m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer);
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to get back buffer"
+            );
+
+            if (backBuffer == nullptr) {
+                MessageBoxA(NULL, "Error, backBuffer is NULL", "EstEngine Fatal Error", MB_ICONERROR);
+                return false;
+            }
+
+            std::cout << "Create Render Target View" << std::endl;
+            result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
+
+            backBuffer->Release();
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to create render target view"
+            );
+
+            std::cout << "Create Depth Stencil View" << std::endl;
+            m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
+
+            D3D11_VIEWPORT pViewport;
+            ZeroMemory(&pViewport, sizeof(D3D11_VIEWPORT));
+            pViewport.TopLeftX = 0;
+            pViewport.TopLeftY = 0;
+            pViewport.Width = window->GetWidth();
+            pViewport.Height = window->GetHeight();
+
+
+            std::cout << "Create Viewport" << std::endl;
+            m_immediateContext->RSSetViewports(1, &pViewport);
+
+            CD3D11_RASTERIZER_DESC rsDesc(
+                D3D11_FILL_SOLID,
+                D3D11_CULL_BACK,
+                FALSE,
+                0,
+                0.f,
+                0.f,
+                TRUE,
+                TRUE,
+                TRUE,
+                FALSE
+            );
+
+            std::cout << "Create Rasterizer State" << std::endl;
+            result = m_device->CreateRasterizerState(&rsDesc, &m_scissorState);
+
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to create rasterizer state"
+            );
+
+            CD3D11_BLEND_DESC blendDesc = {};
+            blendDesc.AlphaToCoverageEnable = false;
+            blendDesc.IndependentBlendEnable = false;
+            blendDesc.RenderTarget[0].BlendEnable = true;
+            blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+            blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+            blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+            blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+            std::cout << "Create Blend State" << std::endl;
+            result = m_device->CreateBlendState(&blendDesc, &m_blendState);
+
+            Win32Exception::ThrowIfError(
+                result,
+                "Failed to create blend state"
+            );
+
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+            // Manually set the display size
+            io.DisplaySize.x = window->GetBufferWidth();
+            io.DisplaySize.y = window->GetBufferHeight();
+            io.DisplayOutputSize.x = window->GetWidth();
+            io.DisplayOutputSize.y = window->GetHeight();
+            io.IniFilename = NULL;
+            io.WantSaveIniSettings = false;
+
+            ImGui::StyleColorsDark();
+
+            if (!ImGui_ImplSDL2_InitForD3D(window->GetWindow())) {
+                std::cout << "Failed to init ImGui SDL2" << std::endl;
+                return false;
+            }
+
+            if (!ImGui_ImplDX11_Init(m_device, m_immediateContext)) {
+                std::cout << "Failed to init ImGui DX11" << std::endl;
+                return false;
+            }
+
+            m_states = new DirectX::CommonStates(m_device);
+            return true; 
+#else
+            std::cout << "DirectX11 renderer is not supported in this platform!" << std::endl;
+            return false;
+#endif
         }
-
-		std::cout << "Create Render Target View" << std::endl;
-        result = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
-
-        backBuffer->Release();
-        Win32Exception::ThrowIfError(
-            result,
-            "Failed to create render target view"
-        );
-		
-		std::cout << "Create Depth Stencil View" << std::endl;
-        m_immediateContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
-
-        D3D11_VIEWPORT pViewport;
-        ZeroMemory(&pViewport, sizeof(D3D11_VIEWPORT));
-        pViewport.TopLeftX = 0;
-        pViewport.TopLeftY = 0;
-        pViewport.Width = window->GetWidth();
-        pViewport.Height = window->GetHeight();
-
-
-		std::cout << "Create Viewport" << std::endl;
-        m_immediateContext->RSSetViewports(1, &pViewport);
-
-        CD3D11_RASTERIZER_DESC rsDesc(
-            D3D11_FILL_SOLID,
-            D3D11_CULL_BACK,
-            FALSE,
-            0,
-            0.f,
-            0.f,
-            TRUE,
-            TRUE,
-            TRUE,
-            FALSE
-        );
-
-		std::cout << "Create Rasterizer State" << std::endl;
-        result = m_device->CreateRasterizerState(&rsDesc, &m_scissorState);
-
-		Win32Exception::ThrowIfError(
-            result, 
-            "Failed to create rasterizer state"
-        );
-
-        CD3D11_BLEND_DESC blendDesc = {};
-        blendDesc.AlphaToCoverageEnable = false;
-        blendDesc.IndependentBlendEnable = false;
-        blendDesc.RenderTarget[0].BlendEnable = true;
-        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		std::cout << "Create Blend State" << std::endl;
-		result = m_device->CreateBlendState(&blendDesc, &m_blendState);
-		
-		Win32Exception::ThrowIfError(
-			result,
-			"Failed to create blend state"
-		);
-
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-        // Manually set the display size
-        io.DisplaySize.x = window->GetBufferWidth();
-        io.DisplaySize.y = window->GetBufferHeight();
-        io.DisplayOutputSize.x = window->GetWidth();
-        io.DisplayOutputSize.y = window->GetHeight();
-
-        ImGui::StyleColorsDark();
-
-        if (!ImGui_ImplSDL2_InitForD3D(window->GetWindow())) {
-			std::cout << "Failed to init ImGui SDL2" << std::endl;
-			return false;
-        }
-		
-        if (!ImGui_ImplDX11_Init(m_device, m_immediateContext)) {
-			std::cout << "Failed to init ImGui DX11" << std::endl;
-			return false;
-        }
-
-        m_states = new DirectX::CommonStates(m_device);
-        return true;
     }
     catch (Win32Exception& e) {
         MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
@@ -342,6 +364,12 @@ bool Renderer::BeginRender() {
 }
 
 bool Renderer::EndRender() {
+    if (ImguiUtil::HasFrameQueue()) {
+        ImguiUtil::Reset();
+
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    }
+
 	m_swapChain->Present(0, 0);
 	
 	return true;

@@ -136,7 +136,7 @@ bool AudioManager::CreateSample(std::string id, uint8_t* buffer, size_t size, Au
 
 bool AudioManager::CreateSample(std::string id, std::filesystem::path path, AudioSample** out) {
 	if (m_audioSamples.find(id) != m_audioSamples.end()) {
-		return false;
+		delete m_audioSamples[id];
 	}
 
 	AudioSample* audio = new AudioSample(id);
@@ -163,7 +163,7 @@ bool AudioManager::CreateSample(std::string id, std::filesystem::path path, Audi
 
 bool AudioManager::CreateSampleFromData(std::string id, int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData, AudioSample** out) {
 	if (m_audioSamples.find(id) != m_audioSamples.end()) {
-		return false;
+		delete m_audioSamples[id];
 	}
 
 	AudioSample* audio = new AudioSample(id);
@@ -236,6 +236,15 @@ bool AudioManager::RemoveSample(std::string id) {
 		m_audioSamples.erase(id);
 	}
 
+	return true;
+}
+
+bool AudioManager::RemoveAll() {
+	for (auto& sample : m_audioSamples) {
+		delete sample.second;
+	}
+
+	m_audioSamples.clear();
 	return true;
 }
 

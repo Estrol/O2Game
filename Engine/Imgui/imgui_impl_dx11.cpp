@@ -32,6 +32,7 @@
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
+#include "../Renderer.hpp"
 
 // DirectX
 #include <stdio.h>
@@ -101,7 +102,11 @@ static void ImGui_ImplDX11_SetupRenderState(ImDrawData* draw_data, ID3D11DeviceC
     ctx->VSSetShader(bd->pVertexShader, nullptr, 0);
     ctx->VSSetConstantBuffers(0, 1, &bd->pVertexConstantBuffer);
     ctx->PSSetShader(bd->pPixelShader, nullptr, 0);
-    ctx->PSSetSamplers(0, 1, &bd->pFontSampler);
+    //ctx->PSSetSamplers(0, 1, &bd->pFontSampler);
+
+    auto sampler = Renderer::GetInstance()->GetStates()->PointWrap();
+    ctx->PSSetSamplers(0, 1, &sampler);
+
     ctx->GSSetShader(nullptr, nullptr, 0);
     ctx->HSSetShader(nullptr, nullptr, 0); // In theory we should backup and restore this as well.. very infrequently used..
     ctx->DSSetShader(nullptr, nullptr, 0); // In theory we should backup and restore this as well.. very infrequently used..
@@ -586,6 +591,16 @@ void ImGui_ImplDX11_Shutdown()
     IM_DELETE(bd);
 }
 
+static bool HasAFrame = false;
+
+bool ImGui_ImplDX11_HasAFrame() {
+    return HasAFrame;
+}
+
+void ImGui_ImplDX11_ResetFrame() {
+    HasAFrame = false;
+}
+
 void ImGui_ImplDX11_NewFrame()
 {
     ImGui_ImplDX11_Data* bd = ImGui_ImplDX11_GetBackendData();
@@ -593,4 +608,6 @@ void ImGui_ImplDX11_NewFrame()
 
     if (!bd->pFontSampler)
         ImGui_ImplDX11_CreateDeviceObjects();
+
+    HasAFrame = true;
 }

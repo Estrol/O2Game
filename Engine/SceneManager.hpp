@@ -5,6 +5,7 @@
 class Game;
 class Scene;
 struct KeyState;
+struct MouseState;
 
 class SceneManager {
 public:
@@ -14,6 +15,8 @@ public:
 
 	void OnKeyDown(const KeyState& state);
 	void OnKeyUp(const KeyState& state);
+	void OnMouseDown(const MouseState& state);
+	void OnMouseUp(const MouseState& state);
 
 	void IAddScene(int idx, Scene* scene);
 	void IChangeScene(int idx);

@@ -6,6 +6,8 @@
 #include "AudioManager.hpp"
 #include "Imgui/imgui_impl_sdl2.h"
 #include "Imgui/imgui_impl_dx11.h"
+#include "FontResources.hpp"
+#include "MsgBox.hpp"
 
 namespace {
 	thread_local double curTick = 0.0;
@@ -105,6 +107,9 @@ bool Game::Init() {
 	if (!AudioManager::GetInstance()->Init(m_window)) {
 		return false;
 	}
+
+	FontResources::PreloadFontCaches();
+	m_frameText = new Text("Arial", 13);
 	
 	return true;
 }
@@ -136,15 +141,9 @@ void Game::Run(double frameRate) {
 				Update(delta);
 				
 				m_renderer->BeginRender();
-				ImGui_ImplDX11_NewFrame();
-				ImGui::NewFrame();
-
 				Render(delta);
-
-				ImGui::ShowDemoWindow(&show_demo_window);
-
-				ImGui::Render();
-				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+				MsgBox::Draw();
+				DrawFPS(delta);
 				m_renderer->EndRender();
 			}
 			else {
@@ -153,12 +152,21 @@ void Game::Run(double frameRate) {
 		}
 	});
 
-	InputEvent* env = m_inputManager->ListenKeyEvent([&](const KeyState& state) {
+	m_inputManager->ListenKeyEvent([&](const KeyState& state) {
 		if (state.type == KeyEventType::KEY_DOWN) {
 			m_sceneManager->OnKeyDown(state);
 		}
 		else {
 			m_sceneManager->OnKeyUp(state);
+		}
+	});
+
+	m_inputManager->ListenMouseEvent([&](const MouseState& state) {
+		if (state.isDown) {
+			m_sceneManager->OnMouseDown(state);
+		}
+		else {
+			m_sceneManager->OnMouseUp(state);
 		}
 	});
 
@@ -169,12 +177,16 @@ void Game::Run(double frameRate) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_QUIT:
-					Stop();
+					MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
 					break;
 			}
 
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
+		}
+
+		if (MsgBox::GetResult("Quit") == 1) {
+			Stop();
 		}
 
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
@@ -187,14 +199,15 @@ void Game::Run(double frameRate) {
 
 			m_renderer->BeginRender();
 			Render(delta);
+
+			MsgBox::Draw();
+			DrawFPS(delta);
 			m_renderer->EndRender();
 		}
 	}
 
 	m_audioThread.join();
 	m_renderThread.join();
-	env->Disconnect();
-	delete env;
 	
 	m_notify = false;
 }
@@ -235,4 +248,34 @@ void Game::Render(double deltaTime) {
 
 void Game::Input(double deltaTime) {
 	
+}
+
+void Game::Mouse(double deltaTime) {
+
+}
+
+void Game::DrawFPS(double delta) {
+	m_frameInterval += delta;
+	m_frameCount += 1;
+
+	if (m_frameInterval >= 1.0) {
+		m_frameInterval = 0.0;
+
+		m_currentFrameCount = std::round(m_frameCount);
+		m_frameCount = 0.0;
+	}
+
+	if (m_currentFrameCount >= 35 && m_currentFrameCount < 60) {
+		m_frameText->Color3 = Color3(1.0f, 0.8f, 0.0f);
+	}
+	else if (m_currentFrameCount >= 0 && m_currentFrameCount < 35) {
+		m_frameText->Color3 = Color3(1.0f, 0.0f, 0.0f);
+	}
+	else {
+		m_frameText->Color3 = Color3(1.0f, 1.0f, 1.0f);
+	}
+
+	m_frameText->Position = UDim2::fromOffset(5, 5);
+	m_frameText->DrawOverEverything = true;
+	//m_frameText->Draw("FPS: " + std::to_string(m_currentFrameCount));
 }

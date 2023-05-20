@@ -26,17 +26,21 @@
     <ClCompile Include="BassFXSampleEncoding.cpp" />
     <ClCompile Include="Color3.cpp" />
     <ClCompile Include="Data\estring.cpp" />
+    <ClCompile Include="FontResources.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
+    <ClCompile Include="Imgui\ImguiUtil.cpp" />
     <ClCompile Include="Imgui\imgui_demo.cpp" />
     <ClCompile Include="Imgui\imgui_draw.cpp" />
     <ClCompile Include="Imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Imgui\imgui_impl_sdl2.cpp" />
     <ClCompile Include="Imgui\imgui_tables.cpp" />
     <ClCompile Include="Imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Imgui\misc\freetype\imgui_freetype.cpp" />
     <ClCompile Include="InputEvent.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="MathUtils.cpp" />
+    <ClCompile Include="MsgBox.cpp" />
     <ClCompile Include="NumericTexture.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -58,6 +62,8 @@
     <ClInclude Include="AudioSampleChannel.hpp" />
     <ClInclude Include="BassFXSampleEncoding.hpp" />
     <ClInclude Include="Color3.hpp" />
+    <ClInclude Include="FallbackFonts\arial.ttf.h" />
+    <ClInclude Include="FontResources.hpp" />
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />
     <ClInclude Include="Imgui\ImguiUtil.hpp" />
@@ -67,6 +73,8 @@
     <ClInclude Include="Imgui\imstb_rectpack.h" />
     <ClInclude Include="Imgui\imstb_textedit.h" />
     <ClInclude Include="Imgui\imstb_truetype.h" />
+    <ClInclude Include="Imgui\misc\freetype\imgui_freetype.h" />
+    <ClInclude Include="MsgBox.hpp" />
     <ClInclude Include="Sprite2D.hpp" />
     <ClInclude Include="Text.hpp" />
     <ClInclude Include="Win32ErrorHandling.h" />
@@ -193,7 +201,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -219,7 +227,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

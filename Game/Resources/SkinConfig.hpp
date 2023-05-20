@@ -25,20 +25,27 @@ struct SpriteValue {
 	float AnchorPointX, AnchorPointY;
 };
 
+struct RectInfo {
+	int X, Y;
+	int Width, Height;
+};
+
 class SkinConfig {
 public:
 	SkinConfig(std::string filePath, int keyCount);
 	SkinConfig(std::filesystem::path path, int keyCount);
 	~SkinConfig();
 
-	PositionValue& GetPosition(std::string key);
-	NumericValue& GetNumeric(std::string key);
+	std::vector<NumericValue>& GetNumeric(std::string key);
+	std::vector<PositionValue>& GetPosition(std::string key);
+	std::vector<RectInfo>& GetRect(std::string key);
 	SpriteValue& GetSprite(std::string key);
 
 private:
 	void Load(std::filesystem::path path, int keyCount);
 
-	std::unordered_map<std::string, PositionValue> m_positionValues;
-	std::unordered_map<std::string, NumericValue> m_numericValues;
+	std::unordered_map<std::string, std::vector<NumericValue>> m_numericValues;
+	std::unordered_map<std::string, std::vector<PositionValue>> m_positionValues;
 	std::unordered_map<std::string, SpriteValue> m_spriteValues;
+	std::unordered_map<std::string, std::vector<RectInfo>> m_rectValues;
 };

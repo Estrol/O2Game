@@ -46,20 +46,26 @@ void OJN::Load(std::filesystem::path& file) {
 
 		difficulty[i] = {};
 
-		// loop until endOffset
-		while (fs.tellg() < endOffset) {
+		for (int j = 0; j < Header.package_count[i]; j++) {
 			Package pkg = {};
 			fs.read((char*)&pkg.Measure, 4);
 			fs.read((char*)&pkg.Channel, 2);
 			fs.read((char*)&pkg.EventCount, 2);
 
-			if (pkg.EventCount == 0) {
+			if (pkg.EventCount > 192) {
 				__debugbreak();
 			}
 
 			for (int i = 0; i < pkg.EventCount; i++) {
 				Event ev = {};
-				fs.read((char*)&ev, sizeof(ev));
+				if (pkg.Channel == 0 || pkg.Channel == 1) {
+					fs.read((char*)&ev.BPM, sizeof(float));
+				}
+				else {
+					fs.read((char*)&ev.Value, sizeof(short));
+					fs.read((char*)&ev.VolPan, sizeof(char));
+					fs.read((char*)&ev.Type, sizeof(char));
+				}
 
 				pkg.Events.push_back(ev);
 			}
@@ -87,7 +93,6 @@ void OJN::Load(std::filesystem::path& file) {
 	}
 
 	fs.close();
-
 	ParseNoteData(this, difficulty);
 
 	m_valid = true;
@@ -131,7 +136,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					ev.Position = position;
 					ev.Value = event.Value - 1;
 
-					if (event.Type % 8 > 3) {
+					if (event.Type % 8 > 3 || event.Type == 4) {
 						ev.Value += 1000;
 					}
 
@@ -139,6 +144,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					// nowdays OJN/OJM do not use VolPan like BMS
 
 					int type = event.Type % 4;
+
 					switch (type) {
 						case 2: {
 							ev.Type = NoteEventType::HoldStart;
@@ -192,7 +198,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 		// sort based on measure + position
 		std::vector<NoteEvent> sortedEvents = events[i];
-		std::sort(sortedEvents.begin(), sortedEvents.end(), [=](NoteEvent& ev1, NoteEvent& ev2) {
+		std::sort(sortedEvents.begin(), sortedEvents.end(), [](NoteEvent& ev1, NoteEvent& ev2) {
 			return (ev1.Measure + ev1.Position) < (ev2.Measure + ev2.Position);
 		});
 
@@ -203,12 +209,17 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 				currentMeasure++;
 				measurePosition = 0;
+				measureFraction = 1;
 			}
 
-			timer += (BEATS_PER_MSEC * (event.Position - measurePosition)) / currentBPM;
-			measurePosition = event.Position;
+			double position = event.Position * measureFraction;
+			timer += (BEATS_PER_MSEC * (position - measurePosition)) / currentBPM;
+			measurePosition = position;
 
-			if (event.Channel == 1) {
+			if (event.Channel == 0) {
+				measureFraction = event.Value;
+			}
+			else if (event.Channel == 1) {
 				bpmChanges.push_back({ event.Value, timer });
 				currentBPM = event.Value;
 			}

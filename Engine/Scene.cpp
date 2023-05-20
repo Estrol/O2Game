@@ -36,3 +36,10 @@ void Scene::OnKeyDown(const KeyState& state) {
 void Scene::OnKeyUp(const KeyState& state) {
 	
 }
+
+void Scene::OnMouseDown(const MouseState& state) {
+
+}
+
+void Scene::OnMouseUp(const MouseState& state) {
+}

@@ -10,6 +10,7 @@
 #include "InputEvent.hpp"
 
 typedef std::function<void(const KeyState&)> key_event_callback;
+typedef std::function<void(const MouseState&)> mouse_event_callback;
 
 class InputManager {
 public:
@@ -18,7 +19,8 @@ public:
 	bool IsKeyDown(Keys key);
 	bool IsMouseButton(MouseButton button);
 
-	InputEvent* ListenKeyEvent(key_event_callback callback);
+	void ListenKeyEvent(key_event_callback callback);
+	void ListenMouseEvent(mouse_event_callback callback);
 
 	RECT GetMousePosition();
 
@@ -38,6 +40,6 @@ private:
 	std::unordered_map<Keys, bool> m_keyStates;
 	std::unordered_map<MouseButton, bool> m_mouseButton;
 
-	int m_keyEventCallbackIndex;
-	std::unordered_map<int, key_event_callback> m_keyEventCallbacks;
+	std::vector<key_event_callback> m_keyEventCallbacks;
+	std::vector<mouse_event_callback> m_mouseEventCallbacks;
 };

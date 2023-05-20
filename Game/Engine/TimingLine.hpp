@@ -4,12 +4,12 @@
 class RhythmEngine;
 
 struct TimingLineDesc {
-	RhythmEngine* Engine;
-
 	double StartTime;
 	double Offset;
 	int ImagePos;
 	int ImageSize;
+
+	RhythmEngine* Engine;
 };
 
 class TimingLine {

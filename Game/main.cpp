@@ -13,33 +13,61 @@
 #include "../Engine/Win32ErrorHandling.h"
 #include "Data/Util/Util.hpp"
 #include "Resources/Configuration.hpp"
+#include <shlobj.h>
+#include "Data/OJM.hpp"
+#include <fstream>
 
-//extern "C" {
-//	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-//	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-//}
+extern "C" {
+	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
-std::filesystem::path prompt() {
-	OPENFILENAME ofn;
-	wchar_t szFile[MAX_PATH] = { 0 };
+static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
 
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = NULL;
-	ofn.lpstrFilter = L"All Supported Files (*.ojn;*.osu;*.bms;*.bme;*.bml;*)\0*.ojn;*.osu;*.bms;*.bme;*.bml\0";
-	ofn.lpstrFile = szFile;
-	ofn.nMaxFile = MAX_PATH;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	if (GetOpenFileNameW(&ofn)) {
-		return szFile;
+	if (uMsg == BFFM_INITIALIZED)
+	{
+		SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
 	}
-	else {
-		return "";	
+
+	return 0;
+}
+
+std::filesystem::path BrowseFolder(std::wstring saved_path) {
+	wchar_t path[MAX_PATH];
+
+	const wchar_t* path_param = saved_path.c_str();
+
+	BROWSEINFO bi = { 0 };
+	bi.lpszTitle = (L"Browse for folder...");
+	bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+	bi.lpfn = BrowseCallbackProc;
+	bi.lParam = (LPARAM)path_param;
+
+	LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+
+	if (pidl != 0)
+	{
+		//get the name of the folder and put it in path
+		SHGetPathFromIDList(pidl, path);
+
+		//free memory used
+		IMalloc* imalloc = 0;
+		if (SUCCEEDED(SHGetMalloc(&imalloc)))
+		{
+			imalloc->Free(pidl);
+			imalloc->Release();
+		}
+
+		return path;
 	}
+
+	return "";
 }
 
 bool API_Query() {
+#ifdef _DEBUG
+	return true;
+#else
 	std::cout << "[Auth] Authenticating session to /~estrol-game/authorize-access" << std::endl;
 
 	try {
@@ -48,7 +76,7 @@ bool API_Query() {
 
 		curlpp::options::Url url("https://cdn.estrol.dev/~estrol-game/authorize-access");
 		myRequest.setOpt(url);
-		
+
 		std::ostringstream os;
 		os << myRequest;
 		std::string response = os.str();
@@ -58,45 +86,44 @@ bool API_Query() {
 	catch (curlpp::RuntimeError) {
 		return false;
 	}
+#endif
 }
 
-int Run(int argc, char* argv[]) {
+int Run(int argc, wchar_t* argv[]) {
 	try {
+		std::filesystem::path parentPath = std::filesystem::path(argv[0]).parent_path();
+		std::wcout << argv[0];
+
+		if (SetCurrentDirectoryW((LPWSTR)parentPath.wstring().c_str()) == FALSE) {
+			MessageBoxA(NULL, "Failed to set directory!", "EstGame Error", MB_ICONERROR);
+			return -1;
+		}
+
+		std::filesystem::path path = Configuration::Load("Music", "Folder");
+		if (path.empty() || !std::filesystem::exists(path)) {
+			path = BrowseFolder(parentPath.wstring());
+		}
+
+		if (path.empty() || !std::filesystem::exists(path)) {
+			return -1;
+		}
+		else {
+			Configuration::Set("Music", "Folder", path.string());
+		}
+
 		auto hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 		Win32Exception::ThrowIfError(hr);
 
-		std::filesystem::path filePath;
 		for (int i = 1; i < argc; i++) {
-			std::filesystem::path arg = argv[i];
-			if (std::filesystem::exists(arg)) {
-				filePath = arg;
+			if (std::filesystem::exists(argv[i])) {
+				std::filesystem::path path = argv[i];
+
+				EnvironmentSetup::SetPath("FILE", path);
 				break;
 			}
 		}
-
-		if (!API_Query()) {
-			MessageBoxA(NULL, "Failed to authenticate!", "EstGame Error", MB_ICONERROR);
-			return -1;
-		}
-
-		if (!filePath.has_extension() || filePath.empty()) {
-			filePath = prompt();
-		}
-
-		if (!filePath.has_extension() || filePath.empty()) {
-			MessageBoxA(NULL, "No file selected!", "EstGame Warning", MB_ICONWARNING);
-			return -1;
-		}
-		
-		EnvironmentSetup::SetPath("FILE", filePath);
-
-		std::filesystem::path parentPath = std::filesystem::path(argv[0]).parent_path();
-		if (SetCurrentDirectoryW((LPWSTR)parentPath.wstring().c_str()) == FALSE) {
-			MessageBoxA(NULL, "Failed to set directory!", "EstGame Warning", MB_ICONWARNING);
-		}
 		
 		MyGame game;
-
 		if (game.Init()) {
 			double frameLimit = std::atof(Configuration::Load("Game", "FrameLimit").c_str());
 			game.Run(frameLimit);
@@ -116,11 +143,38 @@ int HandleStructualException(int code) {
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-int main(int argc, char* argv[]) {
+#if _DEBUG
+int wmain(int argc, wchar_t* argv[]) {
 	__try {
 		return Run(argc, argv);
 	}
 	__except (HandleStructualException(GetExceptionCode())) {
 		return -1;
 	}
+
+	/*std::filesystem::path path = "E:\\Games\\O2JamINT\\Musi1\\BGM.ojm";
+	OJM ojm = {};
+	ojm.Load(path);
+
+	if (ojm.IsValid()) {
+		for (auto& sample : ojm.Samples) {
+			std::fstream file("E:\\Games\\O2JamINT\\Musi1\\out\\" + std::to_string(sample.RefValue) + ".ogg", std::ios::out | std::ios::binary);
+			if (!file.is_open()) {
+				DebugBreak();
+			}
+
+			file.write((const char*)sample.AudioData.data(), sample.AudioData.size());
+			file.close();
+		}
+	}*/
 }
+#else=
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+	__try {
+		return Run(__argc, __wargv);
+	}
+	__except (HandleStructualException(GetExceptionCode())) {
+		return -1;
+	}
+}
+#endif

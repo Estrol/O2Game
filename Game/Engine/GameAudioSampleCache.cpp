@@ -17,6 +17,7 @@ namespace GameAudioSampleCache {
 	std::unordered_map<int, NoteAudioSample> samples;
 	std::unordered_map<int, AudioSampleChannel*> sampleIndex;
 
+	std::string currentHash;
 	double m_rate = 1.0;
 }
 
@@ -32,7 +33,12 @@ int LastIndexOf(std::string& str, char c) {
 
 void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	auto audioManager = AudioManager::GetInstance();
+	if (currentHash == chart->MD5Hash) {
+		return;
+	}
+
 	Dispose();
+	currentHash = chart->MD5Hash;
 
 	std::vector<std::string> ext = { ".wav", ".ogg", ".mp3" };
 
@@ -198,6 +204,8 @@ void GameAudioSampleCache::Stop(int index) {
 		}
 
 		delete it;
+		it = nullptr;
+		
 		sampleIndex.erase(index);
 	}
 }
@@ -225,24 +233,22 @@ void GameAudioSampleCache::PauseAll() {
 
 void GameAudioSampleCache::StopAll() {
 	for (auto& kv : sampleIndex) {
-		if (kv.second->IsPlaying()) {
-			kv.second->Stop();
+		if (kv.second != nullptr) {
+			if (kv.second->IsPlaying()) {
+				kv.second->Stop();
+			}
+
+			delete kv.second;
+			kv.second = nullptr;
 		}
-
-		sampleIndex.erase(kv.first);
-	}
-}
-
-void GameAudioSampleCache::Dispose() {
-	for (auto& kv : sampleIndex) {
-		delete kv.second;
-	}
-
-	auto audioManager = AudioManager::GetInstance();
-	for (auto& it : samples) {
-		audioManager->RemoveSample(it.second.FilePath + std::to_string(it.first));
 	}
 
 	sampleIndex.clear();
+}
+
+void GameAudioSampleCache::Dispose() {
+	StopAll();
+
 	samples.clear();
+	AudioManager::GetInstance()->RemoveAll();
 }

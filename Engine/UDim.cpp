@@ -32,3 +32,11 @@ bool UDim::operator==(UDim const& udim) {
 bool UDim::operator!=(UDim const& udim) {
 	return this->Scale != udim.Scale || this->Offset != udim.Offset;
 }
+
+bool UDim::operator<=(UDim const& udim) {
+	return this->Scale <= udim.Scale && this->Offset <= udim.Offset;
+}
+
+bool UDim::operator>=(UDim const& udim) {
+	return this->Scale >= udim.Scale && this->Offset >= udim.Offset;
+}

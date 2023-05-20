@@ -46,6 +46,11 @@ struct AutoSample {
 	uint32_t Index;
 };
 
+enum class Mod {
+	MIRROR,
+	RANDOM
+};
+
 class Chart {
 public:
 	Chart();
@@ -53,6 +58,8 @@ public:
 	Chart(BMS::BMSFile& bmsfile);
 	Chart(O2::OJN& ojnfile, int diffIndex = 2);
 	~Chart();
+
+	void ApplyMod(Mod mod);
 
 	float InitialSvMultiplier;
 	int m_keyCount;

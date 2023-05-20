@@ -144,6 +144,10 @@ void OJM::Load(std::filesystem::path& fileName) {
 		}
 	}
 
+	std::sort(Samples.begin(), Samples.end(), [](const auto& a, const auto& b) {
+		return a.RefValue < b.RefValue;
+	});
+
 	fs.close();
 	m_valid = true;
 }

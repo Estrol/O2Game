@@ -68,6 +68,14 @@ void SceneManager::OnKeyUp(const KeyState& state) {
 	if (m_currentScene) m_currentScene->OnKeyUp(state);
 }
 
+void SceneManager::OnMouseDown(const MouseState& state) {
+	if (m_currentScene) m_currentScene->OnMouseDown(state);
+}
+
+void SceneManager::OnMouseUp(const MouseState& state) {
+	if (m_currentScene) m_currentScene->OnMouseUp(state);
+}
+
 void SceneManager::AddScene(int idx, Scene* scene) {
 	if (s_instance == nullptr) throw std::exception("SceneManager is not initialized");
 

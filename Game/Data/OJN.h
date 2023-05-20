@@ -44,7 +44,7 @@ struct NoteEvent {
 	NoteEventType Type;
 };
 
-struct Header {
+struct OJNHeader {
 	int songid;
 	char signature[4];
 	float encode_version;
@@ -102,7 +102,7 @@ namespace O2 {
 		void Load(std::filesystem::path& filePath);
 
 		std::filesystem::path CurrrentDir;
-		Header Header;
+		OJNHeader Header;
 
 		bool IsValid();
 

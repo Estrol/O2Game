@@ -1,30 +1,39 @@
 #pragma once
 #include <filesystem>
-#include <directxtk/SpriteFont.h>
+#include "Imgui/imgui_internal.h"
 #include "UDim2.hpp"
 #include "Color3.hpp"
 #include "Vector2.hpp"
 
 class Text {
 public:
-	Text() = default;
-	Text(std::filesystem::path textPath);
-	~Text();
+    Text();
+    Text(std::string fontName, int size = 13);
+    ~Text();
 
-	void Draw(std::wstring text);
-	void Draw(std::wstring text, bool manualDraw);
-	void Draw(std::wstring text, RECT* clipRect);
-	void Draw(std::wstring text, RECT* cliprect, bool manualDraw);
+    void SetFont(ImFont* fontPtr);
+    void SetFont(std::string fontName);
+    void Draw(std::wstring);
+    void Draw(std::u8string);
+    void Draw(std::string);
 
-	UDim2 Size;
-	UDim2 Position;
-	UDim2 Position2;
-	Color3 TintColor;
+    bool DrawOverEverything;
 
-	Vector2 AnchorPoint;
-	Vector2 AbsoluteSize;
-	Vector2 AbsolutePosition;
-
+    float Transparency;
+    float Rotation;
+    int Size;
+    UDim2 Position;
+    Color3 Color3;
+    Vector2 AnchorPoint;
+    Vector2 AbsolutePosition;
+    Vector2 AbsoluteSize;
 private:
-	DirectX::SpriteFont* m_font;
+    int m_current_font_size;
+    ImFont* m_font_ptr;
+    std::string m_current_font_name;
+
+    int rotation_start_index;
+    void ImRotationStart();
+    ImVec2 ImRotationCenter();
+    void ImRotationEnd(float rad, ImVec2 center);
 };

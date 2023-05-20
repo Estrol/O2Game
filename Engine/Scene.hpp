@@ -1,5 +1,6 @@
 #pragma once
 struct KeyState;
+struct MouseState;
 
 class Scene {
 public:
@@ -15,4 +16,6 @@ public:
 
 	virtual void OnKeyDown(const KeyState& state);
 	virtual void OnKeyUp(const KeyState& state);
+	virtual void OnMouseDown(const MouseState& state);
+	virtual void OnMouseUp(const MouseState& state);
 };

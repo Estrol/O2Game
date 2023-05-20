@@ -11,6 +11,6 @@ namespace GameAudioSampleCache {
 	void ResumeAll();
 	void PauseAll();
 	void StopAll();
-
+	
 	void Dispose();
 }

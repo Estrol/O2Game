@@ -1,4 +1,5 @@
 #include "InputManager.hpp"
+#include "Window.hpp"
 
 InputManager::InputManager() {
 	for (Keys i = Keys::A; i != Keys::INVALID_KEY; i = static_cast<Keys>(static_cast<int>(i) + 1)) {
@@ -10,14 +11,11 @@ InputManager::InputManager() {
 	}
 
 	m_mousePosition = { 0, 0, 0, 0 };
-
-	m_keyEventCallbackIndex = 1;
 }
 
 InputManager::~InputManager() {
-	for (auto it = m_keyEventCallbacks.begin(); it != m_keyEventCallbacks.end(); it++) {
-		it->second = nullptr;
-	}
+	m_keyEventCallbacks.clear();
+	m_mouseEventCallbacks.clear();
 }
 
 InputManager* InputManager::s_instance = nullptr;
@@ -68,16 +66,12 @@ bool InputManager::IsMouseButton(MouseButton button) {
 	return m_mouseButton[button];
 }
 
-InputEvent* InputManager::ListenKeyEvent(key_event_callback callback) {
-	int index = m_keyEventCallbackIndex++;
-	m_keyEventCallbacks[m_keyEventCallbackIndex++] = callback;
+void InputManager::ListenKeyEvent(key_event_callback callback) {
+	m_keyEventCallbacks.push_back(callback);
+}
 
-	InputEvent* env = new InputEvent;
-	env->CreateCallback([&](int idx) {
-		m_keyEventCallbacks.erase(idx);
-	}, index);
-
-	return env;
+void InputManager::ListenMouseEvent(mouse_event_callback callback) {
+	m_mouseEventCallbacks.push_back(callback);
 }
 
 RECT InputManager::GetMousePosition() {
@@ -97,8 +91,8 @@ void InputManager::OnKeyEvent(SDL_Event& event, bool isDown) {
 		m_keyStates[key] = true;
 		
 		if (!lastState && m_keyStates[key]) {
-			for (auto it : m_keyEventCallbacks) {
-				it.second(state);
+			for (auto& it : m_keyEventCallbacks) {
+				it(state);
 			}
 		}
 	}
@@ -106,8 +100,8 @@ void InputManager::OnKeyEvent(SDL_Event& event, bool isDown) {
 		m_keyStates[key] = false;
 		
 		if (lastState && !m_keyStates[key]) {
-			for (auto it : m_keyEventCallbacks) {
-				it.second(state);
+			for (auto& it : m_keyEventCallbacks) {
+				it(state);
 			}
 		}
 	}
@@ -123,10 +117,37 @@ void InputManager::OnMouseEvent(SDL_MouseButtonEvent& event, bool isDown) {
 	}
 
 	if (button != MouseButton::INVALID_BUTTON) {
+		bool lastState = m_mouseButton[button];
+
 		m_mouseButton[button] = isDown;
+
+		MouseState state = {};
+		state.button = button;
+		state.isDown = isDown;
+		state.posX = m_mousePosition.left;
+		state.posY = m_mousePosition.right;
+
+		if (isDown) {
+			if (!lastState && m_mouseButton[button]) {
+				for (auto& it : m_mouseEventCallbacks) {
+					it(state);
+				}
+			}
+		}
+		else {
+			if (!lastState && !m_mouseButton[button]) {
+				for (auto& it : m_mouseEventCallbacks) {
+					it(state);
+				}
+			}
+		}
 	}
 }
 
 void InputManager::OnMousePositionEvent(SDL_MouseMotionEvent& event) {
-	m_mousePosition = { event.x, event.y, 0, 0 };
+	Window* wnd = Window::GetInstance();
+	int x = (event.x * wnd->GetBufferWidth()) / wnd->GetWidth();
+	int y = (event.y * wnd->GetBufferHeight()) / wnd->GetHeight();
+	
+	m_mousePosition = { x, y, 0, 0 };
 }

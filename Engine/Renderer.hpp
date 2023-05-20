@@ -6,13 +6,13 @@
 
 enum class RendererMode {
 	DIRECTX,
-	VULKAN
+	VULKAN,
+	OPENGL
 };
 
 class Renderer {
 public:
 	bool Create(RendererMode mode, Window* window);
-	bool Create2(RendererMode mode, Window* window);
 	bool Resize();
 	bool Destroy();
 
@@ -39,7 +39,10 @@ private:
 	~Renderer();
 
 	static Renderer* s_instance;
+	SDL_Renderer* m_renderer;
 
+#if defined(_WIN32) || defined(_WIN64)
+	/* DirectX11 Renderer */
 	ID3D11BlendState* m_blendState = nullptr;
 	ID3D11RasterizerState* m_scissorState = nullptr;
 	ID3D11Device* m_device = nullptr;
@@ -50,4 +53,8 @@ private:
 
 	std::unordered_map<int, RECT> m_scissorRect;
 	std::unordered_map<int, DirectX::SpriteBatch*> m_spriteBatches;
+#endif
+
+	/* OpenGL Renderer */
+	// TODO: add opengl for crossplatform support
 };

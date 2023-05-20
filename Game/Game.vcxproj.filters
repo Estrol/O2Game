@@ -24,7 +24,7 @@
     <ClCompile Include="MyGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameplayScene.cpp">
+    <ClCompile Include="Scenes\GameplayScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Resources\GameResources.cpp">
@@ -60,7 +60,7 @@
     <ClCompile Include="Engine\NoteResult.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LoadingScene.cpp">
+    <ClCompile Include="Scenes\LoadingScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Data\bms.cpp">
@@ -114,7 +114,19 @@
     <ClCompile Include="Resources\Configuration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResultScene.cpp">
+    <ClCompile Include="Scenes\ResultScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Scenes\SongSelectScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\MusicDatabase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Button.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Scenes\IntroScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,7 +137,7 @@
     <ClInclude Include="GameScenes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameplayScene.h">
+    <ClInclude Include="Scenes\GameplayScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Resources\GameResources.hpp">
@@ -167,7 +179,7 @@
     <ClInclude Include="Engine\DrawableTile.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LoadingScene.h">
+    <ClInclude Include="Scenes\LoadingScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Data\bms.hpp">
@@ -224,8 +236,25 @@
     <ClInclude Include="Resources\Configuration.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResultScene.hpp">
+    <ClInclude Include="Scenes\ResultScene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Scenes\SongSelectScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\MusicDatabase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Button.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenes\IntroScene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="icon.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

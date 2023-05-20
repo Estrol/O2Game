@@ -4,6 +4,7 @@
 #include <fstream>
 #include <filesystem>
 #include "Util/md5.h"
+#include <random>
 
 Chart::Chart() {
 	InitialSvMultiplier = 1.0f;
@@ -23,7 +24,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		throw std::invalid_argument("osu beatmap's Mania key must be 7");
 	}
 
-	m_audio = beatmap.AudioFilename;
+	//m_audio = beatmap.AudioFilename;
 	m_title = beatmap.Title;
 	m_keyCount = beatmap.CircleSize;
 	m_artist = beatmap.Artist;
@@ -57,6 +58,14 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		}
 	}
 
+	{
+		AutoSample sample = {};
+		sample.StartTime = beatmap.AudioLeadIn;
+		sample.Index = beatmap.GetCustomSampleIndex(beatmap.AudioFilename);
+
+		m_autoSamples.push_back(sample);
+	}
+
 	for (auto& note : beatmap.HitObjects) {
 		NoteInfo info = {};
 		info.StartTime = note.StartTime;
@@ -86,7 +95,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		else {
 			TimingInfo info = {};
 			info.StartTime = timing.Offset;
-			info.Value = 60000 / timing.BeatLength;
+			info.Value = 60000.0 / timing.BeatLength;
 			info.TimeSignature = timing.TimeSignature;
 			info.Type = TimingType::BPM;
 
@@ -366,6 +375,32 @@ int Chart::GetLength() {
 	return m_notes[m_notes.size() - 1].EndTime != 0 
 		? m_notes[m_notes.size() - 1].EndTime 
 		: m_notes[m_notes.size() - 1].StartTime;
+}
+
+void Chart::ApplyMod(Mod mod) {
+	switch (mod) {
+		case Mod::MIRROR: {
+			for (auto& note : m_notes) {
+				note.LaneIndex = m_keyCount - 1 - note.LaneIndex;
+			}
+			break;
+		}
+
+		case Mod::RANDOM: {
+			std::vector<int> lanes(m_keyCount);
+			for (int i = 0; i < 7; i++) {
+				lanes[i] = i;
+			}
+
+			auto rng = std::default_random_engine{};
+			std::shuffle(std::begin(lanes), std::end(lanes), rng);
+
+			for (auto& note : m_notes) {
+				note.LaneIndex = lanes[note.LaneIndex];
+			}
+			break;
+		}
+	}
 }
 
 void Chart::ComputeHash() {

@@ -2,6 +2,7 @@
 #include "RhythmEngine.hpp"
 
 TimingLineManager::TimingLineManager(RhythmEngine* engine) {
+	RECT playRect = engine->GetPlayRectangle();
 	m_engine = engine;
 	m_timingLines = {};
 	m_timingInfos = {};
@@ -9,41 +10,34 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 	int mapLength = engine->GetAudioLength();
 	auto bpms = engine->GetBPMs();
 
-	double recycle = (300000.0 / 4.0) / engine->GetNotespeed();
-
 	for (int i = 0; i < bpms.size(); i++) {
-		double target = (i + 1) < bpms.size() ? bpms[i + 1].StartTime - 1 : mapLength;
-		float signature = bpms[i].TimeSignature;
-		float maxBPM = 9999;
+		double beatTime = bpms[i].StartTime;
+		double timeEnd = mapLength - 1;
 
-		double msPerBeat = 60000.0f / (std::min)(std::abs(bpms[i].Value), maxBPM);
-		double increment = signature * msPerBeat;
+		if ((size_t)(i + 1) < bpms.size()) {
+			timeEnd = bpms[(size_t)(i + 1)].StartTime - 1;
+		}
 
-		if (increment <= 0) continue;
-
-		double songPos = bpms[i].StartTime;
-		while (songPos < target) {
-			double offset = engine->GetPositionFromOffset(songPos);
+		while (beatTime < timeEnd) {
+			double offset = engine->GetPositionFromOffset(beatTime);
 			
-			if (!(m_engine->GetTrackPosition() - offset > recycle 
-				&& songPos < m_engine->GetGameAudioPosition())) {
-				
-				TimingLineDesc desc = {};
-				desc.Engine = engine;
-				desc.StartTime = songPos;
-				desc.Offset = offset;
-				desc.ImagePos = 3;
-				desc.ImageSize = 193;
+			TimingLineDesc desc = {};
+			desc.Engine = engine;
+			desc.StartTime = beatTime;
+			desc.Offset = offset;
+			desc.ImagePos = playRect.left;
+			desc.ImageSize = playRect.right;
 
-				m_timingInfos.push(desc);
-			}
+			m_timingInfos.push(desc);
 
-			songPos += increment;
+			beatTime += (60000.0 / bpms[i].Value) * bpms[i].TimeSignature;
 		}
 	}
 }
 
 TimingLineManager::TimingLineManager(RhythmEngine* engine, std::vector<double> list) {
+	RECT playRect = engine->GetPlayRectangle();
+
 	m_engine = engine;
 	m_timingLines = {};
 	m_timingInfos = {};
@@ -55,8 +49,8 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine, std::vector<double> l
 		desc.Engine = engine;
 		desc.StartTime = list[i];
 		desc.Offset = offset;
-		desc.ImagePos = 3;
-		desc.ImageSize = 193;
+		desc.ImagePos = playRect.left;
+		desc.ImageSize = playRect.right;
 		
 		m_timingInfos.push(desc);
 	}
@@ -76,15 +70,19 @@ TimingLineManager::~TimingLineManager() {
 void TimingLineManager::Init() {
 	double recycle = (300000.0 / 4.0) / m_engine->GetNotespeed();
 
+	std::sort(m_timingInfos.begin(), m_timingInfos.end(), [](const auto& a, const auto& b) {
+		return a.Offset < b.Offset;
+	});
+
 	while (m_timingInfos.size() > 0) {
 		auto& info = m_timingInfos.front();
+
+		bool IsA = m_engine->GetTrackPosition() - info.Offset > m_engine->GetPrebufferTiming();
 		
-		if (m_engine->GetTrackPosition() - info.Offset > recycle) {
-			m_timingInfos.pop();
-		}
-		else if (m_engine->GetTrackPosition() - info.Offset < recycle) {
+		if (IsA) {
 			TimingLine* t = new TimingLine();
 			t->Load(&info);
+			
 			m_timingLines.push(t);
 			m_timingInfos.pop();
 		}

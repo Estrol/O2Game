@@ -77,7 +77,14 @@ bool Audio::Play(DWORD dwStartPosition, BOOL bLoop) {
 		Stop();
 	}
 
-	if (!BASS_ChannelPlay(m_hStream, bLoop)) {
+	if (bLoop) {
+		BASS_ChannelFlags(m_hStream, BASS_SAMPLE_LOOP, BASS_SAMPLE_LOOP);
+	}
+	else {
+		BASS_ChannelFlags(m_hStream, 0, BASS_SAMPLE_LOOP);
+	}
+
+	if (!BASS_ChannelPlay(m_hStream, TRUE)) {
 		int lastErr = BASS_ErrorGetCode();
 
 		return false;

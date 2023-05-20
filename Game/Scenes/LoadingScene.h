@@ -1,5 +1,5 @@
 #pragma once
-#include "../Engine/EstEngine.hpp"
+#include "../../Engine/EstEngine.hpp"
 
 class LoadingScene : public Scene {
 public:
@@ -13,6 +13,10 @@ public:
 	bool Detach() override;
 
 private:
+	// can't load chart lmao
+	bool fucked = false;
+	bool is_shown = false;
+
 	double m_counter;
 	Texture2D* m_background;
 };

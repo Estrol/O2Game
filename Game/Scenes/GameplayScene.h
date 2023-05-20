@@ -1,12 +1,13 @@
 #pragma once
-#include "../Engine/EstEngine.hpp"
-#include "ManiaKeys.h"
-#include "Engine/O2Texture.hpp"
-#include "Engine/DrawableNote.hpp"
-#include "Engine/RhythmEngine.hpp"
-#include "Engine/O2NumericTexture.hpp"
-#include "Engine/FrameTimer.hpp"
-#include "../Engine/Text.hpp"
+#include "../../Engine/EstEngine.hpp"
+#include "../../Engine/Text.hpp"
+
+#include "../Engine/DrawableNote.hpp"
+#include "../Engine/RhythmEngine.hpp"
+#include "../Engine/FrameTimer.hpp"
+
+#include "../ManiaKeys.h"
+#include "../Engine/Button.hpp"
 
 struct ManiaKeyState {
 	Keys key;
@@ -23,6 +24,7 @@ public:
 
 	void OnKeyDown(const KeyState& state) override;
 	void OnKeyUp(const KeyState& state) override;
+	void OnMouseDown(const MouseState& state) override;
 
 	bool Attach() override;
 	bool Detach() override;
@@ -39,6 +41,8 @@ private:
 	std::unordered_map<int, bool> m_keyState;
 	std::unordered_map<int, UDim2> m_statsPos;
 
+	Button* m_exitButtonFunc;
+	Texture2D* m_exitBtn;
 	Texture2D* m_playBG;
 
 	Tile2D* m_jamGauge;
@@ -59,7 +63,9 @@ private:
 
 	RhythmEngine* m_game;
 
+	bool m_resourceFucked;
 	bool m_starting;
+	bool m_ended;
 	int m_judgeIndex;
 
 	/* Scoring */
@@ -86,4 +92,8 @@ private:
 	/* Fixed Animation*/
 	double m_wiggleTime;
 	double m_wiggleOffsets;
+
+	/* button */
+	bool m_drawExitButton;
+	bool m_doExit;
 };

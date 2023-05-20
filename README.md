@@ -1,5 +1,5 @@
-# Unnamed O2 Clone Game
-This is experimental software for playing rhythm games.
+# Unnamed O2 Clone, The Game
+This is experimental Windows-only software for playing rhythm game's chart.
 
 Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 
@@ -9,10 +9,14 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - Beat-based judgement.
 - Audio sample non-pitched.
 
+# Currently supported game format
+- O2 (.ojn, .ojm)
+- BMS (.bms, .bme, .bml) (2 Player or PMS is not supported)
+- osu!mania (.osu)
+
 # TODO List
 - Implement song selection list.
 - Implement more UI.
-- Add Text rendering into Game Engine.
 - Probably a lots.
 
 # Project directory
@@ -22,7 +26,7 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 # Compiling
 ### Requirements
 - vcpkg
-- Visual Studio 2022 with CXX20
+- Visual Studio 2022 with C++20 Desktop Development
 - BASS Library from https://www.un4seen.com/
 
 ### Installing external library
@@ -36,6 +40,16 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - Copy skins folder from my build in discord server :troll:
 - Run/Debug it
 - To able use Vulkan, download and extract D3D11.dll and DXGI.dll into vulkan folder.
+
+# Crossplatform
+There will be NEVER crossplatform support because:
+- I don't have any macos device.
+- I don't have any linux device.
+- I don't have any interest to do it.
+- And whole engine is written for DirectX11.
+
+So just use wine to run the game :) \
+Unless you gonna port it by yourself.
 
 # License
 MIT License

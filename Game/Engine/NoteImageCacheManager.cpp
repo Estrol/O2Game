@@ -1,12 +1,20 @@
 #include "NoteImageCacheManager.hpp"
 #include <algorithm>
 
+constexpr int MAX_OBJECTS = 50;
+
 NoteImageCacheManager::NoteImageCacheManager() {
 	m_noteTextures = std::unordered_map<NoteImageType, std::vector<DrawableNote*>>();
 }
 
 NoteImageCacheManager::~NoteImageCacheManager() {
 	for (auto& it : m_noteTextures) {
+		for (auto& it2 : it.second) {
+			delete it2;
+		}
+	}
+
+	for (auto& it : m_tileTextures) {
 		for (auto& it2 : it.second) {
 			delete it2;
 		}
@@ -20,6 +28,11 @@ void NoteImageCacheManager::Repool(DrawableNote* image, NoteImageType noteType) 
 
 	auto& it = m_noteTextures[noteType];
 
+	if (it.size() >= MAX_OBJECTS) {
+		delete image;
+		return;
+	}
+
 	it.push_back(image);
 }
 
@@ -27,6 +40,11 @@ void NoteImageCacheManager::RepoolTile(DrawableTile* image, NoteImageType noteTy
 	if (image == nullptr) return;
 
 	auto& it = m_tileTextures[noteType];
+
+	if (it.size() >= MAX_OBJECTS) {
+		delete image;
+		return;
+	}
 
 	it.push_back(image);
 }

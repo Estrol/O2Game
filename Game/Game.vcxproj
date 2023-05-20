@@ -127,7 +127,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -135,6 +135,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Button.cpp" />
+    <ClCompile Include="Data\MusicDatabase.cpp" />
+    <ClCompile Include="Scenes\IntroScene.cpp" />
     <ClCompile Include="Resources\Configuration.cpp" />
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
@@ -146,7 +149,11 @@
     <ClCompile Include="Engine\FrameTimer.cpp" />
     <ClCompile Include="Data\OJM.cpp" />
     <ClCompile Include="Resources\SkinConfig.cpp" />
-    <ClCompile Include="ResultScene.cpp" />
+    <ClCompile Include="Scenes\ResultScene.cpp" />
+    <ClCompile Include="Scenes\SongSelectScene.cpp" />
+    <ClInclude Include="Engine\Button.hpp" />
+    <ClInclude Include="Data\MusicDatabase.h" />
+    <ClInclude Include="Scenes\IntroScene.hpp" />
     <ClInclude Include="Resources\Configuration.hpp" />
     <ClInclude Include="Data\Util\mINI.h" />
     <ClInclude Include="Engine\DrawableLine.hpp" />
@@ -161,8 +168,8 @@
     <ClCompile Include="Engine\NoteResult.cpp" />
     <ClCompile Include="Engine\O2Texture.cpp" />
     <ClCompile Include="Engine\RhythmEngine.cpp" />
-    <ClCompile Include="GameplayScene.cpp" />
-    <ClCompile Include="LoadingScene.cpp" />
+    <ClCompile Include="Scenes\GameplayScene.cpp" />
+    <ClCompile Include="Scenes\LoadingScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyGame.cpp" />
     <ClCompile Include="Engine\DrawableNote.cpp" />
@@ -174,7 +181,8 @@
     <ClInclude Include="Engine\FrameTimer.hpp" />
     <ClInclude Include="Data\OJM.hpp" />
     <ClInclude Include="Resources\SkinConfig.hpp" />
-    <ClInclude Include="ResultScene.hpp" />
+    <ClInclude Include="Scenes\ResultScene.hpp" />
+    <ClInclude Include="Scenes\SongSelectScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data\AutoReplay.hpp" />
@@ -188,14 +196,14 @@
     <ClInclude Include="EnvironmentSetup.hpp" />
     <ClInclude Include="Engine\GameAudioSampleCache.hpp" />
     <ClInclude Include="Engine\GameTrack.hpp" />
-    <ClInclude Include="LoadingScene.h" />
+    <ClInclude Include="Scenes\LoadingScene.h" />
     <ClInclude Include="Engine\Note.hpp" />
     <ClInclude Include="Engine\NoteImageCacheManager.hpp" />
     <ClInclude Include="Engine\NoteResult.hpp" />
     <ClInclude Include="Engine\RhythmEngine.hpp" />
     <ClInclude Include="Engine\Lodepng.h" />
     <ClInclude Include="Engine\O2Texture.hpp" />
-    <ClInclude Include="GameplayScene.h" />
+    <ClInclude Include="Scenes\GameplayScene.h" />
     <ClInclude Include="GameScenes.h" />
     <ClInclude Include="ManiaKeys.h" />
     <ClInclude Include="MyGame.h" />
@@ -206,7 +214,7 @@
     <ClInclude Include="Engine\TimingLineManager.hpp" />
     <ClInclude Include="Engine\TimingLine.hpp" />
     <ClInclude Include="Resources\iterable_queue.hpp" />
-	<ResourceCompile Include="icon.rc" />
+    <ResourceCompile Include="icon.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
