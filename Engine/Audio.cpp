@@ -189,7 +189,7 @@ void Audio::SetPan(int _pan) {
 void Audio::SetRate(float _rate) {
 	rate = _rate;
 
-	float frequency = 44100.0f;
+	float frequency = 48000.0f;
 	BASS_ChannelGetAttribute(m_hStream, BASS_ATTRIB_FREQ, &frequency);
 
 	if (pitch) {

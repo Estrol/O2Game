@@ -92,8 +92,18 @@ Texture2D* Sprite2D::GetTexture() {
 	return tex;
 }
 
-void Sprite2D::SetDelay(double delay) {
-	m_delay = delay;
+//void Sprite2D::SetDelay(double delay) { // U can delete if you want :troll:
+//	m_delay = delay;
+//}
+
+void Sprite2D::SetFPS(float fps) { // Fix animation, add fps function, remove SetDelay because causing game crash
+	if (fps <= 0.0f) {
+		// Avoid division by zero or negative values (Fix crash)
+		m_delay = 1.0f; // Idk why m_delay workinng here for setfps i tried change but nope
+	}
+	else {
+		m_delay = 1.0f / fps;
+	}
 }
 
 void Sprite2D::Reset() {

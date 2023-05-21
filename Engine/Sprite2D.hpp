@@ -28,7 +28,8 @@ public:
 	void Draw(double delta, RECT* rect, bool manual = false);
 
 	Texture2D* GetTexture();
-	void SetDelay(double delay);
+	//void SetDelay(double delay); remove this function, instead using setfps avoid game crash
+	void SetFPS(float fps);
 	void Reset();
 
 private:

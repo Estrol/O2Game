@@ -27,7 +27,7 @@ GameplayScene::GameplayScene() : Scene::Scene() {
 	m_game = nullptr;
 	m_drawJam = false;
 	m_wiggleTime = 0;
-	m_wiggleOffsets = 0;
+	m_wiggleOffset = 0;
 }
 
 void GameplayScene::Update(double delta) {
@@ -115,8 +115,8 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
-			double m_wiggleTime = m_comboTimer * 50; // Combo animated by Frame per second
-			double m_wiggleOffset = std::sin(m_wiggleTime) * 25.0; // Amplitude 
+			m_wiggleTime = m_comboTimer * 50; // Combo animated by Frame per second
+			m_wiggleOffset = std::sin(m_wiggleTime) * 25.0; // Amplitude 
 
 			if (m_wiggleTime < M_PI) {
 				m_comboLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
@@ -166,8 +166,8 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN) {
 		if (std::get<9>(scores) > 0) {
-			double m_wiggleTime = m_lnTimer * 100; // LNCombo animated by Frame per second
-			double m_wiggleOffset = std::sin(m_wiggleTime) * 10.0; // Amplitude 
+			m_wiggleTime = m_lnTimer * 100; // LNCombo animated by Frame per second
+			m_wiggleOffset = std::sin(m_wiggleTime) * 10.0; // Amplitude 
 
 			if (m_wiggleTime < M_PI) {
 				m_lnLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
@@ -625,6 +625,8 @@ bool GameplayScene::Attach() {
 			m_holdEffect[i]->Position = UDim2::fromOffset(pos, 465);
 			m_hitEffect[i]->AnchorPoint = { .5, .45 };
 			m_holdEffect[i]->AnchorPoint = { .5, .45 };
+
+			m_lifeBar->SetFPS(15);
 		}
 
 		m_game->GetScoreManager()->ListenHit([&](NoteHitInfo info) {
@@ -636,13 +638,17 @@ bool GameplayScene::Attach() {
 			m_drawCombo = true;
 			m_drawJudge = true;
 
+			m_comboLogo->SetFPS(18);
+			m_comboTimer = 0; // Fix crash :troll:
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
 		});
 
 		m_game->GetScoreManager()->ListenJam([&](int combo) {
+			m_jamLogo->SetFPS(13.33);
 			m_drawJam = true;
 			m_jamTimer = 0;
+			m_jamLogo->Reset();
 		});
 
 		m_game->GetScoreManager()->ListenLongNote([&] {

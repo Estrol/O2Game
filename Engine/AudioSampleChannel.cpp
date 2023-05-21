@@ -46,7 +46,7 @@ bool AudioSampleChannel::Play() {
 
 	// Pitch is not possible atm, in sample channel!
 	if (m_rate != 1.0f) {
-		float frequency = 44100.0f;
+		float frequency = 48000.0f;
 		BASS_ChannelGetAttribute(m_hCurrentSample, BASS_ATTRIB_FREQ, &frequency);
 		BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_FREQ, frequency * m_rate);
 	}

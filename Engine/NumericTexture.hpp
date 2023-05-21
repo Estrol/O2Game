@@ -31,6 +31,7 @@ public:
 	int Offset = 0;
 
 	void DrawNumber(int number);
+	void SetValue(int value);
 		
 protected:
 	std::vector<Texture2D*> m_numericsTexture;

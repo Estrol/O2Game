@@ -8,7 +8,7 @@
 #include "AudioSample.hpp"
 #include "Data/bass_ogg_silent.hpp"
 
-#define DEFAULT_SAMPLE_RATE 44100
+#define DEFAULT_SAMPLE_RATE 48000
 
 AudioManager::AudioManager() {
 	m_initialized = false;
