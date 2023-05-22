@@ -316,11 +316,11 @@ void RhythmEngine::Input(double delta) {
 void RhythmEngine::OnKeyDown(const KeyState& state) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
-	if (state.key == Keys::F1) {
+	if (state.key == Keys::F3) {
 		m_scrollSpeed -= 10;
 		std::cout << "Decrease Note Speed" << std::endl;
 	}
-	else if (state.key == Keys::F2) {
+	else if (state.key == Keys::F4) {
 		m_scrollSpeed += 10;
 		std::cout << "Increase Note Speed" << std::endl;
 	}
@@ -384,7 +384,7 @@ double RhythmEngine::GetNotespeed() const {
 }
 
 double RhythmEngine::GetBPMAt(double offset) const {
-	auto bpms = m_currentChart->m_bpms;
+	auto& bpms = m_currentChart->m_bpms;
 	int min = 0, max = bpms.size() - 1;
 
 	if (max == 0) {
