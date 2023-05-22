@@ -62,7 +62,7 @@ private:
 	NumericTexture* m_minuteNum;
 	NumericTexture* m_secondNum;
 
-	Text* m_text;
+	Text* m_title;
 
 	RhythmEngine* m_game;
 

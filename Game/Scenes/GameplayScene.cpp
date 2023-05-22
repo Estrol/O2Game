@@ -249,8 +249,7 @@ void GameplayScene::Render(double delta) {
 		m_exitBtn->Draw();
 	}
 
-	m_text->Position = UDim2::fromOffset(437, 539);
-	m_text->Draw(m_game->GetTitle());
+	m_title->Draw(m_game->GetTitle());
 }
 
 void GameplayScene::Input(double delta) {
@@ -307,7 +306,10 @@ bool GameplayScene::Attach() {
 			m_drawHit[i] = false;
 		}
 
-		m_text = new Text("Arial", 13);
+		m_title = new Text("Arial", 13);
+		auto TitlePos = conf.GetPosition("Title");
+		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
+		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
 
 		m_PlayBG = new Texture2D(playingPath / "PlayingBG.png");
 		auto PlayBGPos = conf.GetPosition("PlayingBG");
@@ -766,7 +768,7 @@ bool GameplayScene::Detach() {
 	}
 
 	SAFE_DELETE(m_game);
-	SAFE_DELETE(m_text);
+	SAFE_DELETE(m_title);
 	SAFE_DELETE(m_exitButtonFunc);
 
 	Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
