@@ -10,6 +10,8 @@
 #include "GameAudioSampleCache.hpp"
 #include "NoteResult.hpp"
 
+#include <chrono>
+
 struct ManiaKeyState {
 	Keys key;
 	bool isPressed;
@@ -103,6 +105,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	}
 
 	if (Configuration::Load("Debug", "Autoplay") == "1") {
+		std::cout << "AutoPlay enabled!" << std::endl;
 		auto replay = AutoReplay::CreateReplay(chart);
 		std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
 			return a.Time < b.Time;
@@ -185,9 +188,32 @@ void RhythmEngine::SetKeys(Keys* keys) {
 	}
 }
 
-bool RhythmEngine::Start() {
-	m_state = GameState::Playing;
-	return true;
+bool RhythmEngine::Start() { // Bring old code since it so usefull at this case
+	std::thread([&] { // DON'T REMOVE OR GAME WILL STUCK :troll:
+		std::cout << "Starting Engine 1" << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		//if (!m_audioPath.empty()) {
+		//	AudioManager::GetInstance()->Create("main_audio", m_audioPath, &m_currentAudio);
+		//}
+
+		m_currentAudioPosition -= 3000; // Notetart in 3 Second, Avoid note coming too early
+		m_state = GameState::Playing;
+		std::cout << "Starting Engine 2" << std::endl;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500)); // Delay game timer to 2 second, Fix timer run too early
+		std::cout << "Starting Game Timer" << std::endl;
+		auto startTime = std::chrono::system_clock::now();
+
+		while (m_state == GameState::Playing) {
+			// Calculate the game time in seconds
+			auto currentTime = std::chrono::system_clock::now();
+			auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime);
+			m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
+		}
+
+		}).detach(); // DON'T REMOVE OR GAME WILL STUCK :troll:
+		// Ty for detach from old code Estrol <3
+		return true;
 }
 
 bool RhythmEngine::Stop() {
@@ -205,9 +231,9 @@ void RhythmEngine::Update(double delta) {
 	// I decided to use this method again from Roblox project I did in past.
 	m_currentAudioPosition += (delta * m_rate) * 1000;
 
-	if (m_currentAudioPosition > m_audioLength + 2500) {
+	if (m_currentAudioPosition > m_audioLength + 6000) { // Avoid game ended too early
 		m_state = GameState::PosGame;
-		::printf("AudioStopped!\n");
+		::printf("Audio stopped!\n");
 	}
 
 	UpdateVirtualResolution();
@@ -290,11 +316,13 @@ void RhythmEngine::Input(double delta) {
 void RhythmEngine::OnKeyDown(const KeyState& state) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
-	if (state.key == Keys::O) {
+	if (state.key == Keys::F3) {
 		m_scrollSpeed -= 10;
+		std::cout << "Decrease Note Speed" << std::endl;
 	}
-	else if (state.key == Keys::P) {
+	else if (state.key == Keys::F4) {
 		m_scrollSpeed += 10;
+		std::cout << "Increase Note Speed" << std::endl;
 	}
 
 	for (auto& key : KeyMapping) {
@@ -356,7 +384,7 @@ double RhythmEngine::GetNotespeed() const {
 }
 
 double RhythmEngine::GetBPMAt(double offset) const {
-	auto bpms = m_currentChart->m_bpms;
+	auto& bpms = m_currentChart->m_bpms;
 	int min = 0, max = bpms.size() - 1;
 
 	if (max == 0) {
@@ -415,6 +443,14 @@ std::vector<TimingInfo> RhythmEngine::GetBPMs() const {
 
 std::vector<TimingInfo> RhythmEngine::GetSVs() const {
 	return m_currentChart->m_svs;
+}
+
+double RhythmEngine::GetElapsedTime() const { // Get game frame
+	return static_cast<double>(SDL_GetTicks()) / 1000.0;
+}
+
+int RhythmEngine::GetPlayTime() const { // Get game time
+	return m_PlayTime;
 }
 
 void RhythmEngine::UpdateNotes() {

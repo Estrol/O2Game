@@ -154,6 +154,10 @@ void NumericTexture::DrawNumber(int number) {
 	batch->End();
 }
 
+void NumericTexture::SetValue(int value) { // Add SetValueinto DrawNumber for NumericTexture so it can update
+	DrawNumber(value);
+}
+
 NumericPosition IntToPos(int i) {
 	switch (i) {
 		case -1: return NumericPosition::LEFT;

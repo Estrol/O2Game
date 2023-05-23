@@ -27,7 +27,7 @@ GameplayScene::GameplayScene() : Scene::Scene() {
 	m_game = nullptr;
 	m_drawJam = false;
 	m_wiggleTime = 0;
-	m_wiggleOffsets = 0;
+	m_wiggleOffset = 0;
 }
 
 void GameplayScene::Update(double delta) {
@@ -80,10 +80,12 @@ void GameplayScene::Render(double delta) {
 		return;
 	}
 
-	m_playBG->Draw();
+	m_PlayBG->Draw();
+	m_Playfield->Draw();
 
 	for (auto& [lane, pressed] : m_keyState) {
 		if (pressed) {
+			m_keyLighting[lane]->AlphaBlend = true;
 			m_keyLighting[lane]->Draw();
 			m_keyButtons[lane]->Draw();
 		}
@@ -113,25 +115,52 @@ void GameplayScene::Render(double delta) {
 		m_pills[i]->Draw();
 	}
 
+	auto curLifeTex = m_lifeBar->GetTexture(); // Move lifebar to here so it will not overlapping
+	curLifeTex->CalculateSize();
+
+	RECT rc = {};
+	rc.left = curLifeTex->AbsolutePosition.X;
+	rc.top = curLifeTex->AbsolutePosition.Y;
+	rc.right = rc.left + curLifeTex->AbsoluteSize.X;
+	rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+	float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
+	
+	// Add wiggle effect
+	float yOffset = 0.0f;
+	// Wiggle effect after the first second
+	yOffset = sinf(m_game->GetElapsedTime() * 75.0f) * 5.0f;
+
+	LONG topCur = (1.0f - alpha) * rc.top + alpha * rc.bottom;
+	rc.top = topCur + static_cast<LONG>(yOffset);
+
+	m_lifeBar->Draw(delta, &rc);
+	
 	if (m_drawCombo) {
 		if (std::get<7>(scores) > 0) {
-			double m_wiggleTime = m_comboTimer * 50; // Combo animated by Frame per second
-			double m_wiggleOffset = std::sin(m_wiggleTime) * 25.0; // Amplitude 
+			m_wiggleTime = m_comboTimer * 120; // Combo animated by Frames per second
+			m_amplitude = 30; // Maximum amplitude
+			double halfAmplitude = (m_amplitude) / 2; // Half of the maximum amplitude
+			double comboLogoReduceAmplitude = 3;
+			double dampingFactor = 0.6; // Damping factor to reduce amplitude over time
+			m_wiggleOffset = std::sin(m_wiggleTime) * (m_amplitude);
 
 			if (m_wiggleTime < M_PI) {
-				m_comboLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
-				m_comboLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset / 2.5);
+				double currentAmplitude = halfAmplitude + (m_wiggleTime / M_PI) * ((m_amplitude)-halfAmplitude); // Gradually increase amplitude
+
+				m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / comboLogoReduceAmplitude);
 				m_comboLogo->Draw(delta);
 
-				m_comboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_comboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
 				m_comboNum->DrawNumber(std::get<7>(scores));
 			}
 			else {
-				m_comboLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
-				m_comboLogo->Position2 = UDim2::fromOffset(0, 0);
+				double elapsedWiggleTime = m_wiggleTime - M_PI; // Time after the initial wiggle phase
+				double dampingAmplitude = m_amplitude * std::pow(dampingFactor, elapsedWiggleTime); // Reduce amplitude using damping factor
+
+				m_comboLogo->Position2 = UDim2::fromOffset(0, dampingAmplitude / comboLogoReduceAmplitude);
 				m_comboLogo->Draw(delta);
 
-				m_comboNum->Position2 = UDim2::fromOffset(0, 0);
+				m_comboNum->Position2 = UDim2::fromOffset(0, dampingAmplitude);
 				m_comboNum->DrawNumber(std::get<7>(scores));
 			}
 		}
@@ -163,14 +192,13 @@ void GameplayScene::Render(double delta) {
 			m_drawJam = false;
 		}
 	}
-
+	
 	if (m_drawLN) {
 		if (std::get<9>(scores) > 0) {
-			double m_wiggleTime = m_lnTimer * 100; // LNCombo animated by Frame per second
-			double m_wiggleOffset = std::sin(m_wiggleTime) * 10.0; // Amplitude 
+			m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
+			m_wiggleOffset = std::sin(m_wiggleTime) * 12; // Amplitude 
 
 			if (m_wiggleTime < M_PI) {
-				m_lnLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
 				m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
 				m_lnLogo->Draw(delta);
 
@@ -178,7 +206,6 @@ void GameplayScene::Render(double delta) {
 				m_lnComboNum->DrawNumber(std::get<9>(scores));
 			}
 			else {
-				m_lnLogo->Size = UDim2::fromScale(1.0, 1.0); // set fixed size
 				m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
 				m_lnLogo->Draw(delta);
 
@@ -188,7 +215,7 @@ void GameplayScene::Render(double delta) {
 		}
 
 		m_lnTimer += delta;
-		if (m_lnTimer > 0.60) {
+		if (m_lnTimer > 1) {
 			m_drawLN = false;
 		}
 	}
@@ -201,22 +228,14 @@ void GameplayScene::Render(double delta) {
 	m_waveGage->Size = UDim2::fromScale(currentProgress, 1);
 	m_waveGage->Draw();
 
-	{
-		auto curLifeTex = m_lifeBar->GetTexture();
-		curLifeTex->CalculateSize();
+	int PlayTime = m_game->GetPlayTime();
+	int currentMinutes = PlayTime / 60;
+	int currentSeconds = PlayTime % 60;
 
-		RECT rc = {};
-		rc.left = curLifeTex->AbsolutePosition.X;
-		rc.top = curLifeTex->AbsolutePosition.Y;
-		rc.right = rc.left + curLifeTex->AbsoluteSize.X;
-		rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y;
-
-		float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
-		LONG topCur = (1.0 - alpha) * rc.top + alpha * rc.bottom;
-		rc.top = topCur;
-		
-		m_lifeBar->Draw(delta, &rc);
-	}
+	m_minuteNum->SetValue(currentMinutes);
+	m_minuteNum->DrawNumber(currentMinutes);
+	m_secondNum->SetValue(currentSeconds);
+	m_secondNum->DrawNumber(currentSeconds);
 
 	for (int i = 0; i < 7; i++) {
 		if (m_drawHold[i]) {
@@ -230,8 +249,7 @@ void GameplayScene::Render(double delta) {
 		m_exitBtn->Draw();
 	}
 
-	m_text->Position = UDim2::fromOffset(437, 539);
-	m_text->Draw(m_game->GetTitle());
+	m_title->Draw(m_game->GetTitle());
 }
 
 void GameplayScene::Input(double delta) {
@@ -288,7 +306,15 @@ bool GameplayScene::Attach() {
 			m_drawHit[i] = false;
 		}
 
-		m_text = new Text("Arial", 13);
+		m_title = new Text("Arial", 13);
+		auto TitlePos = conf.GetPosition("Title");
+		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
+		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
+
+		m_PlayBG = new Texture2D(playingPath / "PlayingBG.png");
+		auto PlayBGPos = conf.GetPosition("PlayingBG");
+		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
+		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
 
 		auto conKeyLight = conf.GetPosition("KeyLighting");
 		auto conKeyButton = conf.GetPosition("KeyButton");
@@ -297,7 +323,7 @@ bool GameplayScene::Attach() {
 			throw std::runtime_error("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
 		}
 
-		m_playBG = new Texture2D(playingPath / "PlayingBG.png");
+		m_Playfield = new Texture2D(playingPath / "Playfield.png");
 		for (int i = 0; i < 7; i++) {
 			m_keyLighting[i] = new Texture2D(playingPath / ("KeyLighting" + std::to_string(i) + ".png"));
 			m_keyButtons[i] = new Texture2D(playingPath / ("KeyButton" + std::to_string(i) + ".png"));
@@ -477,7 +503,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_exitBtn = new Texture2D(playingPath / "Exit.png");
-		m_exitBtn->Position = UDim2::fromOffset(btnExitPos[0].X, btnExitPos[0].Y);
+		m_exitBtn->Position = UDim2::fromOffset(btnExitRect[0].X, btnExitRect[0].Y); // Fix Exit not functional with Playing.ini
 		m_exitBtn->AnchorPoint = { btnExitPos[0].AnchorPointX, btnExitPos[0].AnchorPointY };
 
 		m_exitButtonFunc = new Button(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height,
@@ -516,6 +542,30 @@ bool GameplayScene::Attach() {
 		auto waveGagePos = conf.GetPosition("WaveGage").front();
 		m_waveGage->Position = UDim2::fromOffset(waveGagePos.X, waveGagePos.Y);
 		m_waveGage->AnchorPoint = { waveGagePos.AnchorPointX, waveGagePos.AnchorPointY };
+
+		std::vector<std::filesystem::path> numTimerPaths = {};
+		for (int i = 0; i < 10; i++) {
+			numTimerPaths.emplace_back(playingPath / ("PlayTimeNum" + std::to_string(i) + ".png"));
+
+			if (!CheckSkinComponent(numTimerPaths.back())) {
+				MessageBoxA(NULL, "Failed to load Timer Images 0-9, please check your skin folder.", "Error", MB_OK);
+				return false;
+			}
+		}
+
+		m_minuteNum = new NumericTexture(numTimerPaths);
+		auto minutePos = conf.GetNumeric("Minute");
+		m_minuteNum->NumberPosition = IntToPos(minutePos[0].Direction);
+		m_minuteNum->MaxDigits = minutePos[0].MaxDigit;
+		m_minuteNum->FillWithZeros = minutePos[0].FillWithZero;
+		m_minuteNum->Position = UDim2::fromOffset(minutePos[0].X, minutePos[0].Y);
+
+		m_secondNum = new NumericTexture(numTimerPaths);
+		auto secondPos = conf.GetNumeric("Second");
+		m_secondNum->NumberPosition = IntToPos(secondPos[0].Direction);
+		m_secondNum->MaxDigits = secondPos[0].MaxDigit;
+		m_secondNum->FillWithZeros = secondPos[0].FillWithZero;
+		m_secondNum->Position = UDim2::fromOffset(secondPos[0].X, secondPos[0].Y);
 
 		auto pillsPosition = conf.GetPosition("Pill");
 		if (pillsPosition.size() < 5) {
@@ -625,6 +675,8 @@ bool GameplayScene::Attach() {
 			m_holdEffect[i]->Position = UDim2::fromOffset(pos, 465);
 			m_hitEffect[i]->AnchorPoint = { .5, .45 };
 			m_holdEffect[i]->AnchorPoint = { .5, .45 };
+
+			m_lifeBar->SetFPS(15);
 		}
 
 		m_game->GetScoreManager()->ListenHit([&](NoteHitInfo info) {
@@ -636,16 +688,21 @@ bool GameplayScene::Attach() {
 			m_drawCombo = true;
 			m_drawJudge = true;
 
+			m_comboLogo->SetFPS(18);
+			m_comboTimer = 0; // Fix crash :troll:
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
 		});
 
 		m_game->GetScoreManager()->ListenJam([&](int combo) {
+			m_jamLogo->SetFPS(13.33);
 			m_drawJam = true;
 			m_jamTimer = 0;
+			m_jamLogo->Reset();
 		});
 
 		m_game->GetScoreManager()->ListenLongNote([&] {
+			m_lnLogo->SetFPS(15);
 			m_lnTimer = 0;
 			m_drawLN = true;
 		});
@@ -676,7 +733,8 @@ bool GameplayScene::Detach() {
 		SAFE_DELETE(m_judgement[i]);
 	}
 
-	SAFE_DELETE(m_playBG);
+	SAFE_DELETE(m_PlayBG);
+	SAFE_DELETE(m_Playfield);
 
 	SAFE_DELETE(m_jamGauge);
 	SAFE_DELETE(m_waveGage);
@@ -689,6 +747,8 @@ bool GameplayScene::Detach() {
 	SAFE_DELETE(m_jamNum);
 	SAFE_DELETE(m_scoreNum);
 	SAFE_DELETE(m_comboNum);
+	SAFE_DELETE(m_minuteNum);
+	SAFE_DELETE(m_secondNum);
 	SAFE_DELETE(m_exitBtn);
 
 	if (m_game) {
@@ -708,7 +768,7 @@ bool GameplayScene::Detach() {
 	}
 
 	SAFE_DELETE(m_game);
-	SAFE_DELETE(m_text);
+	SAFE_DELETE(m_title);
 	SAFE_DELETE(m_exitButtonFunc);
 
 	Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");

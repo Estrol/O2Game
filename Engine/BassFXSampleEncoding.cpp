@@ -19,7 +19,7 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
 		return { 0, 0, 0, 0, nullptr };
 	}
 
-	float frequency = 44100.0f;
+	float frequency = 48000.0f;
 	BASS_ChannelGetAttribute(tempoch, BASS_ATTRIB_FREQ, &frequency);
 
 	BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_TEMPO, rate * 100.0f - 100.0f);
@@ -68,7 +68,7 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string
 		return { 0, 0, 0, 0, nullptr };
 	}
 
-	float frequency = 44100.0f;
+	float frequency = 48000.0f;
 	BASS_ChannelGetAttribute(tempoch, BASS_ATTRIB_FREQ, &frequency);
 
 	BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_TEMPO, rate * 100.0f - 100.0f);

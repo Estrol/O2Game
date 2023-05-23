@@ -43,7 +43,8 @@ private:
 
 	Button* m_exitButtonFunc;
 	Texture2D* m_exitBtn;
-	Texture2D* m_playBG;
+	Texture2D* m_Playfield;
+	Texture2D* m_PlayBG;
 
 	Tile2D* m_jamGauge;
 	Tile2D* m_waveGage;
@@ -58,8 +59,10 @@ private:
 	NumericTexture* m_jamNum;
 	NumericTexture* m_scoreNum;
 	NumericTexture* m_comboNum;
+	NumericTexture* m_minuteNum;
+	NumericTexture* m_secondNum;
 
-	Text* m_text;
+	Text* m_title;
 
 	RhythmEngine* m_game;
 
@@ -91,7 +94,8 @@ private:
 
 	/* Fixed Animation*/
 	double m_wiggleTime;
-	double m_wiggleOffsets;
+	double m_wiggleOffset;
+	double m_amplitude;
 
 	/* button */
 	bool m_drawExitButton;

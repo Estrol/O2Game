@@ -66,6 +66,9 @@ public:
 	std::vector<TimingInfo> GetBPMs() const;
 	std::vector<TimingInfo> GetSVs() const;
 
+	double GetElapsedTime() const;
+	int GetPlayTime() const;
+
 private:
 	void UpdateNotes();
 	void UpdateGamePosition();
@@ -81,6 +84,8 @@ private:
 	double m_currentTrackPosition;
 	float m_baseBPM, m_currentBPM;
 	float m_currentSVMultiplier;
+
+	int m_PlayTime;
 
 	int m_currentSampleIndex = 0;
 	int m_currentNoteIndex = 0;
