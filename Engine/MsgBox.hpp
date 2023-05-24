@@ -14,5 +14,5 @@ namespace MsgBox {
 	void Draw();
 
 	void Show(std::string Id, std::string Title, std::string fmt);
-	void Show(std::string Id, std::string Title, std::string fmt, MsgBoxType type = MsgBoxType::NOTHING);
+	void Show(std::string Id, std::string Title, std::string fmt, MsgBoxType type);
 }

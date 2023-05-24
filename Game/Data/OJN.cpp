@@ -140,8 +140,23 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						ev.Value += 1000;
 					}
 
-					// do we need parse the VolPan here?
-					// nowdays OJN/OJM do not use VolPan like BMS
+					// nvm, we need parse it :troll:
+
+					float volume = ((static_cast<int>(event.VolPan) >> 4) & 0x0F) / 16.0f;
+					if (volume == 0.0) volume = 1.0f;
+
+					if (static_cast<int>(volume * 100) == 0) {
+						::printf("");
+					}
+
+					float pan = (static_cast<int>(event.VolPan) & 0x0F);
+					if (pan == 0.0f) pan = 8.0f;
+
+					pan -= 8.0f;
+					pan /= 8.0f;
+
+					ev.Volume = volume;
+					ev.Pan = pan;
 
 					int type = event.Type % 4;
 
@@ -239,6 +254,8 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						note.IsLN = true;
 						note.SampleRefId = static_cast<int>(event.Value);
 						note.LaneIndex = laneIndex;
+						note.Volume = event.Volume;
+						note.Pan = event.Pan;
 
 						notes.push_back(note);
 						break;
@@ -249,7 +266,9 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						note.StartTime = timer;
 						note.IsLN = false;
 						note.SampleRefId = static_cast<int>(event.Value);
-						note.LaneIndex = laneIndex;
+						note.LaneIndex = laneIndex; 
+						note.Volume = event.Volume;
+						note.Pan = event.Pan;
 
 						notes.push_back(note);
 						break;
@@ -261,6 +280,8 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 				sample.StartTime = timer;
 				sample.LaneIndex = -1;
 				sample.SampleRefId = static_cast<int>(event.Value);
+				sample.Volume = event.Volume;
+				sample.Pan = event.Pan;
 
 				autoSamples.push_back(sample);
 			}

@@ -42,6 +42,8 @@ struct NoteEvent {
 	float Value;
 	int Channel;
 	NoteEventType Type;
+
+	float Volume, Pan;
 };
 
 struct OJNHeader {
@@ -81,6 +83,8 @@ struct O2Note {
 	bool IsLN;
 	int LaneIndex;
 	int SampleRefId;
+
+	float Volume, Pan;
 };
 
 struct OJNDifficulty {

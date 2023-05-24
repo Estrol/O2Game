@@ -4,6 +4,7 @@
 #include "../../Engine/Scene.hpp"
 #include "../../Engine/Text.hpp"
 #include "../Engine/Button.hpp"
+#include "../Engine/BGMPreview.hpp"
 
 struct MouseState;
 
@@ -12,6 +13,7 @@ public:
 	SongSelectScene();
 
 	void Render(double delta) override;
+	void Update(double delta) override;
 	void Input(double delta) override;
 	void OnMouseDown(const MouseState& state) override;
 
@@ -34,6 +36,7 @@ private:
 	Text* m_text;
 	Texture2D* m_songSelect;
 	Texture2D* m_songSelectIndex;
+	BGMPreview* m_bgm;
 
 	UDim2 m_selectedIndex;
 	std::vector<UDim2> m_songListRect;

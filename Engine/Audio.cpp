@@ -5,6 +5,8 @@
 #include <bass.h>
 #include <bass_fx.h>
 
+#pragma comment(lib, "Winmm.lib")
+
 Audio::Audio(std::string id) {
 	m_pBuffer = nullptr;
 	m_dwSize = 0;
@@ -120,10 +122,6 @@ bool Audio::CreateStream() {
 		return false;
 	}
 
-	// HACK: This is the fastest way to fix delay problem!
-	/*BASS_ChannelPlay(m_hStream, FALSE);
-	BASS_ChannelPause(m_hStream);*/
-
 	return true;
 }
 
@@ -133,6 +131,50 @@ bool Audio::IsPlaying() {
 	}
 
 	return BASS_ChannelIsActive(m_hStream) == BASS_ACTIVE_PLAYING;
+}
+
+void CreateFadeProc(HSTREAM & m_hstream, int volume, bool state) {
+	std::thread tr = std::thread([m_hstream, volume, state] {
+		float initialVolume = state ? (float)volume / 100.0f : 0.0f;
+		float targetVolume = state ? 0.0f : (float)volume / 100.0f;
+
+		BASS_ChannelSlideAttribute(m_hstream, BASS_ATTRIB_VOL, targetVolume, 1000);
+
+		DWORD fadeStartTime = timeGetTime();
+		DWORD fadeEndTime = fadeStartTime + 1000;
+
+		while (timeGetTime() < fadeEndTime) {
+			Sleep(10);
+		}
+
+		BASS_ChannelSetAttribute(m_hstream, BASS_ATTRIB_VOL, targetVolume);
+	});
+
+	tr.detach();
+}
+
+bool Audio::FadeIn() {
+	if (!m_hStream) {
+		return false;
+	}
+
+	CreateFadeProc(m_hStream, volume, false);
+
+	return true;
+}
+
+bool Audio::FadeOut() {
+	if (!m_hStream) {
+		return false;
+	}
+
+	CreateFadeProc(m_hStream, volume, true);
+
+	return true;
+}
+
+void Audio::Update() {
+	
 }
 
 bool Audio::Pause() {

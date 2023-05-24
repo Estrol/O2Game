@@ -42,6 +42,8 @@ void GameTrack::Update(double delta) {
 
 			if (note->GetStartTime() <= m_engine->GetGameAudioPosition()) {
 				m_keySound = note->GetKeysoundId();
+				m_keyVolume = note->GetKeyVolume();
+				m_keyPan = note->GetKeyPan();
 			}
 
 			note->Update(delta);
@@ -101,14 +103,14 @@ void GameTrack::OnKeyDown() {
 				m_currentHold = note;
 			}
 
-			GameAudioSampleCache::Play(note->GetKeysoundId(), 50);
+			GameAudioSampleCache::Play(note->GetKeysoundId(), note->GetKeyVolume(), note->GetKeyPan());
 			found = true;
 			break;
 		}
 	}
 
 	if (!found) {
-		GameAudioSampleCache::Play(m_keySound, 50);
+		GameAudioSampleCache::Play(m_keySound, m_keyVolume, m_keyPan);
 	}
 }
 

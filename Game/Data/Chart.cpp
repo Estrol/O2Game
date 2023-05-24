@@ -49,6 +49,8 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 					AutoSample sample = {};
 					sample.StartTime = event.StartTime;
 					sample.Index = beatmap.GetCustomSampleIndex(fileName);
+					sample.Volume = 1;
+					sample.Pan = 0;
 
 					m_autoSamples.push_back(sample);
 				}
@@ -62,6 +64,8 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		AutoSample sample = {};
 		sample.StartTime = beatmap.AudioLeadIn;
 		sample.Index = beatmap.GetCustomSampleIndex(beatmap.AudioFilename);
+		sample.Volume = 1;
+		sample.Pan = 0;
 
 		m_autoSamples.push_back(sample);
 	}
@@ -72,6 +76,8 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		info.Type = NoteType::NORMAL;
 		info.Keysound = note.KeysoundIndex;
 		info.LaneIndex = static_cast<int>(std::floorf(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
+		info.Volume = static_cast<float>(note.Volume) / 100.0;
+		info.Pan = 0;
 
 		if (note.Type == 128) {
 			info.Type = NoteType::HOLD;
@@ -178,6 +184,8 @@ Chart::Chart(BMS::BMSFile& file) {
 		info.Type = NoteType::NORMAL;
 		info.LaneIndex = note.Lane;
 		info.Keysound = note.SampleIndex;
+		info.Volume = 1;
+		info.Pan = 0;
 		
 		if (note.EndTime != -1) {
 			info.Type = NoteType::HOLD;
@@ -192,6 +200,8 @@ Chart::Chart(BMS::BMSFile& file) {
 				AutoSample sm = {};
 				sm.StartTime = note.StartTime;
 				sm.Index = note.SampleIndex;
+				sm.Volume = 1;
+				sm.Pan = 0;
 
 				m_autoSamples.push_back(sm);
 			}
@@ -236,6 +246,8 @@ Chart::Chart(BMS::BMSFile& file) {
 		AutoSample sm = {};
 		sm.StartTime = autoSample.StartTime;
 		sm.Index = autoSample.SampleIndex;
+		sm.Volume = 1;
+		sm.Pan = 1;
 
 		m_autoSamples.push_back(sm);
 	}
@@ -287,6 +299,8 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 		info.Keysound = note.SampleRefId;
 		info.LaneIndex = note.LaneIndex;
 		info.Type = NoteType::NORMAL;
+		info.Volume = note.Volume;
+		info.Pan = note.Pan;
 
 		if (note.IsLN) {
 			info.Type = NoteType::HOLD;
@@ -301,6 +315,8 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 				AutoSample sm = {};
 				sm.StartTime = note.StartTime;
 				sm.Index = note.SampleRefId;
+				sm.Volume = note.Volume;
+				sm.Pan = note.Pan;
 
 				m_autoSamples.push_back(sm);
 			}
@@ -312,8 +328,6 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	}
 
 	for (auto& timing : diff.Timings) {
-		//float BPM = 240.0 / timing.MsPerMark * 1000.0;
-
 		TimingInfo info = {};
 		info.StartTime = timing.Time;
 		info.Value = timing.BPM;
@@ -332,6 +346,8 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 		AutoSample sm = {};
 		sm.StartTime = autoSample.StartTime;
 		sm.Index = autoSample.SampleRefId;
+		sm.Volume = autoSample.Volume;
+		sm.Pan = autoSample.Pan;
 
 		m_autoSamples.push_back(sm);
 	}

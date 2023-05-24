@@ -129,14 +129,7 @@ void MsgBox::Draw() {
 }
 
 void MsgBox::Show(std::string Id, std::string Title, std::string fmt) {
-	for (auto& it : m_msgbox) {
-		if (it.Id == Id) {
-			return;
-		}
-	}
-
-	m_results[Id] = -1;
-	m_msgbox.push_back({ Id, Title, fmt, MsgBoxType::NOTHING });
+	return Show(Id, Title, fmt, MsgBoxType::OK);
 }
 
 void MsgBox::Show(std::string Id, std::string Title, std::string fmt, MsgBoxType type) {

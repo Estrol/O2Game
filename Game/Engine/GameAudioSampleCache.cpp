@@ -31,6 +31,12 @@ int LastIndexOf(std::string& str, char c) {
 	return -1;
 }
 
+void GameAudioSampleCache::Load(Chart* chart, bool pitch, bool force) {
+	currentHash = "";
+
+	Load(chart, pitch);
+}
+
 void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	auto audioManager = AudioManager::GetInstance();
 	if (currentHash == chart->MD5Hash) {
@@ -174,7 +180,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	}
 }
 
-void GameAudioSampleCache::Play(int index, int volume) {
+void GameAudioSampleCache::Play(int index, int volume, int pan) {
 	if (index == -1) {
 		return;
 	}
@@ -189,6 +195,7 @@ void GameAudioSampleCache::Play(int index, int volume) {
 	
 	sampleIndex[index] = channel;
 	channel->SetVolume(volume);
+	channel->SetPan(pan);
 	bool result = channel->Play();
 	if (!result) {
 		::printf("Failed to play index %d\n", index);

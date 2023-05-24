@@ -54,6 +54,9 @@ Note::Note(RhythmEngine* engine, GameTrack* track) {
 	m_hitPos = 0;
 	m_relPos = 0;
 
+	m_keyVolume = 50;
+	m_keyPan = 0;
+
 	m_lastScoreTime = -1;
 }
 
@@ -90,6 +93,9 @@ void Note::Load(NoteInfoDesc* desc) {
 	m_initialTrackPosition = desc->InitialTrackPosition;
 	m_endTrackPosition = desc->EndTrackPosition;
 	m_keysoundIndex = desc->KeysoundIndex;
+
+	m_keyVolume = desc->Volume;
+	m_keyPan = desc->Pan;
 
 	m_laneOffset = 0;
 	m_drawAble = false;
@@ -264,6 +270,14 @@ double Note::GetHitTime() const {
 
 int Note::GetKeysoundId() const {
 	return m_keysoundIndex;
+}
+
+int Note::GetKeyVolume() const {
+	return m_keyVolume;
+}
+
+int Note::GetKeyPan() const {
+	return m_keyVolume;
 }
 
 NoteType Note::GetType() const {

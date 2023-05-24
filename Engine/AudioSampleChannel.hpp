@@ -7,6 +7,7 @@ public:
 	AudioSampleChannel(DWORD sampleHandle, float rate, float vol, bool pitch);
 
 	void SetVolume(int vol);
+	void SetPan(int pan);
 
 	bool HasPlayed();
 	bool Play();
@@ -21,6 +22,7 @@ private:
 
 	float m_rate;
 	float m_vol;
+	float m_pan;
 
 	bool m_silent;
 	bool m_pitch;

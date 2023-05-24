@@ -23,6 +23,8 @@ struct NoteInfo {
 	NoteType Type;
 	uint32_t LaneIndex;
 	uint32_t Keysound;
+
+	float Volume = 1, Pan = 0;
 };
 
 struct TimingInfo {
@@ -44,6 +46,8 @@ struct Sample {
 struct AutoSample {
 	uint32_t StartTime;
 	uint32_t Index;
+
+	float Volume = 1, Pan = 0;
 };
 
 enum class Mod {

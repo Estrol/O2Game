@@ -21,6 +21,8 @@
 SongSelectScene::SongSelectScene() {
     m_text = nullptr;
     m_songSelect = nullptr;
+
+    index = -1;
 }
 
 void SongSelectScene::Render(double delta) {
@@ -31,6 +33,7 @@ void SongSelectScene::Render(double delta) {
     bool bPlay = false;
     bool bExitPopup = false;
     bool bOptionPopup = false;
+    bool bSelectNewSong = false;
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(ImVec2(800, 600));
@@ -71,6 +74,8 @@ void SongSelectScene::Render(double delta) {
                         ImGui::PushID(Id.c_str());
                         if (ImGui::Button((const char*)item.Title, ImVec2(500, 20))) {
                             index = i + page;
+
+                            bSelectNewSong = true;
                         }
                         ImGui::PopID();
                     }
@@ -97,129 +102,86 @@ void SongSelectScene::Render(double delta) {
         ImGui::SameLine();
         if (ImGui::BeginChild("#Container1", ImVec2(350, 500))) {
             if (ImGui::BeginChild("#SongSelectChild2", ImVec2(350, 200), true)) {
-                if (index != -1) {
-                    DB_MusicItem& item = music->GetMusicItem(index);
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+                
+                DB_MusicItem* item = music->GetArrayItem() + index;
+                ImGui::Text("Title\r");
+                ImGui::Button((const char*)(index != -1 ? item->Title : u8"###EMPTY1"), ImVec2(340, 0));
 
-                    ImGui::Text("Title\r");
-                    ImGui::SameLine();
-                    ImGui::Text((const char*)item.Title);
+                ImGui::Text("Artist\r");
+                ImGui::Button((const char*)(index != -1 ? item->Artist : u8"###EMPTY1"), ImVec2(340, 0));
 
-                    ImGui::Text("Artist\r");
-                    ImGui::SameLine();
-                    ImGui::Text((const char*)item.Artist);
+                ImGui::Text("Notecharter\r");
+                ImGui::Button((const char*)(index != -1 ? item->Noter : u8"###EMPTY1"), ImVec2(340, 0));
 
-                    ImGui::Text("Notecharter\r");
-                    ImGui::SameLine();
-                    ImGui::Text((const char*)item.Noter);
+                ImGui::Text("Note count\r");
 
-                    ImGui::Text("Note count\r");
-                    ImGui::SameLine();
+                std::string count = std::to_string(index != -1 ? item->MaxNotes[2] : 0);
+                ImGui::Button(count.c_str(), ImVec2(340, 0));
 
-                    std::string count = std::to_string(item.MaxNotes[2]);
-                    ImGui::Text(count.c_str());
-
-                    std::string currentDifficulty = EnvironmentSetup::Get("Difficulty");
-
-                    {
-                        if (currentDifficulty == "0") {
-                            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                        }
-
-                        if (ImGui::Button("EX", ImVec2(50, 0))) {
-                            EnvironmentSetup::Set("Difficulty", "0");
-                        }
-
-                        if (currentDifficulty == "0") {
-                            ImGui::PopItemFlag();
-                            ImGui::PopStyleVar();
-                        }
-                    }
-
-                    ImGui::SameLine();
-
-                    {
-                        if (currentDifficulty == "1") {
-                            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                        }
-
-                        if (ImGui::Button("NX", ImVec2(50, 0))) {
-                            EnvironmentSetup::Set("Difficulty", "1");
-                        }
-
-                        if (currentDifficulty == "1") {
-                            ImGui::PopItemFlag();
-                            ImGui::PopStyleVar();
-                        }
-                    }
-
-                    ImGui::SameLine();
-
-                    {
-                        if (currentDifficulty == "2") {
-                            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                        }
-
-                        if (ImGui::Button("HX", ImVec2(50, 0))) {
-                            EnvironmentSetup::Set("Difficulty", "2");
-                        }
-
-                        if (currentDifficulty == "2") {
-                            ImGui::PopItemFlag();
-                            ImGui::PopStyleVar();
-                        }
-                    }
-
-                    ImGui::Spacing();
-
-                    ImGui::Text("Notespeed: ");
-                    ImGui::SameLine();
-                    ImGui::SliderFloat("##Notespeed", &currentSpeed, 0.1f, 4.0f, "%.2f");
-
-                    ImGui::Text("Rate: ");
-                    ImGui::SameLine();
-                    ImGui::SliderFloat("##Rate", &currentRate, 0.5f, 2.0f, "%.2f");
-
-                    {
-                        std::string value = EnvironmentSetup::Get("Mirror");
-                        if (value == "1") {
-                            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
-                        }
-
-                        if (ImGui::Button("Mirror", ImVec2(80, 0))) {
-
-                        }
-
-                        if (value == "1") {
-                            ImGui::PopStyleVar();
-                        }
-                    }
-
-                    ImGui::SameLine();
-
-                    {
-                        std::string value = EnvironmentSetup::Get("Random");
-                        if (value == "1") {
-                            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
-                        }
-
-                        if (ImGui::Button("Random", ImVec2(80, 0))) {
-
-                        }
-
-                        if (value == "1") {
-                            ImGui::PopStyleVar();
-                        }
-                    }
-                }
+                ImGui::PopItemFlag();
+                ImGui::PopStyleVar();
 
                 ImGui::EndChild();
             }
 
 			if (ImGui::BeginChild("#test2", ImVec2(350, 290), true)) {
-				ImGui::Text("test2");
+                std::string currentDifficulty = EnvironmentSetup::Get("Difficulty");
+                std::vector<std::string> difficulty = { "EX", "NX", "HX" };
+
+                ImGui::Text("Note difficulty");
+                for (int i = 0; i < difficulty.size(); i++) {
+                    int index = std::atoi(currentDifficulty.c_str());
+
+                    if (index == i) {
+                        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                    }
+
+                    if (ImGui::Button(difficulty[i].c_str(), ImVec2(50, 0))) {
+                        EnvironmentSetup::Set("Difficulty", std::to_string(i));
+                    }
+
+                    if (index == i) {
+                        ImGui::PopItemFlag();
+                        ImGui::PopStyleVar();
+                    }
+
+                    // same line until end
+                    if (i != difficulty.size() - 1) {
+                        ImGui::SameLine();
+                    }
+                }
+
+                ImGui::Spacing();
+
+                ImGui::Text("Notespeed");
+                ImGui::SliderFloat("##Notespeed", &currentSpeed, 0.1f, 4.0f, "%.2f");
+
+                ImGui::Text("Rate");
+                ImGui::SliderFloat("##Rate", &currentRate, 0.5f, 2.0f, "%.2f");
+
+                ImGui::Text("Mods");
+                std::vector<std::string> Mods = { "Mirror", "Random" };
+
+                for (auto& mod : Mods) {
+                    std::string value = EnvironmentSetup::Get(mod);
+                    if (value == "1") {
+                        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
+                    }
+
+                    if (ImGui::Button(mod.c_str(), ImVec2(80, 0))) {
+
+                    }
+
+                    if (value == "1") {
+                        ImGui::PopStyleVar();
+                    }
+
+                    ImGui::SameLine();
+                }
+				
 				ImGui::EndChild();
 			}
 
@@ -381,6 +343,12 @@ void SongSelectScene::Render(double delta) {
         ImGui::EndPopup();
     }
 
+    if (index != -1 && bSelectNewSong) {
+        SaveConfiguration();
+        m_bgm->Stop();
+        m_bgm->Load(index);
+    }
+
     if (bPlay && index != -1 && !is_departing) {
         is_departing = true;
         SaveConfiguration();
@@ -395,6 +363,10 @@ void SongSelectScene::Render(double delta) {
         SaveConfiguration();
         SceneManager::GetInstance()->StopGame();
     }
+}
+
+void SongSelectScene::Update(double delta) {
+    m_bgm->Update(delta);
 }
 
 void SongSelectScene::Input(double delta) {
@@ -445,7 +417,26 @@ bool SongSelectScene::Attach() {
         noteValue = 2.2f;
     }
 
-    index = -1;
+    if (!m_bgm) {
+        m_bgm = new BGMPreview();
+        m_bgm->OnReady([&](bool start) {
+            Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+            if (start) {
+                if (bgm) {
+                    bgm->FadeOut();
+                }
+
+                Sleep(1500);
+                m_bgm->Play();
+            }
+            else {
+                if (bgm) {
+                    bgm->FadeIn();
+                }
+            }
+        });
+    }
+
     is_departing = false;
     return true;
 }
@@ -454,6 +445,10 @@ bool SongSelectScene::Detach() {
     Audio* bgm = AudioManager::GetInstance()->Get("BGM");
     if (bgm) {
         bgm->Stop();
+    }
+
+    if (m_bgm) {
+        m_bgm->Stop();
     }
 
     return true;

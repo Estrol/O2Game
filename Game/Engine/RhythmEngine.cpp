@@ -152,6 +152,8 @@ bool RhythmEngine::Load(Chart* chart) {
 		desc.EndTrackPosition = -1;
 		desc.KeysoundIndex = note.Keysound;
 		desc.StartBPM = GetBPMAt(note.StartTime);
+		desc.Volume = note.Volume * 100;
+		desc.Pan = note.Pan * 100;
 
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
@@ -251,7 +253,7 @@ void RhythmEngine::Update(double delta) {
 		auto& sample = m_autoSamples[i];
 
 		if (m_currentVisualPosition >= sample.StartTime) {
-			GameAudioSampleCache::Play(sample.Index, 50);
+			GameAudioSampleCache::Play(sample.Index, sample.Volume * 100, sample.Pan * 100);
 			m_currentSampleIndex++;
 		}
 		else {
@@ -468,44 +470,6 @@ void RhythmEngine::UpdateNotes() {
 			break;
 		}
 	}
-
-	/*for (int i = m_currentNoteIndex; i < m_notes.size(); i++) {
-		auto& note = m_notes[i];
-		double startTime = GetPositionFromOffset(note.StartTime);
-		double endTime = 0;
-		if (note.EndTime != -1) {
-			endTime = GetPositionFromOffset(note.EndTime);
-		}
-		
-		if (m_currentAudioGamePosition + (3000.0 / GetNotespeed()) > note.StartTime
-			|| (m_currentTrackPosition - startTime > GetPrebufferTiming())) {
-			
-			NoteInfoDesc desc = {};
-			desc.ImageType = Key2Type[note.LaneIndex];
-			desc.ImageBodyType = Key2HoldType[note.LaneIndex];
-			desc.StartTime = note.StartTime;
-			desc.Lane = note.LaneIndex;
-			desc.Type = note.Type;
-			desc.EndTime = -1;
-			desc.InitialTrackPosition = startTime;
-			desc.EndTrackPosition = -1;
-			desc.KeysoundIndex = note.Keysound;
-			desc.StartBPM = GetBPMAt(note.StartTime);
-
-			if (note.Type == NoteType::HOLD) {
-				desc.EndTime = note.EndTime;
-				desc.EndTrackPosition = endTime;
-				desc.EndBPM = GetBPMAt(note.EndTime);
-			}
-			
-			m_tracks[note.LaneIndex]->AddNote(&desc);
-
-			m_currentNoteIndex += 1;
-		}
-		else {
-			break;
-		}
-	}*/
 }
 
 void RhythmEngine::UpdateGamePosition() {

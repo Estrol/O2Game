@@ -27,6 +27,8 @@ struct NoteInfoDesc {
 	NoteImageType ImageBodyType;
 
 	int KeysoundIndex;
+	int Volume;
+	int Pan;
 	
 	double StartTime;
 	double EndTime;
@@ -56,6 +58,8 @@ public:
 	double GetHitTime() const;
 
 	int GetKeysoundId() const;
+	int GetKeyVolume() const;
+	int GetKeyPan() const;
 	NoteType GetType() const;
 
 	std::tuple<bool, NoteResult> CheckHit();
@@ -94,6 +98,10 @@ private:
 
 	int m_keysoundIndex;
 	int m_lane;
+
+	int m_keyVolume;
+	int m_keyPan;
+
 	NoteType m_type;
 	NoteState m_state;
 	NoteResult m_hitResult;

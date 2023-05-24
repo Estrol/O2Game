@@ -38,7 +38,10 @@ private:
 	RhythmEngine* m_engine;
 	int m_laneOffset;
 	int m_laneIndex;
+
 	int m_keySound;
+	int m_keyVolume;
+	int m_keyPan;
 
 	double m_deleteDelay;
 

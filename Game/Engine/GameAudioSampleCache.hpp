@@ -4,8 +4,9 @@ class AudioSampleChannel;
 
 namespace GameAudioSampleCache {
 	void Load(Chart* chart, bool pitch);
+	void Load(Chart* chart, bool pitch, bool force);
 
-	void Play(int index, int volume);
+	void Play(int index, int volume = 100, int pan = 0);
 	void Stop(int index);
 	void SetRate(double rate);
 	void ResumeAll();

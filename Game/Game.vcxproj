@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\BGMPreview.cpp" />
     <ClCompile Include="Engine\Button.cpp" />
     <ClCompile Include="Data\MusicDatabase.cpp" />
     <ClCompile Include="Scenes\IntroScene.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="Resources\SkinConfig.cpp" />
     <ClCompile Include="Scenes\ResultScene.cpp" />
     <ClCompile Include="Scenes\SongSelectScene.cpp" />
+    <ClInclude Include="Engine\BGMPreview.hpp" />
     <ClInclude Include="Engine\Button.hpp" />
     <ClInclude Include="Data\MusicDatabase.h" />
     <ClInclude Include="Scenes\IntroScene.hpp" />
