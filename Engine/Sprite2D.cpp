@@ -40,7 +40,7 @@ Sprite2D::Sprite2D(std::vector<ID3D11ShaderResourceView*> textures, float delay)
 	AnchorPoint = { 0, 0 };
 
 	for (auto& it : textures) {
-		m_textures.emplace_back(new Texture2D(it));
+		//m_textures.emplace_back(new Texture2D(it));
 	}
 }
 

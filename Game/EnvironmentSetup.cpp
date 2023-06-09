@@ -5,6 +5,7 @@ namespace {
 	std::unordered_map<std::string, std::string> m_stores;
 	std::unordered_map<std::string, void*> m_storesPtr;
 	std::unordered_map<std::string, std::filesystem::path> m_paths;
+	std::unordered_map<std::string, int> m_ints;
 }
 
 void EnvironmentSetup::Set(std::string key, std::string value) {
@@ -29,5 +30,13 @@ void EnvironmentSetup::SetPath(std::string key, std::filesystem::path path) {
 
 std::filesystem::path EnvironmentSetup::GetPath(std::string key) {
 	return m_paths[key];
+}
+
+void EnvironmentSetup::SetInt(std::string key, int value) {
+	m_ints[key] = value;
+}
+
+int EnvironmentSetup::GetInt(std::string key) {
+	return m_ints[key];
 }
 

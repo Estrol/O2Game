@@ -1,8 +1,7 @@
 #include "DrawableTile.hpp"
 #include "../Resources/GameResources.hpp"
 
-DrawableTile::DrawableTile(NoteImage* frame) : Tile2D::Tile2D() {
-	m_pTexture = frame->Texture;
+DrawableTile::DrawableTile(NoteImage* frame) : Texture2D::Texture2D(frame->Texture) {
 	m_bDisposeTexture = false;
 
 	m_actualSize = frame->TextureRect;
@@ -14,6 +13,4 @@ DrawableTile::DrawableTile(NoteImage* frame) : Tile2D::Tile2D() {
 	Size.Y.Offset = 0;
 
 	AnchorPoint = { 0, 0.5 };
-
-	m_pSpriteBatch = Renderer::GetInstance()->GetSpriteBatch(1);
 }

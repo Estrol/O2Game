@@ -25,9 +25,9 @@ int MsgBox::GetResult(std::string Id) {
 }
 
 void MsgBox::Draw() {
-	ImguiUtil::NewFrame();
-	
 	if (m_msgbox.size() > 0) {
+		ImguiUtil::NewFrame();
+
 		MsgBoxSession& session = m_msgbox.back();
 		std::string Id = session.Title + "###MsgBox";
 

@@ -12,6 +12,7 @@
 #include "../GameScenes.h"
 #include "../Data/MusicDatabase.h"
 #include "../../Engine/MsgBox.hpp"
+#include "../../Engine/SDLException.hpp"
 
 LoadingScene::LoadingScene() {
 	m_background = nullptr;
@@ -23,7 +24,7 @@ LoadingScene::~LoadingScene() {
 }
 
 void LoadingScene::Update(double delta) {
-	m_counter += delta;
+	if (is_ready) m_counter += delta;
 
 	auto obj = EnvironmentSetup::GetObj("SONG");
 	if (obj == nullptr) {
@@ -37,6 +38,12 @@ void LoadingScene::Update(double delta) {
 			}
 			else {
 				file = EnvironmentSetup::GetPath("FILE");
+
+				auto autoplay = EnvironmentSetup::GetInt("ParameterAutoplay");
+				auto rate = EnvironmentSetup::Get("ParameterRate");
+
+				EnvironmentSetup::SetInt("Autoplay", autoplay);
+				EnvironmentSetup::Set("SongRate", rate);
 			}
 
 			const char* bmsfile[] = { ".bms", ".bme", ".bml" };
@@ -74,6 +81,7 @@ void LoadingScene::Update(double delta) {
 				}
 
 				chart = new Chart(o2jamFile, diffIndex);
+				chart->m_title = m_title;
 			}
 			else {
 				Osu::Beatmap beatmap(file);
@@ -90,15 +98,32 @@ void LoadingScene::Update(double delta) {
 			std::filesystem::path dirPath = chart->m_beatmapDirectory;
 			dirPath /= chart->m_backgroundFile;
 
-			Window* window = Window::GetInstance();
-			if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
-				m_background = new Texture2D(dirPath.string());
-				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-			}
+			try {
+				Window* window = Window::GetInstance();
+				if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
+					m_background = new Texture2D(dirPath.string());
+					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				}
 
-			if (chart->m_backgroundBuffer.size() > 0) {
-				m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
-				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
+					m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
+					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				}
+
+				if (m_background == nullptr) {
+					auto SkinName = Configuration::Load("Game", "Skin");
+					auto skinPath = Configuration::Skin_GetPath(SkinName);
+					auto noImage = skinPath / "Playing" / "NoImage.png";
+
+					if (std::filesystem::exists(noImage)) {
+						m_background = new Texture2D(noImage);
+						m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+					}
+				}
+			}
+			catch (SDLException& e) {
+				MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
+				fucked = true;
 			}
 
 			EnvironmentSetup::SetObj("SONG", chart);
@@ -126,7 +151,7 @@ void LoadingScene::Update(double delta) {
 }
 
 void LoadingScene::Render(double delta) {
-	if (m_background) {
+	if (m_background && is_ready) {
 		m_background->Draw();
 	}
 }
@@ -145,9 +170,12 @@ bool LoadingScene::Attach() {
 			DB_MusicItem* item = MusicDatabase::GetInstance()->Find(std::atoi(songId.c_str()));
 			if (!item) {
 				MsgBox::Show("FailChart", "Error", "Failed to find the Id: " + songId, MsgBoxType::OK);
+				fucked = true;
 
 				return true;
 			}
+
+			m_title = item->Title;
 
 			std::fstream fs(file, std::ios::binary | std::ios::in);
 			if (!fs.is_open()) {
@@ -157,20 +185,45 @@ bool LoadingScene::Attach() {
 				return true;
 			}
 
-			fs.seekg(item->CoverOffset, std::ios::beg);
-			char* buffer = new char[item->CoverSize];
-			fs.read(buffer, item->CoverSize);
-			fs.close();
+			if (item->CoverSize > 0) {
+				char signature[3] = { 'n', 'e', 'w' };
+				char check[3];
+				fs.read(check, 3);
 
-			m_background = new Texture2D((uint8_t*)buffer, item->CoverSize);
+				if (memcmp(signature, check, 3) != 0) {
+					try {
+						fs.seekg(item->CoverOffset, std::ios::beg);
+						char* buffer = new char[item->CoverSize];
+						fs.read(buffer, item->CoverSize);
+						fs.close();
 
-			delete[] buffer;
+						Window* window = Window::GetInstance();
+						m_background = new Texture2D((uint8_t*)buffer, item->CoverSize);
+						m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+
+						delete[] buffer;
+					}
+					catch (SDLException& e) {
+						MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
+						fucked = true;
+
+						return true;
+					}
+				}
+			}
 		}
 		else {
 			MsgBox::Show("FailChart", "Error", "Failed to find note file, please re-regenerate your note database!", MsgBoxType::OK);
+			fucked = true;
+
 			return true;
 		}
 	}
+
+	is_ready = false;
+	SceneManager::DisplayFade(0, [this] {
+		is_ready = true;
+	});
 
 	return true;
 }

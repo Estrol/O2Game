@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <vector>
 #include <fstream>
+#include <mutex>
 
 #include "../Data/Chart.hpp"
 #include "../../Engine/EstEngine.hpp"
@@ -19,6 +20,8 @@ namespace GameAudioSampleCache {
 
 	std::string currentHash;
 	double m_rate = 1.0;
+
+	std::mutex m_lock;
 }
 
 int LastIndexOf(std::string& str, char c) {
@@ -196,6 +199,7 @@ void GameAudioSampleCache::Play(int index, int volume, int pan) {
 	sampleIndex[index] = channel;
 	channel->SetVolume(volume);
 	channel->SetPan(pan);
+
 	bool result = channel->Play();
 	if (!result) {
 		::printf("Failed to play index %d\n", index);
@@ -203,6 +207,8 @@ void GameAudioSampleCache::Play(int index, int volume, int pan) {
 }
 
 void GameAudioSampleCache::Stop(int index) {
+	std::lock_guard<std::mutex> lock(m_lock);
+
 	if (sampleIndex.find(index) != sampleIndex.end()) {
 		auto& it = sampleIndex[index];
 
@@ -218,16 +224,28 @@ void GameAudioSampleCache::Stop(int index) {
 }
 
 void GameAudioSampleCache::SetRate(double rate) {
+	if (m_rate != rate) {
+		currentHash = "";
+	}
+
 	m_rate = rate;
 }
 
+double GameAudioSampleCache::SetRate() {
+	return m_rate;
+}
+
 void GameAudioSampleCache::ResumeAll() {
+	std::lock_guard<std::mutex> lock(m_lock);
+
 	for (auto& kv : sampleIndex) {
 		kv.second->Play();
 	}
 }
 
 void GameAudioSampleCache::PauseAll() {
+	std::lock_guard<std::mutex> lock(m_lock);
+
 	for (auto& kv : sampleIndex) {
 		if (kv.second->IsPlaying()) {
 			kv.second->Pause();
@@ -239,6 +257,8 @@ void GameAudioSampleCache::PauseAll() {
 }
 
 void GameAudioSampleCache::StopAll() {
+	std::lock_guard<std::mutex> lock(m_lock);
+
 	for (auto& kv : sampleIndex) {
 		if (kv.second != nullptr) {
 			if (kv.second->IsPlaying()) {

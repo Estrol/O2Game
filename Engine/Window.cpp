@@ -35,7 +35,20 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 	m_bufferHeight = bufferHeight;
 	m_mainTitle = title;
 
-	uint32_t flags = SDL_WINDOW_SHOWN;
+	uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+	if (mode == RendererMode::OPENGL) {
+		flags |= SDL_WINDOW_OPENGL;
+	}
+
+	// check if width and height are same in current display
+	SDL_DisplayMode dm;
+	SDL_GetCurrentDisplayMode(0, &dm);
+
+	bool is_fullscreen = false;
+	if (width == dm.w && height == dm.h) {
+		is_fullscreen = true;
+	}
+
 	m_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 
 	if (m_window == nullptr) {
@@ -44,6 +57,10 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 		return false;
 	}
 	
+	if (is_fullscreen) {
+		SDL_SetWindowBordered(m_window, SDL_FALSE);
+	}
+
 	return true;
 }
 
@@ -56,6 +73,37 @@ bool Window::Destroy() {
 	m_window = nullptr;
 
 	return true;
+}
+
+void Window::ResizeWindow(int width, int height) {
+	SDL_DisplayMode dm;
+	SDL_GetCurrentDisplayMode(0, &dm);
+
+	bool is_fullscreen = false;
+	if (width == dm.w && height == dm.h) {
+		is_fullscreen = true;
+	}
+
+	m_width = width;
+	m_height = height;
+
+	SDL_SetWindowSize(m_window, width, height);
+	SDL_SetWindowFullscreen(m_window, is_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	SDL_SetWindowBordered(m_window, is_fullscreen ? SDL_FALSE : SDL_TRUE);
+	
+	if (!is_fullscreen) {
+		SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+	}
+
+	m_resizeRenderer = true;
+}
+
+bool Window::ShouldResizeRenderer() {
+	return m_resizeRenderer;
+}
+
+void Window::HandleResizeRenderer() {
+	m_resizeRenderer = false;
 }
 
 SDL_Window* Window::GetWindow() const {
@@ -166,6 +214,14 @@ float Window::GetWidthScale() {
 
 float Window::GetHeightScale() {
 	return static_cast<float>(m_height) / static_cast<float>(m_bufferHeight);
+}
+
+void Window::SetScaleOutput(bool value) {
+	m_scaleOutput = value;
+}
+
+bool Window::IsScaleOutput() {
+	return m_scaleOutput;
 }
 
 Window* Window::GetInstance() {

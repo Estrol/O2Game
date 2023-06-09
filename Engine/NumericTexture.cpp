@@ -3,11 +3,8 @@
 #include <filesystem>
 #include "Renderer.hpp"
 #include "NumericTexture.hpp"
-#include <directxtk/WICTextureLoader.h>
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
-
-using namespace DirectX;
 
 NumericTexture::NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsTexture) {
 	if (numericsTexture.size() != 10) {
@@ -20,7 +17,7 @@ NumericTexture::NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsT
 	m_numericsTexture.resize(10);
 	for (int i = 0; i < 10; i++) {
 		auto tex = numericsTexture[i];
-		m_numericsTexture[i] = new Texture2D(tex);
+		//m_numericsTexture[i] = new Texture2D(tex);
 		m_numbericsWidth[i] = m_numericsTexture[i]->GetOriginalRECT();
 	}
 }
@@ -65,11 +62,6 @@ NumericTexture::~NumericTexture() {
 
 void NumericTexture::DrawNumber(int number) {
 	Window* window = Window::GetInstance();
-	Renderer* renderer = Renderer::GetInstance();
-	auto batch = renderer->GetSpriteBatch();
-	auto states = renderer->GetStates();
-	auto context = renderer->GetImmediateContext();
-	auto rasterizerState = renderer->GetRasterizerState();
 
 	std::string numberString = std::to_string(number);
 	if (MaxDigits != 0 && numberString.size() > MaxDigits) {
@@ -80,12 +72,6 @@ void NumericTexture::DrawNumber(int number) {
 			numberString = "0" + numberString;
 		}
 	}
-
-	batch->Begin(SpriteSortMode_Deferred, states->NonPremultiplied(), states->PointWrap(), nullptr, nullptr, [&] {
-		if (AlphaBlend) {
-			context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
-		}
-	});
 
 	LONG xPos = static_cast<LONG>(window->GetBufferWidth() * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
 	LONG yPos = static_cast<LONG>(window->GetBufferHeight() * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
@@ -107,8 +93,9 @@ void NumericTexture::DrawNumber(int number) {
 				tx -= (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
+				tex->AlphaBlend = AlphaBlend;
 				tex->AnchorPoint = AnchorPoint;
-				tex->Draw(false);
+				tex->Draw();
 			}
 			break;
 		}
@@ -126,8 +113,9 @@ void NumericTexture::DrawNumber(int number) {
 				int digit = numberString[i] - '0';
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
+				tex->AlphaBlend = AlphaBlend;
 				tex->AnchorPoint = AnchorPoint;
-				tex->Draw(false);
+				tex->Draw();
 				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
 			break;
@@ -140,7 +128,8 @@ void NumericTexture::DrawNumber(int number) {
 				auto tex = m_numericsTexture[digit];
 				tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
 				tex->AnchorPoint = AnchorPoint;
-				tex->Draw(false);
+				tex->AlphaBlend = AlphaBlend;
+				tex->Draw();
 				tx += (int)m_numbericsWidth[digit].right + (int)(m_numbericsWidth[digit].right * offsetScl);
 			}
 			break;
@@ -150,8 +139,6 @@ void NumericTexture::DrawNumber(int number) {
 			throw std::runtime_error("Invalid NumericPosition");
 		}
 	}
-
-	batch->End();
 }
 
 void NumericTexture::SetValue(int value) { // Add SetValueinto DrawNumber for NumericTexture so it can update

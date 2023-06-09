@@ -92,9 +92,13 @@ bool API_Query() {
 int Run(int argc, wchar_t* argv[]) {
 	try {
 		std::filesystem::path parentPath = std::filesystem::path(argv[0]).parent_path();
-		std::wcout << argv[0];
+		if (parentPath.empty()) {
+			parentPath = std::filesystem::current_path();
+		}
 
 		if (SetCurrentDirectoryW((LPWSTR)parentPath.wstring().c_str()) == FALSE) {
+			std::cout << "GetLastError(): " << GetLastError() << ", with path: " << parentPath.string();
+			
 			MessageBoxA(NULL, "Failed to set directory!", "EstGame Error", MB_ICONERROR);
 			return -1;
 		}
@@ -115,11 +119,27 @@ int Run(int argc, wchar_t* argv[]) {
 		Win32Exception::ThrowIfError(hr);
 
 		for (int i = 1; i < argc; i++) {
-			if (std::filesystem::exists(argv[i])) {
+			std::wstring arg = argv[i];
+
+			// --autoplay, -a
+			if (arg.find(L"--autoplay") != std::wstring::npos || arg.find(L"-a") != std::wstring::npos) {
+				EnvironmentSetup::SetInt("ParameterAutoplay", 1);
+			}
+
+			// --rate, -r [float value range 0.5 - 2.0]
+			if (arg.find(L"--rate") != std::wstring::npos || arg.find(L"-r") != std::wstring::npos) {
+				if (i + 1 < argc) {
+					float rate = std::stof(argv[i + 1]);
+					rate = std::clamp(rate, 0.5f, 2.0f);
+
+					EnvironmentSetup::Set("ParameterRate", std::to_string(rate));
+				}
+			}
+
+			if (std::filesystem::exists(argv[i]) && EnvironmentSetup::GetPath("FILE").empty()) {
 				std::filesystem::path path = argv[i];
 
 				EnvironmentSetup::SetPath("FILE", path);
-				break;
 			}
 		}
 		

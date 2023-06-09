@@ -40,3 +40,5 @@ T FindValue(std::vector<T2> vec, Predicate func) {
 	
 	return T();
 }
+
+std::u8string CodepageToUtf8(const char* string, size_t len, int codepage);

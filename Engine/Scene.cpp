@@ -5,10 +5,6 @@ Scene::Scene() {
 	
 }
 
-Scene::~Scene() {
-	
-}
-
 bool Scene::Attach() {
 	return false;
 }

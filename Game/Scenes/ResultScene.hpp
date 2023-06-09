@@ -1,5 +1,7 @@
 #pragma once
+#include <memory>
 #include "../../Engine/Scene.hpp"
+#include "../../Engine/Texture2D.hpp"
 
 class ResultScene : public Scene {
 public:
@@ -12,4 +14,6 @@ public:
 
 private:
 	bool m_backButton;
+
+	std::unique_ptr<Texture2D> m_background;
 };

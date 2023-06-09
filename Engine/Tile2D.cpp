@@ -2,24 +2,25 @@
 #include <filesystem>
 #include <fstream>
 
-#include <directxtk/WICTextureLoader.h>
+#include <SDL2/SDL_image.h>
 #include "Renderer.hpp"
 #include "MathUtils.hpp"
-
-using namespace DirectX;
+#include "SDLException.hpp"
 
 Tile2D::Tile2D() {
-	m_pTexture = nullptr;
-
 	Rotation = 0;
 	Transparency = 0.0f;
 	m_actualSize = { 0, 0, 0, 0 };
 	m_bDisposeTexture = true;
 
+	AlphaBlend = false;
+	Size = UDim2::fromScale(1, 1);
+	Position = UDim2::fromOffset(0, 0);
+
 	TintColor = { 1.0, 1.0, 1.0 };
 }
 
-Tile2D::Tile2D(std::string fileName) {
+Tile2D::Tile2D(std::string fileName) : Tile2D() {
 	auto path = std::filesystem::current_path().string();
 
 	if (!fileName.starts_with(path)) {
@@ -52,7 +53,7 @@ Tile2D::Tile2D(std::string fileName) {
 	LoadImageResources(buffer, size);
 }
 
-Tile2D::Tile2D(std::filesystem::path path) {
+Tile2D::Tile2D(std::filesystem::path path) : Tile2D() {
 	if (!std::filesystem::exists(path)) {
 		throw std::runtime_error(path.string() + " not found!");
 	}
@@ -80,7 +81,7 @@ Tile2D::Tile2D(std::filesystem::path path) {
 	LoadImageResources(buffer, size);
 }
 
-Tile2D::Tile2D(uint8_t* fileData, size_t size) {
+Tile2D::Tile2D(uint8_t* fileData, size_t size) : Tile2D() {
 	uint8_t* buffer = new uint8_t[size];
 	memcpy(buffer, fileData, size);
 
@@ -94,21 +95,27 @@ Tile2D::Tile2D(uint8_t* fileData, size_t size) {
 	LoadImageResources(buffer, size);
 }
 
-Tile2D::Tile2D(ID3D11ShaderResourceView* texture) {
-	m_pTexture = texture;
-
-	Rotation = 0;
-	Transparency = 0.0f;
-	m_actualSize = { 0, 0, 0, 0 };
-	m_bDisposeTexture = false;
-	AlphaBlend = false;
-	TintColor = { 1.0, 1.0, 1.0 };
-}
+//Tile2D::Tile2D(ID3D11ShaderResourceView* texture) {
+//	m_pTexture = texture;
+//
+//	Rotation = 0;
+//	Transparency = 0.0f;
+//	m_actualSize = { 0, 0, 0, 0 };
+//	m_bDisposeTexture = false;
+//	AlphaBlend = false;
+//	TintColor = { 1.0, 1.0, 1.0 };
+//}
 
 Tile2D::~Tile2D() {
 	if (m_bDisposeTexture) {
-		if (m_pTexture) {
-			m_pTexture->Release();
+		if (m_sdl_tex) {
+			SDL_DestroyTexture(m_sdl_tex);
+			m_sdl_tex = nullptr;
+		}
+
+		if (m_sdl_surface) {
+			SDL_FreeSurface(m_sdl_surface);
+			m_sdl_surface = nullptr;
 		}
 	}
 }
@@ -127,11 +134,78 @@ void Tile2D::Draw(RECT* clipRect) {
 
 void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	Renderer* renderer = Renderer::GetInstance();
-	auto batch = m_pSpriteBatch != nullptr ? m_pSpriteBatch : renderer->GetSpriteBatch();
-	auto states = renderer->GetStates();
-	auto context = renderer->GetImmediateContext();
-	auto rasterizerState = renderer->GetRasterizerState();
 
+	CalculateSize();
+
+	float scaleX = static_cast<float>(m_preAnchoredSize.right) / static_cast<float>(m_actualSize.right);
+	float scaleY = static_cast<float>(m_preAnchoredSize.bottom) / static_cast<float>(m_actualSize.bottom);
+
+	auto window = Window::GetInstance();
+
+	bool scaleOutput = window->IsScaleOutput();
+
+	SDL_Rect destRect = { m_calculatedSize.left, m_calculatedSize.top, m_calculatedSize.right, m_calculatedSize.bottom };
+	if (scaleOutput) {
+		destRect.x = destRect.x * window->GetWidthScale();
+		destRect.y = destRect.y * window->GetHeightScale();
+		destRect.w = destRect.w * window->GetWidthScale();
+		destRect.h = destRect.h * window->GetHeightScale();
+	}
+
+	SDL_Rect originClip = {};
+	SDL_BlendMode oldBlendMode = SDL_BLENDMODE_NONE;
+
+	if (clipRect) {
+		SDL_RenderGetClipRect(renderer->GetSDLRenderer(), &originClip);
+
+		SDL_Rect testClip = { clipRect->left, clipRect->top, clipRect->right - clipRect->left, clipRect->bottom - clipRect->top };
+		if (scaleOutput) {
+			testClip.x = testClip.x * window->GetWidthScale();
+			testClip.y = testClip.y * window->GetHeightScale();
+			testClip.w = testClip.w * window->GetWidthScale();
+			testClip.h = testClip.h * window->GetHeightScale();
+		}
+
+		SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
+	}
+
+	if (AlphaBlend) {
+		SDL_GetTextureBlendMode(m_sdl_tex, &oldBlendMode);
+		SDL_SetTextureBlendMode(m_sdl_tex, renderer->GetSDLBlendMode());
+	}
+
+	SDL_SetTextureColorMod(m_sdl_tex, static_cast<uint8_t>(TintColor.R * 255), static_cast<uint8_t>(TintColor.G * 255), static_cast<uint8_t>(TintColor.B * 255));
+	SDL_SetTextureAlphaMod(m_sdl_tex, static_cast<uint8_t>(255 - (Transparency / 100.0) * 255));
+
+	int error = SDL_RenderCopyEx(
+		renderer->GetSDLRenderer(),
+		m_sdl_tex,
+		nullptr,
+		&destRect,
+		Rotation,
+		nullptr,
+		(SDL_RendererFlip)0
+	);
+
+	if (error != 0) {
+		throw SDLException();
+	}
+
+	if (AlphaBlend) {
+		SDL_SetTextureBlendMode(m_sdl_tex, oldBlendMode);
+	}
+
+	if (clipRect) {
+		if (originClip.w == 0 || originClip.h == 0) {
+			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), nullptr);
+		}
+		else {
+			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &originClip);
+		}
+	}
+}
+
+void Tile2D::CalculateSize() {
 	Window* window = Window::GetInstance();
 	int wWidth = window->GetWidth();
 	int wHeight = window->GetHeight();
@@ -142,115 +216,37 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 	LONG width = static_cast<LONG>(m_actualSize.right * Size.X.Scale) + static_cast<LONG>(Size.X.Offset);
 	LONG height = static_cast<LONG>(m_actualSize.bottom * Size.Y.Scale) + static_cast<LONG>(Size.Y.Offset);
 
+	m_preAnchoredSize = { xPos, yPos, width, height };
+
 	LONG xAnchor = (LONG)(width * std::clamp(AnchorPoint.X, 0.0, 1.0));
 	LONG yAnchor = (LONG)(height * std::clamp(AnchorPoint.Y, 0.0, 1.0));
 
 	xPos -= xAnchor;
 	yPos -= yAnchor;
-	
+
+	m_calculatedSize = { xPos, yPos, width, height };
+
 	AbsolutePosition = { (double)xPos, (double)yPos };
 	AbsoluteSize = { (double)width, (double)height };
-
-	float scaleX = (float)width / (float)m_actualSize.right;
-	float scaleY = (float)height / (float)m_actualSize.bottom;
-
-	if (manualDraw) {
-		batch->Begin(
-			SpriteSortMode_Deferred,
-			states->NonPremultiplied(),
-			states->PointClamp(),
-			nullptr,
-			clipRect ? rasterizerState : nullptr,
-			[&] {
-				if (clipRect) {
-					CD3D11_RECT rect(*clipRect);
-					context->RSSetScissorRects(1, &rect);
-				}
-
-				if (AlphaBlend) {
-					context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
-				}
-			}
-		);
-	}
-
-	RECT tileSize = { 0, 0, width, height };
-	XMVECTOR position = { (float)xPos, (float)yPos, 0, 0 };
-	XMVECTOR origin = { 0.5, 0.5, 0, 0 };
-	XMVECTOR scale = { 1, 1, 1, 1 };
-
-	static const XMVECTORF32 s_half = { { { 0.5f, 0.5f, 0.f, 0.f } } };
-	position = XMVectorAdd(XMVectorTruncate(position), s_half);
-
-	try {
-		XMVECTORF32 color = { TintColor.R, TintColor.G, TintColor.B, 1.0f - Transparency };
-
-		batch->Draw(
-			m_pTexture,
-			position,
-			&tileSize,
-			color,
-			Rotation,
-			origin,
-			scale
-		);
-	}
-	catch (std::logic_error& error) {
-		if (error.what() == "Begin must be called before Draw") {
-			MessageBoxA(NULL, "Texture2D::Draw missing SpriteBatch::Begin", "EstEngine, Error", MB_ICONERROR);
-			return;
-		}
-	}
-
-	if (manualDraw) {
-		batch->End();
-	}
 }
 
 void Tile2D::LoadImageResources(uint8_t* buffer, size_t size) {
-	ID3D11Device* device = Renderer::GetInstance()->GetDevice();
-	ID3D11DeviceContext* context = Renderer::GetInstance()->GetImmediateContext();
-
-	ID3D11Resource* resource = nullptr;
-	HRESULT hr = CreateWICTextureFromMemoryEx(
-		device,
-		nullptr,//context,
-		buffer,
-		size,
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_IGNORE_SRGB,
-		&resource,
-		&m_pTexture
-	);
-
-	if (FAILED(hr)) {
-		throw std::runtime_error("Failed to load texture resource view!");
+	SDL_RWops* rw = SDL_RWFromMem(buffer, size);
+	m_sdl_surface = IMG_Load_RW(rw, 1);
+	if (!m_sdl_surface) {
+		throw SDLException();
 	}
 
-	ID3D11Texture2D* texture = nullptr;
-	hr = resource->QueryInterface<ID3D11Texture2D>(&texture);
-
-	if (FAILED(hr)) {
-		throw std::runtime_error("Failed to load texture resource view!");
+	m_sdl_tex = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), m_sdl_surface);
+	if (!m_sdl_tex) {
+		throw SDLException();
 	}
+	
+	// sdl get texture resolution
+	int w, h;
+	SDL_QueryTexture(m_sdl_tex, nullptr, nullptr, &w, &h);
 
-	D3D11_TEXTURE2D_DESC desc;
-	texture->GetDesc(&desc);
-
-	Size.X.Scale = 1.0f;
-	Size.X.Offset = 0;
-	Size.Y.Scale = 1.0f;
-	Size.Y.Offset = 0;
-
-	m_actualSize = { 0, 0, (LONG)desc.Width, (LONG)desc.Height };
-
-	// Free the copied buffer
+	m_bDisposeTexture = true;
 	delete[] buffer;
-
-	texture->Release();
-	resource->Release();
+	m_actualSize = { 0, 0, w, h };
 }

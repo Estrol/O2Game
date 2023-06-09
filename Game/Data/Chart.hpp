@@ -74,9 +74,9 @@ public:
 
 	std::string m_backgroundFile;
 	std::vector<char> m_backgroundBuffer;
-	std::string m_title;
+	std::u8string m_title;
+	std::u8string m_artist;
 	std::string m_audio;
-	std::string m_artist;
 	std::filesystem::path m_beatmapDirectory;
 
 	std::vector<NoteInfo> m_notes;

@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d11.h>
 #include <string>
-#include <directxtk/SpriteBatch.h>
+#include <SDL2/SDL.h>
 #include <filesystem>
 
 #include "UDim2.hpp"
@@ -14,7 +14,8 @@ public:
 	Texture2D(std::string fileName);
 	Texture2D(std::filesystem::path path);
 	Texture2D(uint8_t* fileData, size_t size);
-	Texture2D(ID3D11ShaderResourceView* texture);
+	Texture2D(SDL_Texture* texture);
+	//Texture2D(ID3D11ShaderResourceView* texture);
 	~Texture2D();
 
 	void Draw();
@@ -56,6 +57,9 @@ protected:
 	RECT m_preAnchoredSize;
 
 	RECT m_actualSize;
-	ID3D11ShaderResourceView* m_pTexture;
-	DirectX::SpriteBatch* m_pSpriteBatch = nullptr;
+	SDL_Texture* m_sdl_tex;
+	SDL_Surface* m_sdl_surface;
+
+	/*ID3D11ShaderResourceView* m_pTexture;
+	DirectX::SpriteBatch* m_pSpriteBatch = nullptr;*/
 };

@@ -6,5 +6,7 @@ class ImFont;
 
 namespace FontResources {
 	void PreloadFontCaches();
-	ImFont* Load(std::string name, int size);
+	void Rebuild();
+	bool ShouldRebuild();
+	void DoRebuild();
 };

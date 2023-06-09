@@ -55,21 +55,10 @@ void FrameTimer::Draw(double delta) {
 	}
 
 	if (m_currentFrame < m_frames.size()) {
-		auto renderer = Renderer::GetInstance();
-		auto spriteBatch = renderer->GetSpriteBatch();
-		auto device = renderer->GetDevice();
-		auto context = renderer->GetImmediateContext();
-		auto states = renderer->GetStates();
-
-		spriteBatch->Begin(DirectX::SpriteSortMode_Deferred, states->NonPremultiplied(), states->PointWrap(), nullptr, nullptr, [&] {
-			context->OMSetBlendState(renderer->GetBlendState(), nullptr, 0xffffffff);
-		});
-
 		m_frames[m_currentFrame]->AnchorPoint = AnchorPoint;
 		m_frames[m_currentFrame]->Position = Position;
-		m_frames[m_currentFrame]->Draw(false);
-
-		spriteBatch->End();
+		m_frames[m_currentFrame]->AlphaBlend = true;
+		m_frames[m_currentFrame]->Draw();
 	}
 }
 

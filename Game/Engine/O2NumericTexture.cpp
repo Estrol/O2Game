@@ -1,10 +1,7 @@
 #include "O2NumericTexture.hpp"
-#include <directxtk/WICTextureLoader.h>
 #include "../../Engine/Renderer.hpp"
 #include "Lodepng.h"
 #include "O2Texture.hpp"
-
-using namespace DirectX;
 
 O2NumericTexture::O2NumericTexture(OJS* ojs) {
 	if (ojs->FrameCount < 10) {

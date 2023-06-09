@@ -5,9 +5,11 @@
 #include <d3d11.h>
 
 enum class RendererMode {
-	DIRECTX,
-	VULKAN,
-	OPENGL
+	OPENGL, // 0
+	VULKAN, // 1
+	DIRECTX, // 2
+	DIRECTX11, // 3
+	DIRECTX12, // 4
 };
 
 class Renderer {
@@ -19,17 +21,8 @@ public:
 	bool BeginRender();
 	bool EndRender();
 
-	bool CreateScissor(RECT rect);
-
-	ID3D11Device* GetDevice() const;
-	ID3D11DeviceContext* GetImmediateContext() const;
-	IDXGISwapChain* GetSwapChain() const;
-	ID3D11RasterizerState* GetRasterizerState() const;
-	ID3D11BlendState* GetBlendState() const;
-	
-	DirectX::SpriteBatch* GetSpriteBatch();
-	DirectX::SpriteBatch* GetSpriteBatch(int index);
-	DirectX::CommonStates* GetStates();
+	SDL_Renderer* GetSDLRenderer();
+	SDL_BlendMode GetSDLBlendMode();
 
 	static Renderer* GetInstance();
 	static void Release();
@@ -39,22 +32,6 @@ private:
 	~Renderer();
 
 	static Renderer* s_instance;
-	SDL_Renderer* m_renderer;
-
-#if defined(_WIN32) || defined(_WIN64)
-	/* DirectX11 Renderer */
-	ID3D11BlendState* m_blendState = nullptr;
-	ID3D11RasterizerState* m_scissorState = nullptr;
-	ID3D11Device* m_device = nullptr;
-	ID3D11DeviceContext* m_immediateContext = nullptr;
-	IDXGISwapChain* m_swapChain = nullptr;
-	ID3D11RenderTargetView* m_renderTargetView = nullptr;
-	DirectX::CommonStates* m_states = nullptr;
-
-	std::unordered_map<int, RECT> m_scissorRect;
-	std::unordered_map<int, DirectX::SpriteBatch*> m_spriteBatches;
-#endif
-
-	/* OpenGL Renderer */
-	// TODO: add opengl for crossplatform support
+	SDL_Renderer* m_renderer; /* May be used with DirectX11, DirectX12 or OpenGL */
+	SDL_BlendMode m_blendMode;
 };

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <d3d11.h>
+#include <SDL2/SDL.h>
 
 typedef void* ESTHANDLE;
 
@@ -54,7 +55,8 @@ enum class NoteImageType {
 };
 
 struct NoteImage {
-	ID3D11ShaderResourceView* Texture;
+	SDL_Texture* Texture;
+	SDL_Surface* Surface;
 	RECT TextureRect;
 };
 

@@ -75,9 +75,6 @@
     <ClCompile Include="Data\AutoReplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\DrawableLine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\TimingLineManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -211,9 +208,6 @@
     </ClInclude>
     <ClInclude Include="Data\Util\Util.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\DrawableLine.hpp">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Data\OJN.h">
       <Filter>Header Files</Filter>

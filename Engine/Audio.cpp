@@ -14,10 +14,18 @@ Audio::Audio(std::string id) {
 
 	m_type = AudioType::STREAM;
 	m_id = id;
+
+	lockFade = new std::mutex();
 }
 
 Audio::~Audio() {
-	Release();
+	{
+		std::lock_guard<std::mutex> lock(*lockFade);
+
+		Release();
+	}
+
+	delete lockFade;
 }
 
 AudioType Audio::GetType() const {
@@ -133,8 +141,14 @@ bool Audio::IsPlaying() {
 	return BASS_ChannelIsActive(m_hStream) == BASS_ACTIVE_PLAYING;
 }
 
-void CreateFadeProc(HSTREAM & m_hstream, int volume, bool state) {
-	std::thread tr = std::thread([m_hstream, volume, state] {
+bool Audio::IsFadeOut() {
+	return is_fade_rn;
+}
+
+void CreateFadeProc(std::mutex* lock, HSTREAM & m_hstream, int volume, bool state) {
+	std::thread tr = std::thread([lock, m_hstream, volume, state] {
+		std::lock_guard<std::mutex> l(*lock);
+
 		float initialVolume = state ? (float)volume / 100.0f : 0.0f;
 		float targetVolume = state ? 0.0f : (float)volume / 100.0f;
 
@@ -158,7 +172,8 @@ bool Audio::FadeIn() {
 		return false;
 	}
 
-	CreateFadeProc(m_hStream, volume, false);
+	is_fade_rn = false;
+	CreateFadeProc(lockFade, m_hStream, volume, false);
 
 	return true;
 }
@@ -168,7 +183,8 @@ bool Audio::FadeOut() {
 		return false;
 	}
 
-	CreateFadeProc(m_hStream, volume, true);
+	is_fade_rn = true;
+	CreateFadeProc(lockFade, m_hStream, volume, true);
 
 	return true;
 }

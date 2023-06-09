@@ -74,6 +74,9 @@ public:
 	bool IsDrawable();
 	bool IsRemoveable();
 
+	bool IsHeadHit();
+	bool IsTailHit();
+
 	void Release();
 
 private:

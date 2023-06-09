@@ -103,10 +103,12 @@ namespace O2 {
 		OJN();
 		~OJN();
 
+		static std::stringstream LoadOJNFile(std::filesystem::path filePath);
 		void Load(std::filesystem::path& filePath);
 
 		std::filesystem::path CurrrentDir;
 		OJNHeader Header;
+		int KeyCount;
 
 		bool IsValid();
 

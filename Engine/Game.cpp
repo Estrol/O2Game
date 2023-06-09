@@ -8,13 +8,27 @@
 #include "Imgui/imgui_impl_dx11.h"
 #include "FontResources.hpp"
 #include "MsgBox.hpp"
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_image.h>
+#include "Imgui/ImguiUtil.hpp"
+#include "Imgui/imgui_impl_sdlrenderer2.h"
+#include "MathUtils.hpp"
 
 namespace {
 	thread_local double curTick = 0.0;
 	thread_local double lastTick = 0.0;
 
 	bool InitSDL() {
-		return SDL_Init(SDL_INIT_EVERYTHING) == 0;
+		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+			return false;
+		}
+
+		return IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) != 0;
+	}
+
+	void DeInitSDL() {
+		SDL_Quit();
+		IMG_Quit();
 	}
 
 	//Improve accuracy frame limiter
@@ -75,6 +89,8 @@ Game::~Game() {
 	InputManager::Release();
 	Renderer::Release();
 	Window::Release();
+
+	DeInitSDL();
 }
 
 bool Game::Init() {
@@ -86,7 +102,17 @@ bool Game::Init() {
 
 	std::cout << "Window::Create << " << std::endl;
 	m_window = Window::GetInstance();
-	if (!m_window->Create(m_renderMode, "Game", m_windowWidth, m_windowHeight, m_bufferWidth, m_bufferHeight)) {
+
+	int width = m_windowWidth;
+	int height = m_windowHeight;
+	if (m_fullscreen) {
+		SDL_DisplayMode dm;
+		SDL_GetCurrentDisplayMode(0, &dm);
+		width = dm.w;
+		height = dm.h;
+	}
+
+	if (!m_window->Create(m_renderMode, "Game", width, height, m_bufferWidth, m_bufferHeight)) {
 		return false;
 	}
 	
@@ -94,6 +120,10 @@ bool Game::Init() {
 	m_renderer = Renderer::GetInstance();
 	if (!m_renderer->Create(m_renderMode, m_window)) {
 		return false;
+	}
+
+	if (m_renderMode == RendererMode::OPENGL) {
+		m_threadMode = ThreadMode::SINGLE_THREAD; // OpenGL doesnt support multithreading
 	}
 
 	std::cout << "InputManager::Create << " << std::endl;
@@ -109,7 +139,10 @@ bool Game::Init() {
 	}
 
 	FontResources::PreloadFontCaches();
-	m_frameText = new Text("Arial", 13);
+	m_frameText = new Text(13);
+	m_fadeBox = new ResizableImage(m_window->GetBufferWidth(), m_window->GetBufferHeight(), 0x00); 
+	m_currentFade = 0;
+	m_targetFade = 0;
 	
 	return true;
 }
@@ -124,6 +157,7 @@ void Game::Run(double frameRate) {
 	m_running = true;
 	m_notify = true;
 	m_frameLimit = frameRate;
+	m_frameLimitMode = FrameLimitMode::MENU;
 
 	m_audioThread = std::thread([&] {
 		while (m_running) {
@@ -136,15 +170,74 @@ void Game::Run(double frameRate) {
 	m_renderThread = std::thread([&] {
 		while (m_running) {
 			if (m_threadMode == ThreadMode::MULTI_THREAD) {
-				double delta = FrameLimit(m_frameLimit);
+				double delta = 0;
+
+				switch (m_frameLimitMode) {
+					case FrameLimitMode::GAME: {
+						delta = FrameLimit(m_frameLimit);
+						break;
+					}
+
+					case FrameLimitMode::MENU: {
+						delta = FrameLimit(60.0);
+						break;
+					}
+				}
+
+				if (m_window->ShouldResizeRenderer()) {
+					m_renderer->Resize();
+
+					FontResources::DoRebuild();
+					m_window->HandleResizeRenderer();
+				}
+
+				if (FontResources::ShouldRebuild()) {
+					//FontResources::Rebuild();
+					FontResources::PreloadFontCaches();
+
+					/*ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
+					ImGui_ImplSDLRenderer2_DestroyFontsTexture();*/
+				}
 				
 				Update(delta);
+
+				if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
+					double increment = (delta * 5) * 100;
+
+					// compare it using epsilon
+					if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
+						m_currentFade = m_targetFade;
+					}
+					else {
+						if (m_currentFade < m_targetFade) {
+							m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+						}
+						else {
+							m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+						}
+					}
+				}
 				
-				m_renderer->BeginRender();
-				Render(delta);
-				MsgBox::Draw();
-				DrawFPS(delta);
-				m_renderer->EndRender();
+				if (!m_minimized) {
+					m_renderer->BeginRender();
+					Render(delta);
+					MsgBox::Draw();
+
+					if (static_cast<int>(m_currentFade) != 0) {
+						auto drawList = ImGui::GetForegroundDrawList();
+						float a = static_cast<int>(m_currentFade) / 100.0;
+
+						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(ImVec2(800, 600)), IM_COL32(0, 0, 0, a * 255));
+					}
+
+					if (ImguiUtil::HasFrameQueue()) {
+						ImguiUtil::Reset();
+
+						ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+					}
+
+					m_renderer->EndRender();
+				}
 			}
 			else {
 				FrameLimit(15.0f);
@@ -170,9 +263,23 @@ void Game::Run(double frameRate) {
 		}
 	});
 
+	m_minimized = false;
 	while (m_running) {
-		double delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
-		
+		double delta = 0;
+		switch (m_frameLimitMode) {
+			case FrameLimitMode::GAME: {
+				delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
+				break;
+			}
+
+			case FrameLimitMode::MENU: {
+				delta = FrameLimit(60.0);
+				break;
+			}
+		}
+
+		m_imguiInterval += delta;
+
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
@@ -180,7 +287,7 @@ void Game::Run(double frameRate) {
 					MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
 					break;
 			}
-
+			
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}
@@ -189,20 +296,64 @@ void Game::Run(double frameRate) {
 			Stop();
 		}
 
+		m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
+
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			Input(delta);
 		}
 		else {
+			if (m_window->ShouldResizeRenderer()) {
+				m_renderer->Resize();
+
+				FontResources::DoRebuild();
+				m_window->HandleResizeRenderer();
+			}
+
+			if (FontResources::ShouldRebuild()) {
+				FontResources::PreloadFontCaches();
+			}
+
 			Input(delta);
 
 			Update(delta);
 
-			m_renderer->BeginRender();
-			Render(delta);
+			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
+				double increment = (delta * 5) * 100;
 
-			MsgBox::Draw();
-			DrawFPS(delta);
-			m_renderer->EndRender();
+				// compare it using epsilon
+				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
+					m_currentFade = m_targetFade;
+				}
+				else {
+					if (m_currentFade < m_targetFade) {
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+					}
+					else {
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+					}
+				}
+			}
+
+			if (!m_minimized) {
+				m_renderer->BeginRender();
+				Render(delta);
+				MsgBox::Draw();
+
+				if (static_cast<int>(m_currentFade) != 0) {
+					auto drawList = ImGui::GetForegroundDrawList();
+					float a = static_cast<int>(m_currentFade) / 100.0;
+
+					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(ImVec2(800, 600)), IM_COL32(0, 0, 0, a * 255));
+				}
+
+				if (ImguiUtil::HasFrameQueue()) {
+					ImguiUtil::Reset();
+
+					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+				}
+				
+				m_renderer->EndRender();
+			}
 		}
 	}
 
@@ -224,6 +375,10 @@ void Game::SetRenderMode(RendererMode mode) {
 	m_renderMode = mode;
 }
 
+void Game::SetFrameLimitMode(FrameLimitMode mode) {
+	m_frameLimitMode = mode;
+}
+
 void Game::SetFramelimit(double frameRate) {
 	m_frameLimit = frameRate;
 }
@@ -236,6 +391,18 @@ void Game::SetBufferSize(int width, int height) {
 void Game::SetWindowSize(int width, int height) {
 	m_windowWidth = width;
 	m_windowHeight = height;
+}
+
+void Game::SetFullscreen(bool fullscreen) {
+	m_fullscreen = true;
+}
+
+void Game::DisplayFade(int transparency) {
+	m_targetFade = static_cast<float>(transparency);
+}
+
+float Game::GetDisplayFade() {
+	return m_currentFade;
 }
 
 void Game::Update(double deltaTime) {

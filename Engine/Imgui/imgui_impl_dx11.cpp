@@ -102,10 +102,10 @@ static void ImGui_ImplDX11_SetupRenderState(ImDrawData* draw_data, ID3D11DeviceC
     ctx->VSSetShader(bd->pVertexShader, nullptr, 0);
     ctx->VSSetConstantBuffers(0, 1, &bd->pVertexConstantBuffer);
     ctx->PSSetShader(bd->pPixelShader, nullptr, 0);
-    //ctx->PSSetSamplers(0, 1, &bd->pFontSampler);
+    ctx->PSSetSamplers(0, 1, &bd->pFontSampler);
 
-    auto sampler = Renderer::GetInstance()->GetStates()->PointWrap();
-    ctx->PSSetSamplers(0, 1, &sampler);
+    /*auto sampler = Renderer::GetInstance()->GetStates()->PointWrap();
+    ctx->PSSetSamplers(0, 1, &sampler);*/
 
     ctx->GSSetShader(nullptr, nullptr, 0);
     ctx->HSSetShader(nullptr, nullptr, 0); // In theory we should backup and restore this as well.. very infrequently used..

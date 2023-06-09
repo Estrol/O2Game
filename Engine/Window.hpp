@@ -9,6 +9,10 @@ public:
 	bool Create(RendererMode mode, std::string title, int width, int height, int bufferWidth, int bufferHeight);
 	bool Destroy();
 
+	void ResizeWindow(int width, int height);
+	bool ShouldResizeRenderer();
+	void HandleResizeRenderer();
+
 	SDL_Window* GetWindow() const;
 	HWND GetHandle() const;
 	int GetWidth() const;
@@ -17,6 +21,9 @@ public:
 	int GetBufferHeight() const;
 	float GetWidthScale();
 	float GetHeightScale();
+
+	void SetScaleOutput(bool value);
+	bool IsScaleOutput();
 
 	void SetWindowTitle(std::string& title);
 	void SetWindowSubTitle(std::string& subTitle);
@@ -29,6 +36,8 @@ private:
 
 	static Window* s_instance;
 
+	bool m_scaleOutput;
+	bool m_resizeRenderer;
 	int m_width;
 	int m_height;
 	int m_bufferWidth;

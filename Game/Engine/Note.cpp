@@ -17,6 +17,26 @@ namespace {
 	bool isWithinRange(int point, int minRange, int maxRange) {
 		return (point >= minRange && point <= maxRange);
 	}
+
+	bool isCollision(int top, int bottom, int min, int max) {
+		// Check if the top value of the rectangle is within the range
+		if (top >= min && top <= max) {
+			return true;  // Collision detected
+		}
+
+		// Check if the bottom value of the rectangle is within the range
+		if (bottom >= min && bottom <= max) {
+			return true;  // Collision detected
+		}
+
+		// Check if the range is completely inside the rectangle
+		if (top <= min && bottom >= max) {
+			return true;  // Collision detected
+		}
+
+		// No collision detected
+		return false;
+	}
 }
 
 Note::Note(RhythmEngine* engine, GameTrack* track) {
@@ -174,6 +194,7 @@ void Note::Render(double delta) {
 	double trackPosition = m_engine->GetTrackPosition();
 
 	int min = 0, max = hitPos + 10;
+	auto playRect = m_engine->GetPlayRectangle();
 
 	if (m_type == NoteType::HOLD) {
 		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, hitPos, m_engine->GetNotespeed(), false);
@@ -201,23 +222,21 @@ void Note::Render(double delta) {
 		m_body->Position = UDim2::fromOffset(m_laneOffset, position);
 		m_body->Size = { 1, 0, 0, height };
 		
-		if (!m_didHitTail) {
-			m_body->TintColor = { Transparency, Transparency, Transparency }; 
+		m_body->TintColor = { Transparency, Transparency, Transparency };
 
-			bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
-			bool b2 = isWithinRange(m_tail->Position.Y.Offset, min, max);
+		bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
+		bool b2 = isWithinRange(m_tail->Position.Y.Offset, min, max);
 
-			if (b1 || b2) {
-				m_body->Draw(false);
-			}
-			
-			if (b1) {
-				m_head->Draw(false);
-			}
-			
-			if (b2) {
-				m_tail->Draw(false);
-			}
+		if (isCollision(m_tail->Position.Y.Offset, m_head->Position.Y.Offset, min, max)) {
+			m_body->Draw(&playRect);
+		}
+
+		if (b1) {
+			m_head->Draw(&playRect);
+		}
+
+		if (b2) {
+			m_tail->Draw(&playRect);
 		}
 	}
 	else {
@@ -227,7 +246,7 @@ void Note::Render(double delta) {
 		bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
 
 		if (b1) {
-			m_head->Draw(false);
+			m_head->Draw(&playRect);
 		}
 	}
 }
@@ -273,11 +292,11 @@ int Note::GetKeysoundId() const {
 }
 
 int Note::GetKeyVolume() const {
-	return m_keyVolume;
+	return m_keyVolume;	
 }
 
 int Note::GetKeyPan() const {
-	return m_keyVolume;
+	return m_keyPan;
 }
 
 NoteType Note::GetType() const {
@@ -323,7 +342,6 @@ std::tuple<bool, NoteResult> Note::CheckRelease() {
 		double time_to_end = m_engine->GetGameAudioPosition() - m_endTime;
 
 		if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
-			//auto result = TimeToResult(m_engine, m_endTime, time_to_end);
 			auto result = TimeToResult(m_engine, this);
 
 			if (std::get<bool>(result)) {
@@ -379,14 +397,13 @@ void Note::OnHit(NoteResult result) {
 	}
 	else {
 		m_state = NoteState::DO_REMOVE;
-		//m_engine->GetScoreManager()->OnHit({ result, m_hitPos });
 		m_track->HandleScore({
-				result,
-				m_hitPos,
-				false,
-				m_ignore,
-				1
-			});
+			result,
+			m_hitPos,
+			false,
+			m_ignore,
+			1
+		});
 	}
 }
 
@@ -397,8 +414,6 @@ void Note::OnRelease(NoteResult result) {
 
 			if (result == NoteResult::MISS) {
 				GameAudioSampleCache::Stop(m_keysoundIndex);
-				//m_engine->GetScoreManager()->OnLongNoteHold(HoldResult::HoldBreak);
-				//m_engine->GetScoreManager()->OnHit({ result, m_relPos });
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 
 				m_track->HandleHoldScore(HoldResult::HoldBreak);
@@ -408,19 +423,18 @@ void Note::OnRelease(NoteResult result) {
 					true,
 					m_ignore,
 					2
-					});
+				});
 			}
 			else {
  				m_state = NoteState::HOLD_PASSED;
 				m_didHitTail = true;
-				//m_engine->GetScoreManager()->OnHit({ result, m_relPos });
 				m_track->HandleScore({
 					result,
 					m_hitPos,
 					true,
 					m_ignore,
 					2
-					});
+				});
 			}
 		}
 	}
@@ -446,6 +460,14 @@ bool Note::IsDrawable() {
 
 bool Note::IsRemoveable() {
 	return m_state == NoteState::DO_REMOVE;
+}
+
+bool Note::IsHeadHit() {
+	return m_didHitHead;
+}
+
+bool Note::IsTailHit() {
+	return m_didHitTail;
 }
 
 void Note::Release() {

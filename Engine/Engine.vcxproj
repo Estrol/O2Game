@@ -26,6 +26,8 @@
     <ClCompile Include="BassFXSampleEncoding.cpp" />
     <ClCompile Include="Color3.cpp" />
     <ClCompile Include="Data\estring.cpp" />
+    <ClCompile Include="Imgui\imgui_impl_sdlrenderer2.cpp" />
+    <ClCompile Include="ResizableImage.cpp" />
     <ClCompile Include="FontResources.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
     <ClCompile Include="Imgui\ImguiUtil.cpp" />
@@ -45,6 +47,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="SDLException.cpp" />
     <ClCompile Include="Sprite2D.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture2D.cpp" />
@@ -62,6 +65,10 @@
     <ClInclude Include="AudioSampleChannel.hpp" />
     <ClInclude Include="BassFXSampleEncoding.hpp" />
     <ClInclude Include="Color3.hpp" />
+    <ClInclude Include="Data\SDLRenderStruct.h" />
+    <ClInclude Include="FallbackFonts\jp.ttf.h" />
+    <ClInclude Include="Imgui\imgui_impl_sdlrenderer2.h" />
+    <ClInclude Include="ResizableImage.hpp" />
     <ClInclude Include="FallbackFonts\arial.ttf.h" />
     <ClInclude Include="FontResources.hpp" />
     <ClInclude Include="Imgui\imconfig.h" />
@@ -75,6 +82,7 @@
     <ClInclude Include="Imgui\imstb_truetype.h" />
     <ClInclude Include="Imgui\misc\freetype\imgui_freetype.h" />
     <ClInclude Include="MsgBox.hpp" />
+    <ClInclude Include="SDLException.hpp" />
     <ClInclude Include="Sprite2D.hpp" />
     <ClInclude Include="Text.hpp" />
     <ClInclude Include="Win32ErrorHandling.h" />
@@ -124,6 +132,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -131,6 +140,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -201,7 +211,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -211,7 +221,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:__cplusplus /fsanitize=address %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -227,7 +237,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -239,7 +249,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:__cplusplus /fsanitize=address %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

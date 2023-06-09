@@ -3,7 +3,7 @@
 
 struct NoteImage;
 
-class DrawableTile : public Tile2D {
+class DrawableTile : public Texture2D {
 public:
 	DrawableTile(NoteImage* frame);
 };

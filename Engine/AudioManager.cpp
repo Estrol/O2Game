@@ -19,12 +19,11 @@ AudioManager::AudioManager() {
 
 AudioManager::~AudioManager() {
 	for (auto& it : m_audios) {
-		if (it.second->GetType() == AudioType::SAMPLE) {
-			delete (AudioSample*)it.second;
-		}
-		else {
-			delete it.second;
-		}
+		delete it.second;
+	}
+
+	for (auto& it : m_audioSamples) {
+		delete it.second;
 	}
 	
 	if (m_initialized) {

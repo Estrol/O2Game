@@ -46,6 +46,7 @@ public:
 	double GetCurrentBPM() const;
 	double GetSongRate() const;
 	int GetAudioLength() const;
+	int GetGameVolume() const;
 
 	double GetPositionFromOffset(double offset);
 	double GetPositionFromOffset(double offset, int index);
@@ -58,7 +59,7 @@ public:
 	int GetHitPosition() const;
 	Vector2 GetResolution() const;
 	RECT GetPlayRectangle() const;
-	std::string GetTitle() const;
+	std::u8string GetTitle() const;
 	
 	GameState GetState() const;
 	ScoreManager* GetScoreManager() const;
@@ -85,8 +86,6 @@ private:
 	float m_baseBPM, m_currentBPM;
 	float m_currentSVMultiplier;
 
-	int m_PlayTime;
-
 	int m_currentSampleIndex = 0;
 	int m_currentNoteIndex = 0;
 	int m_currentBPMIndex = 0;
@@ -95,9 +94,13 @@ private:
 	int m_audioLength = 0;
 	int m_hitPosition = 0;
 	int m_laneOffset = 0;
+	int m_audioVolume = 100;
+	int m_audioOffset = 0;
 
 	bool m_started = false;
 	GameState m_state = GameState::NotGame;
+	std::u8string m_title;
+
 	RECT m_playRectangle;
 	int m_laneSize[7];
 	int m_lanePos[7];
@@ -113,6 +116,10 @@ private:
 	std::vector<AutoSample> m_autoSamples;
 	std::unordered_map<int, int> m_autoHitIndex;
 	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
+
+	/* clock system */
+	int m_PlayTime;
+	std::chrono::system_clock::time_point m_startClock;
 
 	ScoreManager* m_scoreManager;
 	TimingLineManager* m_timingLineManager;

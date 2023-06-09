@@ -13,9 +13,13 @@ SceneManager::SceneManager() {
 }
 
 SceneManager::~SceneManager() {
-	for (auto& it : m_scenes) {
-		it.second->Detach();
-		delete it.second;
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+
+		for (auto& it : m_scenes) {
+			it.second->Detach();
+			delete it.second;
+		}
 	}
 }
 
@@ -23,9 +27,7 @@ SceneManager* SceneManager::s_instance = nullptr;
 
 void SceneManager::Update(double delta) {
 	if (m_nextScene != nullptr) {
-		static std::mutex mutex;
-
-		std::lock_guard<std::mutex> lock(mutex);
+		std::lock_guard<std::mutex> lock(m_mutex);
 
 		if (!m_nextScene->Attach()) {
 			MessageBoxA(NULL, "Failed to init next scene", "EstEngine Error", MB_ICONERROR);
@@ -107,6 +109,27 @@ void SceneManager::IChangeScene(int idx) {
 
 void SceneManager::SetParent(Game* parent) {
 	m_parent = parent;
+}
+
+void SceneManager::SetFrameLimit(double frameLimit) {
+	m_parent->SetFramelimit(frameLimit);
+}
+
+void SceneManager::SetFrameLimitMode(FrameLimitMode mode) {
+	m_parent->SetFrameLimitMode(mode);
+}
+
+void SceneManager::DisplayFade(int transparency, std::function<void()> callback) {
+	std::thread([&, transparency, callback] {
+		std::lock_guard<std::mutex> lock(s_instance->m_mutex);
+
+		s_instance->m_parent->DisplayFade(transparency);
+		while (static_cast<int>(s_instance->m_parent->GetDisplayFade()) != transparency) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+
+		callback();
+	}).detach();
 }
 
 void SceneManager::StopGame() {

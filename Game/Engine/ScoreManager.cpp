@@ -30,11 +30,13 @@ ScoreManager::~ScoreManager() {
 }
 
 void ScoreManager::OnHit(NoteHitInfo info) {
+	float multiplier = static_cast<float>(m_jamCombo) / 15.0f;
+
     switch (info.Result) {
 		case NoteResult::COOL: {
 			AddLife(1);
 			m_jamGauge += 4;
-			m_score += 100;
+			m_score += 100 + (25 * multiplier);
 			m_cool++;
 			break;
 		}
@@ -42,7 +44,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		case NoteResult::GOOD: {
 			AddLife(0.5);
 			m_jamGauge += 2;
-			m_score += 50;
+			m_score += 50 + (15 * multiplier);;
 			m_good++;
 			break;
 		}
@@ -50,7 +52,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		case NoteResult::BAD: {
 			if (m_numOfPills > 0) {
 				m_numOfPills = std::clamp(m_numOfPills - 1, 0, 5);
-				m_score += 100;
+				m_score += 100 + (25 * multiplier);;
 				m_cool++;
 
 				info.Result = NoteResult::COOL;
@@ -59,7 +61,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 				AddLife(-1);
 				m_jamGauge = 0;
 				m_coolCombo = 0;
-				m_score += 25;
+				m_score += 25 + (5 * multiplier);;
 				m_combo = 0;
 				m_bad++;
 			}
@@ -71,7 +73,11 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 			m_combo = 0;
 			m_jamCombo = 0;
 			m_jamGauge = 0;
-			m_score -= 25;
+
+			if (m_life > 0) {
+				m_score -= 100 + (100 * multiplier); // LOL
+			}
+			
 			m_miss++;
 			break;
 		}

@@ -1,7 +1,7 @@
 # Unnamed O2 Clone, The Game
-This is experimental Windows-only software for playing rhythm game's chart.
+This is experimental (currently Windows-only) software for playing rhythm game's chart.
 
-Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
+Written in C++ with SDL (+ imgui for it's GUI elements)
 
 # Features
 - BPM Changes with negative BPM.
@@ -10,12 +10,15 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - Audio sample non-pitched.
 
 # Currently supported game format
-- O2 (.ojn, .ojm)
+- O2 (.ojn, .ojm) (Encrypted OJN supported)
 - BMS (.bms, .bme, .bml) (2 Player or PMS is not supported)
 - osu!mania (.osu)
 
 # TODO List
-- Implement song selection list.
+- Implement song selection list (DONE).
+- Implement SDL Based rendering (DONE).
+- Replace any Windows only code to STL implementation.
+- Crossplatform support.
 - Implement more UI.
 - Probably a lots.
 
@@ -30,7 +33,10 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - BASS Library from https://www.un4seen.com/
 
 ### Installing external library
-- Install DirectXTK and libcurl from vcpkg.
+- Install SDL2: `vcpkg install sdl2:x64-windows`
+- Install freetype: `vcpkg install freetype:x64-windows`
+- Install curlpp: `vcpkg install curlpp:x64-windows`
+- Install SDL_Image with JPEG support: `vcpkg install sdl2-image[libjpeg-turbo]:x64-windows`
 - Put BASS x64 library (.lib) to Lib/x64
 
 ### Compiling
@@ -39,17 +45,12 @@ Written in C++ with SDL + BASS + DirectX11 (and Vulkan through DXVK)
 - Copy BASS x64 DLL to build folder
 - Copy skins folder from my build in discord server :troll:
 - Run/Debug it
-- To able use Vulkan, download and extract D3D11.dll and DXGI.dll into vulkan folder.
+- To able use Vulkan, download and extract D3D9.dll into vulkan folder.
 
 # Crossplatform
-There will be NEVER crossplatform support because:
-- I don't have any macos device.
-- I don't have any linux device.
-- I don't have any interest to do it.
-- And whole engine is written for DirectX11.
-
-So just use wine to run the game :) \
-Unless you gonna port it by yourself.
+There will be no crossplatform until:
+- Cleaned every windows-only function (or wrap it).
+- Convert vcproject and solution to cmake project.
 
 # License
 MIT License

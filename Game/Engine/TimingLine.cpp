@@ -8,7 +8,7 @@ namespace {
 }
 
 TimingLine::TimingLine() {
-	m_line = new DrawableLine();
+	m_line = new ResizableImage(198, 1, 0xFF);
 	m_engine = nullptr;
 }
 
@@ -45,6 +45,7 @@ double TimingLine::GetTrackPosition() const {
 void TimingLine::Render(double delta) {
 	auto resolution = m_engine->GetResolution();
 	auto hitPos = m_engine->GetHitPosition();
+	auto playRect = m_engine->GetPlayRectangle();
 	
 	double y = CalculateLinePosition(hitPos, m_currentTrackPosition, m_engine->GetNotespeed());
 
@@ -52,7 +53,7 @@ void TimingLine::Render(double delta) {
 	m_line->Position = UDim2::fromOffset(m_imagePos, y); //+ start.Lerp(end, alpha);
 
 	if (m_line->Position.Y.Offset >= 0 && m_line->Position.Y.Offset < hitPos + 10) {
-		m_line->Draw(false);
+		m_line->Draw(&playRect);
 	}
 }
 

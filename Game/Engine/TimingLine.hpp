@@ -1,6 +1,5 @@
 #pragma once
-#include "DrawableLine.hpp"
-
+class ResizableImage;
 class RhythmEngine;
 
 struct TimingLineDesc {
@@ -31,6 +30,6 @@ private:
 	double m_startTime, m_offset, m_currentTrackPosition;
 	int m_imagePos, m_imageSize;
 
-	DrawableLine* m_line;
+	ResizableImage* m_line;
 	RhythmEngine* m_engine;
 };

@@ -291,6 +291,8 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 		ss.write((char*)buffer, SampleHeader.chunkSize);
 
 		delete[] buffer;
+		ss.str("");
+		ss.clear();
 
 		O2Sample sample = {};
 		sample.RefValue = ValueRef++;

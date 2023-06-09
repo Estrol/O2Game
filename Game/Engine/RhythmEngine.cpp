@@ -11,6 +11,7 @@
 #include "NoteResult.hpp"
 
 #include <chrono>
+#include <codecvt>
 
 struct ManiaKeyState {
 	Keys key;
@@ -104,7 +105,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		m_autoSamples.push_back(sample);
 	}
 
-	if (Configuration::Load("Debug", "Autoplay") == "1") {
+	if (EnvironmentSetup::GetInt("Autoplay") == 1) {
 		std::cout << "AutoPlay enabled!" << std::endl;
 		auto replay = AutoReplay::CreateReplay(chart);
 		std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
@@ -116,17 +117,73 @@ bool RhythmEngine::Load(Chart* chart) {
 		}
 	}
 
+	auto audioVolume = Configuration::Load("Game", "AudioVolume");
+	if (audioVolume.size() > 0) {
+		try {
+			m_audioVolume = std::atoi(audioVolume.c_str());
+		}
+		catch (std::invalid_argument e) {
+			std::cout << "Game.ini::AudioVolume invalid volume: " << audioVolume << " reverting to 100 value" << std::endl;
+			m_audioVolume = 100;
+		}
+	}
+
+	auto audioOffset = Configuration::Load("Game", "AudioOffset");
+	if (audioOffset.size() > 0) {
+		try {
+			m_audioOffset = std::atoi(audioOffset.c_str());
+		}
+
+		catch (std::invalid_argument e) {
+			std::cout << "Game.ini::AudioOffset invalid offset: " << audioOffset << " reverting to 0 value" << std::endl;
+			m_audioOffset = 0;
+		}
+	}
+
+	auto autoSound = Configuration::Load("Game", "AutoSound");
+	bool IsAutoSound = false;
+	if (autoSound.size() > 0) {
+		try {
+			IsAutoSound = std::atoi(autoSound.c_str()) == 1;
+		}
+
+		catch (std::invalid_argument e) {
+			std::cout << "Game.ini::AutoSound invalid value: " << autoSound << " reverting to 0 value" << std::endl;
+			IsAutoSound = false;
+		}
+	}
+
 	if (Configuration::Load("Gameplay", "Notespeed").size() > 0) {
 		m_scrollSpeed = std::atoi(Configuration::Load("Gameplay", "Notespeed").c_str());
 	}
 
 	if (EnvironmentSetup::Get("SongRate").size() > 0) {
 		m_rate = std::stod(EnvironmentSetup::Get("SongRate").c_str());
+		m_rate = std::clamp(m_rate, 0.5, 2.0);
 	}
 
-	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
-		return a.StartTime < b.StartTime;
-	});
+	m_title = chart->m_title;
+	if (m_rate != 1.0) {
+#if defined(WIN32)
+		int widelen = MultiByteToWideChar(CP_UTF8, 0, (char*)m_title.c_str(), -1, NULL, 0);
+		wchar_t* widestr = new wchar_t[widelen];
+		MultiByteToWideChar(CP_UTF8, 0, (char*)m_title.c_str(), -1, widestr, widelen);
+
+		// format [%.2f] <title>
+		wchar_t buffer[256];
+		swprintf_s(buffer, L"[%.2fx] %s", m_rate, widestr);
+
+		// convert back to utf8
+		int mblen = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
+		char8_t* mbstr = new char8_t[mblen];
+
+		WideCharToMultiByte(CP_UTF8, 0, buffer, -1, (char*)mbstr, mblen, NULL, NULL);
+
+		m_title = mbstr;
+		delete[] widestr;
+		delete[] mbstr;
+#endif
+	}
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
 	m_audioLength = chart->GetLength();
@@ -152,13 +209,24 @@ bool RhythmEngine::Load(Chart* chart) {
 		desc.EndTrackPosition = -1;
 		desc.KeysoundIndex = note.Keysound;
 		desc.StartBPM = GetBPMAt(note.StartTime);
-		desc.Volume = note.Volume * 100;
-		desc.Pan = note.Pan * 100;
+		desc.Volume = note.Volume * m_audioVolume;
+		desc.Pan = note.Pan * m_audioVolume;
 
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
 			desc.EndTrackPosition = GetPositionFromOffset(note.EndTime);
 			desc.EndBPM = GetBPMAt(note.EndTime);
+		}
+
+		if ((m_audioOffset != 0 && desc.KeysoundIndex != -1) || IsAutoSound) {
+			AutoSample newSample = {};
+			newSample.StartTime = desc.StartTime;
+			newSample.Pan = note.Pan;
+			newSample.Volume = note.Volume;
+			newSample.Index = desc.KeysoundIndex;
+
+			m_autoSamples.push_back(newSample);
+			desc.KeysoundIndex = -1;
 		}
 
 		m_noteDescs.push_back(desc);
@@ -171,6 +239,10 @@ bool RhythmEngine::Load(Chart* chart) {
 		else {
 			return a.EndTime < b.EndTime;
 		}
+	});
+
+	std::sort(m_autoSamples.begin(), m_autoSamples.end(), [](const AutoSample& a, const AutoSample& b) {
+		return a.StartTime < b.StartTime;
 	});
 
 	UpdateGamePosition();
@@ -190,35 +262,15 @@ void RhythmEngine::SetKeys(Keys* keys) {
 	}
 }
 
-bool RhythmEngine::Start() { // Bring old code since it so usefull at this case
-	std::thread([&] { // DON'T REMOVE OR GAME WILL STUCK :troll:
-		std::cout << "Starting Engine 1" << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		//if (!m_audioPath.empty()) {
-		//	AudioManager::GetInstance()->Create("main_audio", m_audioPath, &m_currentAudio);
-		//}
+bool RhythmEngine::Start() { // no, use update event instead
+	m_currentAudioPosition -= 3000;
+	m_state = GameState::Playing;
 
-		m_currentAudioPosition -= 3000; // Notetart in 3 Second, Avoid note coming too early
-		m_state = GameState::Playing;
-		std::cout << "Starting Engine 2" << std::endl;
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(1500)); // Delay game timer to 2 second, Fix timer run too early
-		std::cout << "Starting Game Timer" << std::endl;
-		auto startTime = std::chrono::system_clock::now();
-
-		while (m_state == GameState::Playing) {
-			// Calculate the game time in seconds
-			auto currentTime = std::chrono::system_clock::now();
-			auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime);
-			m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
-		}
-
-		}).detach(); // DON'T REMOVE OR GAME WILL STUCK :troll:
-		// Ty for detach from old code Estrol <3
-		return true;
+	m_startClock = std::chrono::system_clock::now();
+	return true;
 }
 
-bool RhythmEngine::Stop() {
+bool RhythmEngine::Stop() { 
 	return true;
 }
 
@@ -251,44 +303,31 @@ void RhythmEngine::Update(double delta) {
 	// Sample event updates
 	for (int i = m_currentSampleIndex; i < m_autoSamples.size(); i++) {
 		auto& sample = m_autoSamples[i];
+		if (m_currentAudioPosition >= sample.StartTime) {
+			if (sample.StartTime - m_currentAudioPosition < 5) {
+				GameAudioSampleCache::Play(sample.Index, sample.Volume * m_audioVolume, sample.Pan * 100);
+			}
 
-		if (m_currentVisualPosition >= sample.StartTime) {
-			GameAudioSampleCache::Play(sample.Index, sample.Volume * 100, sample.Pan * 100);
 			m_currentSampleIndex++;
 		}
 		else {
 			break;
 		}
 	}
+
+	auto currentTime = std::chrono::system_clock::now();
+	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startClock);
+	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
 }
 
 void RhythmEngine::Render(double delta) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
-
-	auto batch = Renderer::GetInstance()->GetSpriteBatch(1);
-	auto states = Renderer::GetInstance()->GetStates();
-	auto context = Renderer::GetInstance()->GetImmediateContext();
-	auto rasterizerState = Renderer::GetInstance()->GetRasterizerState();
-
-	batch->Begin(
-		DirectX::SpriteSortMode_Deferred,
-		states->NonPremultiplied(),
-		states->PointWrap(),
-		nullptr,
-		rasterizerState,
-		[&] {
-			CD3D11_RECT rect(m_playRectangle);
-			context->RSSetScissorRects(1, &rect);
-		}
-	);
-
+	
 	m_timingLineManager->Render(delta);
 
 	for (auto& it : m_tracks) {
 		it->Render(delta);
 	}
-
-	batch->End();
 }
 
 void RhythmEngine::Input(double delta) {
@@ -423,6 +462,10 @@ double RhythmEngine::GetSongRate() const {
 
 int RhythmEngine::GetAudioLength() const {
 	return m_audioLength;
+}
+
+int RhythmEngine::GetGameVolume() const {
+	return m_audioVolume;
 }
 
 GameState RhythmEngine::GetState() const {
@@ -580,20 +623,8 @@ RECT RhythmEngine::GetPlayRectangle() const {
 	return m_playRectangle;
 }
 
-std::string RhythmEngine::GetTitle() const {
-	std::string resultText = m_currentChart->m_title;
-
-	if (m_rate != 1.0) {
-		float rouned = std::round(m_rate * 100.0f) / 100.0f;
-		
-		char format[] = "[%.2fx] %s";
-		char result[200];
-		sprintf_s(result, format, rouned, resultText.c_str());
-
-		resultText = result;
-	}
-
-	return resultText;
+std::u8string RhythmEngine::GetTitle() const {
+	return m_title;
 }
 
 void RhythmEngine::Release() {

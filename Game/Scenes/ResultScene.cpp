@@ -7,6 +7,9 @@
 #include "../GameScenes.h"
 #include "../Data/Chart.hpp"
 #include "../EnvironmentSetup.hpp"
+#include "../../Engine/MathUtils.hpp"
+#include "../../Engine/Window.hpp"
+#include "../../Engine/Imgui/imgui_internal.h"
 
 ResultScene::ResultScene() {
 }
@@ -15,7 +18,14 @@ void ResultScene::Render(double delta) {
 	ImguiUtil::NewFrame();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(800, 600));
+    auto window = Window::GetInstance();
+
+    auto windowNextSz = ImVec2(window->GetBufferWidth(), window->GetBufferHeight());
+    ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
+
+    if (m_background) {
+        m_background->Draw();
+    }
 
     if (ImGui::Begin("#SongSelectMenuBar",
         nullptr,
@@ -27,7 +37,7 @@ void ResultScene::Render(double delta) {
         | ImGuiWindowFlags_MenuBar
     )) {
         if (ImGui::BeginMenuBar()) {
-            if (ImGui::Button("Back")) {
+            if (ImGui::Button("Back", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
                 m_backButton = true;
             }
 
@@ -35,30 +45,67 @@ void ResultScene::Render(double delta) {
             ImGui::EndMenuBar();
         }
 
-        if (ImGui::BeginChild("#ResultState", ImVec2(0, 0), true)) {
-            ImGui::Text("Your gameplay result!");
+        if (ImGui::BeginChild("#ResultState", MathUtil::ScaleVec2(ImVec2(0, 0)), true)) {
 
-            std::string score = EnvironmentSetup::Get("Score");
-            std::string cool = EnvironmentSetup::Get("Cool");
-            std::string good = EnvironmentSetup::Get("Good");
-            std::string bad = EnvironmentSetup::Get("Bad");
-            std::string miss = EnvironmentSetup::Get("Miss");
-            std::string jamCombo = EnvironmentSetup::Get("JamCombo");
-            std::string maxJamCombo = EnvironmentSetup::Get("MaxJamCombo");
-            std::string combo = EnvironmentSetup::Get("Combo");
-            std::string maxCombo = EnvironmentSetup::Get("MaxCombo");
-            std::string lnCombo = EnvironmentSetup::Get("LNCombo");
-            std::string lnMaxCombo = EnvironmentSetup::Get("LNMaxCombo");
+            int score = EnvironmentSetup::GetInt("Score");
+            int cool = EnvironmentSetup::GetInt("Cool");
+            int good = EnvironmentSetup::GetInt("Good");
+            int bad = EnvironmentSetup::GetInt("Bad");
+            int miss = EnvironmentSetup::GetInt("Miss");
+            int jamCombo = EnvironmentSetup::GetInt("JamCombo");
+            int maxJamCombo = EnvironmentSetup::GetInt("MaxJamCombo");
+            int combo = EnvironmentSetup::GetInt("Combo");
+            int maxCombo = EnvironmentSetup::GetInt("MaxCombo");
+            int lnCombo = EnvironmentSetup::GetInt("LNCombo");
+            int lnMaxCombo = EnvironmentSetup::GetInt("LNMaxCombo");
 
-            ImGui::Text("Cool: %s", cool.c_str());
-            ImGui::Text("Good: %s", good.c_str());
-            ImGui::Text("Bad: %s", bad.c_str());
-            ImGui::Text("Miss: %s", miss.c_str());
+			// imgui set cursor pos to mid
+            auto size = MathUtil::ScaleVec2(ImVec2(250, 0));
+            auto center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetCursorPosX(center.x - (size.x / 2));
 
-            ImGui::NewLine();
-            ImGui::Text("Max LN Combo: %s", lnMaxCombo.c_str());
-            ImGui::Text("Max Combo: %s", maxCombo.c_str());
-            ImGui::Text("Max Jam: %s", maxJamCombo.c_str());
+            if (ImGui::BeginChild("#ResultState2", size, true)) {
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+
+				ImGui::Text("Score");
+				ImGui::Button((std::to_string(score) + "###Score1").c_str(), size);
+
+				ImGui::Text("Cool");
+				ImGui::Button((std::to_string(cool) + "###Cool1").c_str(), size);
+
+				ImGui::Text("Good");
+				ImGui::Button((std::to_string(good) + "###Good1").c_str(), size);
+
+				ImGui::Text("Bad");
+				ImGui::Button((std::to_string(bad) + "###Bad1").c_str(), size);
+
+				ImGui::Text("Miss");
+				ImGui::Button((std::to_string(miss) + "###Miss1").c_str(), size);
+
+				ImGui::Text("Jam Combo");
+				ImGui::Button((std::to_string(jamCombo) + "###JamCombo1").c_str(), size);
+
+				ImGui::Text("Max Jam Combo");
+				ImGui::Button((std::to_string(maxJamCombo) + "###MaxJamCombo1").c_str(), size);
+
+				ImGui::Text("Combo");
+				ImGui::Button((std::to_string(combo) + "###Combo1").c_str(), size);
+
+				ImGui::Text("Max Combo");
+				ImGui::Button((std::to_string(maxCombo) + "###MaxCombo1").c_str(), size);
+
+				ImGui::Text("LongNote Combo");
+				ImGui::Button((std::to_string(lnCombo) + "###LNCombo1").c_str(), size);
+
+				ImGui::Text("Max LongNote Combo");
+				ImGui::Button((std::to_string(lnMaxCombo) + "###LNMaxCombo1").c_str(), size);
+				
+                ImGui::PopItemFlag();
+                ImGui::PopStyleVar();
+
+                ImGui::EndChild();
+            }
 
             ImGui::EndChild();
         }
@@ -68,7 +115,9 @@ void ResultScene::Render(double delta) {
 
     if (m_backButton) {
         if (EnvironmentSetup::GetPath("FILE").empty()) {
-            SceneManager::ChangeScene(GameScene::MAINMENU);
+            SceneManager::DisplayFade(100, [] {
+                SceneManager::ChangeScene(GameScene::MAINMENU); 
+            });
         }
         else {
             SceneManager::GetInstance()->StopGame();
@@ -77,6 +126,7 @@ void ResultScene::Render(double delta) {
 }
 
 bool ResultScene::Attach() {
+    SceneManager::DisplayFade(0, [] {});
     m_backButton = false;
 
 	Audio* audio = AudioManager::GetInstance()->Get("FINISH");
@@ -95,6 +145,18 @@ bool ResultScene::Attach() {
         audio->Play();
     }
 
+    Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
+    EnvironmentSetup::SetObj("SONG", nullptr);
+
+    if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
+        Window* window = Window::GetInstance();
+
+        m_background = std::make_unique<Texture2D>((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
+        m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+    }
+
+    delete chart;
+
 	return true;
 }
 
@@ -104,5 +166,6 @@ bool ResultScene::Detach() {
         audio->Stop();
     }
 
+    m_background.reset();
 	return true;
 }

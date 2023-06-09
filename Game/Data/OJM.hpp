@@ -5,6 +5,10 @@
 struct O2Sample {
 	uint32_t RefValue;
 	std::vector<uint8_t> AudioData;
+
+	~O2Sample() {
+		AudioData.clear();
+	}
 };
 
 class OJM {

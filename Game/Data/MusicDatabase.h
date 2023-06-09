@@ -13,6 +13,7 @@ struct DB_MusicItem {
 	char8_t Title[64];
 	char8_t Artist[32];
 	char8_t Noter[32];
+	char Hash[32];
 
 	int Difficulty[3];
 	int MaxNotes[3];

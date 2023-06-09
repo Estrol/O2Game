@@ -5,6 +5,7 @@
 #include <filesystem>
 #include "Util/md5.h"
 #include <random>
+#include "Util/Util.hpp"
 
 Chart::Chart() {
 	InitialSvMultiplier = 1.0f;
@@ -25,9 +26,9 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 	}
 
 	//m_audio = beatmap.AudioFilename;
-	m_title = beatmap.Title;
+	m_title = std::u8string(beatmap.Title.begin(), beatmap.Title.end());
 	m_keyCount = beatmap.CircleSize;
-	m_artist = beatmap.Artist;
+	m_artist = std::u8string(beatmap.Artist.begin(), beatmap.Artist.end());
 	m_beatmapDirectory = beatmap.CurrentDir;
 
 	for (auto& event : beatmap.Events) {
@@ -165,10 +166,10 @@ Chart::Chart(BMS::BMSFile& file) {
 	}
 
 	m_beatmapDirectory = file.CurrentDir;
-	m_title = file.Title;
+	m_title = std::u8string(file.Title.begin(), file.Title.end());
 	m_audio = "";// file.FileDirectory + "/" + "test.mp3";
 	m_keyCount = 7;
-	m_artist = file.Artist;
+	m_artist = std::u8string(file.Artist.begin(), file.Artist.end());
 	m_backgroundFile = file.StageFile;
 	BaseBPM = file.BPM;
 	m_customMeasures = file.Measures;
@@ -287,7 +288,11 @@ Chart::Chart(BMS::BMSFile& file) {
 Chart::Chart(O2::OJN& file, int diffIndex) {
 	auto& diff = file.Difficulties[diffIndex];
 
-	m_title = file.Header.title;
+	int len = strlen(file.Header.title);
+
+	auto str = CodepageToUtf8(file.Header.title, len, 949);
+
+	m_title = str;
 	m_backgroundBuffer = file.BackgroundImage;
 	m_keyCount = 7;
 	m_customMeasures = diff.Measures;

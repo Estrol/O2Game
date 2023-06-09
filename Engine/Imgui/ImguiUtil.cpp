@@ -1,6 +1,8 @@
 #include "ImguiUtil.hpp"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 
 namespace {
 	bool HasAQueueFrame = false;
@@ -8,7 +10,8 @@ namespace {
 
 void ImguiUtil::NewFrame() {
 	if (!HasAQueueFrame) {
-		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplSDLRenderer2_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
 		HasAQueueFrame = true;
@@ -16,7 +19,7 @@ void ImguiUtil::NewFrame() {
 }
 
 void ImguiUtil::BeginText() {
-	if (!ImGui_ImplDX11_HasAFrame()) {
+	if (!ImGui_ImplSDL2_HasAFrame()) {
 		NewFrame();
 	}
 
@@ -45,7 +48,7 @@ bool ImguiUtil::HasFrameQueue() {
 void ImguiUtil::Reset() {
 	ImGui::EndFrame();
 	ImGui::Render();
-	ImGui_ImplDX11_ResetFrame();
+	ImGui_ImplSDL2_ResetFrame();
 
 	HasAQueueFrame = false;
 }

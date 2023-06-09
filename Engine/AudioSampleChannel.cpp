@@ -26,6 +26,10 @@ AudioSampleChannel::AudioSampleChannel(DWORD sampleHandle, float rate, float vol
 	m_silent = false;
 }
 
+AudioSampleChannel::~AudioSampleChannel() {
+	Stop();
+}
+
 void AudioSampleChannel::SetVolume(int vol) {
 	m_vol = static_cast<float>(vol);
 }
@@ -57,8 +61,11 @@ bool AudioSampleChannel::Play() {
 		BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_FREQ, frequency * m_rate);
 	}
 
-	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_VOL, m_vol / 100.0f);
-	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_PAN, m_pan / 100.0f);
+	float vol = m_vol / 100.0f;
+	float pan = m_pan / 100.0f;
+
+	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_VOL, vol);
+	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_PAN, pan);
 
 	if (!BASS_ChannelPlay(m_hCurrentSample, FALSE)) {
 		return false;
@@ -77,9 +84,8 @@ bool AudioSampleChannel::Stop() {
 		return false;
 	}
 
-	if (!BASS_ChannelStop(m_hCurrentSample)) {
-		return false;
-	}
+	BASS_ChannelStop(m_hCurrentSample);
+	BASS_ChannelFree(m_hCurrentSample);
 
 	return true;
 }

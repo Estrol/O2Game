@@ -1,9 +1,12 @@
 #include "GameResources.hpp"
+#include "../../Engine/SDLException.hpp"
 #include "../../Engine/EstEngine.hpp"
 
+#include <SDL2/SDL_image.h>
 #include <filesystem>
 #include <fstream>
-#include <directxtk/WICTextureLoader.h>
+
+#include "Configuration.hpp"
 
 #pragma warning(disable:26451)
 
@@ -359,8 +362,6 @@ namespace GameNoteResource {
 	std::unordered_map<NoteImageType, NoteImage*> noteTextures;
 
 	bool Load() {
-		using namespace DirectX;
-		
 		const char* textures[] = {
 			"mania-note1.png",
 			"mania-note2.png",
@@ -371,59 +372,32 @@ namespace GameNoteResource {
 			"mania-hold3.png",
 		};
 		
+		auto skinName = Configuration::Load("Game", "Skin");
+
 		for (int i = 0; i < 6; i++) {
-			std::filesystem::path path = std::filesystem::current_path() / "Skins" / "Default" / "Notes" / textures[i];
+			std::filesystem::path path = std::filesystem::current_path() / "Skins" / skinName / "Notes" / textures[i];
 			if (!std::filesystem::exists(path)) {
-				std::cout << "Missing: " << path << std::endl;
-
-				MessageBoxA(NULL, "Missing note texture!", "Error", MB_ICONERROR);
-				return false;
-			}
-			
-			ID3D11Device* device = Renderer::GetInstance()->GetDevice();
-			ID3D11DeviceContext* context = Renderer::GetInstance()->GetImmediateContext();
-
-			ID3D11ShaderResourceView* pTexture = nullptr;
-			ID3D11Resource* pResource;
-			HRESULT hr = CreateWICTextureFromFileEx(
-				device,
-				path.wstring().c_str(),
-				0,
-				D3D11_USAGE_DEFAULT,
-				D3D11_BIND_SHADER_RESOURCE,
-				0,
-				0,
-				WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_IGNORE_SRGB,
-				&pResource,
-				&pTexture
-			);
-
-			if (FAILED(hr)) {
-				MessageBoxA(NULL, "Failed to load note texture!", "Error", MB_ICONERROR);
-				return false;
-			}
-			
-			// query interface
-			ID3D11Texture2D* texture = nullptr;
-			hr = pResource->QueryInterface<ID3D11Texture2D>(&texture);
-
-			if (FAILED(hr)) {
-				MessageBoxA(NULL, "Failed to load note texture!", "Error", MB_ICONERROR);
-				return false;
+				throw std::runtime_error("Missing image file at: " + path.string());
 			}
 
-			// get image size
-			D3D11_TEXTURE2D_DESC desc;
-			texture->GetDesc(&desc);
+			auto image = new NoteImage();
+			image->Surface = IMG_Load((const char*)path.u8string().c_str());
+			if (image->Surface == nullptr) {
+				throw SDLException();
+			}
 
-			NoteImage* noteImage = new NoteImage();
-			noteImage->Texture = pTexture;
-			noteImage->TextureRect = { 0, 0, (LONG)desc.Width, (LONG)desc.Height };
+			image->Texture = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), image->Surface);
+			if (image->Texture == nullptr) {
+				throw SDLException();
+			}
 
-			noteTextures[(NoteImageType)i] = noteImage;
+			auto& rect = image->TextureRect;
+			rect.left = 0;
+			rect.top = 0;
 
-			texture->Release();
-			pResource->Release();
+			SDL_QueryTexture(image->Texture, NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+
+			noteTextures[(NoteImageType)i] = image;
 		}
 		
 		return true;
@@ -431,7 +405,9 @@ namespace GameNoteResource {
 
 	bool Dispose() {
 		for (auto& it : noteTextures) {
-			it.second->Texture->Release();
+			SDL_DestroyTexture(it.second->Texture);
+			SDL_FreeSurface(it.second->Surface);
+
 			delete it.second;
 		}
 

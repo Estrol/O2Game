@@ -1,8 +1,7 @@
 #include "DrawableNote.hpp"
 #include "../Resources/GameResources.hpp"
 
-DrawableNote::DrawableNote(NoteImage* frame) : Texture2D::Texture2D() {
-	m_pTexture = frame->Texture;
+DrawableNote::DrawableNote(NoteImage* frame) : Texture2D::Texture2D(frame->Texture) {
 	m_bDisposeTexture = false;
 
 	m_actualSize = frame->TextureRect;
@@ -14,6 +13,4 @@ DrawableNote::DrawableNote(NoteImage* frame) : Texture2D::Texture2D() {
 	Size.Y.Offset = 0;
 
 	AnchorPoint = { 0, 1 };
-
-	m_pSpriteBatch = Renderer::GetInstance()->GetSpriteBatch(1);
 }

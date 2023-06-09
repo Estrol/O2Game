@@ -7,14 +7,17 @@
 
 using namespace O2;
 
-//std::stringstream LoadOJNFile(std::string path);
-
 OJN::OJN() {
 	Header = {};
 }
 
 OJN::~OJN() {
-	
+	if (IsValid()) {
+		for (int i = 0; i < 3; i++) {
+			auto& diff = Difficulties[i];
+			diff.Samples.clear();
+		}
+	}
 }
 
 void OJN::Load(std::filesystem::path& file) {
@@ -22,18 +25,20 @@ void OJN::Load(std::filesystem::path& file) {
 
 	CurrrentDir = file.parent_path().string();
 
-	std::fstream fs(file, std::ios::binary | std::ios::in);
-	if (!fs.is_open()) {
-		::printf("Failed to open: %s\n", file.string().c_str());
-		return;
-	}
+	auto fs = LoadOJNFile(file);
 
 	fs.read((char*)&Header, sizeof(Header));
 
 	if (memcmp(Header.signature, signature, 4) != 0) {
 		::printf("Invalid OJN file: %s\n", file.string().c_str());
 		::printf("Dumping 1-3 byte: %c%c%c\n", Header.signature[0], Header.signature[1], Header.signature[2]);
-		return;
+		
+		throw std::runtime_error("Invalid OJN Header at file: " + file.string());
+	}
+	
+	KeyCount = 7;
+	if (Header.encode_version == 5.0) {
+		fs.read((char*)&KeyCount, sizeof(int));
 	}
 
 	std::map<int, std::vector<Package>> difficulty;
@@ -47,13 +52,17 @@ void OJN::Load(std::filesystem::path& file) {
 		difficulty[i] = {};
 
 		for (int j = 0; j < Header.package_count[i]; j++) {
+			if (fs.tellg() > endOffset) {
+				throw std::runtime_error("Block data size overflow! at file: " + file.string());
+			}
+
 			Package pkg = {};
 			fs.read((char*)&pkg.Measure, 4);
 			fs.read((char*)&pkg.Channel, 2);
 			fs.read((char*)&pkg.EventCount, 2);
 
 			if (pkg.EventCount > 192) {
-				__debugbreak();
+				throw std::runtime_error("Event count at measure: " + std::to_string(pkg.Measure) + " exceed the limit! (limit: 192)");
 			}
 
 			for (int i = 0; i < pkg.EventCount; i++) {
@@ -91,8 +100,7 @@ void OJN::Load(std::filesystem::path& file) {
 		ThumbnailImage.resize(Header.bmp_size);
 		fs.read((char*)ThumbnailImage.data(), Header.bmp_size);
 	}
-
-	fs.close();
+	
 	ParseNoteData(this, difficulty);
 
 	m_valid = true;
@@ -142,15 +150,15 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 					// nvm, we need parse it :troll:
 
-					float volume = ((static_cast<int>(event.VolPan) >> 4) & 0x0F) / 16.0f;
-					if (volume == 0.0) volume = 1.0f;
-
-					if (static_cast<int>(volume * 100) == 0) {
-						::printf("");
+					float volume = ((event.VolPan >> 4) & 0x0F) / 16.0f;
+					if (volume == 0.0f) {
+						volume = 1.0f;
 					}
 
-					float pan = (static_cast<int>(event.VolPan) & 0x0F);
-					if (pan == 0.0f) pan = 8.0f;
+					float pan = (event.VolPan & 0x0F);
+					if (pan == 0.0f) {
+						pan = 8.0f;	
+					}
 
 					pan -= 8.0f;
 					pan /= 8.0f;
@@ -299,49 +307,70 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 	}
 }
 
-//std::stringstream LoadOJNFile(std::string path) {
-//	std::fstream fs(path, std::ios::in | std::ios::binary);
-//
-//	fs.seekg(0, std::ios::end);
-//	size_t sz = fs.tellg();
-//	fs.seekg(0, std::ios::beg);
-//
-//	char* input = new char[sz];
-//	fs.read(input, sz);
-//
-//	char newSign[3] = { 'n', 'e', 'w' };
-//	char checkSign[3];
-//
-//	fs.seekg(0, std::ios::beg);
-//	fs.read(checkSign, 3);
-//
-//	if (memcmp(newSign, checkSign, 3) == 0) {
-//		fs.seekg(3, std::ios::beg);
-//		uint8_t blockSz = 0, mainKey = 0, midKey = 0, initialKey = 0;
-//		fs.read((char*)&blockSz, 1);
-//		fs.read((char*)&mainKey, 1);
-//		fs.read((char*)&midKey, 1);
-//		fs.read((char*)&initialKey, 1);
-//
-//		uint8_t* key = new uint8_t[blockSz];
-//		memset(key, mainKey, blockSz);
-//		key[0] = initialKey;
-//		key[(int)std::floor(blockSz / 2.0f)] = midKey;
-//
-//		size_t outputLen = sz - fs.tellg();
-//		char* output = new char[outputLen];
-//		for (int i = 0; i < outputLen; i += blockSz) {
-//			for (int j = 0; j < blockSz; j++) {
-//				int offset = i + j;
-//				if (offset >= outputLen) {
-//					// TODO: return
-//				}
-//
-//				output[offset] = (char)(input[sz - (offset + 1)] ^ key[j]);
-//			}
-//		}
-//	}
-//	else {
-//		
-//	}
-//}
+std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
+	std::fstream fs(path, std::ios::in | std::ios::binary);
+	if (!fs.is_open()) {
+		throw std::runtime_error("Failed to open: " + path.string());
+	}
+
+	fs.seekg(0, std::ios::end);
+	size_t sz = fs.tellg();
+	fs.seekg(0, std::ios::beg);
+
+	char* input = new char[sz];
+	fs.read(input, sz);
+
+	char newSign[3] = { 'n', 'e', 'w' };
+	char checkSign[3];
+
+	fs.seekg(0, std::ios::beg);
+	fs.read(checkSign, 3);
+
+	if (memcmp(newSign, checkSign, 3) == 0) {
+		fs.seekg(3, std::ios::beg);
+		uint8_t blockSz = 0, mainKey = 0, midKey = 0, initialKey = 0;
+		fs.read((char*)&blockSz, 1);
+		fs.read((char*)&mainKey, 1);
+		fs.read((char*)&midKey, 1);
+		fs.read((char*)&initialKey, 1);
+
+		uint8_t* key = new uint8_t[blockSz];
+		memset(key, mainKey, blockSz);
+		key[0] = initialKey;
+		key[(int)std::floor(blockSz / 2.0f)] = midKey;
+
+		size_t outputLen = sz - fs.tellg();
+		char* output = new char[outputLen];
+		for (int i = 0; i < outputLen; i += blockSz) {
+			for (int j = 0; j < blockSz; j++) {
+				int offset = i + j;
+				if (offset >= outputLen) {
+					goto DONE;
+				}
+
+				output[offset] = (char)(input[sz - (offset + 1)] ^ key[j]);
+			}
+		}
+
+		DONE:
+		fs.close();
+
+		std::stringstream ss;
+		ss.write(output, outputLen);
+
+		delete[] input;
+		delete[] output;
+
+		return ss;
+	}
+	else {
+		fs.close();
+
+		std::stringstream ss;
+		ss.write(input, sz);
+
+		delete[] input;
+
+		return ss;
+	}
+}

@@ -5,6 +5,7 @@ class AudioSampleChannel {
 public:
 	AudioSampleChannel();
 	AudioSampleChannel(DWORD sampleHandle, float rate, float vol, bool pitch);
+	~AudioSampleChannel();
 
 	void SetVolume(int vol);
 	void SetPan(int pan);

@@ -5,6 +5,7 @@
 #include "../../Engine/SceneManager.hpp"
 
 #include "../Resources/Configuration.hpp"
+#include "../Data/Util/Util.hpp"
 #include "../Data/MusicDatabase.h"
 #include "../Data/OJN.h"
 
@@ -34,24 +35,26 @@ void IntroScene::Render(double delta) {
 			m_text->Draw("Processing file: " + path.string());
 
 			if (waitFrame > 0.05) {
-				std::fstream fs(path, std::ios::in | std::ios::binary);
+				auto fs = O2::OJN::LoadOJNFile(path);
 				OJNHeader Header = {};
 				fs.read((char*)&Header, sizeof(OJNHeader));
 
 				DB_MusicItem item = {};
 				item.Id = Header.songid;
-				memcpy(&item.Title, &Header.title, sizeof(item.Title));
-				memcpy(&item.Artist, &Header.artist, sizeof(item.Artist));
-				memcpy(&item.Noter, &Header.noter, sizeof(item.Noter));
-				memcpy(&item.Difficulty, &Header.level, sizeof(item.Difficulty));
-				memcpy(&item.MaxNotes, &Header.note_count, sizeof(item.MaxNotes));
 				
+				auto title = CodepageToUtf8((const char*)Header.title, sizeof(Header.title), 949);
+				auto noter = CodepageToUtf8((const char*)Header.noter, sizeof(Header.noter), 949);
+				auto artist = CodepageToUtf8((const char*)Header.artist, sizeof(Header.artist), 949);
+				
+				memcpy(item.Title, title.c_str(), std::clamp((int)title.size(), 0, (int)(sizeof(item.Title) - 1)));
+				memcpy(item.Noter, noter.c_str(), std::clamp((int)noter.size(), 0, (int)(sizeof(item.Noter) - 1)));
+				memcpy(item.Artist, artist.c_str(), std::clamp((int)artist.size(), 0, (int)(sizeof(item.Artist) - 1)));
+
 				item.CoverOffset = Header.data_offset[3];
 				item.CoverSize = Header.cover_size; 
 				item.ThumbnailSize = Header.bmp_size;
 
 				db->Insert(nextIndex++, item);
-				fs.close();
 
 				waitFrame = 0;
 			}
@@ -73,13 +76,12 @@ void IntroScene::OnKeyDown(const KeyState& state) {
 }
 
 bool IntroScene::Attach() {
-	m_text = new Text("Arial", 13);
+	m_text = new Text(13);
 
 	std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
-	std::string dbName = Configuration::Load("Music", "Database");
 
 	auto db = MusicDatabase::GetInstance();
-	std::filesystem::path dbPath = std::filesystem::current_path() / dbName;
+	std::filesystem::path dbPath = std::filesystem::current_path() / "Game.db";
 	if (std::filesystem::exists(dbPath)) {
 		db->Load(dbPath);
 
