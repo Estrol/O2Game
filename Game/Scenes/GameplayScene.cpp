@@ -777,8 +777,8 @@ bool GameplayScene::Attach() {
 			m_holdEffect[i]->AlphaBlend = true;
 
 			int pos = std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
-			m_hitEffect[i]->Position = UDim2::fromOffset(pos, 465);
-			m_holdEffect[i]->Position = UDim2::fromOffset(pos, 465);
+			m_hitEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
+			m_holdEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
 			m_hitEffect[i]->AnchorPoint = { .5, .45 };
 			m_holdEffect[i]->AnchorPoint = { .5, .45 };
 
