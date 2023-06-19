@@ -931,6 +931,7 @@ CODE
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
+#include <mutex>
 
 // Visual Studio warnings
 #ifdef _MSC_VER
@@ -1351,12 +1352,17 @@ void ImGuiIO::ClearInputKeys()
     MouseWheel = MouseWheelH = 0.0f;
 }
 
+static std::mutex ImGui_InputMutex;
 static ImGuiInputEvent* FindLatestInputEvent(ImGuiContext* ctx, ImGuiInputEventType type, int arg = -1)
 {
+    std::lock_guard<std::mutex> lock(ImGui_InputMutex);
+
     ImGuiContext& g = *ctx;
     for (int n = g.InputEventsQueue.Size - 1; n >= 0; n--)
     {
         ImGuiInputEvent* e = &g.InputEventsQueue[n];
+        if (!e)
+            continue;
         if (e->Type != type)
             continue;
         if (type == ImGuiInputEventType_Key && e->Key.Key != arg)

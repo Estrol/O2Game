@@ -11,6 +11,7 @@
 #include "Imgui/imgui_impl_dx11.h"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
 #include "Imgui/ImguiUtil.hpp"
+#include "Imgui/implot.h"
 #include <iostream>
 #include "SDLException.hpp"
 #include "Data/SDLRenderStruct.h"
@@ -112,6 +113,8 @@ bool Renderer::Create(RendererMode mode, Window* window) {
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+        ImPlot::CreateContext();
+
         ImGuiIO& io = ImGui::GetIO(); (void)io;
 
         // Manually set the display size
@@ -185,6 +188,11 @@ bool Renderer::BeginRender() {
 bool Renderer::EndRender() {
     SDL_RenderPresent(m_renderer);
 	return true;
+}
+
+void Renderer::ResetImGui() {
+    ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
+    ImGui_ImplSDLRenderer2_DestroyFontsTexture();
 }
 
 SDL_Renderer* Renderer::GetSDLRenderer() {

@@ -5,7 +5,7 @@
 #include "../Engine/FontResources.hpp"
 
 #include "./Resources/GameResources.hpp"
-#include "./Resources/Configuration.hpp"
+#include "./../Engine/Configuration.hpp"
 #include "./Data/Util/Util.hpp"
 #include "./Data/MusicDatabase.h"
 #include "EnvironmentSetup.hpp"
@@ -16,6 +16,7 @@
 #include "./Scenes/SongSelectScene.h"
 #include "./Scenes/IntroScene.hpp"
 #include "./Scenes/ResultScene.hpp"
+#include "./Scenes/EditorScene.hpp"
 
 
 MyGame::~MyGame() {
@@ -26,7 +27,6 @@ bool MyGame::Init() {
 	SetRenderMode(RendererMode::DIRECTX);
 	SetBufferSize(800, 600);
 	SetWindowSize(1280, 720);
-	//SetFullscreen(true);
 	
 	{
 		auto value = Configuration::Load("Game", "Renderer");
@@ -110,6 +110,7 @@ bool MyGame::Init() {
 		SceneManager::AddScene(GameScene::LOADING, new LoadingScene());
 		SceneManager::AddScene(GameScene::RESULT, new ResultScene());
 		SceneManager::AddScene(GameScene::GAME, new GameplayScene());
+		SceneManager::AddScene(GameScene::EDITOR, new EditorScene());
 
 		std::string title = "Unnamed O2 Clone (Beta 5)";
 		m_window->SetWindowTitle(title);

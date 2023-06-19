@@ -1,7 +1,12 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "Util.hpp"
 #include <numeric>
 #include <algorithm>
 #include <Windows.h>
+#include <string>
+#include <codecvt>
 
 std::vector<std::string> splitString(std::string& input, char delimeter) {
 	std::stringstream ss(input);

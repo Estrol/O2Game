@@ -1,16 +1,12 @@
 #include "DrawableNote.hpp"
 #include "../Resources/GameResources.hpp"
 
-DrawableNote::DrawableNote(NoteImage* frame) : Texture2D::Texture2D(frame->Texture) {
-	m_bDisposeTexture = false;
+DrawableNote::DrawableNote(NoteImage* frame) : FrameTimer::FrameTimer(frame->Texture) {
+	AnchorPoint = { 0.0, 1.0 };
 
-	m_actualSize = frame->TextureRect;
+	for (auto& _frame : m_frames) {
+		_frame->SetOriginalRECT(frame->TextureRect);
+	}
 
-	// clean up this later
-	Size.X.Scale = 1.0f;
-	Size.X.Offset = 0;
-	Size.Y.Scale = 1.0f;
-	Size.Y.Offset = 0;
-
-	AnchorPoint = { 0, 1 };
+	SetFPS(30);
 }

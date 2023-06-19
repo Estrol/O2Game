@@ -14,7 +14,13 @@ NoteImageCacheManager::~NoteImageCacheManager() {
 		}
 	}
 
-	for (auto& it : m_tileTextures) {
+	for (auto& it : m_holdTextures) {
+		for (auto& it2 : it.second) {
+			delete it2;
+		}
+	}
+
+	for (auto& it : m_trailTextures) {
 		for (auto& it2 : it.second) {
 			delete it2;
 		}
@@ -36,10 +42,23 @@ void NoteImageCacheManager::Repool(DrawableNote* image, NoteImageType noteType) 
 	it.push_back(image);
 }
 
-void NoteImageCacheManager::RepoolTile(DrawableTile* image, NoteImageType noteType) {
+void NoteImageCacheManager::RepoolHold(DrawableNote* image, NoteImageType noteType) {
 	if (image == nullptr) return;
 
-	auto& it = m_tileTextures[noteType];
+	auto& it = m_holdTextures[noteType];
+
+	if (it.size() >= MAX_OBJECTS) {
+		delete image;
+		return;
+	}
+
+	it.push_back(image);
+}
+
+void NoteImageCacheManager::RepoolTrail(DrawableNote* image, NoteImageType noteType) {
+	if (image == nullptr) return;
+
+	auto& it = m_trailTextures[noteType];
 
 	if (it.size() >= MAX_OBJECTS) {
 		delete image;
@@ -50,7 +69,7 @@ void NoteImageCacheManager::RepoolTile(DrawableTile* image, NoteImageType noteTy
 }
 
 DrawableNote* NoteImageCacheManager::Depool(NoteImageType noteType) {
-	if (noteType >= NoteImageType::WHITE && noteType <= NoteImageType::YELLOW) {
+	if (noteType >= NoteImageType::LANE_1 && noteType <= NoteImageType::LANE_7) {
 		auto& it = m_noteTextures[noteType];
 		DrawableNote* image = nullptr;
 		if (it.size() > 0) {
@@ -59,6 +78,7 @@ DrawableNote* NoteImageCacheManager::Depool(NoteImageType noteType) {
 		}
 		else {
 			image = new DrawableNote(GameNoteResource::GetNoteTexture(noteType));
+			image->Repeat = true;
 		}
 
 		return image;
@@ -68,16 +88,37 @@ DrawableNote* NoteImageCacheManager::Depool(NoteImageType noteType) {
 	}
 }
 
-DrawableTile* NoteImageCacheManager::DepoolTile(NoteImageType noteType) {
-	if (noteType >= NoteImageType::HOLD_WHITE && noteType <= NoteImageType::HOLD_YELLOW) {
-		auto& it = m_tileTextures[noteType];
-		DrawableTile* image = nullptr;
+DrawableNote* NoteImageCacheManager::DepoolHold(NoteImageType noteType) {
+	if (noteType >= NoteImageType::HOLD_LANE_1 && noteType <= NoteImageType::HOLD_LANE_7) {
+		auto& it = m_holdTextures[noteType];
+		DrawableNote* image = nullptr;
 		if (it.size() > 0) {
 			image = it.back();
 			it.pop_back();
 		}
 		else {
-			image = new DrawableTile(GameNoteResource::GetNoteTexture(noteType));
+			image = new DrawableNote(GameNoteResource::GetNoteTexture(noteType));
+			image->Repeat = true;
+		}
+
+		return image;
+	}
+	else {
+		return nullptr;
+	}
+}
+
+DrawableNote* NoteImageCacheManager::DepoolTrail(NoteImageType noteType) {
+	if (noteType >= NoteImageType::TRAIL_UP && noteType <= NoteImageType::TRAIL_DOWN) {
+		auto& it = m_trailTextures[noteType];
+		DrawableNote* image = nullptr;
+		if (it.size() > 0) {
+			image = it.back();
+			it.pop_back();
+		}
+		else {
+			image = new DrawableNote(GameNoteResource::GetNoteTexture(noteType));
+			image->Repeat = true;
 		}
 
 		return image;
@@ -97,6 +138,8 @@ NoteImageCacheManager* NoteImageCacheManager::GetInstance() {
 
 void NoteImageCacheManager::Release() {
 	if (s_instance) {
+		std::cout << "[NoteImageCacheManager] Release about: hold=" << s_instance->m_holdTextures.size() << ", note=" << s_instance->m_noteTextures.size() << ", trail=" << s_instance->m_trailTextures.size() << std::endl;
+
 		delete s_instance;
 		s_instance = nullptr;
 	}

@@ -299,6 +299,9 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 		sample.AudioData.resize(ss.str().size());
 		memcpy(sample.AudioData.data(), ss.str().data(), ss.str().size());
 
+		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), 949);
+		memcpy(sample.FileName, utf8_name.c_str(), sizeof(sample.FileName));
+
 		Samples.push_back(sample);
 	}
 
@@ -325,6 +328,9 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 		sample.RefValue = ValueRef++;
 		sample.AudioData.resize(SampleHeader.sampleSize);
 		memcpy(sample.AudioData.data(), buffer, SampleHeader.sampleSize);
+
+		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), 949);
+		memcpy(sample.FileName, utf8_name.c_str(), sizeof(sample.FileName));
 
 		Samples.push_back(sample);
 		delete[] buffer;

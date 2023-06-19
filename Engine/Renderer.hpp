@@ -21,6 +21,8 @@ public:
 	bool BeginRender();
 	bool EndRender();
 
+	void ResetImGui();
+
 	SDL_Renderer* GetSDLRenderer();
 	SDL_BlendMode GetSDLBlendMode();
 

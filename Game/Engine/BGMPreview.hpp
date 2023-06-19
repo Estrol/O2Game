@@ -31,6 +31,7 @@ private:
 	bool OnStarted;
 	bool Ready;
 
+	int m_startOffset = 0;
 	int m_currentSampleIndex = 0;
 	int m_bgmIndex;
 	int m_length;

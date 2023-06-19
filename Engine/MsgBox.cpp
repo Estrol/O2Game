@@ -4,6 +4,7 @@
 
 #include "./Imgui/ImguiUtil.hpp"
 #include "./Imgui/imgui.h"
+#include "MathUtils.hpp"
 
 struct MsgBoxSession {
 	std::string Id;
@@ -42,7 +43,7 @@ void MsgBox::Draw() {
 
 			switch (session.Type) {
 				case MsgBoxType::YESNOCANCEL: {
-					if (ImGui::Button("Yes") || ImGui::IsKeyDown(ImGuiKey_Enter)) {
+					if (ImGui::Button("Yes", MathUtil::ScaleVec2(ImVec2(40, 0))) || ImGui::IsKeyDown(ImGuiKey_Enter)) {
 						m_results[session.Id] = 1;
 
 						close = true;
@@ -51,7 +52,7 @@ void MsgBox::Draw() {
 
 					ImGui::SameLine();
 
-					if (ImGui::Button("No") || ImGui::IsKeyDown(ImGuiKey_Escape)) {
+					if (ImGui::Button("No", MathUtil::ScaleVec2(ImVec2(40, 0))) || ImGui::IsKeyDown(ImGuiKey_Escape)) {
 						m_results[session.Id] = 2;
 
 						close = true;
@@ -60,7 +61,7 @@ void MsgBox::Draw() {
 
 					ImGui::SameLine();
 
-					if (ImGui::Button("Cancel")) {
+					if (ImGui::Button("Cancel", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
 						m_results[session.Id] = 3;
 
 						close = true;
@@ -71,7 +72,7 @@ void MsgBox::Draw() {
 				}
 
 				case MsgBoxType::YESNO: {
-					if (ImGui::Button("Yes") || ImGui::IsKeyDown(ImGuiKey_Enter)) {
+					if (ImGui::Button("Yes", MathUtil::ScaleVec2(ImVec2(40, 0))) || ImGui::IsKeyDown(ImGuiKey_Enter)) {
 						m_results[session.Id] = 1;
 
 						close = true;
@@ -80,7 +81,7 @@ void MsgBox::Draw() {
 
 					ImGui::SameLine();
 
-					if (ImGui::Button("No") || ImGui::IsKeyDown(ImGuiKey_Escape)) {
+					if (ImGui::Button("No", MathUtil::ScaleVec2(ImVec2(40, 0))) || ImGui::IsKeyDown(ImGuiKey_Escape)) {
 						m_results[session.Id] = 2;
 
 						close = true;
@@ -90,7 +91,7 @@ void MsgBox::Draw() {
 				}
 
 				case MsgBoxType::OKCANCEL: {
-					if (ImGui::Button("Ok") || ImGui::IsKeyDown(ImGuiKey_Enter)) {
+					if (ImGui::Button("Ok", MathUtil::ScaleVec2(ImVec2(40, 0))) || ImGui::IsKeyDown(ImGuiKey_Enter)) {
 						m_results[session.Id] = 4;
 
 						close = true;
@@ -99,7 +100,7 @@ void MsgBox::Draw() {
 
 					ImGui::SameLine();
 
-					if (ImGui::Button("Cancel")) {
+					if (ImGui::Button("Cancel", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
 						m_results[session.Id] = 3;
 
 						close = true;
@@ -109,7 +110,7 @@ void MsgBox::Draw() {
 				}
 
 				default: {
-					if (ImGui::Button("Ok")) {
+					if (ImGui::Button("Ok", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
 						m_results[session.Id] = 4;
 
 						close = true;

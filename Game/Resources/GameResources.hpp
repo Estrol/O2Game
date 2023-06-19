@@ -45,18 +45,29 @@ struct OPIFile {
 };
 
 enum class NoteImageType {
-	WHITE,
-	BLUE,
-	YELLOW,
+	LANE_1,
+	LANE_2,
+	LANE_3,
+	LANE_4,
+	LANE_5,
+	LANE_6,
+	LANE_7,
 
-	HOLD_WHITE,
-	HOLD_BLUE,
-	HOLD_YELLOW,
+	HOLD_LANE_1,
+	HOLD_LANE_2,
+	HOLD_LANE_3,
+	HOLD_LANE_4,
+	HOLD_LANE_5,
+	HOLD_LANE_6,
+	HOLD_LANE_7,
+
+	TRAIL_UP,
+	TRAIL_DOWN,
 };
 
 struct NoteImage {
-	SDL_Texture* Texture;
-	SDL_Surface* Surface;
+	std::vector<SDL_Texture*> Texture;
+	std::vector<SDL_Surface*> Surface;
 	RECT TextureRect;
 };
 

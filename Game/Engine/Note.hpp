@@ -9,9 +9,11 @@ class RhythmEngine;
 class DrawableNote;
 class DrawableTile;
 class AudioSampleChannel;
+class ResizableImage;
 
 enum class NoteState {
 	NORMAL_NOTE,
+	NORMAL_NOTE_PASSED,
 
 	HOLD_PRE,
 	HOLD_MISSED_ACTIVE,
@@ -73,6 +75,7 @@ public:
 	bool IsHoldEffectDrawable();
 	bool IsDrawable();
 	bool IsRemoveable();
+	bool IsPassed();
 
 	bool IsHeadHit();
 	bool IsTailHit();
@@ -87,8 +90,11 @@ private:
 	GameTrack* m_track;
 
 	DrawableNote* m_head;
-	DrawableTile* m_body;
+	DrawableNote* m_body;
 	DrawableNote* m_tail;
+
+	DrawableNote* m_trail_up;
+	DrawableNote* m_trail_down;
 
 	NoteImageType m_imageType;
 	NoteImageType m_imageBodyType;

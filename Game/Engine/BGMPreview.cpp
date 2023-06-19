@@ -1,7 +1,7 @@
 #include "BGMPreview.hpp"
 #include "GameAudioSampleCache.hpp"
 #include "../Data/Chart.hpp"
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 #include "../EnvironmentSetup.hpp"
 #include "../Data/MusicDatabase.h"
 #include <future>
@@ -11,6 +11,7 @@ BGMPreview::~BGMPreview() {
 		std::lock_guard<std::mutex> lock(*m_mutex);
 	}
 
+	m_callback = [&](bool) {};
 	delete m_mutex;
 }
 
@@ -35,13 +36,13 @@ void BGMPreview::Load(int index) {
 		std::lock_guard<std::mutex> lock(*m_mutex);
 		Ready = false;
 
-		DB_MusicItem* item = MusicDatabase::GetInstance()->GetArrayItem() + m_bgmIndex;
+		DB_MusicItem* item = MusicDatabase::GetInstance()->Find(m_bgmIndex);
 
 		auto path = Configuration::Load("Music", "Folder");
 		std::filesystem::path file = path;
 		file /= "o2ma" + std::to_string(item->Id) + ".ojn";
 
-		if (file.string() != m_currentFilePath || GameAudioSampleCache::SetRate() != 1.0) {
+		if (file.string() != m_currentFilePath || GameAudioSampleCache::SetRate() != 1.0 || GameAudioSampleCache::IsEmpty()) {
 			try {
 				O2::OJN o2jamFile;
 				o2jamFile.Load(file);
@@ -85,6 +86,7 @@ void BGMPreview::Load(int index) {
 			});
 
 			m_length = m_currentChart->GetLength();
+			m_startOffset = m_autoSamples.size() ? m_autoSamples.front().StartTime : 0;
 
 			GameAudioSampleCache::SetRate(1.0);
 			GameAudioSampleCache::Load(m_currentChart, Configuration::Load("Game", "AudioPitch") == "1");
@@ -125,13 +127,15 @@ void BGMPreview::Update(double delta) {
 }
 
 void BGMPreview::Play() {
-	m_currentAudioPosition = m_autoSamples.size() ? m_autoSamples.front().StartTime : 0;
+	m_currentAudioPosition = m_startOffset;
 	m_currentSampleIndex = 0;
 	
 	OnStarted = true;
 }
 
 void BGMPreview::Stop() {
+	m_currentState = -1;
+
 	if (!IsPlaying()) return;
 	OnStarted = false;
 

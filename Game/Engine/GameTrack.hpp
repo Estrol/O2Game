@@ -34,6 +34,7 @@ public:
 private:
 	std::vector<std::shared_ptr<Note>> m_notes;
 	std::vector<std::shared_ptr<Note>> m_noteCaches;
+	std::vector<std::shared_ptr<Note>> m_inactive_notes;
 
 	RhythmEngine* m_engine;
 	int m_laneOffset;

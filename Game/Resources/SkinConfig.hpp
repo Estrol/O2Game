@@ -25,6 +25,12 @@ struct SpriteValue {
 	float AnchorPointX, AnchorPointY;
 };
 
+// Value format: NumOfFiles, FileName
+struct NoteValue {
+	int numOfFiles;
+	std::string fileName;
+};
+
 struct RectInfo {
 	int X, Y;
 	int Width, Height;
@@ -39,6 +45,7 @@ public:
 	std::vector<NumericValue>& GetNumeric(std::string key);
 	std::vector<PositionValue>& GetPosition(std::string key);
 	std::vector<RectInfo>& GetRect(std::string key);
+	NoteValue& GetNote(std::string key);
 	SpriteValue& GetSprite(std::string key);
 
 private:
@@ -48,4 +55,5 @@ private:
 	std::unordered_map<std::string, std::vector<PositionValue>> m_positionValues;
 	std::unordered_map<std::string, SpriteValue> m_spriteValues;
 	std::unordered_map<std::string, std::vector<RectInfo>> m_rectValues;
+	std::unordered_map<std::string, NoteValue> m_noteValues;
 };

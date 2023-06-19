@@ -3,6 +3,7 @@
 #include <vector>
 
 struct O2Sample {
+	char8_t FileName[32];
 	uint32_t RefValue;
 	std::vector<uint8_t> AudioData;
 

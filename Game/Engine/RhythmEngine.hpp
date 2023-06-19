@@ -70,6 +70,9 @@ public:
 	double GetElapsedTime() const;
 	int GetPlayTime() const;
 
+	int GetGuideLineIndex() const;
+	void SetGuideLineIndex(int idx);
+
 private:
 	void UpdateNotes();
 	void UpdateGamePosition();
@@ -96,6 +99,8 @@ private:
 	int m_laneOffset = 0;
 	int m_audioVolume = 100;
 	int m_audioOffset = 0;
+
+	int m_guideLineIndex = 0;
 
 	bool m_started = false;
 	GameState m_state = GameState::NotGame;

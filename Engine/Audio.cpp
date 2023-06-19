@@ -147,6 +147,10 @@ bool Audio::IsFadeOut() {
 
 void CreateFadeProc(std::mutex* lock, HSTREAM & m_hstream, int volume, bool state) {
 	std::thread tr = std::thread([lock, m_hstream, volume, state] {
+		if (!lock) {
+			return;
+		}
+
 		std::lock_guard<std::mutex> l(*lock);
 
 		float initialVolume = state ? (float)volume / 100.0f : 0.0f;

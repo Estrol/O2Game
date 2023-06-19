@@ -1,10 +1,12 @@
 #pragma once
 #include <filesystem>
 
-const char signature[4] = { 'D', 'B', '0', '1' };
- 
+const char signature[2] = { 'D', 'B' };
+const int version = 2;
+
 struct DB_Header {
-	char8_t Signature[4];
+	char8_t Signature[2];
+	short Version;
 	int MusicCount;
 };
 
@@ -37,7 +39,7 @@ public:
 	void Save(std::filesystem::path path);
 
 	static MusicDatabase* GetInstance();
-	static MusicDatabase* Release();
+	static void Release();
 private:
 	static MusicDatabase* m_instance;
 	MusicDatabase();

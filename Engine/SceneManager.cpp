@@ -51,15 +51,43 @@ void SceneManager::Update(double delta) {
 	}
 	else {
 		m_currentScene->Update(delta);
+
+		if (m_queue_render.size()) {
+			for (auto it = m_queue_render.begin(); it != m_queue_render.end();) {
+				if (it->time <= std::chrono::system_clock::now()) {
+					it->callback();
+					it = m_queue_render.erase(it);
+				}
+				else {
+					it++;
+				}
+			}
+		}
 	}
 }
 
 void SceneManager::Render(double delta) {
+	m_renderId = std::this_thread::get_id();
+
 	if (m_currentScene) m_currentScene->Render(delta);
 }
 
 void SceneManager::Input(double delta) {
+	m_inputId = std::this_thread::get_id();
+
 	if (m_currentScene) m_currentScene->Input(delta);
+
+	if (m_queue_input.size()) {
+		for (auto it = m_queue_input.begin(); it != m_queue_input.end();) {
+			if (it->time <= std::chrono::system_clock::now()) {
+				it->callback();
+				it = m_queue_input.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+	}
 }
 
 void SceneManager::OnKeyDown(const KeyState& state) {
@@ -130,6 +158,20 @@ void SceneManager::DisplayFade(int transparency, std::function<void()> callback)
 
 		callback();
 	}).detach();
+}
+
+void SceneManager::ExecuteAfter(int ms_time, std::function<void()> callback) {
+	QueueInfo info = {};
+	info.callback = callback;
+	info.time = std::chrono::system_clock::now() + std::chrono::milliseconds(ms_time);
+
+	auto thread_id = std::this_thread::get_id();
+	if (thread_id == s_instance->m_renderId) {
+		s_instance->m_queue_render.push_back(std::move(info));
+	}
+	else {
+		s_instance->m_queue_input.push_back(std::move(info));
+	}
 }
 
 void SceneManager::StopGame() {

@@ -98,6 +98,11 @@ void Window::ResizeWindow(int width, int height) {
 	m_resizeRenderer = true;
 }
 
+void Window::ResizeBuffer(int width, int height) {
+	m_bufferWidth = width;
+	m_bufferHeight = height;
+}
+
 bool Window::ShouldResizeRenderer() {
 	return m_resizeRenderer;
 }

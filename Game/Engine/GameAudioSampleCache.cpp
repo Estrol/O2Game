@@ -40,6 +40,10 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch, bool force) {
 	Load(chart, pitch);
 }
 
+bool GameAudioSampleCache::IsEmpty() {
+	return currentHash == "";
+}
+
 void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	auto audioManager = AudioManager::GetInstance();
 	if (currentHash == chart->MD5Hash) {
@@ -278,4 +282,6 @@ void GameAudioSampleCache::Dispose() {
 
 	samples.clear();
 	AudioManager::GetInstance()->RemoveAll();
+
+	currentHash = "";
 }

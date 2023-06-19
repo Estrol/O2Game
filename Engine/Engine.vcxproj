@@ -25,8 +25,12 @@
     <ClCompile Include="AudioSampleChannel.cpp" />
     <ClCompile Include="BassFXSampleEncoding.cpp" />
     <ClCompile Include="Color3.cpp" />
+    <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Data\estring.cpp" />
     <ClCompile Include="Imgui\imgui_impl_sdlrenderer2.cpp" />
+    <ClCompile Include="Imgui\implot.cpp" />
+    <ClCompile Include="Imgui\implot_demo.cpp" />
+    <ClCompile Include="Imgui\implot_items.cpp" />
     <ClCompile Include="ResizableImage.cpp" />
     <ClCompile Include="FontResources.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
@@ -51,6 +55,7 @@
     <ClCompile Include="Sprite2D.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture2D.cpp" />
+    <ClCompile Include="Threading\GameThread.cpp" />
     <ClCompile Include="Tile2D.cpp" />
     <ClCompile Include="UDim.cpp" />
     <ClCompile Include="UDim2.cpp" />
@@ -65,9 +70,13 @@
     <ClInclude Include="AudioSampleChannel.hpp" />
     <ClInclude Include="BassFXSampleEncoding.hpp" />
     <ClInclude Include="Color3.hpp" />
+    <ClInclude Include="Configuration.hpp" />
     <ClInclude Include="Data\SDLRenderStruct.h" />
     <ClInclude Include="FallbackFonts\jp.ttf.h" />
     <ClInclude Include="Imgui\imgui_impl_sdlrenderer2.h" />
+    <ClInclude Include="Imgui\implot.h" />
+    <ClInclude Include="Imgui\implot_internal.h" />
+    <ClInclude Include="Data\mINI.h" />
     <ClInclude Include="ResizableImage.hpp" />
     <ClInclude Include="FallbackFonts\arial.ttf.h" />
     <ClInclude Include="FontResources.hpp" />
@@ -85,6 +94,7 @@
     <ClInclude Include="SDLException.hpp" />
     <ClInclude Include="Sprite2D.hpp" />
     <ClInclude Include="Text.hpp" />
+    <ClInclude Include="Threading\GameThread.hpp" />
     <ClInclude Include="Win32ErrorHandling.h" />
     <ClInclude Include="Data\bass_ogg_silent.hpp" />
     <ClInclude Include="Data\estring.hpp" />
@@ -210,7 +220,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)/include;$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -236,7 +246,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)/include;$(SolutionDir)Lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING  /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>

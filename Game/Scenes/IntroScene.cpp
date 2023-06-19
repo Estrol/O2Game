@@ -4,7 +4,7 @@
 #include "../../Engine/Keys.h"
 #include "../../Engine/SceneManager.hpp"
 
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 #include "../Data/Util/Util.hpp"
 #include "../Data/MusicDatabase.h"
 #include "../Data/OJN.h"
@@ -34,7 +34,7 @@ void IntroScene::Render(double delta) {
 
 			m_text->Draw("Processing file: " + path.string());
 
-			if (waitFrame > 0.05) {
+			if (waitFrame > 0.025) {
 				auto fs = O2::OJN::LoadOJNFile(path);
 				OJNHeader Header = {};
 				fs.read((char*)&Header, sizeof(OJNHeader));
@@ -61,9 +61,8 @@ void IntroScene::Render(double delta) {
 		}
 		else {
 			std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
-			std::string dbName = Configuration::Load("Music", "Database");
 
-			db->Save(std::filesystem::current_path() / dbName);
+			db->Save(std::filesystem::current_path() / "Game.db");
 			IsReady = true;
 		}
 	}
@@ -83,11 +82,17 @@ bool IntroScene::Attach() {
 	auto db = MusicDatabase::GetInstance();
 	std::filesystem::path dbPath = std::filesystem::current_path() / "Game.db";
 	if (std::filesystem::exists(dbPath)) {
-		db->Load(dbPath);
+		try {
+			db->Load(dbPath);
 
-		IsReady = true;
+			IsReady = true;
+		}
+		catch (std::runtime_error) {
+			goto prepare_db;
+		}
 	}
 	else {
+		prepare_db:
 		for (const auto& dir_entry : std::filesystem::recursive_directory_iterator(musicPath)) {
 			if (dir_entry.is_regular_file()) {
 				std::string fileName = dir_entry.path().filename().string();

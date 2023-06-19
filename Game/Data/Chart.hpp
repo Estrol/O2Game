@@ -27,6 +27,11 @@ struct NoteInfo {
 	float Volume = 1, Pan = 0;
 };
 
+struct BMSMeasureInfo {
+	int Measure;
+	int CellSize;
+};
+
 struct TimingInfo {
 	double StartTime;
 	float Value;
@@ -52,7 +57,8 @@ struct AutoSample {
 
 enum class Mod {
 	MIRROR,
-	RANDOM
+	RANDOM,
+	REARRANGE
 };
 
 class Chart {
@@ -63,7 +69,7 @@ public:
 	Chart(O2::OJN& ojnfile, int diffIndex = 2);
 	~Chart();
 
-	void ApplyMod(Mod mod);
+	void ApplyMod(Mod mod, void* data = NULL);
 
 	float InitialSvMultiplier;
 	int m_keyCount;

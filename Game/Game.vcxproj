@@ -137,11 +137,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Scenes\Converters\ToOsu.cpp" />
+    <ClCompile Include="Scenes\EditorScene.cpp" />
     <ClCompile Include="Engine\BGMPreview.cpp" />
     <ClCompile Include="Engine\Button.cpp" />
     <ClCompile Include="Data\MusicDatabase.cpp" />
     <ClCompile Include="Scenes\IntroScene.cpp" />
-    <ClCompile Include="Resources\Configuration.cpp" />
     <ClCompile Include="Data\AutoReplay.cpp" />
     <ClCompile Include="Data\bms.cpp" />
     <ClCompile Include="Data\Chart.cpp" />
@@ -153,12 +154,13 @@
     <ClCompile Include="Resources\SkinConfig.cpp" />
     <ClCompile Include="Scenes\ResultScene.cpp" />
     <ClCompile Include="Scenes\SongSelectScene.cpp" />
+    <ClInclude Include="Resources\DefaultConfiguration.h" />
+    <ClInclude Include="Scenes\Converters\ToOsu.hpp" />
+    <ClInclude Include="Scenes\EditorScene.hpp" />
     <ClInclude Include="Engine\BGMPreview.hpp" />
     <ClInclude Include="Engine\Button.hpp" />
     <ClInclude Include="Data\MusicDatabase.h" />
     <ClInclude Include="Scenes\IntroScene.hpp" />
-    <ClInclude Include="Resources\Configuration.hpp" />
-    <ClInclude Include="Data\Util\mINI.h" />
     <ClCompile Include="Engine\DrawableTile.cpp" />
     <ClCompile Include="Engine\ScoreManager.cpp" />
     <ClCompile Include="EnvironmentSetup.cpp" />

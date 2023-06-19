@@ -2,7 +2,7 @@
 #include "../../Engine/Imgui/ImGui.h"
 #include "../../Engine/Imgui/ImguiUtil.hpp"
 #include "../../Engine/AudioManager.hpp"
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 #include "../../Engine/SceneManager.hpp"
 #include "../GameScenes.h"
 #include "../Data/Chart.hpp"
@@ -10,6 +10,8 @@
 #include "../../Engine/MathUtils.hpp"
 #include "../../Engine/Window.hpp"
 #include "../../Engine/Imgui/imgui_internal.h"
+#include "../../Engine/Imgui/implot.h"
+#include "../../Engine/FontResources.hpp"
 
 ResultScene::ResultScene() {
 }
@@ -59,48 +61,55 @@ void ResultScene::Render(double delta) {
             int lnCombo = EnvironmentSetup::GetInt("LNCombo");
             int lnMaxCombo = EnvironmentSetup::GetInt("LNMaxCombo");
 
-			// imgui set cursor pos to mid
-            auto size = MathUtil::ScaleVec2(ImVec2(250, 0));
-            auto center = ImGui::GetMainViewport()->GetCenter();
-            ImGui::SetCursorPosX(center.x - (size.x / 2));
-
-            if (ImGui::BeginChild("#ResultState2", size, true)) {
+            if (ImGui::BeginChild("#Window1", MathUtil::ScaleVec2(ImVec2(200, 0)), true)) {
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
 
-				ImGui::Text("Score");
-				ImGui::Button((std::to_string(score) + "###Score1").c_str(), size);
+                ImGui::Text("Score:");
+                ImGui::PushFont(FontResources::GetButtonFont());
+                ImGui::Button((std::to_string(score) + "###1").c_str(), MathUtil::ScaleVec2(ImVec2(192, 0)));
+                ImGui::PopFont();
 
-				ImGui::Text("Cool");
-				ImGui::Button((std::to_string(cool) + "###Cool1").c_str(), size);
+                if (ImGui::BeginChild("#Window2", MathUtil::ScaleVec2(ImVec2(95, 0)))) {
+                    ImGui::Text("Cool");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(cool) + "###2").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("Good");
-				ImGui::Button((std::to_string(good) + "###Good1").c_str(), size);
+                    ImGui::Text("Bad");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(bad) + "###3").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("Bad");
-				ImGui::Button((std::to_string(bad) + "###Bad1").c_str(), size);
+                    ImGui::Text("Max Jam Combo");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(maxJamCombo) + "###4").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("Miss");
-				ImGui::Button((std::to_string(miss) + "###Miss1").c_str(), size);
+                    ImGui::EndChild();
+                }
 
-				ImGui::Text("Jam Combo");
-				ImGui::Button((std::to_string(jamCombo) + "###JamCombo1").c_str(), size);
+                ImGui::SameLine();
 
-				ImGui::Text("Max Jam Combo");
-				ImGui::Button((std::to_string(maxJamCombo) + "###MaxJamCombo1").c_str(), size);
+                if (ImGui::BeginChild("#Window3", MathUtil::ScaleVec2(ImVec2(95, 0)))) {
+                    ImGui::Text("Good");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(good) + "###5").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("Combo");
-				ImGui::Button((std::to_string(combo) + "###Combo1").c_str(), size);
+                    ImGui::Text("Miss");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(miss) + "###6").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("Max Combo");
-				ImGui::Button((std::to_string(maxCombo) + "###MaxCombo1").c_str(), size);
+                    ImGui::Text("Max LN Combo");
+                    ImGui::PushFont(FontResources::GetButtonFont());
+                    ImGui::Button((std::to_string(lnMaxCombo) + "###7").c_str(), MathUtil::ScaleVec2(ImVec2(95, 0)));
+                    ImGui::PopFont();
 
-				ImGui::Text("LongNote Combo");
-				ImGui::Button((std::to_string(lnCombo) + "###LNCombo1").c_str(), size);
+                    ImGui::EndChild();
+                }
 
-				ImGui::Text("Max LongNote Combo");
-				ImGui::Button((std::to_string(lnMaxCombo) + "###LNMaxCombo1").c_str(), size);
-				
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
 

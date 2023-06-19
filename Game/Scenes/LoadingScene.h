@@ -17,6 +17,7 @@ private:
 	bool fucked = false;
 	bool is_shown = false;
 	bool is_ready = false;
+	bool dont_dispose = false;
 
 	std::u8string m_title;
 

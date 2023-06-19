@@ -1,5 +1,5 @@
 #include "FontResources.hpp"
-#include "../Game/Resources/Configuration.hpp"
+#include "Configuration.hpp"
 #include "Window.hpp"
 #include <mutex>
 
@@ -13,9 +13,10 @@
 #include "FallbackFonts/arial.ttf.h"
 #include "FallbackFonts/jp.ttf.h"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
+#include "Renderer.hpp"
+#include <iostream>
 
-static std::map<std::string, void*> gFontCaches;
-static std::map<std::string, ImFont*> gImFontCaches;
+static ImFont* gImFontButton = nullptr;
 static bool gImFontRebuild = true;
 static std::mutex mutex;
 
@@ -31,6 +32,7 @@ double calculateDisplayDPI(double diagonalDPI, double horizontalDPI, double vert
 
 namespace FontResources {
 	void PreloadFontCaches() {
+		std::cout << "[Font] Preload font on progress!" << std::endl;
 		std::lock_guard<std::mutex> lock(mutex);
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -52,7 +54,7 @@ namespace FontResources {
 		auto jpFont = fontPath / "jp.ttf";
 
 		ImFontConfig conf;
-		conf.OversampleH = conf.OversampleH = 3;
+		conf.OversampleH = conf.OversampleV = 0;
 		conf.PixelSnapH = true;
 		conf.SizePixels = fontSize;
 		conf.GlyphOffset.y = 1 * (fontSize / 16.0);
@@ -76,10 +78,22 @@ namespace FontResources {
 		}
 
 		io.Fonts->Build();
-		gImFontRebuild = false;
 
-		ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
-		ImGui_ImplSDLRenderer2_DestroyFontsTexture();
+		int iBtnFontSz = 20 * (targetScale / originScale);
+		conf.MergeMode = false;
+		conf.SizePixels = iBtnFontSz;
+		conf.GlyphOffset.y = 1 * (iBtnFontSz / 16.0);
+		if (std::filesystem::exists(font)) {
+			gImFontButton = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
+		}
+		else {
+			gImFontButton = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
+		}
+
+		gImFontRebuild = false;
+		Renderer::GetInstance()->ResetImGui();
+
+		std::cout << "[Font] Preload font completed!" << std::endl;
 	}
 
 	void Rebuild() {
@@ -105,5 +119,8 @@ namespace FontResources {
 
 	void DoRebuild() {
 		gImFontRebuild = true;
+	}
+	ImFont* GetButtonFont() {
+		return gImFontButton;
 	}
 }

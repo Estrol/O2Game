@@ -248,7 +248,7 @@ Chart::Chart(BMS::BMSFile& file) {
 		sm.StartTime = autoSample.StartTime;
 		sm.Index = autoSample.SampleIndex;
 		sm.Volume = 1;
-		sm.Pan = 1;
+		sm.Pan = 0;
 
 		m_autoSamples.push_back(sm);
 	}
@@ -288,11 +288,9 @@ Chart::Chart(BMS::BMSFile& file) {
 Chart::Chart(O2::OJN& file, int diffIndex) {
 	auto& diff = file.Difficulties[diffIndex];
 
-	int len = strlen(file.Header.title);
+	m_title = CodepageToUtf8(file.Header.title, sizeof(file.Header.title), 949);
+	m_artist = CodepageToUtf8(file.Header.artist, sizeof(file.Header.artist), 949);
 
-	auto str = CodepageToUtf8(file.Header.title, len, 949);
-
-	m_title = str;
 	m_backgroundBuffer = file.BackgroundImage;
 	m_keyCount = 7;
 	m_customMeasures = diff.Measures;
@@ -398,7 +396,7 @@ int Chart::GetLength() {
 		: m_notes[m_notes.size() - 1].StartTime;
 }
 
-void Chart::ApplyMod(Mod mod) {
+void Chart::ApplyMod(Mod mod, void* data) {
 	switch (mod) {
 		case Mod::MIRROR: {
 			for (auto& note : m_notes) {
@@ -414,11 +412,23 @@ void Chart::ApplyMod(Mod mod) {
 			}
 
 			auto rng = std::default_random_engine{};
+			rng.seed(time(NULL));
+
 			std::shuffle(std::begin(lanes), std::end(lanes), rng);
 
 			for (auto& note : m_notes) {
 				note.LaneIndex = lanes[note.LaneIndex];
 			}
+			break;
+		}
+
+		case Mod::REARRANGE: {
+			int* lanes = reinterpret_cast<int*>(data);
+
+			for (auto& note : m_notes) {
+				note.LaneIndex = lanes[note.LaneIndex];
+			}
+
 			break;
 		}
 	}

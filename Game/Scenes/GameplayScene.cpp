@@ -6,13 +6,14 @@
 #include "../../Engine/Imgui/ImguiUtil.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 #include "../Resources/SkinConfig.hpp"
-#include "../Data/Util/mINI.h"
+#include "../../Engine/Data/mINI.h"
 
 #include "../EnvironmentSetup.hpp"
 #include "../GameScenes.h"
 #include "../../Engine/MsgBox.hpp"
+#include <random>
 
 #define SAFE_DELETE(x) if (x) { delete x; x = nullptr; }
 
@@ -286,6 +287,16 @@ void GameplayScene::Render(double delta) {
 	}
 
 	m_title->Draw(m_game->GetTitle());
+
+	if (m_autoPlay) {
+		m_autoText->Position = m_autoTextPos;
+		m_autoText->Draw(u8"Game currently on autoplay!");
+
+		m_autoTextPos.X.Offset -= delta * 30.0;
+		if (m_autoTextPos.X.Offset < (-m_autoTextSize + 20)) {
+			m_autoTextPos = UDim2::fromOffset(Window::GetInstance()->GetBufferWidth(), 50);
+		}
+	}
 }
 
 void GameplayScene::Input(double delta) {
@@ -319,6 +330,7 @@ bool GameplayScene::Attach() {
 	m_drawExitButton = false;
 	m_resourceFucked = false;
 	m_drawJudge = false;
+	m_autoPlay = EnvironmentSetup::GetInt("Autoplay") == 1;
 
 	try {
 		auto SkinName = Configuration::Load("Game", "Skin");
@@ -333,7 +345,6 @@ bool GameplayScene::Attach() {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
 		}
 
-		GameNoteResource::Dispose();
 		GameNoteResource::Load();
 
 		auto skinPath = Configuration::Skin_GetPath(SkinName);
@@ -354,7 +365,19 @@ bool GameplayScene::Attach() {
 		m_autoText = std::make_unique<Text>(13);
 		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
 
-        m_PlayBG = std::make_unique<Texture2D>(playingPath / "PlayingBG.png");
+		m_autoTextPos = UDim2::fromOffset(Window::GetInstance()->GetBufferWidth(), 50);
+
+		int arena = EnvironmentSetup::GetInt("Arena");
+		if (arena == 0) {
+			std::random_device dev;
+			std::mt19937 rng(dev());
+
+			std::uniform_int_distribution<> dist(1, 12);
+
+			arena = dist(rng);
+		}
+
+		m_PlayBG = std::make_unique<Texture2D>(playingPath / ("PlayingBG_" + std::to_string(arena) + ".png"));
         auto PlayBGPos = conf.GetPosition("PlayingBG");
         m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
         m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
@@ -652,6 +675,16 @@ bool GameplayScene::Attach() {
 		m_game->SetHitPosition(HitPos);
 		m_game->SetLaneOffset(LaneOffset);
 
+		int idx = 2;
+		try {
+			idx = std::atoi(Configuration::Load("Game", "GuideLine").c_str());
+		}
+		catch (std::invalid_argument) {
+			idx = 2;
+		}
+
+		m_game->SetGuideLineIndex(idx);
+
 		m_game->ListenKeyEvent([&](GameTrackEvent e) {
 			if (e.IsKeyEvent) {
 				m_keyState[e.Lane] = e.State;
@@ -740,6 +773,8 @@ bool GameplayScene::Attach() {
 			m_holdEffect[i]->SetFPS(30.0);
 			m_hitEffect[i]->LastIndex();
 			m_holdEffect[i]->Repeat = true;
+			m_hitEffect[i]->AlphaBlend = true;
+			m_holdEffect[i]->AlphaBlend = true;
 
 			int pos = std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
 			m_hitEffect[i]->Position = UDim2::fromOffset(pos, 465);
@@ -844,7 +879,8 @@ bool GameplayScene::Detach() {
 	m_game.reset();
 	m_title.reset();
 	m_exitButtonFunc.reset();
-
+	
+	GameNoteResource::Dispose();
 	SceneManager::GetInstance()->SetFrameLimitMode(FrameLimitMode::MENU);
 	return true;
 }

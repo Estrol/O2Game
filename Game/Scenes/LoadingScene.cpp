@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 
 #include "../Data/osu.hpp"
 #include "../Data/Chart.hpp"
@@ -46,11 +46,11 @@ void LoadingScene::Update(double delta) {
 				EnvironmentSetup::Set("SongRate", rate);
 			}
 
-			const char* bmsfile[] = { ".bms", ".bme", ".bml" };
+			const char* bmsfile[] = { ".bms", ".bme", ".bml", ".bmsc" };
 			const char* ojnfile = ".ojn";
 
 			Chart* chart = nullptr;
-			if (file.extension() == bmsfile[0] || file.extension() == bmsfile[1] || file.extension() == bmsfile[2]) {
+			if (file.extension() == bmsfile[0] || file.extension() == bmsfile[1] || file.extension() == bmsfile[2] || file.extension() == bmsfile[3]) {
 				BMS::BMSFile beatmap;
 				beatmap.Load(file);
 
@@ -81,7 +81,6 @@ void LoadingScene::Update(double delta) {
 				}
 
 				chart = new Chart(o2jamFile, diffIndex);
-				chart->m_title = m_title;
 			}
 			else {
 				Osu::Beatmap beatmap(file);
@@ -159,77 +158,18 @@ void LoadingScene::Render(double delta) {
 bool LoadingScene::Attach() {
 	fucked = false;
 	is_shown = false;
+	is_ready = true;
 	m_counter = 0;
 
-	std::string songId = EnvironmentSetup::Get("Key");
-	if (songId.size()) {
-		std::filesystem::path file = Configuration::Load("Music", "Folder");
-		file /= "o2ma" + songId + ".ojn";
+	m_background = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
+	dont_dispose = m_background != nullptr;
 
-		if (std::filesystem::exists(file)) {
-			DB_MusicItem* item = MusicDatabase::GetInstance()->Find(std::atoi(songId.c_str()));
-			if (!item) {
-				MsgBox::Show("FailChart", "Error", "Failed to find the Id: " + songId, MsgBoxType::OK);
-				fucked = true;
-
-				return true;
-			}
-
-			m_title = item->Title;
-
-			std::fstream fs(file, std::ios::binary | std::ios::in);
-			if (!fs.is_open()) {
-				std::string msg = "Failed to open file: " + file.string();
-				MsgBox::Show("FailChart", "Error", msg, MsgBoxType::OK);
-
-				return true;
-			}
-
-			if (item->CoverSize > 0) {
-				char signature[3] = { 'n', 'e', 'w' };
-				char check[3];
-				fs.read(check, 3);
-
-				if (memcmp(signature, check, 3) != 0) {
-					try {
-						fs.seekg(item->CoverOffset, std::ios::beg);
-						char* buffer = new char[item->CoverSize];
-						fs.read(buffer, item->CoverSize);
-						fs.close();
-
-						Window* window = Window::GetInstance();
-						m_background = new Texture2D((uint8_t*)buffer, item->CoverSize);
-						m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-
-						delete[] buffer;
-					}
-					catch (SDLException& e) {
-						MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
-						fucked = true;
-
-						return true;
-					}
-				}
-			}
-		}
-		else {
-			MsgBox::Show("FailChart", "Error", "Failed to find note file, please re-regenerate your note database!", MsgBoxType::OK);
-			fucked = true;
-
-			return true;
-		}
-	}
-
-	is_ready = false;
-	SceneManager::DisplayFade(0, [this] {
-		is_ready = true;
-	});
-
+	EnvironmentSetup::SetObj("SongBackground", nullptr);
 	return true;
 }
 
 bool LoadingScene::Detach() {
-	if (m_background) {
+	if (m_background && !dont_dispose) {
 		delete m_background;
 		m_background = nullptr;
 	}

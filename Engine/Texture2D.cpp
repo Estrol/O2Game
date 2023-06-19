@@ -140,14 +140,11 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 
 	CalculateSize();
 
-	float scaleX = static_cast<float>(m_preAnchoredSize.right) / static_cast<float>(m_actualSize.right);
-	float scaleY = static_cast<float>(m_preAnchoredSize.bottom) / static_cast<float>(m_actualSize.bottom);
-
 	auto window = Window::GetInstance();
 
 	bool scaleOutput = window->IsScaleOutput();
 
-	SDL_Rect destRect = { m_calculatedSize.left, m_calculatedSize.top, m_calculatedSize.right, m_calculatedSize.bottom };
+	SDL_FRect destRect = { m_calculatedSizeF.left, m_calculatedSizeF.top, m_calculatedSizeF.right, m_calculatedSizeF.bottom };
 	if (scaleOutput) {
 		destRect.x = destRect.x * window->GetWidthScale();
 		destRect.y = destRect.y * window->GetHeightScale();
@@ -180,7 +177,7 @@ void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
 	SDL_SetTextureColorMod(m_sdl_tex, static_cast<uint8_t>(TintColor.R * 255), static_cast<uint8_t>(TintColor.G * 255), static_cast<uint8_t>(TintColor.B * 255));
 	SDL_SetTextureAlphaMod(m_sdl_tex, static_cast<uint8_t>(255 - (Transparency / 100.0) * 255));
 
-	int error = SDL_RenderCopyEx(
+	int error = SDL_RenderCopyExF(
 		renderer->GetSDLRenderer(), 
 		m_sdl_tex, 
 		nullptr, 
@@ -213,28 +210,34 @@ void Texture2D::CalculateSize() {
 	int wWidth = window->GetWidth();
 	int wHeight = window->GetHeight();
 
- 	LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
-	LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
+ 	float xPos = wWidth * Position.X.Scale + Position.X.Offset;
+	float yPos = wHeight * Position.Y.Scale + Position.Y.Offset;
+	
+	float width = m_actualSize.right * Size.X.Scale + Size.X.Offset;
+	float height = m_actualSize.bottom * Size.Y.Scale + Size.Y.Offset;
 
-	LONG width = static_cast<LONG>(m_actualSize.right * Size.X.Scale) + static_cast<LONG>(Size.X.Offset);
-	LONG height = static_cast<LONG>(m_actualSize.bottom * Size.Y.Scale) + static_cast<LONG>(Size.Y.Offset);
+	m_preAnchoredSize = { (LONG)xPos, (LONG)yPos, (LONG)width, (LONG)height };
+	m_preAnchoredSizeF = { xPos, yPos, width, height };
 
-	m_preAnchoredSize = { xPos, yPos, width, height };
-
-	LONG xAnchor = (LONG)(width * std::clamp(AnchorPoint.X, 0.0, 1.0));
-	LONG yAnchor = (LONG)(height * std::clamp(AnchorPoint.Y, 0.0, 1.0));
+	float xAnchor = width * std::clamp(AnchorPoint.X, 0.0, 1.0);
+	float yAnchor = height * std::clamp(AnchorPoint.Y, 0.0, 1.0);
 	
 	xPos -= xAnchor;
 	yPos -= yAnchor;
 
-	m_calculatedSize = { xPos, yPos, width, height };
+	m_calculatedSize = { (LONG)xPos, (LONG)yPos, (LONG)width, (LONG)height };
+	m_calculatedSizeF = { xPos, yPos, width, height };
 
-	AbsolutePosition = { (double)xPos, (double)yPos };
-	AbsoluteSize = { (double)width, (double)height };
+	AbsolutePosition = { xPos, yPos };
+	AbsoluteSize = { width, height };
 }
 
 RECT Texture2D::GetOriginalRECT() {
 	return m_actualSize;
+}
+
+void Texture2D::SetOriginalRECT(RECT size) {
+	m_actualSize = size;
 }
 
 Texture2D* Texture2D::FromTexture2D(Texture2D* tex) {

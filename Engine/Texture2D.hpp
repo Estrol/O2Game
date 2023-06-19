@@ -8,6 +8,13 @@
 #include "Vector2.hpp"
 #include "Color3.hpp"
 
+struct RECT_F {
+	float left;
+	float top;
+	float right;
+	float bottom;
+};
+
 class Texture2D {
 public:
 	Texture2D();
@@ -15,7 +22,6 @@ public:
 	Texture2D(std::filesystem::path path);
 	Texture2D(uint8_t* fileData, size_t size);
 	Texture2D(SDL_Texture* texture);
-	//Texture2D(ID3D11ShaderResourceView* texture);
 	~Texture2D();
 
 	void Draw();
@@ -39,6 +45,7 @@ public:
 	Vector2 AbsolutePosition;
 
 	RECT GetOriginalRECT();
+	void SetOriginalRECT(RECT size);
 
 	static Texture2D* FromTexture2D(Texture2D* tex);
 
@@ -55,11 +62,10 @@ protected:
 	
 	RECT m_calculatedSize;
 	RECT m_preAnchoredSize;
+	RECT_F m_calculatedSizeF;
+	RECT_F m_preAnchoredSizeF;
 
 	RECT m_actualSize;
 	SDL_Texture* m_sdl_tex;
 	SDL_Surface* m_sdl_surface;
-
-	/*ID3D11ShaderResourceView* m_pTexture;
-	DirectX::SpriteBatch* m_pSpriteBatch = nullptr;*/
 };

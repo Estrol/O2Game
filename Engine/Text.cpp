@@ -4,6 +4,7 @@
 #include "Imgui/ImguiUtil.hpp"
 #include "FontResources.hpp"
 #include <codecvt>
+#include "MathUtils.hpp"
 
 Text::Text() {
     Rotation = 0.0f;
@@ -60,8 +61,8 @@ void Text::Draw(std::u8string text) {
     int wWidth = window->GetWidth();
     int wHeight = window->GetHeight();
 
-    LONG xPos = static_cast<LONG>(wWidth * Position.X.Scale) + static_cast<LONG>(Position.X.Offset);
-    LONG yPos = static_cast<LONG>(wHeight * Position.Y.Scale) + static_cast<LONG>(Position.Y.Offset);
+    float xPos = (wWidth * Position.X.Scale) + Position.X.Offset;
+    float yPos = (wHeight * Position.Y.Scale) + Position.Y.Offset;
 
     xPos *= wnd->GetWidthScale();
 	yPos *= wnd->GetHeightScale();
@@ -71,7 +72,7 @@ void Text::Draw(std::u8string text) {
     draw_list->AddText(
         NULL, 
         Size * scale,
-        ImVec2(xPos, yPos), 
+        ImVec2(xPos, yPos) - MathUtil::ScaleVec2(0, 2.5),
         ImColor(255 * red, 255 * green, 255 * blue), 
         (const char*)text.c_str()
     );
@@ -86,6 +87,8 @@ Text::~Text() {
 }
 
 int Text::CalculateSize(std::u8string text) {
+    ImguiUtil::NewFrame();
+
     Window* wnd = Window::GetInstance();
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
     float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;

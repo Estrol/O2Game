@@ -1,6 +1,6 @@
 #include "SkinConfig.hpp"
-#include "../Data/Util/mINI.h"
 #include "../Data/Util/Util.hpp"
+#include "../../Engine/Data/mINI.h"
 #include <filesystem>
 #include <iostream>
 
@@ -109,6 +109,21 @@ void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 		}
 	}
 
+	std::string keyName1 = "notes";
+	if (keyCount != -1) {
+		keyName1 += "#" + std::to_string(keyCount);
+	}
+
+	for (auto const& [key, value] : ini[keyName1]) {
+		auto split = splitString(value, ',');
+
+		NoteValue e = {};
+		e.numOfFiles = std::stoi(split[0]);
+		e.fileName = split[1];
+
+		m_noteValues[key] = std::move(e);
+	}
+
 	for (auto const& [key, value] : ini["Sprites"]) {
 		auto split = splitString(value, ',');
 
@@ -167,6 +182,16 @@ std::vector<RectInfo>& SkinConfig::GetRect(std::string key) {
 	}
 
 	return m_rectValues[key];
+}
+
+NoteValue& SkinConfig::GetNote(std::string key) {
+	std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+
+	if (m_noteValues.find(key) == m_noteValues.end()) {
+		throw std::runtime_error("Sprite key not found: " + key);
+	}
+
+	return m_noteValues[key];
 }
 
 

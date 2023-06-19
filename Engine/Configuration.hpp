@@ -3,6 +3,8 @@
 #include <filesystem>
 
 namespace Configuration {
+	void SetDefaultConfiguration(std::string conf);
+
 	std::string Load(std::string key, std::string prop);
 	void Set(std::string key, std::string prop, std::string value);
 

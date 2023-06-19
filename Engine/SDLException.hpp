@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-#define SDL_EXCEPTION_MAX_CHARS 500
+constexpr auto SDL_EXCEPTION_MAX_CHARS = 500;
 
 class SDLException : std::exception {
 public:

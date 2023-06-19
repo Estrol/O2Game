@@ -10,6 +10,8 @@ public:
 	bool Destroy();
 
 	void ResizeWindow(int width, int height);
+	void ResizeBuffer(int width, int height);
+
 	bool ShouldResizeRenderer();
 	void HandleResizeRenderer();
 

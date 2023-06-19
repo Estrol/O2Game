@@ -130,6 +130,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					ev.Channel = package.Channel;
 					ev.Position = position;
 					ev.Value = event.BPM;
+					ev.CellSize = package.EventCount;
 
 					events[i].push_back(ev);
 				}
@@ -141,6 +142,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					NoteEvent ev = {};
 					ev.Measure = package.Measure;
 					ev.Channel = package.Channel;
+					ev.CellSize = package.EventCount;
 					ev.Position = position;
 					ev.Value = event.Value - 1;
 
@@ -206,6 +208,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		std::vector<O2Note> notes;
 		std::vector<O2Note> autoSamples;
 		std::vector<O2Timing> bpmChanges;
+		std::vector<O2Timing> measureLengthChanges;
 		std::vector<double> measureList;
 
 		bpmChanges.push_back({ Header.bpm, 0 });
@@ -217,6 +220,8 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		double timer = 0;
 		
 		double holdNotes[7] = {};
+		float holdNotesPos[7] = { -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 };
+
 		int currentMeasure = 0;
 
 		// sort based on measure + position
@@ -240,10 +245,11 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 			measurePosition = position;
 
 			if (event.Channel == 0) {
+				measureLengthChanges.push_back({ event.Value, timer, (float)(event.Measure + event.Position) });
 				measureFraction = event.Value;
 			}
 			else if (event.Channel == 1) {
-				bpmChanges.push_back({ event.Value, timer });
+				bpmChanges.push_back({ event.Value, timer, (float)(event.Measure + event.Position) });
 				currentBPM = event.Value;
 			}
 			else if (event.Channel < 9) {
@@ -252,20 +258,31 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 				switch (event.Type) {
 					case NoteEventType::HoldStart: {
 						holdNotes[laneIndex] = timer;
+						holdNotesPos[laneIndex] = event.Measure + event.Position;
 						break;
 					}
 
 					case NoteEventType::HoldEnd: {
-						O2Note note = {};
-						note.StartTime = holdNotes[laneIndex];
-						note.EndTime = timer;
-						note.IsLN = true;
-						note.SampleRefId = static_cast<int>(event.Value);
-						note.LaneIndex = laneIndex;
-						note.Volume = event.Volume;
-						note.Pan = event.Pan;
+						if (holdNotesPos[laneIndex] != -1) {
+							O2Note note = {};
+							note.StartTime = holdNotes[laneIndex];
+							note.EndTime = timer;
+							note.IsLN = true;
+							note.SampleRefId = static_cast<int>(event.Value);
+							note.LaneIndex = laneIndex;
+							note.Volume = event.Volume;
+							note.Pan = event.Pan;
+							note.Channel = event.Channel;
+							note.Position = holdNotesPos[laneIndex];
+							note.EndPosition = event.Measure + event.Position;
+							holdNotesPos[laneIndex] = -1;
+							holdNotes[laneIndex] = -1;
 
-						notes.push_back(note);
+							assert(note.Position != -1);
+							assert(note.EndPosition != -1);
+
+							notes.push_back(note);
+						}
 						break;
 					}
 
@@ -277,6 +294,10 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						note.LaneIndex = laneIndex; 
 						note.Volume = event.Volume;
 						note.Pan = event.Pan;
+						note.Channel = event.Channel;
+						note.Position = event.Measure + event.Position;
+
+						assert(note.Position != -1);
 
 						notes.push_back(note);
 						break;
@@ -290,6 +311,10 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 				sample.SampleRefId = static_cast<int>(event.Value);
 				sample.Volume = event.Volume;
 				sample.Pan = event.Pan;
+				sample.Channel = event.Channel;
+				sample.Position = event.Measure + event.Position;
+
+				assert(sample.Position != -1);
 
 				autoSamples.push_back(sample);
 			}
@@ -301,6 +326,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		diff.Timings = bpmChanges;
 		diff.Measures = measureList;
 		diff.Samples = ojm.Samples;
+		diff.MeasureLenghts = measureLengthChanges;
 		diff.AudioLength = timer + 500;
 
 		Difficulties[i] = std::move(diff);

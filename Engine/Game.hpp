@@ -5,6 +5,7 @@
 #include "SceneManager.hpp"
 #include "Text.hpp"
 #include "ResizableImage.hpp"
+#include "Threading/GameThread.hpp"
 
 enum class ThreadMode {
 	SINGLE_THREAD,
@@ -33,6 +34,9 @@ public:
 	void SetBufferSize(int width, int height);
 	void SetWindowSize(int width, int height);
 	void SetFullscreen(bool fullscreen);
+
+	GameThread* GetRenderThread();
+	GameThread* GetMainThread();
 
 	void DisplayFade(int transparency);
 	float GetDisplayFade();
@@ -70,8 +74,10 @@ private:
 	ThreadMode m_threadMode;
 	RendererMode m_renderMode;
 	FrameLimitMode m_frameLimitMode;
-	std::thread m_audioThread;
-	std::thread m_renderThread;
+
+	GameThread mRenderThread;
+	GameThread mAudioThread;
+	GameThread mLocalThread;
 
 	Text* m_frameText;
 	ResizableImage* m_fadeBox;

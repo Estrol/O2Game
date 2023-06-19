@@ -21,6 +21,11 @@ GameTrack::~GameTrack() {
 		note.reset();
 	}
 
+	for (auto& note : m_inactive_notes) {
+		note.reset();
+	}
+
+	m_inactive_notes.clear();
 	m_currentHold.reset();
 	m_noteCaches.clear();
 	m_notes.clear();
@@ -30,8 +35,8 @@ void GameTrack::Update(double delta) {
 	for (auto _note = m_notes.begin(); _note != m_notes.end();) {
 		auto& note = *_note;
 
-		if (note->IsRemoveable()) {
-			m_noteCaches.push_back(note);
+		if (note->IsPassed()) {
+			m_inactive_notes.push_back(note);
 			_note = m_notes.erase(_note);
 		}
 		else {
@@ -54,10 +59,29 @@ void GameTrack::Update(double delta) {
 			_note++;
 		}
 	}
+
+	for (auto _note = m_inactive_notes.begin(); _note != m_inactive_notes.end();) {
+		auto& note = *_note;
+
+		if (note->IsRemoveable()) {
+			note->Release();
+
+			m_noteCaches.push_back(note);
+			_note = m_inactive_notes.erase(_note);
+		}
+		else {
+			note->Update(delta);
+			_note++;
+		}
+	}
 }
 
 void GameTrack::Render(double delta) {
 	for (auto& note : m_notes) {
+		note->Render(delta);
+	}
+
+	for (auto& note : m_inactive_notes) {
 		note->Render(delta);
 	}
 }

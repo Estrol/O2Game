@@ -1,6 +1,6 @@
 #include "Configuration.hpp"
 #include <iostream>
-#include "../Data/Util/mINI.h"
+#include "Data/mINI.h"
 
 namespace {
     bool IsLoaded = false;
@@ -9,22 +9,11 @@ namespace {
 	std::string CurrentSkin = "";
 	mINI::INIStructure SkinConfig;
 
-	std::string defaultConfig = "[Game]\n"
-		"Window = 1280x720\n"
-		"Vulkan = 0\n"
-		"Skin = Default\n"
-		"AudioPitch = 0\n"
-		"[KeyMapping]\n"
-		"Lane1 = S\n"
-		"Lane2 = D\n"
-		"Lane3 = F\n"
-		"Lane4 = Space\n"
-		"Lane5 = J\n"
-		"Lane6 = K\n"
-		"Lane7 = L\n"
-		"[Debug]\n"
-		"Autoplay = 0\n"
-		"Rate = 1.0\n";
+	std::string defaultConfig;
+}
+
+void Configuration::SetDefaultConfiguration(std::string conf) {
+	defaultConfig = conf;
 }
 
 void LoadConfiguration() {

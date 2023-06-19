@@ -14,6 +14,10 @@ namespace {
 		return hitPosition + ((initialTrackPos - offset) * (upscroll ? noteSpeed : -noteSpeed) / 100);
 	}
 
+	double lerp(double min, double max, float alpha) {
+		return min * (1.0 - alpha) + (max * alpha);
+	}
+
 	bool isWithinRange(int point, int minRange, int maxRange) {
 		return (point >= minRange && point <= maxRange);
 	}
@@ -37,14 +41,21 @@ namespace {
 		// No collision detected
 		return false;
 	}
+
+	const int length_multiplier[4] = {
+		0,
+		2,
+		4,
+		6
+	};
 }
 
 Note::Note(RhythmEngine* engine, GameTrack* track) {
 	m_engine = engine;
 	m_track = track;
 
-	m_imageType = NoteImageType::WHITE;
-	m_imageBodyType = NoteImageType::HOLD_WHITE;
+	m_imageType = NoteImageType::LANE_1;
+	m_imageBodyType = NoteImageType::HOLD_LANE_1;
 	
 	m_head = nullptr;
 	m_tail = nullptr;
@@ -91,7 +102,8 @@ void Note::Load(NoteInfoDesc* desc) {
 	m_head = NoteImageCacheManager::GetInstance()->Depool(m_imageType);
 	if (desc->Type == NoteType::HOLD) {
 		m_tail = NoteImageCacheManager::GetInstance()->Depool(m_imageType);
-		m_body = NoteImageCacheManager::GetInstance()->DepoolTile(m_imageBodyType);
+		m_body = NoteImageCacheManager::GetInstance()->DepoolHold(m_imageBodyType);
+		m_body->AnchorPoint = { 0, 0.5 };
 
 		m_startBPM = desc->StartBPM;
 		m_endBPM = desc->EndBPM;
@@ -105,6 +117,9 @@ void Note::Load(NoteInfoDesc* desc) {
 		m_endBPM = 0;
 		m_state = NoteState::NORMAL_NOTE;
 	}
+
+	m_trail_up = NoteImageCacheManager::GetInstance()->DepoolTrail(NoteImageType::TRAIL_UP);
+	m_trail_down = NoteImageCacheManager::GetInstance()->DepoolTrail(NoteImageType::TRAIL_DOWN);
 
 	m_startTime = desc->StartTime;
 	m_endTime = desc->EndTime;
@@ -136,20 +151,20 @@ void Note::Update(double delta) {
 	if (IsRemoveable()) return;
 
 	double audioPos = m_engine->GetGameAudioPosition();
-	m_hitTime = m_startTime - audioPos; //static_cast<double>(SDL_GetPerformanceFrequency()) / 1000000.0;
+	m_hitTime = m_startTime - audioPos;
 
 	if (m_type == NoteType::NORMAL) {
-		//if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
 		if (IsMissed(m_engine, this)) {
-			m_state = NoteState::DO_REMOVE;
+			if (!IsPassed()) {
+				m_hitPos = m_startTime + kNoteBadHitWindowMax;
+				OnHit(NoteResult::MISS);
+			}
 
-			m_hitPos = m_startTime + kNoteBadHitWindowMax;
-			OnHit(NoteResult::MISS);
+			m_state = NoteState::DO_REMOVE;
 		}
 	}
 	else {
 		if (m_state == NoteState::HOLD_PRE) {
-			//if (audioPos > (m_startTime + kNoteBadHitWindowMax)) {
 			if (IsMissed(m_engine, this)) {
 				m_state = NoteState::HOLD_MISSED_ACTIVE;
 
@@ -161,6 +176,7 @@ void Note::Update(double delta) {
 			m_state == NoteState::HOLD_ON_HOLDING || 
 			m_state == NoteState::HOLD_MISSED_ACTIVE || 
 			m_state == NoteState::HOLD_PASSED) {
+			
 			if (m_state == NoteState::HOLD_ON_HOLDING) {
 				if (m_lastScoreTime != -1 && audioPos <= m_endTime && audioPos > m_startTime) {
 					if (audioPos - m_lastScoreTime > HOLD_COMBO_TICK) {
@@ -170,7 +186,6 @@ void Note::Update(double delta) {
 				}
 			}
 
-			//if (audioPos > (m_endTime + kNoteBadHitWindowMax)) {
 			if (IsMissed(m_engine, this)) {
 				if (m_state == NoteState::HOLD_ON_HOLDING || m_state == NoteState::HOLD_MISSED_ACTIVE) {
 					m_hitPos = m_endTime + kNoteBadHitWindowMax;
@@ -193,20 +208,24 @@ void Note::Render(double delta) {
 	auto hitPos = m_engine->GetHitPosition();
 	double trackPosition = m_engine->GetTrackPosition();
 
-	int min = 0, max = hitPos + 10;
+	int min = -100, max = hitPos + 25;
 	auto playRect = m_engine->GetPlayRectangle();
 
-	if (m_type == NoteType::HOLD) {
-		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, hitPos, m_engine->GetNotespeed(), false);
-		double y2 = CalculateNotePosition(trackPosition, m_endTrackPosition, hitPos, m_engine->GetNotespeed(), false);
+	int guideLineIndex = m_engine->GetGuideLineIndex();
 
-		m_head->Position = UDim2::fromOffset(m_laneOffset, y1);
-		m_tail->Position = UDim2::fromOffset(m_laneOffset, y2) ;
+	int guideLineLength = 24 * length_multiplier[guideLineIndex];
+
+	if (m_type == NoteType::HOLD) {
+		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
+		double y2 = CalculateNotePosition(trackPosition, m_endTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
+
+		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y1));
+		m_tail->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y2)) ;
 
 		float Transparency = 0.9f;
 
 		if (m_hitResult >= NoteResult::GOOD && m_state == NoteState::HOLD_ON_HOLDING) {
-			m_head->Position.Y.Offset = hitPos;
+			//m_head->Position.Y.Offset = hitPos;
 			Transparency = 1.0f;
 		}
 
@@ -228,25 +247,68 @@ void Note::Render(double delta) {
 		bool b2 = isWithinRange(m_tail->Position.Y.Offset, min, max);
 
 		if (isCollision(m_tail->Position.Y.Offset, m_head->Position.Y.Offset, min, max)) {
-			m_body->Draw(&playRect);
+			m_body->Draw(delta, &playRect);
 		}
 
 		if (b1) {
-			m_head->Draw(&playRect);
+			if (guideLineLength > 0) {
+				m_trail_down->Position = m_head->Position;
+				m_trail_down->Size = UDim2::fromOffset(1, guideLineLength);
+				m_trail_down->AnchorPoint = { 0, 0 };
+				m_trail_down->Draw(delta, &playRect);
+
+				m_trail_down->Position = m_head->Position + UDim2::fromOffset(m_head->AbsoluteSize.X, 0);
+				m_trail_down->AnchorPoint = { 1, 0 };
+				m_trail_down->Draw(delta, &playRect);
+			}
+
+			m_head->Draw(delta, &playRect);
 		}
 
 		if (b2) {
-			m_tail->Draw(&playRect);
+			if (guideLineLength > 0) {
+				m_trail_up->Position = m_tail->Position + UDim2::fromOffset(0, -m_tail->AbsoluteSize.Y);
+				m_trail_up->Size = UDim2::fromOffset(1, guideLineLength);
+				m_trail_up->AnchorPoint = { 0, 1 };
+				m_trail_up->Draw(delta, &playRect);
+
+				m_trail_up->Position = m_tail->Position + UDim2::fromOffset(m_tail->AbsoluteSize.X, -m_tail->AbsoluteSize.Y);
+				m_trail_up->AnchorPoint = { 1, 1 };
+				m_trail_up->Draw(delta, &playRect);
+			}
+
+			m_tail->Draw(delta, &playRect);
 		}
 	}
 	else {
-		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, hitPos, m_engine->GetNotespeed(), false);
-		m_head->Position = UDim2::fromOffset(m_laneOffset, y1);
+		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
+		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y1));
+		m_head->CalculateSize();
 		
 		bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);
 
 		if (b1) {
-			m_head->Draw(&playRect);
+			if (guideLineLength > 0) {
+				m_trail_down->Position = m_head->Position;
+				m_trail_down->Size = UDim2::fromOffset(1, guideLineLength);
+				m_trail_down->AnchorPoint = { 0, 0 };
+				m_trail_down->Draw(delta, &playRect);
+
+				m_trail_down->Position = m_head->Position + UDim2::fromOffset(m_head->AbsoluteSize.X, 0);
+				m_trail_down->AnchorPoint = { 1, 0 };
+				m_trail_down->Draw(delta, &playRect);
+
+				m_trail_up->Position = m_head->Position + UDim2::fromOffset(0, -m_head->AbsoluteSize.Y);
+				m_trail_up->Size = UDim2::fromOffset(1, guideLineLength);
+				m_trail_up->AnchorPoint = { 0, 1 };
+				m_trail_up->Draw(delta, &playRect);
+
+				m_trail_up->Position = m_head->Position + UDim2::fromOffset(m_head->AbsoluteSize.X, -m_head->AbsoluteSize.Y);
+				m_trail_up->AnchorPoint = { 1, 1 };
+				m_trail_up->Draw(delta, &playRect);
+			}
+
+			m_head->Draw(delta, &playRect);
 		}
 	}
 }
@@ -396,7 +458,7 @@ void Note::OnHit(NoteResult result) {
 		}
 	}
 	else {
-		m_state = NoteState::DO_REMOVE;
+		m_state = NoteState::NORMAL_NOTE_PASSED;
 		m_track->HandleScore({
 			result,
 			m_hitPos,
@@ -462,6 +524,10 @@ bool Note::IsRemoveable() {
 	return m_state == NoteState::DO_REMOVE;
 }
 
+bool Note::IsPassed() {
+	return m_state == NoteState::NORMAL_NOTE_PASSED || m_state == NoteState::HOLD_PASSED;
+}
+
 bool Note::IsHeadHit() {
 	return m_didHitHead;
 }
@@ -476,6 +542,12 @@ void Note::Release() {
 
 	auto cacheManager = NoteImageCacheManager::GetInstance();
 
+	cacheManager->RepoolTrail(m_trail_down, NoteImageType::TRAIL_DOWN);
+	cacheManager->RepoolTrail(m_trail_up, NoteImageType::TRAIL_UP);
+
+	m_trail_up = nullptr;
+	m_trail_down = nullptr;
+
 	if (m_type == NoteType::HOLD) {
 		cacheManager->Repool(m_head, m_imageType);
 		m_head = nullptr;
@@ -483,7 +555,7 @@ void Note::Release() {
 		cacheManager->Repool(m_tail, m_imageType);
 		m_tail = nullptr;
 
-		cacheManager->RepoolTile(m_body, m_imageBodyType);
+		cacheManager->RepoolHold(m_body, m_imageBodyType);
 		m_body = nullptr;
 	}
 	else {

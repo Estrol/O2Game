@@ -12,12 +12,10 @@ MusicDatabase* MusicDatabase::GetInstance() {
 	return m_instance;
 }
 
-MusicDatabase* MusicDatabase::Release() {
+void MusicDatabase::Release() {
 	if (m_instance) {
 		delete m_instance;
 	}
-
-	return m_instance;
 }
 
 MusicDatabase::MusicDatabase() {
@@ -34,8 +32,12 @@ void MusicDatabase::Load(std::filesystem::path path) {
 	DB_Header header = {};
 	fs.read((char*)&header, sizeof(DB_Header));
 
-	if (memcmp(header.Signature, signature, 4) != 0) {
+	if (memcmp(header.Signature, signature, 2) != 0) {
 		throw std::runtime_error("Invalid signature!");
+	}
+
+	if (header.Version != version) {
+		throw std::runtime_error("Invalid version!");
 	}
 
 	Items.resize(header.MusicCount);
@@ -83,9 +85,10 @@ void MusicDatabase::Save(std::filesystem::path path) {
 	std::fstream fs(path, std::ios::binary | std::ios::out);
 
 	DB_Header header = {};
-	memcpy((char*)&header.Signature, signature, 4);
+	memcpy((char*)&header.Signature, signature, 2);
+	header.Version = version;
 	header.MusicCount = Items.size();
-
+	
 	fs.write((char*)&header, sizeof(DB_Header));
 
 	for (int i = 0; i < header.MusicCount; i++) {

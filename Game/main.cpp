@@ -12,7 +12,8 @@
 #include <filesystem>
 #include "../Engine/Win32ErrorHandling.h"
 #include "Data/Util/Util.hpp"
-#include "Resources/Configuration.hpp"
+#include "../Engine/Configuration.hpp"
+#include "Resources/DefaultConfiguration.h"
 #include <shlobj.h>
 #include "Data/OJM.hpp"
 #include <fstream>
@@ -38,7 +39,7 @@ std::filesystem::path BrowseFolder(std::wstring saved_path) {
 	const wchar_t* path_param = saved_path.c_str();
 
 	BROWSEINFO bi = { 0 };
-	bi.lpszTitle = (L"Browse for folder...");
+	bi.lpszTitle = (L"Browse for Music Folder (.ojn files folder!)");
 	bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
 	bi.lpfn = BrowseCallbackProc;
 	bi.lParam = (LPARAM)path_param;
@@ -91,6 +92,8 @@ bool API_Query() {
 
 int Run(int argc, wchar_t* argv[]) {
 	try {
+		Configuration::SetDefaultConfiguration(defaultConfiguration);
+
 		std::filesystem::path parentPath = std::filesystem::path(argv[0]).parent_path();
 		if (parentPath.empty()) {
 			parentPath = std::filesystem::current_path();
@@ -190,6 +193,11 @@ int wmain(int argc, wchar_t* argv[]) {
 }
 #else=
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow) {
+	if (!API_Query()) {
+		MessageBoxA(NULL, "Failed to Authenticate to master server!", "Auth Failed", MB_ICONERROR);
+		return -1;
+	}
+	
 	__try {
 		return Run(__argc, __wargv);
 	}

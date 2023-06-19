@@ -159,91 +159,82 @@ void Game::Run(double frameRate) {
 	m_frameLimit = frameRate;
 	m_frameLimitMode = FrameLimitMode::MENU;
 
-	m_audioThread = std::thread([&] {
-		while (m_running) {
-			double delta = FrameLimit(500.0);
-			AudioManager::GetInstance()->Update(delta);
-		}
-	});
+	mAudioThread.Run([&] {
+		double delta = FrameLimit(144.0);
+		AudioManager::GetInstance()->Update(delta);
+	}, true);
 
-	bool show_demo_window = true;
-	m_renderThread = std::thread([&] {
-		while (m_running) {
-			if (m_threadMode == ThreadMode::MULTI_THREAD) {
-				double delta = 0;
+	mRenderThread.Run([&] {
+		if (m_threadMode == ThreadMode::MULTI_THREAD) {
+			double delta = 0;
 
-				switch (m_frameLimitMode) {
-					case FrameLimitMode::GAME: {
-						delta = FrameLimit(m_frameLimit);
-						break;
-					}
-
-					case FrameLimitMode::MENU: {
-						delta = FrameLimit(60.0);
-						break;
-					}
+			switch (m_frameLimitMode) {
+				case FrameLimitMode::GAME: {
+					delta = FrameLimit(m_frameLimit);
+					break;
 				}
 
-				if (m_window->ShouldResizeRenderer()) {
-					m_renderer->Resize();
-
-					FontResources::DoRebuild();
-					m_window->HandleResizeRenderer();
+				case FrameLimitMode::MENU: {
+					delta = FrameLimit(60.0);
+					break;
 				}
+			}
 
-				if (FontResources::ShouldRebuild()) {
-					//FontResources::Rebuild();
-					FontResources::PreloadFontCaches();
+			if (m_window->ShouldResizeRenderer()) {
+				m_renderer->Resize();
 
-					/*ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
-					ImGui_ImplSDLRenderer2_DestroyFontsTexture();*/
+				FontResources::DoRebuild();
+				m_window->HandleResizeRenderer();
+			}
+
+			if (FontResources::ShouldRebuild()) {
+				FontResources::PreloadFontCaches();
+			}
+
+			Update(delta);
+
+			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
+				double increment = (delta * 5) * 100;
+
+				// compare it using epsilon
+				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
+					m_currentFade = m_targetFade;
 				}
-				
-				Update(delta);
-
-				if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-					double increment = (delta * 5) * 100;
-
-					// compare it using epsilon
-					if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
-						m_currentFade = m_targetFade;
+				else {
+					if (m_currentFade < m_targetFade) {
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
 					}
 					else {
-						if (m_currentFade < m_targetFade) {
-							m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
-						}
-						else {
-							m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
-						}
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
 					}
-				}
-				
-				if (!m_minimized) {
-					m_renderer->BeginRender();
-					Render(delta);
-					MsgBox::Draw();
-
-					if (static_cast<int>(m_currentFade) != 0) {
-						auto drawList = ImGui::GetForegroundDrawList();
-						float a = static_cast<int>(m_currentFade) / 100.0;
-
-						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(ImVec2(800, 600)), IM_COL32(0, 0, 0, a * 255));
-					}
-
-					if (ImguiUtil::HasFrameQueue()) {
-						ImguiUtil::Reset();
-
-						ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-					}
-
-					m_renderer->EndRender();
 				}
 			}
-			else {
-				FrameLimit(15.0f);
+
+			if (!m_minimized) {
+				m_renderer->BeginRender();
+				Render(delta);
+				MsgBox::Draw();
+
+				if (static_cast<int>(m_currentFade) != 0) {
+					auto drawList = ImGui::GetForegroundDrawList();
+					float a = static_cast<int>(m_currentFade) / 100.0;
+
+					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+				}
+
+				if (ImguiUtil::HasFrameQueue()) {
+					ImguiUtil::Reset();
+
+					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+				}
+
+				m_renderer->EndRender();
 			}
 		}
-	});
+		else {
+			FrameLimit(15.0f);
+		}
+	}, true);
 
 	m_inputManager->ListenKeyEvent([&](const KeyState& state) {
 		if (state.type == KeyEventType::KEY_DOWN) {
@@ -264,7 +255,7 @@ void Game::Run(double frameRate) {
 	});
 
 	m_minimized = false;
-	while (m_running) {
+	mLocalThread.Run([&] {
 		double delta = 0;
 		switch (m_frameLimitMode) {
 			case FrameLimitMode::GAME: {
@@ -287,7 +278,7 @@ void Game::Run(double frameRate) {
 					MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
 					break;
 			}
-			
+
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}
@@ -343,7 +334,7 @@ void Game::Run(double frameRate) {
 					auto drawList = ImGui::GetForegroundDrawList();
 					float a = static_cast<int>(m_currentFade) / 100.0;
 
-					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(ImVec2(800, 600)), IM_COL32(0, 0, 0, a * 255));
+					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
 				}
 
 				if (ImguiUtil::HasFrameQueue()) {
@@ -351,15 +342,19 @@ void Game::Run(double frameRate) {
 
 					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 				}
-				
+
 				m_renderer->EndRender();
 			}
 		}
+	}, false);
+
+	while (m_running) {
+		mLocalThread.Update();
 	}
 
-	m_audioThread.join();
-	m_renderThread.join();
-	
+	mAudioThread.Stop();
+	mRenderThread.Stop();
+
 	m_notify = false;
 }
 

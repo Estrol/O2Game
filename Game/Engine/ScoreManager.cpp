@@ -69,7 +69,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		}
 
 		default: {
-			AddLife(-1);
+			AddLife(-10);
 			m_combo = 0;
 			m_jamCombo = 0;
 			m_jamGauge = 0;

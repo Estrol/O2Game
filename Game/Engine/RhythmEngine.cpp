@@ -4,7 +4,7 @@
 
 #include "../../Engine/EstEngine.hpp"
 #include "../EnvironmentSetup.hpp"
-#include "../Resources/Configuration.hpp"
+#include "../../Engine/Configuration.hpp"
 
 #include "NoteImageCacheManager.hpp"
 #include "GameAudioSampleCache.hpp"
@@ -20,23 +20,23 @@ struct ManiaKeyState {
 
 namespace {
 	std::vector<NoteImageType> Key2Type = {
-		NoteImageType::WHITE,
-		NoteImageType::BLUE,
-		NoteImageType::WHITE,
-		NoteImageType::YELLOW,
-		NoteImageType::WHITE,
-		NoteImageType::BLUE,
-		NoteImageType::WHITE,
+		NoteImageType::LANE_1,
+		NoteImageType::LANE_2,
+		NoteImageType::LANE_3,
+		NoteImageType::LANE_4,
+		NoteImageType::LANE_5,
+		NoteImageType::LANE_6,
+		NoteImageType::LANE_7,
 	};
 
 	std::vector<NoteImageType> Key2HoldType = {
-		NoteImageType::HOLD_WHITE,
-		NoteImageType::HOLD_BLUE,
-		NoteImageType::HOLD_WHITE,
-		NoteImageType::HOLD_YELLOW,
-		NoteImageType::HOLD_WHITE,
-		NoteImageType::HOLD_BLUE,
-		NoteImageType::HOLD_WHITE,
+		NoteImageType::HOLD_LANE_1,
+		NoteImageType::HOLD_LANE_2,
+		NoteImageType::HOLD_LANE_3,
+		NoteImageType::HOLD_LANE_4,
+		NoteImageType::HOLD_LANE_5,
+		NoteImageType::HOLD_LANE_6,
+		NoteImageType::HOLD_LANE_7,
 	};
 
 	std::unordered_map<int, ManiaKeyState> KeyMapping = {
@@ -96,6 +96,18 @@ bool RhythmEngine::Load(Chart* chart) {
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;
+
+	if (EnvironmentSetup::GetInt("Mirror")) {
+		chart->ApplyMod(Mod::MIRROR);
+	}
+	else if (EnvironmentSetup::GetInt("Random")) {
+		chart->ApplyMod(Mod::RANDOM);
+	}
+	else if (EnvironmentSetup::GetInt("Rearrange")) {
+		void* lane_data = EnvironmentSetup::GetObj("LaneData");
+
+		chart->ApplyMod(Mod::REARRANGE, lane_data);
+	}
 
 	if (std::filesystem::exists(audioPath) && audioPath.has_extension()) {
 		m_audioPath = audioPath;
@@ -417,7 +429,7 @@ double RhythmEngine::GetPrebufferTiming() const {
 
 double RhythmEngine::GetNotespeed() const {
 	double speed = static_cast<double>(m_scrollSpeed);
-	double scrollingFactor = 960.0 / 1366.0;
+	double scrollingFactor = 1920.0 / 1366.0;
 	float virtualRatio = m_virtualResolution.Y / m_gameResolution.Y;
 	float value = (speed / 10.0) / (20.0 * m_rate) * scrollingFactor * virtualRatio;
 
@@ -496,6 +508,14 @@ double RhythmEngine::GetElapsedTime() const { // Get game frame
 
 int RhythmEngine::GetPlayTime() const { // Get game time
 	return m_PlayTime;
+}
+
+int RhythmEngine::GetGuideLineIndex() const {
+	return m_guideLineIndex;
+}
+
+void RhythmEngine::SetGuideLineIndex(int idx) {
+	m_guideLineIndex = idx;
 }
 
 void RhythmEngine::UpdateNotes() {

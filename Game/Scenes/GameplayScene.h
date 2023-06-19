@@ -104,5 +104,7 @@ private:
 	bool m_doExit;
 
 	/* auto text size */
+	bool m_autoPlay;
 	int m_autoTextSize;
+	UDim2 m_autoTextPos;
 };

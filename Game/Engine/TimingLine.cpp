@@ -47,10 +47,13 @@ void TimingLine::Render(double delta) {
 	auto hitPos = m_engine->GetHitPosition();
 	auto playRect = m_engine->GetPlayRectangle();
 	
-	double y = CalculateLinePosition(hitPos, m_currentTrackPosition, m_engine->GetNotespeed());
+	double alpha = CalculateLinePosition(1000.0, m_currentTrackPosition, m_engine->GetNotespeed()) / 1000.0;
+
+	double min = 0, max = hitPos;
+	double pos_y = min + (max - min) * alpha;
 
 	m_line->Size = UDim2::fromOffset(m_imageSize, 1);
-	m_line->Position = UDim2::fromOffset(m_imagePos, y); //+ start.Lerp(end, alpha);
+	m_line->Position = UDim2::fromOffset(m_imagePos, pos_y); //+ start.Lerp(end, alpha);
 
 	if (m_line->Position.Y.Offset >= 0 && m_line->Position.Y.Offset < hitPos + 10) {
 		m_line->Draw(&playRect);

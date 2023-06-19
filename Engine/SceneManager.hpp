@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <functional>
+#include <chrono>
 
 /* Forward Declaration */
 class Game;
@@ -9,6 +10,11 @@ class Scene;
 struct KeyState;
 struct MouseState;
 enum class FrameLimitMode;
+
+struct QueueInfo {
+	std::function<void()> callback;
+	std::chrono::system_clock::time_point time;
+};
 
 class SceneManager {
 public:
@@ -30,6 +36,7 @@ public:
 	void StopGame();
 
 	static void DisplayFade(int transparency, std::function<void()> callback);
+	static void ExecuteAfter(int ms_time, std::function<void()> callback);
 
 	static void AddScene(int idx, Scene* scene);
 	static void ChangeScene(int idx);
@@ -47,6 +54,12 @@ private:
 	Scene* m_nextScene = nullptr;
 	Scene* m_currentScene = nullptr;
 	std::mutex m_mutex;
+
+	std::thread::id m_renderId;
+	std::thread::id m_inputId;
+
+	std::vector<QueueInfo> m_queue_render;
+	std::vector<QueueInfo> m_queue_input;
 
 	Game* m_parent = nullptr;
 };
