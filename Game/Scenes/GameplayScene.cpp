@@ -207,21 +207,21 @@ void GameplayScene::Render(double delta) {
 	if (m_drawLN) {
 		if (std::get<9>(scores) > 0) {
 			m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-			m_wiggleOffset = std::sin(m_wiggleTime) * 12; // Amplitude 
+			m_wiggleOffset = std::sin(m_wiggleTime) * 6; // Amplitude 
 
 			if (m_wiggleTime < M_PI) {
-				m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
-				m_lnLogo->Draw(delta);
-
 				m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
 				m_lnComboNum->DrawNumber(std::get<9>(scores));
+
+				m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_lnLogo->Draw(delta);
 			}
 			else {
-				m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
-				m_lnLogo->Draw(delta);
-
 				m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
 				m_lnComboNum->DrawNumber(std::get<9>(scores));
+
+				m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
+				m_lnLogo->Draw(delta);
 			}
 		}
 
@@ -233,19 +233,33 @@ void GameplayScene::Render(double delta) {
 
 	float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
 	if (gaugeVal > 0) {
-		m_jamGauge->CalculateSize();
+		m_jamGauge->CalculateSize();// Thanks estrol for make this easier to fix than before :pog: because moving RECT rc to GameplayScene :D
 
-		int min = 0, max = m_jamGauge->AbsoluteSize.X;
-		int lerp = (int)std::lerp(min, max, gaugeVal);
+		int lerp;
+		if (m_jamGauge->AbsoluteSize.Y > m_jamGauge->AbsoluteSize.X) {
+			// Fill from bottom to top
+			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.Y, gaugeVal);
+			RECT rc = {
+				(LONG)m_jamGauge->AbsolutePosition.X,
+				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y - lerp),
+				(LONG)(m_jamGauge->AbsolutePosition.X + m_jamGauge->AbsoluteSize.X),
+				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
+			};
 
-		RECT rc = { 
-			(LONG)m_jamGauge->AbsolutePosition.X, 
-			(LONG)m_jamGauge->AbsolutePosition.Y, 
-			(LONG)(m_jamGauge->AbsolutePosition.X + lerp),
-			(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
-		};
-		
-		m_jamGauge->Draw(&rc);
+			m_jamGauge->Draw(&rc);
+		}
+		else {
+			// Fill from left to right
+			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.X, gaugeVal);
+			RECT rc = {
+				(LONG)m_jamGauge->AbsolutePosition.X,
+				(LONG)m_jamGauge->AbsolutePosition.Y,
+				(LONG)(m_jamGauge->AbsolutePosition.X + lerp),
+				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
+			};
+
+			m_jamGauge->Draw(&rc);
+		}
 	}
 
 	float currentProgress = m_game->GetAudioPosition() / m_game->GetAudioLength();
@@ -290,7 +304,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_autoPlay) {
 		m_autoText->Position = m_autoTextPos;
-		m_autoText->Draw(u8"Game currently on autoplay!");
+		m_autoText->Draw(u8"Game currently on Autoplay!");
 
 		m_autoTextPos.X.Offset -= delta * 30.0;
 		if (m_autoTextPos.X.Offset < (-m_autoTextSize + 20)) {
@@ -504,21 +518,6 @@ bool GameplayScene::Attach() {
 		m_lifeBar->Position = UDim2::fromOffset(lifeBarPos.X, lifeBarPos.Y);
 		m_lifeBar->AnchorPoint = { lifeBarPos.AnchorPointX, lifeBarPos.AnchorPointY };
 
-		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
-		std::vector<std::filesystem::path> lnLogoFileName = {};
-		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
-			lnLogoFileName.push_back(playingPath / ("LongNoteLogo" + std::to_string(i) + ".png"));
-
-			if (!CheckSkinComponent(lnLogoFileName.back())) {
-				throw std::runtime_error("Failed to load Long Note Logo image!");
-			}
-		}
-
-		m_lnLogo = std::make_unique<Sprite2D>(lnLogoFileName, 0.25);
-		m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
-		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
-		m_lnLogo->AlphaBlend = true;
-
 		std::vector<std::filesystem::path> lnComboFileName = {};
 		for (int i = 0; i < 10; i++) {
 			lnComboFileName.push_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
@@ -586,6 +585,21 @@ bool GameplayScene::Attach() {
 		m_lnComboNum->MaxDigits = lnComboPos[0].MaxDigit;
 		m_lnComboNum->FillWithZeros = lnComboPos[0].FillWithZero;
 		m_lnComboNum->AlphaBlend = true;
+
+		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
+		std::vector<std::filesystem::path> lnLogoFileName = {};
+		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
+			lnLogoFileName.push_back(playingPath / ("LongNoteLogo" + std::to_string(i) + ".png"));
+
+			if (!CheckSkinComponent(lnLogoFileName.back())) {
+				throw std::runtime_error("Failed to load Long Note Logo image!");
+			}
+		}
+
+		m_lnLogo = std::make_unique<Sprite2D>(lnLogoFileName, 0.25);
+		m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
+		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
+		m_lnLogo->AlphaBlend = true;
 
 		auto comboLogoPos = conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
@@ -808,7 +822,7 @@ bool GameplayScene::Attach() {
 		});
 
 		m_game->GetScoreManager()->ListenLongNote([&] {
-			m_lnLogo->SetFPS(15);
+			m_lnLogo->SetFPS(60);
 			m_lnTimer = 0;
 			m_drawLN = true;
 		});
