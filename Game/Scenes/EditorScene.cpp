@@ -570,6 +570,10 @@ void EditorScene::Render(double delta) {
 
 					ImColor color = note.Channel < laneColor.size() ? laneColor[note.Channel] : ImColor(255, 255, 255);
 
+					if ((yPos < 0 || yPos > 720) && !note.IsLN) {
+						continue;
+					}
+
 					ImVec2 head_pos = MathUtil::ScaleVec2(lanePos[note.Channel], yPos) + ImVec2(cursorPosX, 0);
 					ImVec2 head_size = MathUtil::ScaleVec2(lanePos[note.Channel + 1], yPos + noteSize) + ImVec2(cursorPosX, 0);
 
@@ -627,71 +631,17 @@ void EditorScene::Render(double delta) {
 			ImGui::SetCursorPos(MathUtil::ScaleVec2(3.5, 3.25));
 			ImGuiSliderFlags flags = ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_Vertical;
 
-			float lastSize = ImGui::GetFont()->FontSize;
-			ImGui::GetFont()->FontSize = window_sz.y - MathUtil::ScaleVec2(0, 12).y;
+			float lastSize = FontResources::GetReallyBigFontForSlider()->FontSize;
+			FontResources::GetReallyBigFontForSlider()->FontSize = window_sz.y - MathUtil::ScaleVec2(0, 12).y;
 
-			ImGui::PushFont(ImGui::GetFont());
+			ImGui::PushFont(FontResources::GetReallyBigFontForSlider());
 			ImGui::SliderFloat("###ProgressSlider", &m_currentTime, 0.0, audio_length, "", flags);
 			ImGui::PopFont();
 
-			ImGui::GetFont()->FontSize = lastSize;
+			FontResources::GetReallyBigFontForSlider()->FontSize = lastSize;
 			ImGui::EndDisabled();
 			ImGui::EndChild();
 		}
-
-		//drawList->AddRectFilled(
-		//	rc1,
-		//	rc2,
-		//	ImColor(24, 24, 24),
-		//	2.0f);
-
-		//drawList->AddRect(
-		//	rc1,
-		//	rc2,
-		//	ImColor(64, 64, 64),
-		//	2.0f);
-		//
-		//const float scroll_btn_size = 20.0;
-		//auto scaled_size = MathUtil::ScaleVec2(0, scroll_btn_size);
-
-		//// calculate position from 0 to audio_length
-		//float position = 1 - (m_currentTime / audio_length);
-
-		//// lerp from rc1.x to rc2.x
-		//float y = std::clamp((float)MathUtil::Lerp(rc1.y + (scaled_size.y / 2.0f), rc2.y - (scaled_size.y / 2.0f), position), rc1.y + (scaled_size.y / 2.0f), rc2.y);
-
-		//rc1.y = y - (scaled_size.y * 0.5);
-		//rc2.y = rc1.y;
-
-		//rc1.x += 2.0;
-		//rc2.x -= 2.0;
-
-		//rc2 += scaled_size;
-
-		//drawList->AddRectFilled(
-		//	rc1,
-		//	rc2,
-		//	ImColor(255, 255, 255),
-		//	2.0f);
-
-		//if (!m_autoscroll) {
-		//	// check if mouse within rc1 and rc2
-		//	if (ImGui::IsMouseHoveringRect(rc1, rc2) || m_isMouseClickSlider) {
-		//		if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-		//			auto mousePos = ImGui::GetMousePos();
-		//			auto alpha = 1.0 - (mousePos.y - rc1.y) / (rc2.y - rc1.y);
-
-		//			m_currentTime = std::lerp(0, audio_length, alpha);
-		//			
-		//			m_isMouseClickSlider = true;
-		//			m_currentTime = std::clamp(m_currentTime, 0.0, audio_length);
-		//		}
-		//		else {
-		//			m_isMouseClickSlider = false;
-		//			m_lastMousePos = ImGui::GetMousePos();
-		//		}
-		//	}
-		//}
 
 		// check imgui mouse scroll=
 		if (ImGui::IsWindowFocused() && ImGui::GetIO().MouseWheel != 0 && !m_autoscroll) {
@@ -750,7 +700,9 @@ void EditorScene::Render(double delta) {
 	bool b = true;
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 	if (ImGui::BeginPopupModal("Timing List###editor_timing_list", &b, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
-		if (ImGui::BeginChild("###imgui_pop_up_child_window", MathUtil::ScaleVec2(420, 300), false)) {
+		auto child_sz = MathUtil::ScaleVec2(420, 300);
+		
+		if (ImGui::BeginChild("###imgui_pop_up_child_window", child_sz, false)) {
 			if (ImGui::BeginTable("###bpm_table_view", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders)) {
 				ImGui::TableSetupColumn("Index", ImGuiTableColumnFlags_WidthFixed);
 				ImGui::TableSetupColumn("BPM", ImGuiTableColumnFlags_WidthFixed);

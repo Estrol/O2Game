@@ -17,6 +17,7 @@
 #include <iostream>
 
 static ImFont* gImFontButton = nullptr;
+static ImFont* gImFontSlider = nullptr;
 static bool gImFontRebuild = true;
 static std::mutex mutex;
 
@@ -85,9 +86,11 @@ namespace FontResources {
 		conf.GlyphOffset.y = 1 * (iBtnFontSz / 16.0);
 		if (std::filesystem::exists(font)) {
 			gImFontButton = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
+			gImFontSlider = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
 		}
 		else {
 			gImFontButton = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
+			gImFontSlider = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
 		}
 
 		gImFontRebuild = false;
@@ -122,5 +125,8 @@ namespace FontResources {
 	}
 	ImFont* GetButtonFont() {
 		return gImFontButton;
+	}
+	ImFont* GetReallyBigFontForSlider() {
+		return gImFontSlider;
 	}
 }
