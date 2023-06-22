@@ -12,6 +12,9 @@ void ImguiUtil::NewFrame() {
 	if (!HasAQueueFrame) {
 		ImGui_ImplSDLRenderer2_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
+
+		ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDimBg] = ImColor(24, 24, 24, 255 * 0.5);
+
 		ImGui::NewFrame();
 
 		HasAQueueFrame = true;
