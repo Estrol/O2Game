@@ -38,6 +38,13 @@ FrameTimer::FrameTimer(std::vector<SDL_Texture*> frames) : FrameTimer::FrameTime
 	}
 }
 
+FrameTimer::FrameTimer(std::vector<Texture2D_Vulkan*> frames) : FrameTimer::FrameTimer() {
+	m_frames = std::vector<Texture2D*>();
+	for (auto frame : frames) {
+		m_frames.push_back(new Texture2D(frame));
+	}
+}
+
 FrameTimer::~FrameTimer() {
 	for (auto& f : m_frames) {
 		delete f;
@@ -48,7 +55,7 @@ void FrameTimer::Draw(double delta) {
 	Draw(delta, nullptr);
 }
 
-void FrameTimer::Draw(double delta, RECT* clip) {
+void FrameTimer::Draw(double delta, Rect* clip) {
 	m_currentTime += delta;
 
 	if (m_currentTime >= m_frameTime) {

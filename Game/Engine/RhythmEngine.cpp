@@ -639,7 +639,7 @@ Vector2 RhythmEngine::GetResolution() const {
 	return m_gameResolution;
 }
 
-RECT RhythmEngine::GetPlayRectangle() const {
+Rect RhythmEngine::GetPlayRectangle() const {
 	return m_playRectangle;
 }
 

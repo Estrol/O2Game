@@ -2,6 +2,7 @@
 #include "AudioSampleChannel.hpp"
 #include <iostream>
 #include <filesystem>
+#include "Data/WindowsTypes.hpp"
 
 class AudioSample {
 public:

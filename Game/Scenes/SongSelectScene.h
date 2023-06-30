@@ -65,4 +65,6 @@ private:
 	std::vector<std::string> m_fps;
 	std::vector<UDim2> m_songListRect;
 	std::vector<Button> m_buttons;
+
+	Texture2D* image;
 };

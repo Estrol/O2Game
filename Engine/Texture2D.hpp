@@ -1,19 +1,15 @@
 #pragma once
-#include <d3d11.h>
 #include <string>
 #include <SDL2/SDL.h>
 #include <filesystem>
 
+#include "Data/WindowsTypes.hpp"
+#include "VulkanDriver/Texture2DVulkan.h"
 #include "UDim2.hpp"
 #include "Vector2.hpp"
 #include "Color3.hpp"
 
-struct RECT_F {
-	float left;
-	float top;
-	float right;
-	float bottom;
-};
+struct Texture2D_Vulkan;
 
 class Texture2D {
 public:
@@ -22,12 +18,13 @@ public:
 	Texture2D(std::filesystem::path path);
 	Texture2D(uint8_t* fileData, size_t size);
 	Texture2D(SDL_Texture* texture);
+	Texture2D(Texture2D_Vulkan* texture);
 	~Texture2D();
 
 	void Draw();
 	void Draw(bool manualDraw);
-	void Draw(RECT* clipRect);
-	void Draw(RECT* clipRect, bool manualDraw);
+	void Draw(Rect* clipRect);
+	void Draw(Rect* clipRect, bool manualDraw);
 
 	void CalculateSize();
 
@@ -44,8 +41,8 @@ public:
 	Vector2 AbsoluteSize;
 	Vector2 AbsolutePosition;
 
-	RECT GetOriginalRECT();
-	void SetOriginalRECT(RECT size);
+	Rect GetOriginalRECT();
+	void SetOriginalRECT(Rect size);
 
 	static Texture2D* FromTexture2D(Texture2D* tex);
 
@@ -60,12 +57,14 @@ protected:
 	void LoadImageResources(uint8_t* buffer, size_t size);
 	bool m_bDisposeTexture;
 	
-	RECT m_calculatedSize;
-	RECT m_preAnchoredSize;
-	RECT_F m_calculatedSizeF;
-	RECT_F m_preAnchoredSizeF;
+	Rect m_calculatedSize;
+	Rect m_preAnchoredSize;
+	RectF m_calculatedSizeF;
+	RectF m_preAnchoredSizeF;
 
-	RECT m_actualSize;
+	Rect m_actualSize;
 	SDL_Texture* m_sdl_tex;
 	SDL_Surface* m_sdl_surface;
+
+	Texture2D_Vulkan* m_vk_tex;
 };

@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include "Texture2D.hpp"
+#include "Data/WindowsTypes.hpp"
 
 enum class NumericPosition {
 	LEFT,
@@ -35,5 +36,5 @@ public:
 		
 protected:
 	std::vector<Texture2D*> m_numericsTexture;
-	std::map<int, RECT> m_numbericsWidth;
+	std::map<int, Rect> m_numbericsWidth;
 };

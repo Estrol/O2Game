@@ -39,6 +39,9 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 	if (mode == RendererMode::OPENGL) {
 		flags |= SDL_WINDOW_OPENGL;
 	}
+	if (mode == RendererMode::VULKAN) {
+		flags |= SDL_WINDOW_VULKAN;
+	}
 
 	// check if width and height are same in current display
 	SDL_DisplayMode dm;
@@ -117,13 +120,6 @@ SDL_Window* Window::GetWindow() const {
 	return m_window;
 }
 
-HWND Window::GetHandle() const {
-	SDL_SysWMinfo wmInfo{};
-	SDL_VERSION(&wmInfo.version);
-	SDL_GetWindowWMInfo(m_window, &wmInfo);
-	return wmInfo.info.win.window;
-}
-
 std::wstring UTF8_to_wchar(const char8_t* in) {
 	std::wstring out;
 	unsigned int codepoint;
@@ -160,43 +156,10 @@ std::wstring UTF8_to_wchar(const char8_t* in) {
 
 void Window::SetWindowTitle(std::string& title) {
 	m_mainTitle = title;
-
-	std::u8string u8title(m_mainTitle.begin(), m_mainTitle.end());
-	std::u8string u8sub(m_subTitle.begin(), m_subTitle.end());
-	std::u8string combined = u8title + (u8sub.empty() ? u8sub : u8" - " + u8sub);
-
-#if _MSC_VER
-	std::wstring _title = UTF8_to_wchar(combined.c_str());
-	SetWindowTextW(GetHandle(), (LPCWSTR)_title.c_str());
-#else
-	if (m_subTitle.empty()) {
-		SDL_SetWindowTitle(m_window, (const char*)u8title.c_str());
-	}
-	else {
-		SDL_SetWindowTitle(m_window, (const char*)(u8title + u8" - " + u8sub).c_str());
-	}
-#endif
 }
 
 void Window::SetWindowSubTitle(std::string& subTitle) {
 	m_subTitle = subTitle;
-
-	std::u8string u8title(m_mainTitle.begin(), m_mainTitle.end());
-	std::u8string u8sub(m_subTitle.begin(), m_subTitle.end());
-
-	std::u8string combined = u8title + (u8sub.empty() ? u8sub : u8" - " + u8sub);
-
-#if _MSC_VER
-	std::wstring _title = UTF8_to_wchar(combined.c_str());
-	SetWindowTextW(GetHandle(), (LPCWSTR)_title.c_str());
-#else
-	if (m_subTitle.empty()) {
-		SDL_SetWindowTitle(m_window, (const char*)u8title.c_str());
-	}
-	else {
-		SDL_SetWindowTitle(m_window, (const char*)(u8title + u8" - " + u8sub).c_str());
-	}
-#endif
 }
 
 int Window::GetWidth() const {

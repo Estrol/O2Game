@@ -47,10 +47,14 @@ bool AudioManager::Init(Window* window) {
 		return false;
 	}
 
-	if (!BASS_Init(-1, DEFAULT_SAMPLE_RATE, BASS_DEVICE_DEFAULT, m_currentWindow->GetHandle(), NULL)) {
+#if _WIN32
+	if (!BASS_Init(-1, DEFAULT_SAMPLE_RATE, BASS_DEVICE_DEFAULT, NULL, NULL)) {
 		MessageBoxA(0, "Can't initialize device", 0, MB_ICONERROR);
 		return false;
 	}
+#else
+
+#endif
 
 	//BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
 	BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);

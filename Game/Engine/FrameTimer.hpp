@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <windows.h>
 #include <filesystem>
 #include <SDL2/SDL.h>
 #include "../../Engine/UDim2.hpp"
 #include "../../Engine/Vector2.hpp"
 #include "../../Engine/Color3.hpp"
+#include "../../Engine/Data/WindowsTypes.hpp"
+#include "../../Engine/VulkanDriver/Texture2DVulkan.h"
 
 class Texture2D;
 class Color3;
@@ -18,6 +19,7 @@ public:
 	FrameTimer(std::vector<std::string> frames);
 	FrameTimer(std::vector<std::filesystem::path> frames);
 	FrameTimer(std::vector<SDL_Texture*> frames);
+	FrameTimer(std::vector<Texture2D_Vulkan*> frames);
 	~FrameTimer();
 
 	bool Repeat;
@@ -32,7 +34,7 @@ public:
 	Vector2 AbsoluteSize;
 
 	void Draw(double delta);
-	void Draw(double delta, RECT* clip);
+	void Draw(double delta, Rect* clip);
 	void SetFPS(float fps);
 	void ResetIndex();
 	void LastIndex();

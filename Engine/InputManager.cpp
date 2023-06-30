@@ -74,7 +74,7 @@ void InputManager::ListenMouseEvent(mouse_event_callback callback) {
 	m_mouseEventCallbacks.push_back(callback);
 }
 
-RECT InputManager::GetMousePosition() {
+Rect InputManager::GetMousePosition() {
 	return m_mousePosition;
 }
 

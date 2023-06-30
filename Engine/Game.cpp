@@ -5,7 +5,6 @@
 #include "Window.hpp"
 #include "AudioManager.hpp"
 #include "Imgui/imgui_impl_sdl2.h"
-#include "Imgui/imgui_impl_dx11.h"
 #include "FontResources.hpp"
 #include "MsgBox.hpp"
 #include <SDL2/SDL_image.h>
@@ -140,7 +139,6 @@ bool Game::Init() {
 
 	FontResources::PreloadFontCaches();
 	m_frameText = new Text(13);
-	m_fadeBox = new ResizableImage(m_window->GetBufferWidth(), m_window->GetBufferHeight(), 0x00); 
 	m_currentFade = 0;
 	m_targetFade = 0;
 	
@@ -148,12 +146,6 @@ bool Game::Init() {
 }
 
 void Game::Run(double frameRate) {
-	if (!InitSDL()) {
-		MessageBoxA(NULL, "SDL Failed to Initialize", "EstEngine Error", MB_ICONERROR);
-
-		return;
-	}
-
 	m_running = true;
 	m_notify = true;
 	m_frameLimit = frameRate;
@@ -211,24 +203,19 @@ void Game::Run(double frameRate) {
 			}
 
 			if (!m_minimized) {
-				m_renderer->BeginRender();
-				Render(delta);
-				MsgBox::Draw();
+				if (m_renderer->BeginRender()) {
+					Render(delta);
+					MsgBox::Draw();
 
-				if (static_cast<int>(m_currentFade) != 0) {
-					auto drawList = ImGui::GetForegroundDrawList();
-					float a = static_cast<int>(m_currentFade) / 100.0;
+					if (static_cast<int>(m_currentFade) != 0) {
+						auto drawList = ImGui::GetForegroundDrawList();
+						float a = static_cast<int>(m_currentFade) / 100.0;
 
-					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+					}
+
+					m_renderer->EndRender();
 				}
-
-				if (ImguiUtil::HasFrameQueue()) {
-					ImguiUtil::Reset();
-
-					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-				}
-
-				m_renderer->EndRender();
 			}
 		}
 		else {
@@ -279,6 +266,7 @@ void Game::Run(double frameRate) {
 					break;
 			}
 
+			m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}
@@ -286,8 +274,6 @@ void Game::Run(double frameRate) {
 		if (MsgBox::GetResult("Quit") == 1) {
 			Stop();
 		}
-
-		m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
 
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			Input(delta);
@@ -326,24 +312,19 @@ void Game::Run(double frameRate) {
 			}
 
 			if (!m_minimized) {
-				m_renderer->BeginRender();
-				Render(delta);
-				MsgBox::Draw();
+				if (m_renderer->BeginRender()) {
+					Render(delta);
+					MsgBox::Draw();
 
-				if (static_cast<int>(m_currentFade) != 0) {
-					auto drawList = ImGui::GetForegroundDrawList();
-					float a = static_cast<int>(m_currentFade) / 100.0;
+					if (static_cast<int>(m_currentFade) != 0) {
+						auto drawList = ImGui::GetForegroundDrawList();
+						float a = static_cast<int>(m_currentFade) / 100.0;
 
-					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+					}
+
+					m_renderer->EndRender();
 				}
-
-				if (ImguiUtil::HasFrameQueue()) {
-					ImguiUtil::Reset();
-
-					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-				}
-
-				m_renderer->EndRender();
 			}
 		}
 	}, false);

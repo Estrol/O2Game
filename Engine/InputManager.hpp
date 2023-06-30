@@ -1,11 +1,10 @@
 #pragma once
-#include "framework.h"
-
 #include <functional>
 #include <unordered_map>
 #include <vector>
 #include <SDL2/SDL.h>
 
+#include "Data/WindowsTypes.hpp"
 #include "Keys.h"
 #include "InputEvent.hpp"
 
@@ -22,7 +21,7 @@ public:
 	void ListenKeyEvent(key_event_callback callback);
 	void ListenMouseEvent(mouse_event_callback callback);
 
-	RECT GetMousePosition();
+	Rect GetMousePosition();
 
 	static InputManager* GetInstance();
 	static void Release();
@@ -36,7 +35,7 @@ private:
 	void OnMouseEvent(SDL_MouseButtonEvent& event, bool isDown);
 	void OnMousePositionEvent(SDL_MouseMotionEvent& event);
 
-	RECT m_mousePosition;
+	Rect m_mousePosition;
 	std::unordered_map<Keys, bool> m_keyStates;
 	std::unordered_map<MouseButton, bool> m_mouseButton;
 

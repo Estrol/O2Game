@@ -1,17 +1,26 @@
 #include "ImguiUtil.hpp"
 #include "imgui.h"
-#include "imgui_impl_dx11.h"
 #include "imgui_impl_sdl2.h"
+#include "imgui_impl_vulkan.h"
 #include "imgui_impl_sdlrenderer2.h"
+
+// Duhh very BAD code!!!
+#include "../VulkanDriver/VulkanEngine.h"
 
 namespace {
 	bool HasAQueueFrame = false;
+	bool vulkan = false;
 }
 
 void ImguiUtil::NewFrame() {
 	if (!HasAQueueFrame) {
-		ImGui_ImplSDLRenderer2_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
+		if (vulkan) {
+			VulkanEngine::GetInstance()->imgui_begin();
+		}
+		else {
+			ImGui_ImplSDLRenderer2_NewFrame();
+			ImGui_ImplSDL2_NewFrame();
+		}
 
 		ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDimBg] = ImColor(24, 24, 24, 255 * 0.5);
 
@@ -48,10 +57,20 @@ bool ImguiUtil::HasFrameQueue() {
 	return HasAQueueFrame;
 }
 
+void ImguiUtil::SetVulkan(bool v) {
+	vulkan = v;
+}
+
 void ImguiUtil::Reset() {
 	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplSDL2_ResetFrame();
+
+	if (vulkan) {
+		VulkanEngine::GetInstance()->imgui_end();
+	}
+	else {
+		ImGui::Render();
+		ImGui_ImplSDL2_ResetFrame();
+	}
 
 	HasAQueueFrame = false;
 }

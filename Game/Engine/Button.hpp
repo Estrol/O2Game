@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <functional>
-#include <windows.h>
+#include "../../Engine/Data/WindowsTypes.hpp"
 
 class Button {
 public:
@@ -29,5 +29,5 @@ private:
 	std::function<void(int)> m_mouseHover;
 
 	bool IsOutside = false;
-	RECT m_lastState;
+	Rect m_lastState;
 };

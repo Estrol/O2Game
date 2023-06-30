@@ -137,9 +137,6 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 
 	CalculateSize();
 
-	float scaleX = static_cast<float>(m_preAnchoredSize.right) / static_cast<float>(m_actualSize.right);
-	float scaleY = static_cast<float>(m_preAnchoredSize.bottom) / static_cast<float>(m_actualSize.bottom);
-
 	auto window = Window::GetInstance();
 
 	bool scaleOutput = window->IsScaleOutput();
@@ -166,7 +163,10 @@ void Tile2D::Draw(RECT* clipRect, bool manualDraw) {
 			testClip.h = testClip.h * window->GetHeightScale();
 		}
 
-		SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
+		int result = SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
+		if (result != 0) {
+			throw SDLException();
+		}
 	}
 
 	if (AlphaBlend) {

@@ -8,6 +8,11 @@
 #include "Win32ErrorHandling.h"
 #include "SDLException.hpp"
 #include <SDL2/SDL_image.h>
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include "VulkanDriver/VulkanEngine.h"
+#include "VulkanDriver/Texture2DVulkan_Internal.h"
+#include "Imgui/imgui_impl_vulkan.h"
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
 
@@ -109,16 +114,31 @@ Texture2D::Texture2D(SDL_Texture* texture) : Texture2D() {
 	m_sdl_tex = texture;
 }
 
+Texture2D::Texture2D(Texture2D_Vulkan* texture) : Texture2D() {
+	m_bDisposeTexture = false;
+	m_vk_tex = texture;
+}
+
 Texture2D::~Texture2D() {
 	if (m_bDisposeTexture) {
-		if (m_sdl_tex) {
-			SDL_DestroyTexture(m_sdl_tex);
-			m_sdl_tex = nullptr;
-		}
+		if (m_vk_tex) {
+			auto vk_tex = m_vk_tex;
 
-		if (m_sdl_surface) {
-			SDL_FreeSurface(m_sdl_surface);
-			m_sdl_surface = nullptr;
+			VulkanEngine::GetInstance()->_perFrameDeletionQueue.push_function([vk_tex] {
+				vkTexture::ReleaseTexture(vk_tex);
+			});
+
+			m_vk_tex = nullptr;
+		} else {
+			if (m_sdl_tex) {
+				SDL_DestroyTexture(m_sdl_tex);
+				m_sdl_tex = nullptr;
+			}
+
+			if (m_sdl_surface) {
+				SDL_FreeSurface(m_sdl_surface);
+				m_sdl_surface = nullptr;
+			}
 		}
 	}
 }
@@ -131,84 +151,182 @@ void Texture2D::Draw(bool manualDraw) {
 	Draw(nullptr, manualDraw);
 }
 
-void Texture2D::Draw(RECT* clipRect) {
+void Texture2D::Draw(Rect* clipRect) {
 	Draw(clipRect, true);
 }
 
-void Texture2D::Draw(RECT* clipRect, bool manualDraw) {
+void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 	Renderer* renderer = Renderer::GetInstance();
-
+	auto window = Window::GetInstance();
+	bool scaleOutput = window->IsScaleOutput();
 	CalculateSize();
 
-	auto window = Window::GetInstance();
+	if (renderer->IsVulkan() && m_vk_tex) {
+		auto vulkan_driver = renderer->GetVulkanEngine();
+		auto cmd = vulkan_driver->get_current_frame()._mainCommandBuffer;
 
-	bool scaleOutput = window->IsScaleOutput();
+		VkRect2D scissor = {};
+		scissor.offset.x = 0;
+		scissor.offset.y = 0;
+		scissor.extent.width = window->GetWidth();
+		scissor.extent.height = window->GetHeight();
 
-	SDL_FRect destRect = { m_calculatedSizeF.left, m_calculatedSizeF.top, m_calculatedSizeF.right, m_calculatedSizeF.bottom };
-	if (scaleOutput) {
-		destRect.x = destRect.x * window->GetWidthScale();
-		destRect.y = destRect.y * window->GetHeightScale();
-		destRect.w = destRect.w * window->GetWidthScale();
-		destRect.h = destRect.h * window->GetHeightScale();
-	}
+		if (clipRect) {
+			scissor.offset.x = clipRect->left;
+			scissor.offset.y = clipRect->top;
+			scissor.extent.width = clipRect->right - clipRect->left;
+			scissor.extent.height = clipRect->bottom - clipRect->top;
+		}
 
-	SDL_Rect originClip = {};
-	SDL_BlendMode oldBlendMode = SDL_BLENDMODE_NONE;
+		VkDescriptorSet imageId = m_vk_tex->DS;
 
-	if (clipRect) {
-		SDL_RenderGetClipRect(renderer->GetSDLRenderer(), &originClip);
-		
-		SDL_Rect testClip = { clipRect->left, clipRect->top, clipRect->right - clipRect->left, clipRect->bottom - clipRect->top };
+		std::vector<ImDrawVert> vertexData(6);
+		float x1 = m_calculatedSizeF.left;
+		float y1 = m_calculatedSizeF.top;
+		float x2 = m_calculatedSizeF.left + m_calculatedSizeF.right;
+		float y2 = m_calculatedSizeF.top + m_calculatedSizeF.bottom;
+
 		if (scaleOutput) {
-			testClip.x = testClip.x * window->GetWidthScale();
-			testClip.y = testClip.y * window->GetHeightScale();
-			testClip.w = testClip.w * window->GetWidthScale();
-			testClip.h = testClip.h * window->GetHeightScale();
+			if (clipRect) {
+				scissor.offset.x *= window->GetWidthScale();
+				scissor.offset.y *= window->GetHeightScale();
+				scissor.extent.width *= window->GetWidthScale();
+				scissor.extent.height *= window->GetHeightScale();
+			}
+
+			x1 *= window->GetWidthScale();
+			y1 *= window->GetHeightScale();
+			x2 *= window->GetWidthScale();
+			y2 *= window->GetHeightScale();
 		}
 
-		SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
-	}
-
-	if (AlphaBlend) {
-		SDL_GetTextureBlendMode(m_sdl_tex, &oldBlendMode);
-		SDL_SetTextureBlendMode(m_sdl_tex, renderer->GetSDLBlendMode());
-	}
-
-	SDL_SetTextureColorMod(m_sdl_tex, static_cast<uint8_t>(TintColor.R * 255), static_cast<uint8_t>(TintColor.G * 255), static_cast<uint8_t>(TintColor.B * 255));
-	SDL_SetTextureAlphaMod(m_sdl_tex, static_cast<uint8_t>(255 - (Transparency / 100.0) * 255));
-
-	int error = SDL_RenderCopyExF(
-		renderer->GetSDLRenderer(), 
-		m_sdl_tex, 
-		nullptr, 
-		&destRect, 
-		Rotation, 
-		nullptr, 
-		(SDL_RendererFlip)0
-	);
-
-	if (error != 0) {
-		throw SDLException();
-	}
-
-	if (AlphaBlend) {
-		SDL_SetTextureBlendMode(m_sdl_tex, oldBlendMode);
-	}
-
-	if (clipRect) {
-		if (originClip.w == 0 || originClip.h == 0) {
-			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), nullptr);
+		if (x2 <= 0 || y2 <= 0) {
+			return;
 		}
-		else {
-			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &originClip);
+
+		ImVec2 uv1(0.0f, 0.0f);  // Top-left UV coordinate
+		ImVec2 uv2(1.0f, 0.0f);  // Top-right UV coordinate
+		ImVec2 uv3(1.0f, 1.0f);  // Bottom-right UV coordinate
+		ImVec2 uv4(0.0f, 1.0f);  // Bottom-left UV coordinate
+
+		ImU32 color = IM_COL32_WHITE;
+
+		ImDrawVert vertex1;
+		vertex1.pos = ImVec2(x1, y1);
+		vertex1.uv = uv1;
+		vertex1.col = color;
+
+		ImDrawVert vertex2;
+		vertex2.pos = ImVec2(x2, y1);
+		vertex2.uv = uv2;
+		vertex2.col = color;
+
+		ImDrawVert vertex3;
+		vertex3.pos = ImVec2(x2, y2);
+		vertex3.uv = uv3;
+		vertex3.col = color;
+
+		ImDrawVert vertex4;
+		vertex4.pos = ImVec2(x1, y1);
+		vertex4.uv = uv1;
+		vertex4.col = color;
+
+		ImDrawVert vertex5;
+		vertex5.pos = ImVec2(x2, y2);
+		vertex5.uv = uv3;
+		vertex5.col = color;
+
+		ImDrawVert vertex6;
+		vertex6.pos = ImVec2(x1, y2);
+		vertex6.uv = uv4;
+		vertex6.col = color;
+
+		vertexData[0] = vertex1;
+		vertexData[1] = vertex2;
+		vertexData[2] = vertex3;
+		vertexData[3] = vertex4;
+		vertexData[4] = vertex5;
+		vertexData[5] = vertex6;
+
+		std::vector<uint16_t> indicies = { 0, 1, 2, 3, 4, 5 };
+
+		SubmitQueueInfo info = {};
+		info.AlphaBlend = AlphaBlend;
+		info.descriptor = imageId;
+		info.vertices = vertexData;
+		info.indices = indicies;
+		info.scissor = scissor;
+
+		// submit to queue
+		vulkan_driver->queue_submit(info);
+	}
+	else {
+		SDL_FRect destRect = { m_calculatedSizeF.left, m_calculatedSizeF.top, m_calculatedSizeF.right, m_calculatedSizeF.bottom };
+		if (scaleOutput) {
+			destRect.x = destRect.x * window->GetWidthScale();
+			destRect.y = destRect.y * window->GetHeightScale();
+			destRect.w = destRect.w * window->GetWidthScale();
+			destRect.h = destRect.h * window->GetHeightScale();
+		}
+
+		SDL_Rect originClip = {};
+		SDL_BlendMode oldBlendMode = SDL_BLENDMODE_NONE;
+
+		if (clipRect) {
+			SDL_RenderGetClipRect(renderer->GetSDLRenderer(), &originClip);
+
+			SDL_Rect testClip = { clipRect->left, clipRect->top, clipRect->right - clipRect->left, clipRect->bottom - clipRect->top };
+			if (scaleOutput) {
+				testClip.x = testClip.x * window->GetWidthScale();
+				testClip.y = testClip.y * window->GetHeightScale();
+				testClip.w = testClip.w * window->GetWidthScale();
+				testClip.h = testClip.h * window->GetHeightScale();
+			}
+
+			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
+		}
+
+		if (AlphaBlend) {
+			SDL_GetTextureBlendMode(m_sdl_tex, &oldBlendMode);
+			SDL_SetTextureBlendMode(m_sdl_tex, renderer->GetSDLBlendMode());
+		}
+
+		SDL_SetTextureColorMod(m_sdl_tex, static_cast<uint8_t>(TintColor.R * 255), static_cast<uint8_t>(TintColor.G * 255), static_cast<uint8_t>(TintColor.B * 255));
+		SDL_SetTextureAlphaMod(m_sdl_tex, static_cast<uint8_t>(255 - (Transparency / 100.0) * 255));
+
+		int error = SDL_RenderCopyExF(
+			renderer->GetSDLRenderer(),
+			m_sdl_tex,
+			nullptr,
+			&destRect,
+			Rotation,
+			nullptr,
+			(SDL_RendererFlip)0
+		);
+
+		if (error != 0) {
+			throw SDLException();
+		}
+
+		if (AlphaBlend) {
+			SDL_SetTextureBlendMode(m_sdl_tex, oldBlendMode);
+		}
+
+		if (clipRect) {
+			if (originClip.w == 0 || originClip.h == 0) {
+				SDL_RenderSetClipRect(renderer->GetSDLRenderer(), nullptr);
+			}
+			else {
+				SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &originClip);
+			}
 		}
 	}
 }
 
 void Texture2D::CalculateSize() {
 	Window* window = Window::GetInstance();
-	int wWidth = window->GetWidth();
-	int wHeight = window->GetHeight();
+	int wWidth = window->GetBufferWidth();
+	int wHeight = window->GetBufferHeight();
 
  	float xPos = wWidth * Position.X.Scale + Position.X.Offset;
 	float yPos = wHeight * Position.Y.Scale + Position.Y.Offset;
@@ -232,11 +350,11 @@ void Texture2D::CalculateSize() {
 	AbsoluteSize = { width, height };
 }
 
-RECT Texture2D::GetOriginalRECT() {
+Rect Texture2D::GetOriginalRECT() {
 	return m_actualSize;
 }
 
-void Texture2D::SetOriginalRECT(RECT size) {
+void Texture2D::SetOriginalRECT(Rect size) {
 	m_actualSize = size;
 }
 
@@ -274,30 +392,41 @@ Texture2D* Texture2D::FromPNG(std::string fileName) {
 }
 
 void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
-	SDL_RWops* rw = SDL_RWFromMem(buffer, size);
-	
-	// check if buffer magic is BMP
-	if (buffer[0] == 0x42 && buffer[1] == 0x4D) {
-		m_sdl_surface = SDL_LoadBMP_RW(rw, 1);
+	if (Renderer::GetInstance()->IsVulkan()) {
+		auto tex_data = vkTexture::TexLoadImage(buffer, size);
+
+		m_actualSize = { 0, 0, tex_data->Width, tex_data->Height };
+		m_vk_tex = tex_data;
+
+		m_bDisposeTexture = true;
+		delete[] buffer;
 	}
 	else {
-		m_sdl_surface = IMG_Load_RW(rw, 1);
-	}
+		SDL_RWops* rw = SDL_RWFromMem(buffer, size);
 
-	if (!m_sdl_surface) {
-		throw SDLException();
-	}
+		// check if buffer magic is BMP
+		if (buffer[0] == 0x42 && buffer[1] == 0x4D) {
+			m_sdl_surface = SDL_LoadBMP_RW(rw, 1);
+		}
+		else {
+			m_sdl_surface = IMG_Load_RW(rw, 1);
+		}
 
-	m_sdl_tex = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), m_sdl_surface);
-	if (!m_sdl_tex) {
-		throw SDLException();
-	}
+		if (!m_sdl_surface) {
+			throw SDLException();
+		}
 
-	// sdl get texture resolution
-	int w, h;
-	SDL_QueryTexture(m_sdl_tex, nullptr, nullptr, &w, &h);
-	
-	m_bDisposeTexture = true;
-	delete[] buffer;
-	m_actualSize = { 0, 0, w, h };
+		m_sdl_tex = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), m_sdl_surface);
+		if (!m_sdl_tex) {
+			throw SDLException();
+		}
+
+		// sdl get texture resolution
+		int w, h;
+		SDL_QueryTexture(m_sdl_tex, nullptr, nullptr, &w, &h);
+
+		m_bDisposeTexture = true;
+		delete[] buffer;
+		m_actualSize = { 0, 0, w, h };
+	}
 }

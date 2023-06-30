@@ -126,7 +126,7 @@ void GameplayScene::Render(double delta) {
 	auto curLifeTex = m_lifeBar->GetTexture(); // Move lifebar to here so it will not overlapping
 	curLifeTex->CalculateSize();
 
-	RECT rc = {};
+	Rect rc = {};
 	rc.left = curLifeTex->AbsolutePosition.X;
 	rc.top = curLifeTex->AbsolutePosition.Y;
 	rc.right = rc.left + curLifeTex->AbsoluteSize.X;
@@ -239,7 +239,7 @@ void GameplayScene::Render(double delta) {
 		if (m_jamGauge->AbsoluteSize.Y > m_jamGauge->AbsoluteSize.X) {
 			// Fill from bottom to top
 			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.Y, gaugeVal);
-			RECT rc = {
+			Rect rc = {
 				(LONG)m_jamGauge->AbsolutePosition.X,
 				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y - lerp),
 				(LONG)(m_jamGauge->AbsolutePosition.X + m_jamGauge->AbsoluteSize.X),
@@ -251,7 +251,7 @@ void GameplayScene::Render(double delta) {
 		else {
 			// Fill from left to right
 			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.X, gaugeVal);
-			RECT rc = {
+			Rect rc = {
 				(LONG)m_jamGauge->AbsolutePosition.X,
 				(LONG)m_jamGauge->AbsolutePosition.Y,
 				(LONG)(m_jamGauge->AbsolutePosition.X + lerp),
@@ -269,7 +269,7 @@ void GameplayScene::Render(double delta) {
 		int min = 0, max = m_waveGage->AbsoluteSize.X;
 		int lerp = (int)std::lerp(min, max, currentProgress);
 
-		RECT rc = {
+		Rect rc = {
 			(LONG)m_waveGage->AbsolutePosition.X,
 			(LONG)m_waveGage->AbsolutePosition.Y,
 			(LONG)(m_waveGage->AbsolutePosition.X + lerp),
@@ -481,7 +481,7 @@ bool GameplayScene::Attach() {
 			m_judgement[i]->AlphaBlend = true;
 		}
 
-		m_jamGauge = std::make_unique<Tile2D>(playingPath / "JamGauge.png");
+		m_jamGauge = std::make_unique<Texture2D>(playingPath / "JamGauge.png");
 		auto gaugePos = conf.GetPosition("JamGauge");
 		if (gaugePos.size() < 1) {
 			throw std::runtime_error("Playing.ini : Positions : JamGauge : Position Not defined!");
@@ -618,7 +618,7 @@ bool GameplayScene::Attach() {
 		m_comboLogo->AnchorPoint = { comboLogoPos.AnchorPointX, comboLogoPos.AnchorPointY };
 		m_comboLogo->AlphaBlend = true;
 
-		m_waveGage = std::make_unique<Tile2D>(playingPath / "WaveGage.png");
+		m_waveGage = std::make_unique<Texture2D>(playingPath / "WaveGage.png");
 		auto waveGagePos = conf.GetPosition("WaveGage").front();
 		m_waveGage->Position = UDim2::fromOffset(waveGagePos.X, waveGagePos.Y);
 		m_waveGage->AnchorPoint = { waveGagePos.AnchorPointX, waveGagePos.AnchorPointY };

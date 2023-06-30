@@ -1,11 +1,10 @@
 #include "Audio.hpp"
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 #include <bass.h>
 #include <bass_fx.h>
-
-#pragma comment(lib, "Winmm.lib")
 
 Audio::Audio(std::string id) {
 	m_pBuffer = nullptr;
@@ -158,11 +157,11 @@ void CreateFadeProc(std::mutex* lock, HSTREAM & m_hstream, int volume, bool stat
 
 		BASS_ChannelSlideAttribute(m_hstream, BASS_ATTRIB_VOL, targetVolume, 1000);
 
-		DWORD fadeStartTime = timeGetTime();
-		DWORD fadeEndTime = fadeStartTime + 1000;
+		auto fadeStartTime = std::chrono::steady_clock::now();
+		auto fadeEndTime = fadeStartTime + std::chrono::milliseconds(1000);
 
-		while (timeGetTime() < fadeEndTime) {
-			Sleep(10);
+		while (std::chrono::steady_clock::now() < fadeEndTime) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		BASS_ChannelSetAttribute(m_hstream, BASS_ATTRIB_VOL, targetVolume);

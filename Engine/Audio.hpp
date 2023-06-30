@@ -2,6 +2,7 @@
 #include "framework.h"
 #include <string>
 #include <filesystem>
+#include "Data/WindowsTypes.hpp"
 #include <mutex>
 
 enum class AudioType {
@@ -56,7 +57,7 @@ protected:
 	bool is_fade_rn = false;
 	
 	std::mutex* lockFade;
-	DWORD fadeState = -1;
+	UINT32 fadeState = -1;
 	DWORD fadeStartTime = -1;
 	DWORD fadeEndTime = -1;
 

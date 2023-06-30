@@ -28,6 +28,7 @@
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Data\estring.cpp" />
     <ClCompile Include="Imgui\imgui_impl_sdlrenderer2.cpp" />
+    <ClCompile Include="Imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="Imgui\implot.cpp" />
     <ClCompile Include="Imgui\implot_demo.cpp" />
     <ClCompile Include="Imgui\implot_items.cpp" />
@@ -37,7 +38,6 @@
     <ClCompile Include="Imgui\ImguiUtil.cpp" />
     <ClCompile Include="Imgui\imgui_demo.cpp" />
     <ClCompile Include="Imgui\imgui_draw.cpp" />
-    <ClCompile Include="Imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Imgui\imgui_impl_sdl2.cpp" />
     <ClCompile Include="Imgui\imgui_tables.cpp" />
     <ClCompile Include="Imgui\imgui_widgets.cpp" />
@@ -56,10 +56,15 @@
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="Threading\GameThread.cpp" />
-    <ClCompile Include="Tile2D.cpp" />
     <ClCompile Include="UDim.cpp" />
     <ClCompile Include="UDim2.cpp" />
     <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="VulkanDriver\Texture2DVulkan.cpp" />
+    <ClCompile Include="VulkanDriver\VkBootstrap\VkBootstrap.cpp" />
+    <ClCompile Include="VulkanDriver\vkinit.cpp" />
+    <ClCompile Include="VulkanDriver\vk_mem_alloc\Common.cpp" />
+    <ClCompile Include="VulkanDriver\vk_mem_alloc\VmaUsage.cpp" />
+    <ClCompile Include="VulkanDriver\VulkanEngine.cpp" />
     <ClCompile Include="Win32ErrorHandling.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -71,9 +76,12 @@
     <ClInclude Include="BassFXSampleEncoding.hpp" />
     <ClInclude Include="Color3.hpp" />
     <ClInclude Include="Configuration.hpp" />
+    <ClInclude Include="Data\stb_image.h" />
+    <ClInclude Include="Data\WindowsTypes.hpp" />
     <ClInclude Include="Data\SDLRenderStruct.h" />
     <ClInclude Include="FallbackFonts\jp.ttf.h" />
     <ClInclude Include="Imgui\imgui_impl_sdlrenderer2.h" />
+    <ClInclude Include="Imgui\imgui_impl_vulkan.h" />
     <ClInclude Include="Imgui\implot.h" />
     <ClInclude Include="Imgui\implot_internal.h" />
     <ClInclude Include="Data\mINI.h" />
@@ -83,7 +91,6 @@
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />
     <ClInclude Include="Imgui\ImguiUtil.hpp" />
-    <ClInclude Include="Imgui\imgui_impl_dx11.h" />
     <ClInclude Include="Imgui\imgui_impl_sdl2.h" />
     <ClInclude Include="Imgui\imgui_internal.h" />
     <ClInclude Include="Imgui\imstb_rectpack.h" />
@@ -95,6 +102,15 @@
     <ClInclude Include="Sprite2D.hpp" />
     <ClInclude Include="Text.hpp" />
     <ClInclude Include="Threading\GameThread.hpp" />
+    <ClInclude Include="VulkanDriver\Texture2DVulkan.h" />
+    <ClInclude Include="VulkanDriver\Texture2DVulkan_Internal.h" />
+    <ClInclude Include="VulkanDriver\VkBootstrap\VkBootstrap.h" />
+    <ClInclude Include="VulkanDriver\VkBootstrap\VkBootstrapDispatch.h" />
+    <ClInclude Include="VulkanDriver\vkinit.h" />
+    <ClInclude Include="VulkanDriver\vk_mem_alloc\Common.h" />
+    <ClInclude Include="VulkanDriver\vk_mem_alloc\vk_mem_alloc.h" />
+    <ClInclude Include="VulkanDriver\vk_mem_alloc\VmaUsage.h" />
+    <ClInclude Include="VulkanDriver\VulkanEngine.h" />
     <ClInclude Include="Win32ErrorHandling.h" />
     <ClInclude Include="Data\bass_ogg_silent.hpp" />
     <ClInclude Include="Data\estring.hpp" />
@@ -110,11 +126,13 @@
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="SceneManager.hpp" />
     <ClInclude Include="Texture2D.hpp" />
-    <ClInclude Include="Tile2D.hpp" />
     <ClInclude Include="UDim.hpp" />
     <ClInclude Include="UDim2.hpp" />
     <ClInclude Include="Vector2.hpp" />
     <ClInclude Include="Window.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

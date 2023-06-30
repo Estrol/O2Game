@@ -8,15 +8,14 @@
 #include <wrl.h>
 #include "Win32ErrorHandling.h"
 #include "Imgui/imgui_impl_sdl2.h"
-#include "Imgui/imgui_impl_dx11.h"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
 #include "Imgui/ImguiUtil.hpp"
 #include "Imgui/implot.h"
 #include <iostream>
 #include "SDLException.hpp"
 #include "Data/SDLRenderStruct.h"
+#include "VulkanDriver/VulkanEngine.h"
 
-#pragma comment(lib, "dxguid.lib")
 constexpr auto MAIN_SPRITE_BATCH = 0;
 
 Renderer::Renderer() {
@@ -34,6 +33,7 @@ Renderer* Renderer::s_instance = nullptr;
 bool Renderer::Create(RendererMode mode, Window* window) {
     try {
         std::string rendererName = "";
+        bool bUsedSDLRenderer = true;
 
         switch (mode) {
             case RendererMode::OPENGL: {
@@ -43,7 +43,7 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             }
 									
             case RendererMode::VULKAN: {
-                rendererName = "direct3d";
+                bUsedSDLRenderer = false;
                 break;
             }
 
@@ -63,85 +63,98 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             }
         }
 
-		// loop and find the first available renderer
-        bool found = false;
-		int numRenderers = SDL_GetNumRenderDrivers();
-        for (int i = 0; i < numRenderers; i++) {
-            SDL_RendererInfo info;
-            SDL_GetRenderDriverInfo(i, &info);
+        if (bUsedSDLRenderer) {
+            // loop and find the first available renderer
+            bool found = false;
+            int numRenderers = SDL_GetNumRenderDrivers();
+            for (int i = 0; i < numRenderers; i++) {
+                SDL_RendererInfo info;
+                SDL_GetRenderDriverInfo(i, &info);
 
-            if (info.flags & SDL_RENDERER_SOFTWARE) {
-                continue;
+                if (info.flags & SDL_RENDERER_SOFTWARE) {
+                    continue;
+                }
+
+                if (rendererName == info.name) {
+                    found = true;
+                    break;
+                }
             }
 
-            if (rendererName == info.name) {
-                found = true;
-                break;
+            if (!found) {
+                throw std::runtime_error("Renderer " + rendererName + " is not supported in this system!");
             }
-        }
 
-        if (!found) {
-			throw std::runtime_error("Renderer " + rendererName + " is not supported in this system!");
-        }
+            if (mode == RendererMode::VULKAN) {
+                std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
 
-        if (mode == RendererMode::VULKAN) {
-            std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
-
-            if (LoadLibraryA((dxvkPath / "d3d9.dll").string().c_str()) == NULL) {
-                throw std::runtime_error("Failed to load DXVK (D3D9.dll) library");
+                if (LoadLibraryA((dxvkPath / "d3d9.dll").string().c_str()) == NULL) {
+                    throw std::runtime_error("Failed to load DXVK (D3D9.dll) library");
+                }
             }
+
+            SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
+            SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+            m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
+            if (!m_renderer) {
+                throw SDLException();
+            }
+
+            m_blendMode = SDL_ComposeCustomBlendMode(
+                SDL_BLENDFACTOR_SRC_ALPHA,
+                SDL_BLENDFACTOR_ONE,
+                SDL_BLENDOPERATION_ADD,
+                SDL_BLENDFACTOR_ONE,
+                SDL_BLENDFACTOR_ZERO,
+                SDL_BLENDOPERATION_ADD);
+
+            if (SDL_SetRenderDrawBlendMode(m_renderer, m_blendMode) == -1) {
+                throw SDLException();
+            }
+
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImPlot::CreateContext();
+
+            ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+            // Manually set the display size
+            io.DisplaySize.x = window->GetWidth();
+            io.DisplaySize.y = window->GetHeight();
+            io.DisplayOutputSize.x = window->GetWidth();
+            io.DisplayOutputSize.y = window->GetHeight();
+            io.IniFilename = NULL;
+            io.WantSaveIniSettings = false;
+
+            ImGui::StyleColorsDark();
+
+            if (!ImGui_ImplSDL2_InitForSDLRenderer(window->GetWindow(), m_renderer)) {
+                throw SDLException();
+            }
+
+            if (!ImGui_ImplSDLRenderer2_Init(m_renderer)) {
+                throw SDLException();
+            }
+
+            return true;
         }
+        else {
+            m_vulkan = VulkanEngine::GetInstance();
+			m_vulkan->init(window->GetWindow(), window->GetWidth(), window->GetHeight());
 
-		SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-        m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
-        if (!m_renderer) {
-            throw SDLException();
+            ImGuiIO& io = ImGui::GetIO(); (void)io;
+            ImguiUtil::SetVulkan(true);
+
+            // Manually set the display size
+            io.DisplaySize.x = window->GetWidth();
+            io.DisplaySize.y = window->GetHeight();
+            io.DisplayOutputSize.x = window->GetWidth();
+            io.DisplayOutputSize.y = window->GetHeight();
+            io.IniFilename = NULL;
+            io.WantSaveIniSettings = false;
+
+            return true;
         }
-
-        m_blendMode = SDL_ComposeCustomBlendMode(
-            SDL_BLENDFACTOR_SRC_ALPHA,
-            SDL_BLENDFACTOR_ONE,
-            SDL_BLENDOPERATION_ADD,
-            SDL_BLENDFACTOR_ONE,
-            SDL_BLENDFACTOR_ZERO,
-            SDL_BLENDOPERATION_ADD);
-
-        if (SDL_SetRenderDrawBlendMode(m_renderer, m_blendMode) == -1) {
-            throw SDLException();
-        }
-
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImPlot::CreateContext();
-
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-        // Manually set the display size
-        io.DisplaySize.x = window->GetWidth();
-        io.DisplaySize.y = window->GetHeight();
-        io.DisplayOutputSize.x = window->GetWidth();
-        io.DisplayOutputSize.y = window->GetHeight();
-        io.IniFilename = NULL;
-        io.WantSaveIniSettings = false;
-
-        ImGui::StyleColorsDark();
-
-        if (!ImGui_ImplSDL2_InitForSDLRenderer(window->GetWindow(), m_renderer)) {
-            throw SDLException();
-        }
-
-        if (!ImGui_ImplSDLRenderer2_Init(m_renderer)) {
-            throw SDLException();
-        }
-
-        //SDL_SetWindowFullscreen(window->GetWindow(), SDL_WINDOW_FULLSCREEN);
-
-        return true;
-    }
-    catch (Win32Exception& e) {
-        MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
-        return false;
     }
 	catch (SDLException& e) {
 		MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
@@ -156,11 +169,6 @@ bool Renderer::Resize() {
         int new_width = window->GetWidth();
         int new_height = window->GetHeight();
 
-        // resize SDL_Renderer
-		if (SDL_RenderSetLogicalSize(m_renderer, new_width, new_height) == -1) {
-			throw SDLException();
-		}
-
         ImGuiIO& io = ImGui::GetIO(); (void)io;
 
         // Manually set the display size
@@ -168,6 +176,12 @@ bool Renderer::Resize() {
         io.DisplaySize.y = new_height;
         io.DisplayOutputSize.x = new_width;
         io.DisplayOutputSize.y = new_height;
+
+        if (!IsVulkan()) {
+            if (SDL_RenderSetLogicalSize(m_renderer, new_width, new_height) == -1) {
+                throw SDLException();
+            }
+        }
 
         return true;
     }
@@ -179,20 +193,60 @@ bool Renderer::Resize() {
 
 bool Renderer::BeginRender() {
 	// sdl clear color
-	SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
-	SDL_RenderClear(m_renderer);
+    if (IsVulkan()) {
+        if (m_vulkan->_swapChainOutdated) {
+            Window* window = Window::GetInstance();
+
+			int new_width = window->GetWidth();
+            int new_height = window->GetHeight();
+
+			if (new_width > 0 && new_height > 0) {
+                m_vulkan->re_init_swapchains(new_width, new_height);
+			}
+        }
+
+        if (m_vulkan->_swapChainOutdated) {
+            return false;
+        }
+
+        m_vulkan->begin();
+    }
+    else {
+        SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+        SDL_RenderClear(m_renderer);
+    }
 
 	return true;
 }
 
 bool Renderer::EndRender() {
-    SDL_RenderPresent(m_renderer);
+    if (IsVulkan()) {
+        m_vulkan->flush_queue();
+
+        if (ImguiUtil::HasFrameQueue()) {
+            ImguiUtil::Reset();
+        }
+
+        m_vulkan->end();
+    }
+    else {
+        if (ImguiUtil::HasFrameQueue()) {
+            ImguiUtil::Reset();
+
+            ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+        }
+
+        SDL_RenderPresent(m_renderer);
+    }
+
 	return true;
 }
 
 void Renderer::ResetImGui() {
-    ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
-    ImGui_ImplSDLRenderer2_DestroyFontsTexture();
+    if (!IsVulkan()) {
+        ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
+        ImGui_ImplSDLRenderer2_DestroyFontsTexture();
+    }
 }
 
 SDL_Renderer* Renderer::GetSDLRenderer() {
@@ -201,6 +255,14 @@ SDL_Renderer* Renderer::GetSDLRenderer() {
 
 SDL_BlendMode Renderer::GetSDLBlendMode() {
     return m_blendMode;
+}
+
+VulkanEngine* Renderer::GetVulkanEngine() {
+    return m_vulkan;
+}
+
+bool Renderer::IsVulkan() {
+    return GetVulkanEngine() != nullptr;
 }
 
 Renderer* Renderer::GetInstance() {

@@ -51,36 +51,38 @@ void OJN::Load(std::filesystem::path& file) {
 
 		difficulty[i] = {};
 
-		for (int j = 0; j < Header.package_count[i]; j++) {
-			if (fs.tellg() > endOffset) {
-				throw std::runtime_error("Block data size overflow! at file: " + file.string());
-			}
-
-			Package pkg = {};
-			fs.read((char*)&pkg.Measure, 4);
-			fs.read((char*)&pkg.Channel, 2);
-			fs.read((char*)&pkg.EventCount, 2);
-
-			if (pkg.EventCount > 192) {
-				throw std::runtime_error("Event count at measure: " + std::to_string(pkg.Measure) + " exceed the limit! (limit: 192)");
-			}
-
-			for (int i = 0; i < pkg.EventCount; i++) {
-				Event ev = {};
-				if (pkg.Channel == 0 || pkg.Channel == 1) {
-					fs.read((char*)&ev.BPM, sizeof(float));
-				}
-				else {
-					fs.read((char*)&ev.Value, sizeof(short));
-					fs.read((char*)&ev.VolPan, sizeof(char));
-					fs.read((char*)&ev.Type, sizeof(char));
+		if (size > 0) {
+			for (int j = 0; j < Header.package_count[i]; j++) {
+				if (fs.tellg() > endOffset) {
+					throw std::runtime_error("Block data size overflow! at file: " + file.string());
 				}
 
-				pkg.Events.push_back(ev);
-			}
+				Package pkg = {};
+				fs.read((char*)&pkg.Measure, 4);
+				fs.read((char*)&pkg.Channel, 2);
+				fs.read((char*)&pkg.EventCount, 2);
 
-			if (pkg.EventCount > 0) {
-				difficulty[i].push_back(pkg);
+				if (pkg.EventCount > 192) {
+					throw std::runtime_error("Event count at measure: " + std::to_string(pkg.Measure) + " exceed the limit! (limit: 192)");
+				}
+
+				for (int i = 0; i < pkg.EventCount; i++) {
+					Event ev = {};
+					if (pkg.Channel == 0 || pkg.Channel == 1) {
+						fs.read((char*)&ev.BPM, sizeof(float));
+					}
+					else {
+						fs.read((char*)&ev.Value, sizeof(short));
+						fs.read((char*)&ev.VolPan, sizeof(char));
+						fs.read((char*)&ev.Type, sizeof(char));
+					}
+
+					pkg.Events.push_back(ev);
+				}
+
+				if (pkg.EventCount > 0) {
+					difficulty[i].push_back(pkg);
+				}
 			}
 		}
 
@@ -328,6 +330,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		diff.Samples = ojm.Samples;
 		diff.MeasureLenghts = measureLengthChanges;
 		diff.AudioLength = timer + 500;
+		diff.Valid = !notes.empty();
 
 		Difficulties[i] = std::move(diff);
 	}

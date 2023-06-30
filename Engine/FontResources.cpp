@@ -14,7 +14,10 @@
 #include "FallbackFonts/jp.ttf.h"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
 #include "Renderer.hpp"
+#include "VulkanDriver/VulkanEngine.h"
+
 #include <iostream>
+#include "Imgui/imgui_impl_vulkan.h"
 
 static ImFont* gImFontButton = nullptr;
 static ImFont* gImFontSlider = nullptr;
@@ -35,6 +38,10 @@ namespace FontResources {
 	void PreloadFontCaches() {
 		std::cout << "[Font] Preload font on progress!" << std::endl;
 		std::lock_guard<std::mutex> lock(mutex);
+
+		if (!gImFontRebuild) {
+			return;
+		}
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.Fonts->Clear();
@@ -93,6 +100,18 @@ namespace FontResources {
 			gImFontSlider = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
 		}
 
+		if (Renderer::GetInstance()->IsVulkan()) {
+			auto vulkan = Renderer::GetInstance()->GetVulkanEngine();
+
+			//execute a gpu command to upload imgui font textures
+			vulkan->immediate_submit([&](VkCommandBuffer cmd) {
+				ImGui_ImplVulkan_CreateFontsTexture(cmd);
+			});
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
+
 		gImFontRebuild = false;
 		Renderer::GetInstance()->ResetImGui();
 
@@ -108,10 +127,20 @@ namespace FontResources {
 
 		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		atlas->Clear();
-		
-		
 
 		atlas->Build();
+
+		if (Renderer::GetInstance()->IsVulkan()) {
+			auto vulkan = Renderer::GetInstance()->GetVulkanEngine();
+
+			//execute a gpu command to upload imgui font textures
+			vulkan->immediate_submit([&](VkCommandBuffer cmd) {
+				ImGui_ImplVulkan_CreateFontsTexture(cmd);
+			});
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
 
 		gImFontRebuild = false;
 	}

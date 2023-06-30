@@ -1,5 +1,5 @@
 #pragma once
-#include <windows.h>
+#include "Data/WindowsTypes.hpp"
 
 class AudioSampleChannel {
 public:

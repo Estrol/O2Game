@@ -65,8 +65,21 @@ void SongSelectScene::Render(double delta) {
         }
     }
 
+    /*image->Position = UDim2::fromOffset(0, 0);
+    image->Size = UDim2::fromOffset(22, 4);
+    image->Draw();
+    image->Position = UDim2::fromOffset(0, 10);
+    image->Draw();
+    image->Position = UDim2::fromOffset(60, 40);
+    image->Draw();
+    image->Position = UDim2::fromOffset(40, 30);
+    image->Draw();
+    image->Position = UDim2::fromOffset(60, 40);
+    image->Draw();*/
+
+	//ImGui::GetForegroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(window->GetWidth(), window->GetHeight()), ImColor(0, 0, 0, 200));
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
-	
+
     ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0, 0.00000001, 1.0);
     auto flags = ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoResize
@@ -346,7 +359,10 @@ void SongSelectScene::Render(double delta) {
     }
 
     if (bExitPopup) {
-        SendMessageA(Window::GetInstance()->GetHandle(), WM_CLOSE, 0, 0);
+        SDL_Event ev = {};
+        ev.type = SDL_QUIT;
+
+        SDL_PushEvent(&ev);
     }
 
     if (bOptionPopup) {
@@ -900,7 +916,7 @@ bool SongSelectScene::Attach() {
 
     if (bgm) {
         bgm->SetVolume(50);
-        bgm->Play(0, true);
+        //bgm->Play(0, true);
     }
 
     if (m_resolutions.size() == 0) {
@@ -985,6 +1001,9 @@ bool SongSelectScene::Attach() {
     catch (std::invalid_argument) {
         currentGuideLineIndex = 2;
     }
+    
+    std::filesystem::path imagePath = "F:\\VisualStudio2022\\O2Game\\x64\\Debug\\Skins\\Default\\Notes\\blue-note0.png";
+    image = new Texture2D(imagePath);
 
     is_update_bgm = false;
     isWait = index != -1;

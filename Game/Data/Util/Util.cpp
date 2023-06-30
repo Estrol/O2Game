@@ -4,7 +4,9 @@
 #include "Util.hpp"
 #include <numeric>
 #include <algorithm>
+#if _WIN32
 #include <Windows.h>
+#endif
 #include <string>
 #include <codecvt>
 
@@ -116,6 +118,7 @@ void flipArray(uint8_t* arr, size_t size) {
 }
 
 std::u8string CodepageToUtf8(const char* string, size_t len, int codepage) {
+#if _WIN32
 	int size_needed = MultiByteToWideChar(codepage, 0, &string[0], (int)len, NULL, 0);
 	wchar_t* temp_string = new wchar_t[size_needed];
 	if (!temp_string) {
@@ -138,4 +141,7 @@ std::u8string CodepageToUtf8(const char* string, size_t len, int codepage) {
 	delete[] result;
 
 	return str_result;
+#else
+	return std::u8string(string, len);
+#endif
 }

@@ -1,6 +1,7 @@
+#include <bass.h>
+
 #include "AudioSampleChannel.hpp"
 #include <iostream>
-#include <bass.h>
 
 AudioSampleChannel::AudioSampleChannel() {
 	m_hCurrentSample = NULL;
