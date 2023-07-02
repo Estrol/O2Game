@@ -11,6 +11,7 @@
 #include <SDL2/SDL_image.h>
 #include "Imgui/ImguiUtil.hpp"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
+#include "VulkanDriver/VulkanEngine.h"
 #include "MathUtils.hpp"
 
 namespace {
@@ -156,6 +157,8 @@ void Game::Run(double frameRate) {
 		AudioManager::GetInstance()->Update(delta);
 	}, true);
 
+	std::mutex m1, m2;
+
 	mRenderThread.Run([&] {
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			double delta = 0;
@@ -203,6 +206,8 @@ void Game::Run(double frameRate) {
 			}
 
 			if (!m_minimized) {
+				std::lock_guard<std::mutex> lock(m1);
+
 				if (m_renderer->BeginRender()) {
 					Render(delta);
 					MsgBox::Draw();
@@ -273,6 +278,17 @@ void Game::Run(double frameRate) {
 
 		if (MsgBox::GetResult("Quit") == 1) {
 			Stop();
+		}
+
+		if (m_renderer->GetVulkanEngine()->_swapChainOutdated) {
+			std::lock_guard<std::mutex> lock(m1);
+
+			int new_width = m_window->GetWidth();
+			int new_height = m_window->GetHeight();
+
+			if (new_width > 0 && new_height > 0) {
+				m_renderer->GetVulkanEngine()->re_init_swapchains(new_width, new_height);
+			}
 		}
 
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
@@ -373,12 +389,24 @@ void Game::SetFullscreen(bool fullscreen) {
 	m_fullscreen = true;
 }
 
+GameThread* Game::GetRenderThread() {
+	return &mRenderThread;
+}
+
+GameThread* Game::GetMainThread() {
+	return &mLocalThread;
+}
+
 void Game::DisplayFade(int transparency) {
 	m_targetFade = static_cast<float>(transparency);
 }
 
 float Game::GetDisplayFade() {
 	return m_currentFade;
+}
+
+ThreadMode Game::GetThreadMode() {
+	return m_threadMode;
 }
 
 void Game::Update(double deltaTime) {

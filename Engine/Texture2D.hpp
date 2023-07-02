@@ -31,6 +31,7 @@ public:
 	float Transparency;
 	float Rotation;
 	bool AlphaBlend;
+	bool m_ready = false;
 
 	UDim2 Size;
 	UDim2 Position;

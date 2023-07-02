@@ -1,4 +1,5 @@
 #pragma once
+
 struct KeyState;
 struct MouseState;
 

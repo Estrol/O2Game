@@ -40,6 +40,7 @@ public:
 
 	void DisplayFade(int transparency);
 	float GetDisplayFade();
+	ThreadMode GetThreadMode();
 	
 protected:
 	virtual void Update(double deltaTime);

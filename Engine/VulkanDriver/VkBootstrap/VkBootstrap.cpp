@@ -1759,6 +1759,9 @@ Result<Swapchain> SwapchainBuilder::build() const {
 	VkSurfaceFormatKHR surface_format = detail::find_best_surface_format(surface_support.formats, desired_formats);
 
 	VkExtent2D extent = detail::find_extent(surface_support.capabilities, info.desired_width, info.desired_height);
+	if (surface_support.capabilities.currentExtent.width <= 0 || surface_support.capabilities.currentExtent.height <= 0) {
+		return Error{ SwapchainError::failed_query_surface_support_details, VK_ERROR_INITIALIZATION_FAILED };
+	}
 
 	uint32_t image_array_layers = info.array_layer_count;
 	if (surface_support.capabilities.maxImageArrayLayers < info.array_layer_count)

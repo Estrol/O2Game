@@ -195,17 +195,6 @@ bool Renderer::BeginRender() {
 	// sdl clear color
     if (IsVulkan()) {
         if (m_vulkan->_swapChainOutdated) {
-            Window* window = Window::GetInstance();
-
-			int new_width = window->GetWidth();
-            int new_height = window->GetHeight();
-
-			if (new_width > 0 && new_height > 0) {
-                m_vulkan->re_init_swapchains(new_width, new_height);
-			}
-        }
-
-        if (m_vulkan->_swapChainOutdated) {
             return false;
         }
 
@@ -283,6 +272,10 @@ void Renderer::Release() {
 bool Renderer::Destroy() {
     if (m_renderer) {
         SDL_DestroyRenderer(m_renderer);
+    }
+
+    if (m_vulkan) {
+        VulkanEngine::Release();
     }
 
     return true;

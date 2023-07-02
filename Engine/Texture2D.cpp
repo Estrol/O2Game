@@ -112,11 +112,15 @@ Texture2D::Texture2D(uint8_t* fileData, size_t size) : Texture2D() {
 Texture2D::Texture2D(SDL_Texture* texture) : Texture2D() {
 	m_bDisposeTexture = false;
 	m_sdl_tex = texture;
+
+	m_ready = true;
 }
 
 Texture2D::Texture2D(Texture2D_Vulkan* texture) : Texture2D() {
 	m_bDisposeTexture = false;
 	m_vk_tex = texture;
+
+	m_ready = true;
 }
 
 Texture2D::~Texture2D() {
@@ -160,6 +164,8 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 	auto window = Window::GetInstance();
 	bool scaleOutput = window->IsScaleOutput();
 	CalculateSize();
+
+	if (!m_ready) return;
 
 	if (renderer->IsVulkan() && m_vk_tex) {
 		auto vulkan_driver = renderer->GetVulkanEngine();
@@ -399,6 +405,7 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 		m_vk_tex = tex_data;
 
 		m_bDisposeTexture = true;
+		m_ready = true;
 		delete[] buffer;
 	}
 	else {
@@ -428,5 +435,7 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 		m_bDisposeTexture = true;
 		delete[] buffer;
 		m_actualSize = { 0, 0, w, h };
+
+		m_ready = true;
 	}
 }

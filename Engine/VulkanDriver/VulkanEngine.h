@@ -140,6 +140,8 @@ public:
 	void imgui_begin();
 	void imgui_end();
 
+	void set_vsync(bool v);
+
 	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	size_t pad_uniform_buffer_size(size_t originalSize);
 
@@ -162,7 +164,6 @@ public:
 	VkDeviceMemory _vertexBufferMemory;
 	VkDeviceMemory _indexBufferMemory;
 
-	void delete_on_present(std::function<void()>&& function);
 	void re_init_swapchains(int width, int height);
 
 	DeletionQueue _perFrameDeletionQueue;
@@ -170,6 +171,7 @@ private:
 	VulkanEngine() = default;
 	~VulkanEngine();
 
+	bool m_vsync = false;
 	static VulkanEngine* m_instance;
 
 	void init_vulkan();
