@@ -502,7 +502,7 @@ public:
 	bool Init() override {
 		SetBufferSize(1280, 720);
 		SetWindowSize(1920, 1080);
-		SetRenderMode(RendererMode::DIRECTX11);
+		SetRenderMode(RendererMode::VULKAN);
 
 		bool result = Game::Init();
 		if (result) {

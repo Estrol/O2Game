@@ -85,10 +85,10 @@ public:
 
 	struct SDL_Window* _window{ nullptr };
 
-	VkInstance _instance;
-	VkDebugUtilsMessengerEXT _debug_messenger;
-	VkPhysicalDevice _chosenGPU;
-	VkDevice _device;
+	VkInstance _instance = VK_NULL_HANDLE;
+	VkDebugUtilsMessengerEXT _debug_messenger = VK_NULL_HANDLE;
+	VkPhysicalDevice _chosenGPU = VK_NULL_HANDLE;
+	VkDevice _device = VK_NULL_HANDLE;
 
 	VkPhysicalDeviceProperties _gpuProperties;
 
@@ -97,10 +97,10 @@ public:
 	VkQueue _graphicsQueue;
 	uint32_t _graphicsQueueFamily;
 
-	VkRenderPass _renderPass;
+	VkRenderPass _renderPass = VK_NULL_HANDLE;
 
-	VkSurfaceKHR _surface;
-	VkSwapchainKHR _swapchain;
+	VkSurfaceKHR _surface = VK_NULL_HANDLE;
+	VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
 	VkFormat _swachainImageFormat;
 
 	std::vector<VkFramebuffer> _framebuffers;
@@ -109,25 +109,25 @@ public:
 
 	DeletionQueue _mainDeletionQueue;
 	DeletionQueue _swapChainQueue;
-	VmaAllocator _allocator;
+	VmaAllocator _allocator = VK_NULL_HANDLE;
 
-	VkImageView _depthImageView;
+	VkImageView _depthImageView = VK_NULL_HANDLE;
 	AllocatedImage _depthImage;
 
 	//the format for the depth image
 	VkFormat _depthFormat;
-	VkShaderModule _vert_shader;
-	VkShaderModule _frag_shader;
-	VkPipelineLayout _pipeline_layout;
-	VkPipelineLayout _pipeline_layout_non_blend;
-	VkPipeline _graphics_pipeline;
-	VkPipeline _graphics_pipeline_non_blend;
+	VkShaderModule _vert_shader = VK_NULL_HANDLE;
+	VkShaderModule _frag_shader = VK_NULL_HANDLE;
+	VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE;
+	VkPipelineLayout _pipeline_layout_non_blend = VK_NULL_HANDLE;
+	VkPipeline _graphics_pipeline = VK_NULL_HANDLE;
+	VkPipeline _graphics_pipeline_non_blend = VK_NULL_HANDLE;
 
-	VkDescriptorPool _descriptorPool;
+	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 
-	VkDescriptorSetLayout _globalSetLayout;
-	VkDescriptorSetLayout _objectSetLayout;
-	VkDescriptorSetLayout _singleTextureSetLayout;
+	VkDescriptorSetLayout _globalSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout _objectSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout _singleTextureSetLayout = VK_NULL_HANDLE;
 	UploadContext _uploadContext;
 	
 	void init(SDL_Window* window, int width, int height);
@@ -157,13 +157,13 @@ public:
 
 	std::vector<SubmitQueueInfo> _queueInfos;
 
-	int _vertexBufferSize;
-	int _indexBufferSize;
-	VkBuffer _vertexBuffer;
-	VkBuffer _indexBuffer;
-	VkDeviceMemory _vertexBufferMemory;
-	VkDeviceMemory _indexBufferMemory;
-
+	int _vertexBufferSize = 0;
+	int _indexBufferSize = 0;
+	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
+	VkBuffer _indexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory _indexBufferMemory = VK_NULL_HANDLE;
+	
 	void re_init_swapchains(int width, int height);
 
 	DeletionQueue _perFrameDeletionQueue;

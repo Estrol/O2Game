@@ -10,23 +10,33 @@
 #include "vkinit.h"
 #include "../imgui/imgui_impl_vulkan.h"
 #include "../imgui/imgui_impl_sdl2.h"
-#include "../MsgBox.hpp"
 #include "../SDLException.hpp"
 #include "Texture2DVulkan.h"
 
+#if _DEBUG
 constexpr bool bUseValidationLayers = true;
+#else
+constexpr bool bUseValidationLayers = false;
+#endif
 
-//we want to immediately abort when there is an error. In normal engines this would give an error message to the user, or perform a dump of state.
+// we want to immediately abort when there is an error. 
+// In normal engines this would give an error message to the user, or perform a dump of state.
 using namespace std;
-#define VK_CHECK(x)                                                 \
-	do                                                              \
-	{                                                               \
-		VkResult err = x;                                           \
-		if (err)                                                    \
-		{                                                           \
-			__debugbreak();	\
-			throw std::runtime_error("VulkanError: " + std::to_string(err)); \
-		}                                                           \
+#if _DEBUG && _WIN32
+#define _DEBUGBREAK_WIN32 __debugbreak();
+#else
+#define _DEBUGBREAK_WIN32
+#endif
+
+#define VK_CHECK(x)																\
+	do																			\
+	{																			\
+		VkResult err = x;														\
+		if (err)																\
+		{																		\
+			_DEBUGBREAK_WIN32													\
+			throw std::runtime_error("VulkanError: " + std::to_string(err));	\
+		}																		\
 	} while (0)
 
 VulkanEngine::~VulkanEngine() {
@@ -73,6 +83,16 @@ void VulkanEngine::cleanup() {
 	if (_isInitialized) {
 		vkDeviceWaitIdle(_device);
 		
+		if (_vertexBuffer != VK_NULL_HANDLE) {
+			vkDestroyBuffer(_device, _vertexBuffer, nullptr);
+			vkFreeMemory(_device, _vertexBufferMemory, nullptr);
+		}
+
+		if (_indexBuffer != VK_NULL_HANDLE) {
+			vkDestroyBuffer(_device, _indexBuffer, nullptr);
+			vkFreeMemory(_device, _indexBufferMemory, nullptr);
+		}
+
 		_swapChainQueue.flush();
 		_mainDeletionQueue.flush();
 
@@ -100,10 +120,6 @@ void VulkanEngine::begin() {
 	if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MINIMIZED) return;
 
 	auto waitdevice = vkDeviceWaitIdle(_device);
-	if (waitdevice == VK_ERROR_DEVICE_LOST) {
-		MsgBox::ShowOut("VulkanError", "Device lost");
-	}
-
 	VK_CHECK(waitdevice);
 
 	auto waitFence = vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1e+9);
@@ -374,6 +390,9 @@ bool VulkanEngine::init_swapchain() {
 
 	if (m_vsync) {
 		swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR);
+	}
+	else {
+		swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_RELAXED_KHR);
 	}
 
 	vkb::Result vkbSwapchainResult = swapchainBuilder.build();

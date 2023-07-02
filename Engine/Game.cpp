@@ -280,7 +280,7 @@ void Game::Run(double frameRate) {
 			Stop();
 		}
 
-		if (m_renderer->GetVulkanEngine()->_swapChainOutdated) {
+		if (m_renderer->IsVulkan() && m_renderer->GetVulkanEngine()->_swapChainOutdated) {
 			std::lock_guard<std::mutex> lock(m1);
 
 			int new_width = m_window->GetWidth();
