@@ -15,11 +15,11 @@ Color3 Color3::FromRGB(float r, float g, float b) {
 Color3 Color3::FromHSV(int hue, int saturnation, int value) {
 	float R, G, B;
 
-	float h = hue / 60.0;
-	float s = saturnation / 100.0;
-	float v = value / 100.0;
+	float h = hue / 60.0f;
+	float s = saturnation / 100.0f;
+	float v = value / 100.0f;
 	float c = v * s;
-	float x = c * (1.0 - std::abs(fmod(h, 2.0) - 1.0));
+	float x = c * (1.0f - std::abs(fmod(h, 2.0f) - 1.0f));
 	float m = v - c;
 
 	if (h >= 0 && h < 1) {
@@ -82,7 +82,7 @@ Color3 Color3::FromHex(std::string hexValue) {
 }
 
 Color3 Color3::Lerp(Color3 dest, float alpha) {
-	return (*this) * (1.0 - alpha) + (dest * alpha);
+	return (*this) * (1.0f - alpha) + (dest * alpha);
 }
 
 int Color3::ToHSV() {

@@ -30,26 +30,25 @@ Renderer::~Renderer() {
 
 Renderer* Renderer::s_instance = nullptr;
 
-bool Renderer::Create(RendererMode mode, Window* window) {
+bool Renderer::Create(RendererMode mode, Window* window, bool failed) {
     try {
         std::string rendererName = "";
         bool bUsedSDLRenderer = true;
 
         switch (mode) {
             case RendererMode::OPENGL: {
-                // set renderer hint to opengl
                 rendererName = "opengl";
                 break;
             }
-									
+
             case RendererMode::VULKAN: {
                 bUsedSDLRenderer = false;
                 break;
             }
 
             case RendererMode::DIRECTX: {
-				rendererName = "direct3d";
-				break;
+                rendererName = "direct3d";
+                break;
             }
 
             case RendererMode::DIRECTX11: {
@@ -61,43 +60,48 @@ bool Renderer::Create(RendererMode mode, Window* window) {
                 rendererName = "direct3d12";
                 break;
             }
+
+            case RendererMode::METAL: {
+				rendererName = "metal";
+				break;
+            }
         }
 
         if (bUsedSDLRenderer) {
             // loop and find the first available renderer
-            bool found = false;
-            int numRenderers = SDL_GetNumRenderDrivers();
-            for (int i = 0; i < numRenderers; i++) {
-                SDL_RendererInfo info;
-                SDL_GetRenderDriverInfo(i, &info);
+            if (!failed) {
+                bool found = false;
+                int numRenderers = SDL_GetNumRenderDrivers();
+                for (int i = 0; i < numRenderers; i++) {
+                    SDL_RendererInfo info;
+                    SDL_GetRenderDriverInfo(i, &info);
 
-                if (info.flags & SDL_RENDERER_SOFTWARE) {
-                    continue;
+                    if (info.flags & SDL_RENDERER_SOFTWARE) {
+                        continue;
+                    }
+
+                    if (rendererName == info.name) {
+                        found = true;
+                        break;
+                    }
                 }
 
-                if (rendererName == info.name) {
-                    found = true;
-                    break;
+                if (!found) {
+                    // fallback
+                    return Create(mode, window, true);
                 }
+
+                SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
             }
 
-            if (!found) {
-                throw std::runtime_error("Renderer " + rendererName + " is not supported in this system!");
-            }
-
-            if (mode == RendererMode::VULKAN) {
-                std::filesystem::path dxvkPath = std::filesystem::current_path() / "vulkan";
-
-                if (LoadLibraryA((dxvkPath / "d3d9.dll").string().c_str()) == NULL) {
-                    throw std::runtime_error("Failed to load DXVK (D3D9.dll) library");
-                }
-            }
-
-            SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-            SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
             m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
             if (!m_renderer) {
                 throw SDLException();
+            }
+
+            if (failed) {
+                std::cout << "[Renderer] Failed to create renderer: " << rendererName << " and fallback to " << SDL_GetCurrentVideoDriver() << std::endl;
             }
 
             m_blendMode = SDL_ComposeCustomBlendMode(
@@ -119,10 +123,10 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             ImGuiIO& io = ImGui::GetIO(); (void)io;
 
             // Manually set the display size
-            io.DisplaySize.x = window->GetWidth();
-            io.DisplaySize.y = window->GetHeight();
-            io.DisplayOutputSize.x = window->GetWidth();
-            io.DisplayOutputSize.y = window->GetHeight();
+            io.DisplaySize.x = (float)window->GetWidth();
+            io.DisplaySize.y = (float)window->GetHeight();
+            io.DisplayOutputSize.x = (float)window->GetWidth();
+            io.DisplayOutputSize.y = (float)window->GetHeight();
             io.IniFilename = NULL;
             io.WantSaveIniSettings = false;
 
@@ -146,10 +150,10 @@ bool Renderer::Create(RendererMode mode, Window* window) {
             ImguiUtil::SetVulkan(true);
 
             // Manually set the display size
-            io.DisplaySize.x = window->GetWidth();
-            io.DisplaySize.y = window->GetHeight();
-            io.DisplayOutputSize.x = window->GetWidth();
-            io.DisplayOutputSize.y = window->GetHeight();
+            io.DisplaySize.x = (float)window->GetWidth();
+            io.DisplaySize.y = (float)window->GetHeight();
+            io.DisplayOutputSize.x = (float)window->GetWidth();
+            io.DisplayOutputSize.y = (float)window->GetHeight();
             io.IniFilename = NULL;
             io.WantSaveIniSettings = false;
 
@@ -172,10 +176,10 @@ bool Renderer::Resize() {
         ImGuiIO& io = ImGui::GetIO(); (void)io;
 
         // Manually set the display size
-        io.DisplaySize.x = new_width;
-        io.DisplaySize.y = new_height;
-        io.DisplayOutputSize.x = new_width;
-        io.DisplayOutputSize.y = new_height;
+        io.DisplaySize.x = (float)new_width;
+        io.DisplaySize.y = (float)new_height;
+        io.DisplayOutputSize.x = (float)new_width;
+        io.DisplayOutputSize.y = (float)new_height;
 
         if (!IsVulkan()) {
             if (SDL_RenderSetLogicalSize(m_renderer, new_width, new_height) == -1) {
@@ -232,10 +236,7 @@ bool Renderer::EndRender() {
 }
 
 void Renderer::ResetImGui() {
-    if (!IsVulkan()) {
-        ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
-        ImGui_ImplSDLRenderer2_DestroyFontsTexture();
-    }
+
 }
 
 SDL_Renderer* Renderer::GetSDLRenderer() {
@@ -267,6 +268,16 @@ void Renderer::Release() {
 		delete s_instance;
 		s_instance = nullptr;
 	}
+}
+
+RendererMode Renderer::GetBestRendererMode() {
+#if _WIN32
+    return RendererMode::DIRECTX11; // I hope, all windows user support this
+#elif __APPLE__
+	return RendererMode::METAL; // Not sure if this work
+#else
+	return RendererMode::OPENGL; // Also I'm not sure if linux users support vulkan
+#endif
 }
 
 bool Renderer::Destroy() {

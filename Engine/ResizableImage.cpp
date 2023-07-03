@@ -3,7 +3,7 @@
 
 #include "Renderer.hpp"
 
-ResizableImage::ResizableImage() : ResizableImage(1, 1, 0xFF) {}
+ResizableImage::ResizableImage() : ResizableImage(1, 1, (char)0xFF) {}
 
 ResizableImage::ResizableImage(int X, int Y, char color) : Texture2D::Texture2D() {
 	BITMAPFILEHEADER bmfHeader = { 0 };

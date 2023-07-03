@@ -189,7 +189,7 @@ void Game::Run(double frameRate) {
 			Update(delta);
 
 			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				double increment = (delta * 5) * 100;
+				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
 
 				// compare it using epsilon
 				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
@@ -197,10 +197,10 @@ void Game::Run(double frameRate) {
 				}
 				else {
 					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
 					}
 					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
 					}
 				}
 			}
@@ -214,7 +214,7 @@ void Game::Run(double frameRate) {
 
 					if (static_cast<int>(m_currentFade) != 0) {
 						auto drawList = ImGui::GetForegroundDrawList();
-						float a = static_cast<int>(m_currentFade) / 100.0;
+						float a = static_cast<int>(m_currentFade) / 100.0f;
 
 						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
 					}
@@ -311,7 +311,7 @@ void Game::Run(double frameRate) {
 			Update(delta);
 
 			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				double increment = (delta * 5) * 100;
+				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
 
 				// compare it using epsilon
 				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
@@ -319,10 +319,10 @@ void Game::Run(double frameRate) {
 				}
 				else {
 					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
 					}
 					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
 					}
 				}
 			}
@@ -334,7 +334,7 @@ void Game::Run(double frameRate) {
 
 					if (static_cast<int>(m_currentFade) != 0) {
 						auto drawList = ImGui::GetForegroundDrawList();
-						float a = static_cast<int>(m_currentFade) / 100.0;
+						float a = static_cast<int>(m_currentFade) / 100.0f;
 
 						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
 					}
@@ -429,11 +429,11 @@ void Game::DrawFPS(double delta) {
 	m_frameInterval += delta;
 	m_frameCount += 1;
 
-	if (m_frameInterval >= 1.0) {
+	if (m_frameInterval >= 1.0f) {
 		m_frameInterval = 0.0;
 
-		m_currentFrameCount = std::round(m_frameCount);
-		m_frameCount = 0.0;
+		m_currentFrameCount = m_frameCount;
+		m_frameCount = 0;
 	}
 
 	if (m_currentFrameCount >= 35 && m_currentFrameCount < 60) {

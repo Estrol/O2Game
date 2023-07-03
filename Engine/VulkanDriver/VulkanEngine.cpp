@@ -122,14 +122,14 @@ void VulkanEngine::begin() {
 	auto waitdevice = vkDeviceWaitIdle(_device);
 	VK_CHECK(waitdevice);
 
-	auto waitFence = vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1e+9);
+	auto waitFence = vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, static_cast<int64_t>(1e+9));
 	if (waitFence == VK_TIMEOUT) {
 		return;
 	}
 
 	VK_CHECK(waitFence);
 
-	auto requestResult = vkAcquireNextImageKHR(_device, _swapchain, 1e+9, get_current_frame()._presentSemaphore, nullptr, &_swapchainNumber);
+	auto requestResult = vkAcquireNextImageKHR(_device, _swapchain, static_cast<int64_t>(1e+9), get_current_frame()._presentSemaphore, nullptr, &_swapchainNumber);
 	if (requestResult == VK_ERROR_OUT_OF_DATE_KHR) {
 		_swapChainOutdated = true;
 		return;
@@ -237,7 +237,7 @@ void VulkanEngine::imgui_init() {
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	pool_info.maxSets = 1000;
-	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
 	pool_info.pPoolSizes = pool_sizes;
 
 	VkDescriptorPool imguiPool;
@@ -527,10 +527,10 @@ bool VulkanEngine::init_framebuffers() {
 	
 	VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(_renderPass, _windowExtent);
 
-	const uint32_t swapchain_imagecount = _swapchainImages.size();
+	const uint32_t swapchain_imagecount = (uint32_t)_swapchainImages.size();
 	_framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
 
-	for (int i = 0; i < swapchain_imagecount; i++) {
+	for (uint32_t i = 0; i < swapchain_imagecount; i++) {
 		VkImageView attachments[2];
 		attachments[0] = _swapchainImageViews[i];
 		attachments[1] = _depthImageView;
@@ -749,8 +749,8 @@ void VulkanEngine::flush_queue() {
 	VkViewport viewport = {};
 	viewport.x = 0;
 	viewport.y = 0;
-	viewport.width = _windowExtent.width;
-	viewport.height = _windowExtent.height;
+	viewport.width = (float)_windowExtent.width;
+	viewport.height = (float)_windowExtent.height;
 	viewport.maxDepth = 1.0f;
 
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
@@ -760,8 +760,8 @@ void VulkanEngine::flush_queue() {
 	vkCmdBindIndexBuffer(cmd, _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 	float scale[2];
-	scale[0] = 2.0 / _windowExtent.width;
-	scale[1] = 2.0 / _windowExtent.height;
+	scale[0] = 2.0f / _windowExtent.width;
+	scale[1] = 2.0f / _windowExtent.height;
 
 	float translate[2];
 	translate[0] = -1.0f;
@@ -785,13 +785,13 @@ void VulkanEngine::flush_queue() {
 
 		vkCmdSetScissor(cmd, 0, 1, &info.scissor);
 
-		vkCmdDrawIndexed(cmd, info.vertices.size(), 1, currentIndiIndex, currentVertIndex, 0);
-		currentVertIndex += info.vertices.size();
-		currentIndiIndex += info.indices.size();
+		vkCmdDrawIndexed(cmd, (uint32_t)info.vertices.size(), 1, currentIndiIndex, currentVertIndex, 0);
+		currentVertIndex += (int)info.vertices.size();
+		currentIndiIndex += (int)info.indices.size();
 	}
 
-	_vertexBufferSize = vertex_size;
-	_indexBufferSize = indices_size;
+	_vertexBufferSize = (int)vertex_size;
+	_indexBufferSize = (int)indices_size;
 	_queueInfos.clear();
 }
 

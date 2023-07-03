@@ -22,7 +22,7 @@ void ImguiUtil::NewFrame() {
 			ImGui_ImplSDL2_NewFrame();
 		}
 
-		ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDimBg] = ImColor(24, 24, 24, 255 * 0.5);
+		ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDimBg] = ImColor(24, 24, 24, static_cast<int>(255.0 * 0.5));
 
 		ImGui::NewFrame();
 

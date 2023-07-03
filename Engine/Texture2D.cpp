@@ -14,8 +14,6 @@
 #include "VulkanDriver/Texture2DVulkan_Internal.h"
 #include "Imgui/imgui_impl_vulkan.h"
 
-#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
-
 Texture2D::Texture2D() {
 	TintColor = { 1.0f, 1.0f, 1.0f };
 
@@ -194,10 +192,10 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 
 		if (scaleOutput) {
 			if (clipRect) {
-				scissor.offset.x *= window->GetWidthScale();
-				scissor.offset.y *= window->GetHeightScale();
-				scissor.extent.width *= window->GetWidthScale();
-				scissor.extent.height *= window->GetHeightScale();
+				scissor.offset.x = static_cast<int32_t>(clipRect->left * window->GetWidthScale());
+				scissor.offset.y = static_cast<int32_t>(clipRect->top * window->GetHeightScale());
+				scissor.extent.width = static_cast<int32_t>((clipRect->right - clipRect->left) * window->GetWidthScale());
+				scissor.extent.height = static_cast<int32_t>((clipRect->bottom - clipRect->top) * window->GetHeightScale());
 			}
 
 			x1 *= window->GetWidthScale();
@@ -283,10 +281,10 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 
 			SDL_Rect testClip = { clipRect->left, clipRect->top, clipRect->right - clipRect->left, clipRect->bottom - clipRect->top };
 			if (scaleOutput) {
-				testClip.x = testClip.x * window->GetWidthScale();
-				testClip.y = testClip.y * window->GetHeightScale();
-				testClip.w = testClip.w * window->GetWidthScale();
-				testClip.h = testClip.h * window->GetHeightScale();
+				testClip.x = static_cast<int>(testClip.x * window->GetWidthScale());
+				testClip.y = static_cast<int>(testClip.y * window->GetHeightScale());
+				testClip.w = static_cast<int>(testClip.w * window->GetWidthScale());
+				testClip.h = static_cast<int>(testClip.h * window->GetHeightScale());
 			}
 
 			SDL_RenderSetClipRect(renderer->GetSDLRenderer(), &testClip);
@@ -334,17 +332,17 @@ void Texture2D::CalculateSize() {
 	int wWidth = window->GetBufferWidth();
 	int wHeight = window->GetBufferHeight();
 
- 	float xPos = wWidth * Position.X.Scale + Position.X.Offset;
-	float yPos = wHeight * Position.Y.Scale + Position.Y.Offset;
+	float xPos = static_cast<float>((wWidth * Position.X.Scale) + Position.X.Offset);
+	float yPos = static_cast<float>((wHeight * Position.Y.Scale) + Position.Y.Offset);
 	
-	float width = m_actualSize.right * Size.X.Scale + Size.X.Offset;
-	float height = m_actualSize.bottom * Size.Y.Scale + Size.Y.Offset;
+	float width = static_cast<float>((m_actualSize.right * Size.X.Scale) + Size.X.Offset);
+	float height = static_cast<float>((m_actualSize.bottom * Size.Y.Scale) + Size.Y.Offset);
 
 	m_preAnchoredSize = { (LONG)xPos, (LONG)yPos, (LONG)width, (LONG)height };
 	m_preAnchoredSizeF = { xPos, yPos, width, height };
 
-	float xAnchor = width * std::clamp(AnchorPoint.X, 0.0, 1.0);
-	float yAnchor = height * std::clamp(AnchorPoint.Y, 0.0, 1.0);
+	float xAnchor = width * std::clamp((float)AnchorPoint.X, 0.0f, 1.0f);
+	float yAnchor = height * std::clamp((float)AnchorPoint.Y, 0.0f, 1.0f);
 	
 	xPos -= xAnchor;
 	yPos -= yAnchor;
@@ -409,7 +407,7 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 		delete[] buffer;
 	}
 	else {
-		SDL_RWops* rw = SDL_RWFromMem(buffer, size);
+		SDL_RWops* rw = SDL_RWFromMem(buffer, (int)size);
 
 		// check if buffer magic is BMP
 		if (buffer[0] == 0x42 && buffer[1] == 0x4D) {

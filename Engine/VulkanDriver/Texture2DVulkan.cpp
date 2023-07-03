@@ -47,7 +47,7 @@ Texture2D_Vulkan* vkTexture::TexLoadImage(void* buffer, size_t size) {
 
 	unsigned char* image_data = stbi_load_from_memory(
 		(uint8_t*)buffer, 
-		size, 
+		(int)size, 
 		&tex_data->Width, 
 		&tex_data->Height, 
 		0, 

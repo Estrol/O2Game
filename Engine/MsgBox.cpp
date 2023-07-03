@@ -181,7 +181,7 @@ int MsgBox::ShowOut(std::string title, std::string fmt, MsgBoxType type) {
 		}
 	}
 
-	data.numbuttons = buttons.size();
+	data.numbuttons = (int)buttons.size();
 	data.buttons = buttons.data();
 
 	int buttonid;

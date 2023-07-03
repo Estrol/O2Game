@@ -8,16 +8,15 @@ class VulkanEngine;
 enum class RendererMode {
 	OPENGL, // 0
 	VULKAN, // 1
-#if _WIN32
 	DIRECTX, // 2
 	DIRECTX11, // 3
 	DIRECTX12, // 4
-#endif
+	METAL, // 5
 };
 
 class Renderer {
 public:
-	bool Create(RendererMode mode, Window* window);
+	bool Create(RendererMode mode, Window* window, bool failed = false);
 	bool Resize();
 	bool Destroy();
 
@@ -34,6 +33,8 @@ public:
 
 	static Renderer* GetInstance();
 	static void Release();
+
+	static RendererMode GetBestRendererMode();
 
 private:
 	Renderer();
