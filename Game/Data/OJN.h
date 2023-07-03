@@ -109,6 +109,7 @@ struct OJNDifficulty {
 	std::vector<O2Sample> Samples;
 	std::vector<double> Measures;
 
+	bool Valid = false;
 	double AudioLength = 0;
 };
 

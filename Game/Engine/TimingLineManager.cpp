@@ -2,7 +2,7 @@
 #include "RhythmEngine.hpp"
 
 TimingLineManager::TimingLineManager(RhythmEngine* engine) {
-	RECT playRect = engine->GetPlayRectangle();
+	Rect playRect = engine->GetPlayRectangle();
 	m_engine = engine;
 	m_timingLines = {};
 	m_timingInfos = {};
@@ -36,7 +36,7 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 }
 
 TimingLineManager::TimingLineManager(RhythmEngine* engine, std::vector<double> list) {
-	RECT playRect = engine->GetPlayRectangle();
+	Rect playRect = engine->GetPlayRectangle();
 
 	m_engine = engine;
 	m_timingLines = {};

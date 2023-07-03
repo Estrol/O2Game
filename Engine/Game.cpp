@@ -5,13 +5,13 @@
 #include "Window.hpp"
 #include "AudioManager.hpp"
 #include "Imgui/imgui_impl_sdl2.h"
-#include "Imgui/imgui_impl_dx11.h"
 #include "FontResources.hpp"
 #include "MsgBox.hpp"
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_image.h>
 #include "Imgui/ImguiUtil.hpp"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
+#include "VulkanDriver/VulkanEngine.h"
 #include "MathUtils.hpp"
 
 namespace {
@@ -140,7 +140,6 @@ bool Game::Init() {
 
 	FontResources::PreloadFontCaches();
 	m_frameText = new Text(13);
-	m_fadeBox = new ResizableImage(m_window->GetBufferWidth(), m_window->GetBufferHeight(), 0x00); 
 	m_currentFade = 0;
 	m_targetFade = 0;
 	
@@ -148,12 +147,6 @@ bool Game::Init() {
 }
 
 void Game::Run(double frameRate) {
-	if (!InitSDL()) {
-		MessageBoxA(NULL, "SDL Failed to Initialize", "EstEngine Error", MB_ICONERROR);
-
-		return;
-	}
-
 	m_running = true;
 	m_notify = true;
 	m_frameLimit = frameRate;
@@ -163,6 +156,8 @@ void Game::Run(double frameRate) {
 		double delta = FrameLimit(144.0);
 		AudioManager::GetInstance()->Update(delta);
 	}, true);
+
+	std::mutex m1, m2;
 
 	mRenderThread.Run([&] {
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
@@ -194,7 +189,7 @@ void Game::Run(double frameRate) {
 			Update(delta);
 
 			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				double increment = (delta * 5) * 100;
+				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
 
 				// compare it using epsilon
 				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
@@ -202,33 +197,30 @@ void Game::Run(double frameRate) {
 				}
 				else {
 					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
 					}
 					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
 					}
 				}
 			}
 
 			if (!m_minimized) {
-				m_renderer->BeginRender();
-				Render(delta);
-				MsgBox::Draw();
+				std::lock_guard<std::mutex> lock(m1);
 
-				if (static_cast<int>(m_currentFade) != 0) {
-					auto drawList = ImGui::GetForegroundDrawList();
-					float a = static_cast<int>(m_currentFade) / 100.0;
+				if (m_renderer->BeginRender()) {
+					Render(delta);
+					MsgBox::Draw();
 
-					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+					if (static_cast<int>(m_currentFade) != 0) {
+						auto drawList = ImGui::GetForegroundDrawList();
+						float a = static_cast<int>(m_currentFade) / 100.0f;
+
+						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+					}
+
+					m_renderer->EndRender();
 				}
-
-				if (ImguiUtil::HasFrameQueue()) {
-					ImguiUtil::Reset();
-
-					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-				}
-
-				m_renderer->EndRender();
 			}
 		}
 		else {
@@ -279,6 +271,7 @@ void Game::Run(double frameRate) {
 					break;
 			}
 
+			m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}
@@ -287,7 +280,16 @@ void Game::Run(double frameRate) {
 			Stop();
 		}
 
-		m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
+		if (m_renderer->IsVulkan() && m_renderer->GetVulkanEngine()->_swapChainOutdated) {
+			std::lock_guard<std::mutex> lock(m1);
+
+			int new_width = m_window->GetWidth();
+			int new_height = m_window->GetHeight();
+
+			if (new_width > 0 && new_height > 0) {
+				m_renderer->GetVulkanEngine()->re_init_swapchains(new_width, new_height);
+			}
+		}
 
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			Input(delta);
@@ -309,7 +311,7 @@ void Game::Run(double frameRate) {
 			Update(delta);
 
 			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				double increment = (delta * 5) * 100;
+				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
 
 				// compare it using epsilon
 				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
@@ -317,33 +319,28 @@ void Game::Run(double frameRate) {
 				}
 				else {
 					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
 					}
 					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0, 100.0);
+						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
 					}
 				}
 			}
 
 			if (!m_minimized) {
-				m_renderer->BeginRender();
-				Render(delta);
-				MsgBox::Draw();
+				if (m_renderer->BeginRender()) {
+					Render(delta);
+					MsgBox::Draw();
 
-				if (static_cast<int>(m_currentFade) != 0) {
-					auto drawList = ImGui::GetForegroundDrawList();
-					float a = static_cast<int>(m_currentFade) / 100.0;
+					if (static_cast<int>(m_currentFade) != 0) {
+						auto drawList = ImGui::GetForegroundDrawList();
+						float a = static_cast<int>(m_currentFade) / 100.0f;
 
-					drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+					}
+
+					m_renderer->EndRender();
 				}
-
-				if (ImguiUtil::HasFrameQueue()) {
-					ImguiUtil::Reset();
-
-					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-				}
-
-				m_renderer->EndRender();
 			}
 		}
 	}, false);
@@ -392,12 +389,24 @@ void Game::SetFullscreen(bool fullscreen) {
 	m_fullscreen = true;
 }
 
+GameThread* Game::GetRenderThread() {
+	return &mRenderThread;
+}
+
+GameThread* Game::GetMainThread() {
+	return &mLocalThread;
+}
+
 void Game::DisplayFade(int transparency) {
 	m_targetFade = static_cast<float>(transparency);
 }
 
 float Game::GetDisplayFade() {
 	return m_currentFade;
+}
+
+ThreadMode Game::GetThreadMode() {
+	return m_threadMode;
 }
 
 void Game::Update(double deltaTime) {
@@ -420,11 +429,11 @@ void Game::DrawFPS(double delta) {
 	m_frameInterval += delta;
 	m_frameCount += 1;
 
-	if (m_frameInterval >= 1.0) {
+	if (m_frameInterval >= 1.0f) {
 		m_frameInterval = 0.0;
 
-		m_currentFrameCount = std::round(m_frameCount);
-		m_frameCount = 0.0;
+		m_currentFrameCount = m_frameCount;
+		m_frameCount = 0;
 	}
 
 	if (m_currentFrameCount >= 35 && m_currentFrameCount < 60) {

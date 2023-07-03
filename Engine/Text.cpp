@@ -50,8 +50,8 @@ void Text::Draw(std::u8string text) {
     }
 
     Window* wnd = Window::GetInstance();
-    float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
-	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;
+    float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
+	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
 	float scale = targetScale / originScale;
 	
@@ -61,8 +61,8 @@ void Text::Draw(std::u8string text) {
     int wWidth = window->GetWidth();
     int wHeight = window->GetHeight();
 
-    float xPos = (wWidth * Position.X.Scale) + Position.X.Offset;
-    float yPos = (wHeight * Position.Y.Scale) + Position.Y.Offset;
+    float xPos = static_cast<float>((wWidth * Position.X.Scale) + Position.X.Offset);
+    float yPos = static_cast<float>((wHeight * Position.Y.Scale) + Position.Y.Offset);
 
     xPos *= wnd->GetWidthScale();
 	yPos *= wnd->GetHeightScale();
@@ -90,12 +90,12 @@ int Text::CalculateSize(std::u8string text) {
     ImguiUtil::NewFrame();
 
     Window* wnd = Window::GetInstance();
-    float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
-    float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;
+    float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
+    float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
     float scale = targetScale / originScale;
 
-    return ImGui::CalcTextSizeWithSize((const char*)text.c_str(), Size * scale).x;
+    return static_cast<int>(ImGui::CalcTextSizeWithSize((const char*)text.c_str(), Size * scale).x);
 }
 
 void Text::ImRotationStart() {

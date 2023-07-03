@@ -14,9 +14,13 @@
 #include "FallbackFonts/jp.ttf.h"
 #include "Imgui/imgui_impl_sdlrenderer2.h"
 #include "Renderer.hpp"
+#include "VulkanDriver/VulkanEngine.h"
+
 #include <iostream>
+#include "Imgui/imgui_impl_vulkan.h"
 
 static ImFont* gImFontButton = nullptr;
+static ImFont* gImFontSlider = nullptr;
 static bool gImFontRebuild = true;
 static std::mutex mutex;
 
@@ -35,16 +39,20 @@ namespace FontResources {
 		std::cout << "[Font] Preload font on progress!" << std::endl;
 		std::lock_guard<std::mutex> lock(mutex);
 
+		if (!gImFontRebuild) {
+			return;
+		}
+
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.Fonts->Clear();
 		io.Fonts->ClearFonts();
 
 		Window* wnd = Window::GetInstance();
 
-		float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
-		float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;
+		float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
+		float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
-		int fontSize = 13 * (targetScale / originScale);
+		float fontSize = std::round(13.0f * (targetScale / originScale));
 
 		auto SkinName = Configuration::Load("Game", "Skin");
 		auto skinPath = Configuration::Skin_GetPath(SkinName);
@@ -57,7 +65,7 @@ namespace FontResources {
 		conf.OversampleH = conf.OversampleV = 0;
 		conf.PixelSnapH = true;
 		conf.SizePixels = fontSize;
-		conf.GlyphOffset.y = 1 * (fontSize / 16.0);
+		conf.GlyphOffset.y = 1.0f * (fontSize / 16.0f);
 
 		if (std::filesystem::exists(font)) {
 			io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), fontSize, &conf);
@@ -79,19 +87,36 @@ namespace FontResources {
 
 		io.Fonts->Build();
 
-		int iBtnFontSz = 20 * (targetScale / originScale);
+		float iBtnFontSz = std::round(20.0f * (targetScale / originScale));
 		conf.MergeMode = false;
 		conf.SizePixels = iBtnFontSz;
-		conf.GlyphOffset.y = 1 * (iBtnFontSz / 16.0);
+		conf.GlyphOffset.y = 1.0f * (iBtnFontSz / 16.0f);
 		if (std::filesystem::exists(font)) {
 			gImFontButton = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
+			gImFontSlider = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
 		}
 		else {
 			gImFontButton = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
+			gImFontSlider = io.Fonts->AddFontFromMemoryTTF((void*)arial_ttf, sizeof(arial_ttf), iBtnFontSz, &conf);
+		}
+
+		if (Renderer::GetInstance()->IsVulkan()) {
+			auto vulkan = Renderer::GetInstance()->GetVulkanEngine();
+
+			//execute a gpu command to upload imgui font textures
+			vulkan->immediate_submit([&](VkCommandBuffer cmd) {
+				ImGui_ImplVulkan_CreateFontsTexture(cmd);
+			});
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
+		else {
+			ImGui_ImplSDLRenderer2_DestroyDeviceObjects();
+			ImGui_ImplSDLRenderer2_DestroyFontsTexture();
 		}
 
 		gImFontRebuild = false;
-		Renderer::GetInstance()->ResetImGui();
 
 		std::cout << "[Font] Preload font completed!" << std::endl;
 	}
@@ -105,10 +130,20 @@ namespace FontResources {
 
 		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		atlas->Clear();
-		
-		
 
 		atlas->Build();
+
+		if (Renderer::GetInstance()->IsVulkan()) {
+			auto vulkan = Renderer::GetInstance()->GetVulkanEngine();
+
+			//execute a gpu command to upload imgui font textures
+			vulkan->immediate_submit([&](VkCommandBuffer cmd) {
+				ImGui_ImplVulkan_CreateFontsTexture(cmd);
+			});
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
 
 		gImFontRebuild = false;
 	}
@@ -122,5 +157,8 @@ namespace FontResources {
 	}
 	ImFont* GetButtonFont() {
 		return gImFontButton;
+	}
+	ImFont* GetReallyBigFontForSlider() {
+		return gImFontSlider;
 	}
 }

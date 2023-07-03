@@ -33,7 +33,7 @@ Written in C++ with SDL (+ imgui for it's GUI elements)
 - BASS Library from https://www.un4seen.com/
 
 ### Installing external library
-- Install SDL2: `vcpkg install sdl2:x64-windows`
+- Install SDL2 with vulkan support: `vcpkg install sdl2[vulkan]:x64-windows`
 - Install freetype: `vcpkg install freetype:x64-windows`
 - Install curlpp: `vcpkg install curlpp:x64-windows`
 - Install SDL_Image with JPEG support: `vcpkg install sdl2-image[libjpeg-turbo]:x64-windows`
@@ -45,7 +45,6 @@ Written in C++ with SDL (+ imgui for it's GUI elements)
 - Copy BASS x64 DLL to build folder
 - Copy skins folder from my build in discord server :troll:
 - Run/Debug it
-- To able use Vulkan, download and extract D3D9.dll into vulkan folder.
 
 # Crossplatform
 There will be no crossplatform until:

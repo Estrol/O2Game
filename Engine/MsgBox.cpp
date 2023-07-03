@@ -143,3 +143,49 @@ void MsgBox::Show(std::string Id, std::string Title, std::string fmt, MsgBoxType
 	m_results[Id] = -1;
 	m_msgbox.push_back({ Id, Title, fmt, type });
 }
+
+int MsgBox::ShowOut(std::string title, std::string fmt) {
+	return ShowOut(title, fmt, MsgBoxType::OK);
+}
+
+int MsgBox::ShowOut(std::string title, std::string fmt, MsgBoxType type) {
+	SDL_MessageBoxData data = {};
+	data.title = title.c_str();
+	data.message = fmt.c_str();
+	data.flags = 0;
+
+	std::vector<SDL_MessageBoxButtonData> buttons;
+	switch (type) {
+		case MsgBoxType::YESNOCANCEL: {
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Yes" });
+			buttons.push_back({ 0, 2, "No" });
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 3, "Cancel" });
+			break;
+		}
+
+		case MsgBoxType::YESNO: {
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Yes" });
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 2, "No" });
+			break;
+		}
+
+		case MsgBoxType::OKCANCEL: {
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 4, "Ok" });
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 3, "Cancel" });
+			break;
+		}
+
+		default: {
+			buttons.push_back({ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 4, "Ok" });
+			break;
+		}
+	}
+
+	data.numbuttons = (int)buttons.size();
+	data.buttons = buttons.data();
+
+	int buttonid;
+	SDL_ShowMessageBox(&data, &buttonid);
+
+	return buttonid;
+}

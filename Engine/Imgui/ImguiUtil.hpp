@@ -6,4 +6,5 @@ namespace ImguiUtil {
 	void EndText();
 	bool HasFrameQueue();
 	void Reset();
+	void SetVulkan(bool v);
 }

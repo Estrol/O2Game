@@ -46,8 +46,8 @@ private:
 	std::unique_ptr<Texture2D> m_Playfield;
 	std::unique_ptr<Texture2D> m_PlayBG;
 
-	std::unique_ptr<Tile2D> m_jamGauge;
-	std::unique_ptr<Tile2D> m_waveGage;
+	std::unique_ptr<Texture2D> m_jamGauge;
+	std::unique_ptr<Texture2D> m_waveGage;
 	
 	std::unique_ptr<Sprite2D> m_jamLogo;
 	std::unique_ptr<Sprite2D> m_lifeBar;

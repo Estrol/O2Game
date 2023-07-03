@@ -11,4 +11,5 @@ namespace FontResources {
 	void DoRebuild();
 
 	ImFont* GetButtonFont();
+	ImFont* GetReallyBigFontForSlider();
 };

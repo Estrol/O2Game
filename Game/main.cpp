@@ -17,11 +17,14 @@
 #include <shlobj.h>
 #include "Data/OJM.hpp"
 #include <fstream>
+#include "../Engine/MsgBox.hpp"
 
+#if _WIN32
 extern "C" {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
+#endif
 
 static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
 
@@ -168,8 +171,10 @@ int HandleStructualException(int code) {
 
 #if _DEBUG
 int wmain(int argc, wchar_t* argv[]) {
+	return Run(argc, argv);
+
 	__try {
-		return Run(argc, argv);
+		
 	}
 	__except (HandleStructualException(GetExceptionCode())) {
 		return -1;

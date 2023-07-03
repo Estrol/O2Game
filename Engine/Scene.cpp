@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 #include "SceneManager.hpp"
+#include "Texture2D.hpp"
 
 Scene::Scene() {
 	

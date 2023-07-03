@@ -174,6 +174,27 @@ void SceneManager::ExecuteAfter(int ms_time, std::function<void()> callback) {
 	}
 }
 
+void SceneManager::GameExecuteAfter(ExecuteThread thread, int ms_time, std::function<void()> callback) {
+	Game* game = s_instance->m_parent;
+
+	if (game->GetThreadMode() == ThreadMode::SINGLE_THREAD) {
+		game->GetMainThread()->QueueAction(callback);
+	}
+	else {
+		switch (thread) {
+			case ExecuteThread::UPDATE: {
+				game->GetRenderThread()->QueueAction(callback);
+				break;
+			}
+
+			case ExecuteThread::WINDOW: {
+				game->GetMainThread()->QueueAction(callback);
+				break;
+			}
+		}
+	}
+}
+
 void SceneManager::StopGame() {
 	m_parent->Stop();
 }

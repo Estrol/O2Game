@@ -48,12 +48,12 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
 	}
 
 	delete[] data;
-	int size2 = dataVec.size();
+	size_t size2 = dataVec.size();
 	void* data2 = new char[size2];
 	memcpy(data2, dataVec.data(), size2);
 
 	// return tuple: sampleFalgs, sampleRate, sampleChannels, sampleLength, void*
-	return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, size2, data2 };
+	return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, (int)size2, data2 };
 }
 
 std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string filePath, float rate) {
@@ -92,7 +92,7 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string
 	BASS_ChannelFree(channel);
 
 	delete[] data;
-	int size2 = dataVec.size();
+	size_t size2 = dataVec.size();
 	void* data2 = new char[size2];
 	memcpy(data2, dataVec.data(), size2);
 
@@ -102,5 +102,5 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string
 	}
 
 	// return tuple: sampleFalgs, sampleRate, sampleChannels, sampleLength, void*
-	return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, size2, data2 };
+	return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, (int)size2, data2 };
 }

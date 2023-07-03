@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <unordered_map>
-#include <d3d11.h>
 #include <SDL2/SDL.h>
+#include "../../Engine/VulkanDriver/Texture2DVulkan.h"
+#include "../../Engine/Data/WindowsTypes.hpp"
 
 typedef void* ESTHANDLE;
 
@@ -68,7 +69,9 @@ enum class NoteImageType {
 struct NoteImage {
 	std::vector<SDL_Texture*> Texture;
 	std::vector<SDL_Surface*> Surface;
-	RECT TextureRect;
+
+	std::vector<Texture2D_Vulkan*> VulkanTexture;
+	Rect TextureRect;
 };
 
 namespace GameInterfaceResource {

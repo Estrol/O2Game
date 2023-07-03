@@ -17,11 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher", "Launcher\Launcher.csproj", "{189D25D5-B849-41D8-800C-E84263EC7A63}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcxproj", "{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{ECBD3DF3-3A2C-4E1C-88EB-FCAE902A994D} = {ECBD3DF3-3A2C-4E1C-88EB-FCAE902A994D}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,18 +63,6 @@ Global
 		{189D25D5-B849-41D8-800C-E84263EC7A63}.Release|x64.Build.0 = Release|Any CPU
 		{189D25D5-B849-41D8-800C-E84263EC7A63}.Release|x86.ActiveCfg = Release|Any CPU
 		{189D25D5-B849-41D8-800C-E84263EC7A63}.Release|x86.Build.0 = Release|Any CPU
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|Any CPU.Build.0 = Debug|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|x64.ActiveCfg = Debug|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|x64.Build.0 = Debug|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|x86.ActiveCfg = Debug|Win32
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Debug|x86.Build.0 = Debug|Win32
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|Any CPU.ActiveCfg = Release|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|Any CPU.Build.0 = Release|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|x64.ActiveCfg = Release|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|x64.Build.0 = Release|x64
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|x86.ActiveCfg = Release|Win32
-		{95BE4199-3B3F-4BF3-9B0F-9646CED91AFF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

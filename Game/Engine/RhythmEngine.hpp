@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "../../Engine/EstEngine.hpp"
+#include "../../Engine/Data/WindowsTypes.hpp"
 #include "../Data/Chart.hpp"
 #include "../Data/AutoReplay.hpp"
 #include "GameTrack.hpp"
@@ -58,7 +59,7 @@ public:
 	void SetLaneOffset(int offset);
 	int GetHitPosition() const;
 	Vector2 GetResolution() const;
-	RECT GetPlayRectangle() const;
+	Rect GetPlayRectangle() const;
 	std::u8string GetTitle() const;
 	
 	GameState GetState() const;
@@ -106,7 +107,7 @@ private:
 	GameState m_state = GameState::NotGame;
 	std::u8string m_title;
 
-	RECT m_playRectangle;
+	Rect m_playRectangle;
 	int m_laneSize[7];
 	int m_lanePos[7];
 

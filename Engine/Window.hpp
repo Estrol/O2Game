@@ -1,6 +1,7 @@
 #pragma once
-#include "framework.h"
 #include <string>
+#include "Data/WindowsTypes.hpp"
+#include <SDL2/SDL.h>
 
 enum class RendererMode;
 
@@ -16,7 +17,6 @@ public:
 	void HandleResizeRenderer();
 
 	SDL_Window* GetWindow() const;
-	HWND GetHandle() const;
 	int GetWidth() const;
 	int GetHeight() const;
 	int GetBufferWidth() const;

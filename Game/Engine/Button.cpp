@@ -7,7 +7,7 @@ struct Vector2 {
 	LONG X, Y;
 };
 
-bool IsRectInsideRect(const Vector2& innerRect, const RECT& outerRect) {
+bool IsRectInsideRect(const Vector2& innerRect, const Rect& outerRect) {
 	if (innerRect.X < outerRect.left) {
 		return false;
 	}
@@ -45,7 +45,7 @@ Button::~Button() {
 }
 
 void Button::Render(double delta) {
-	RECT targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
 	Vector2 pos = { m_lastState.left, m_lastState.top };
 
 	if (IsRectInsideRect(pos, targetRect)) {
@@ -64,7 +64,7 @@ void Button::Input(double delta) {
 
 	m_lastState = inputs->GetMousePosition();
 	
-	RECT targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
 	Vector2 pos = { m_lastState.left, m_lastState.top };
 
 	if (IsRectInsideRect(pos, targetRect) && !IsOutside) {
@@ -83,7 +83,7 @@ void Button::Input(double delta) {
 bool Button::OnKeyDown() {
 	InputManager* inputs = InputManager::GetInstance();
 
-	RECT targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
 	Vector2 pos = { m_lastState.left, m_lastState.top };
 
 	if (IsRectInsideRect(pos, targetRect)) {

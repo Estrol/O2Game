@@ -363,6 +363,8 @@ namespace GameNoteResource {
 	std::unordered_map<NoteImageType, NoteImage*> noteTextures;
 
 	bool Load() {		
+		bool IsVulkan = Renderer::GetInstance()->IsVulkan();
+		
 		auto skinName = Configuration::Load("Game", "Skin");
 		auto skinPath = Configuration::Skin_GetPath(skinName);
 		auto skinNotePath = skinPath / "Notes";
@@ -381,29 +383,50 @@ namespace GameNoteResource {
 			noteImage->Texture.resize(note.numOfFiles);
 			holdImage->Texture.resize(hold.numOfFiles);
 
+			noteImage->VulkanTexture.resize(note.numOfFiles);
+			holdImage->VulkanTexture.resize(hold.numOfFiles);
+
 			for (int j = 0; j < note.numOfFiles; j++) {
 				auto path = skinNotePath / (note.fileName + std::to_string(j) + ".png");
 				if (!std::filesystem::exists(path)) {
 					throw std::runtime_error("File: " + path.string() + " is not found!");
 				}
 
-				noteImage->Surface[j] = IMG_Load(path.string().c_str());
-				if (noteImage->Surface[j] == nullptr) {
-					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				if (IsVulkan) {
+					auto tex_data = vkTexture::TexLoadImage(path);
+					if (tex_data == nullptr) {
+						throw std::runtime_error("Failed to load image: " + path.string() + "!");
+					}
+
+					noteImage->VulkanTexture[j] = tex_data;
+
+					if (j == 0) {
+						auto& rect = noteImage->TextureRect;
+						rect.left = 0;
+						rect.top = 0;
+						
+						vkTexture::QueryTexture(tex_data, rect.right, rect.bottom);
+					}
 				}
+				else {
+					noteImage->Surface[j] = IMG_Load(path.string().c_str());
+					if (noteImage->Surface[j] == nullptr) {
+						throw std::runtime_error("Failed to load image: " + path.string() + "!");
+					}
 
-				noteImage->Texture[j] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), noteImage->Surface[j]);
-				if (noteImage->Texture[j] == nullptr) {
-					throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
-				}
+					noteImage->Texture[j] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), noteImage->Surface[j]);
+					if (noteImage->Texture[j] == nullptr) {
+						throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
+					}
 
-				if (j == 0) {
-					// query texture size
-					auto& rect = noteImage->TextureRect;
-					rect.left = 0;
-					rect.top = 0;
+					if (j == 0) {
+						// query texture size
+						auto& rect = noteImage->TextureRect;
+						rect.left = 0;
+						rect.top = 0;
 
-					SDL_QueryTexture(noteImage->Texture[j], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+						SDL_QueryTexture(noteImage->Texture[j], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+					}
 				}
 			}
 
@@ -413,23 +436,41 @@ namespace GameNoteResource {
 					throw std::runtime_error("File: " + path.string() + " is not found!");
 				}
 
-				holdImage->Surface[j] = IMG_Load((const char*)path.u8string().c_str());
-				if (holdImage->Surface[j] == nullptr) {
-					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				if (IsVulkan) {
+					auto tex_data = vkTexture::TexLoadImage(path);
+					if (tex_data == nullptr) {
+						throw std::runtime_error("Failed to load image: " + path.string() + "!");
+					}
+
+					holdImage->VulkanTexture[j] = tex_data;
+
+					if (j == 0) {
+						auto& rect = holdImage->TextureRect;
+						rect.left = 0;
+						rect.top = 0;
+
+						vkTexture::QueryTexture(tex_data, rect.right, rect.bottom);
+					}
 				}
+				else {
+					holdImage->Surface[j] = IMG_Load((const char*)path.u8string().c_str());
+					if (holdImage->Surface[j] == nullptr) {
+						throw std::runtime_error("Failed to load image: " + path.string() + "!");
+					}
 
-				holdImage->Texture[j] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), holdImage->Surface[j]);
-				if (holdImage->Texture[j] == nullptr) {
-					throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
-				}
+					holdImage->Texture[j] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), holdImage->Surface[j]);
+					if (holdImage->Texture[j] == nullptr) {
+						throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
+					}
 
-				if (j == 0) {
-					// query texture size
-					auto& rect = holdImage->TextureRect;
-					rect.left = 0;
-					rect.top = 0;
+					if (j == 0) {
+						// query texture size
+						auto& rect = holdImage->TextureRect;
+						rect.left = 0;
+						rect.top = 0;
 
-					SDL_QueryTexture(holdImage->Texture[j], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+						SDL_QueryTexture(holdImage->Texture[j], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+					}
 				}
 			}
 
@@ -443,10 +484,12 @@ namespace GameNoteResource {
 		NoteImage* trailUpImg = new NoteImage();
 		trailUpImg->Texture.resize(trailUp.numOfFiles);
 		trailUpImg->Surface.resize(trailUp.numOfFiles);
+		trailUpImg->VulkanTexture.resize(trailUp.numOfFiles);
 
 		NoteImage* trailDownImg = new NoteImage();
 		trailDownImg->Texture.resize(trailDown.numOfFiles);
 		trailDownImg->Surface.resize(trailDown.numOfFiles);
+		trailDownImg->VulkanTexture.resize(trailUp.numOfFiles);
 
 		for (int i = 0; i < trailUp.numOfFiles; i++) {
 			auto path = skinNotePath / (trailUp.fileName + std::to_string(i) + ".png");
@@ -454,23 +497,41 @@ namespace GameNoteResource {
 				throw std::runtime_error("File: " + path.string() + " is not found!");
 			}
 
-			trailUpImg->Surface[i] = IMG_Load((const char*)path.u8string().c_str());
-			if (trailUpImg->Surface[i] == nullptr) {
-				throw std::runtime_error("Failed to load image: " + path.string() + "!");
+			if (IsVulkan) {
+				auto tex_data = vkTexture::TexLoadImage(path);
+				if (tex_data == nullptr) {
+					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				}
+
+				trailUpImg->VulkanTexture[i] = tex_data;
+
+				if (i == 0) {
+					auto& rect = trailUpImg->TextureRect;
+					rect.left = 0;
+					rect.top = 0;
+
+					vkTexture::QueryTexture(tex_data, rect.right, rect.bottom);
+				}
 			}
+			else {
+				trailUpImg->Surface[i] = IMG_Load((const char*)path.u8string().c_str());
+				if (trailUpImg->Surface[i] == nullptr) {
+					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				}
 
-			trailUpImg->Texture[i] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), trailUpImg->Surface[i]);
-			if (trailUpImg->Texture[i] == nullptr) {
-				throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
-			}
+				trailUpImg->Texture[i] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), trailUpImg->Surface[i]);
+				if (trailUpImg->Texture[i] == nullptr) {
+					throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
+				}
 
-			if (i == 0) {
-				// query texture size
-				auto& rect = trailUpImg->TextureRect;
-				rect.left = 0;
-				rect.top = 0;
+				if (i == 0) {
+					// query texture size
+					auto& rect = trailUpImg->TextureRect;
+					rect.left = 0;
+					rect.top = 0;
 
-				SDL_QueryTexture(trailUpImg->Texture[i], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+					SDL_QueryTexture(trailUpImg->Texture[i], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+				}
 			}
 		}
 
@@ -480,23 +541,41 @@ namespace GameNoteResource {
 				throw std::runtime_error("File: " + path.string() + " is not found!");
 			}
 
-			trailDownImg->Surface[i] = IMG_Load((const char*)path.u8string().c_str());
-			if (trailDownImg->Surface[i] == nullptr) {
-				throw std::runtime_error("Failed to load image: " + path.string() + "!");
+			if (IsVulkan) {
+				auto tex_data = vkTexture::TexLoadImage(path);
+				if (tex_data == nullptr) {
+					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				}
+
+				trailDownImg->VulkanTexture[i] = tex_data;
+
+				if (i == 0) {
+					auto& rect = trailDownImg->TextureRect;
+					rect.left = 0;
+					rect.top = 0;
+
+					vkTexture::QueryTexture(tex_data, rect.right, rect.bottom);
+				}
 			}
+			else {
+				trailDownImg->Surface[i] = IMG_Load((const char*)path.u8string().c_str());
+				if (trailDownImg->Surface[i] == nullptr) {
+					throw std::runtime_error("Failed to load image: " + path.string() + "!");
+				}
 
-			trailDownImg->Texture[i] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), trailDownImg->Surface[i]);
-			if (trailDownImg->Texture[i] == nullptr) {
-				throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
-			}
+				trailDownImg->Texture[i] = SDL_CreateTextureFromSurface(Renderer::GetInstance()->GetSDLRenderer(), trailDownImg->Surface[i]);
+				if (trailDownImg->Texture[i] == nullptr) {
+					throw std::runtime_error("Failed to create texture from image: " + path.string() + "!");
+				}
 
-			if (i == 0) {
-				// query texture size
-				auto& rect = trailDownImg->TextureRect;
-				rect.left = 0;
-				rect.top = 0;
+				if (i == 0) {
+					// query texture size
+					auto& rect = trailDownImg->TextureRect;
+					rect.left = 0;
+					rect.top = 0;
 
-				SDL_QueryTexture(trailDownImg->Texture[i], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+					SDL_QueryTexture(trailDownImg->Texture[i], NULL, NULL, (int*)&rect.right, (int*)&rect.bottom);
+				}
 			}
 		}
 
@@ -507,15 +586,25 @@ namespace GameNoteResource {
 	}
 
 	bool Dispose() {
-		for (auto& it : noteTextures) {
-			for (auto& tex : it.second->Texture) {
-				SDL_DestroyTexture(tex);
-				tex = nullptr;
-			}
+		bool IsVulkan = Renderer::GetInstance()->IsVulkan();
 
-			for (auto& sur : it.second->Surface) {
-				SDL_FreeSurface(sur);
-				sur = nullptr;
+		for (auto& it : noteTextures) {
+			if (IsVulkan) {
+				for (auto& tex : it.second->VulkanTexture) {
+					vkTexture::ReleaseTexture(tex);
+					tex = nullptr;
+				}
+			}
+			else {
+				for (auto& tex : it.second->Texture) {
+					SDL_DestroyTexture(tex);
+					tex = nullptr;
+				}
+
+				for (auto& sur : it.second->Surface) {
+					SDL_FreeSurface(sur);
+					sur = nullptr;
+				}
 			}
 
 			delete it.second;

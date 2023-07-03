@@ -1,5 +1,4 @@
 #pragma once
-#include <d3d11.h>
 #include <string>
 #include <filesystem>
 #include <SDL2/SDL.h>

@@ -47,7 +47,7 @@ bool AudioSample::Create(std::filesystem::path path) {
 	uint8_t* buffer = new uint8_t[size];
 	fs.read((char*)buffer, size);
 
-	m_handle = BASS_SampleLoad(TRUE, buffer, 0, size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
+	m_handle = BASS_SampleLoad(TRUE, buffer, 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
 	if (!m_handle) {
 		delete[] buffer;
 
@@ -101,7 +101,7 @@ std::unique_ptr<AudioSampleChannel> AudioSample::CreateChannel() {
 }
 
 void AudioSample::CheckAudioTime() {
-	int length = BASS_ChannelGetLength(m_handle, BASS_POS_BYTE);
+	QWORD length = BASS_ChannelGetLength(m_handle, BASS_POS_BYTE);
 	double ms = BASS_ChannelBytes2Seconds(m_handle, length) * 1000;
 
 	if (ms < 25) {
