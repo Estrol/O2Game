@@ -237,7 +237,7 @@ void SongSelectScene::Render(double delta) {
 
                 ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
                 ImGui::Text("Arena");
-                std::vector<std::string> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10" };
+                std::vector<std::string> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
                 // select
                 int value = EnvironmentSetup::GetInt("Arena");
@@ -755,7 +755,7 @@ void SongSelectScene::Render(double delta) {
                             ImGui::Text("Gameplay-Related Configuration");
 							ImGui::Checkbox("Long Note Lighting###SetCheckbox1", &LongNoteLighting);
                             if (ImGui::IsItemHovered()) {
-                                ImGui::SetTooltip("When Long note on hold, change the lighting brightness to 100\% else 90\% brightness");
+                                ImGui::SetTooltip("When Long note on hold, change the lighting brightness to 100%% else 90%% brightness");
                             }
 
                             ImGui::Checkbox("Long Note Head Position at HitPos###SetCheckbox2", &LongNoteOnHitPos);
@@ -916,7 +916,7 @@ bool SongSelectScene::Attach() {
 
     if (bgm) {
         bgm->SetVolume(50);
-        //bgm->Play(0, true);
+        bgm->Play(0, true);
     }
 
     if (m_resolutions.size() == 0) {
@@ -978,7 +978,7 @@ bool SongSelectScene::Attach() {
 		convertAutoSound = true;
 	}
 
-    m_fps = { "30", "60", "75", "120", "144", "360", "1000", "Unlimited" };
+    m_fps = { "30", "60", "75", "120", "144", "165", "180", "240", "360", "480", "600", "800", "1000", "Unlimited" };
 
     try {
         int value = std::atoi(Configuration::Load("Game", "FrameLimit").c_str());
@@ -1001,9 +1001,6 @@ bool SongSelectScene::Attach() {
     catch (std::invalid_argument) {
         currentGuideLineIndex = 2;
     }
-    
-    std::filesystem::path imagePath = "F:\\VisualStudio2022\\O2Game\\x64\\Debug\\Skins\\Default\\Notes\\blue-note0.png";
-    image = new Texture2D(imagePath);
 
     is_update_bgm = false;
     isWait = index != -1;
