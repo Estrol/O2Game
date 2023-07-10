@@ -121,7 +121,7 @@ bool Audio::CreateStream() {
 		return false;
 	}
 
-	volume = 50;
+	volume = 100;
 	SetVolume(volume);
 
 	if (!BASS_ChannelUpdate(m_hStream, 1000)) {

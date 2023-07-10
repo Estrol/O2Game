@@ -6,7 +6,7 @@ AudioSample::AudioSample(std::string id) {
 	m_silent = false;
 	m_handle = NULL;
 	m_rate = 1.0;
-	m_vol = 50;
+	m_vol = 100;
 	m_pitch = FALSE;
 
 	m_id = id;

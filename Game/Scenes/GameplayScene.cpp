@@ -130,9 +130,9 @@ void GameplayScene::Render(double delta) {
 	rc.left = curLifeTex->AbsolutePosition.X;
 	rc.top = curLifeTex->AbsolutePosition.Y;
 	rc.right = rc.left + curLifeTex->AbsoluteSize.X;
-	rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+	rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because of the wiggle effect =w=
 	float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
-	
+
 	// Add wiggle effect
 	float yOffset = 0.0f;
 	// Wiggle effect after the first second
@@ -210,18 +210,18 @@ void GameplayScene::Render(double delta) {
 			m_wiggleOffset = std::sin(m_wiggleTime) * 6; // Amplitude 
 
 			if (m_wiggleTime < M_PI) {
-				m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
-				m_lnComboNum->DrawNumber(std::get<9>(scores));
-
 				m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
 				m_lnLogo->Draw(delta);
+
+				m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+				m_lnComboNum->DrawNumber(std::get<9>(scores));
 			}
 			else {
-				m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
-				m_lnComboNum->DrawNumber(std::get<9>(scores));
-
 				m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
 				m_lnLogo->Draw(delta);
+
+				m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
+				m_lnComboNum->DrawNumber(std::get<9>(scores));
 			}
 		}
 
@@ -518,15 +518,6 @@ bool GameplayScene::Attach() {
 		m_lifeBar->Position = UDim2::fromOffset(lifeBarPos.X, lifeBarPos.Y);
 		m_lifeBar->AnchorPoint = { lifeBarPos.AnchorPointX, lifeBarPos.AnchorPointY };
 
-		std::vector<std::filesystem::path> lnComboFileName = {};
-		for (int i = 0; i < 10; i++) {
-			lnComboFileName.push_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
-
-			if (!CheckSkinComponent(lnComboFileName.back())) {
-				throw std::runtime_error("Failed to load Long Note Combo image!");
-			}
-		}
-
 		std::vector<std::filesystem::path> statsNumFileName = {};
 		for (int i = 0; i < 10; i++) {
 			statsNumFileName.push_back(playingPath / ("StatsNum" + std::to_string(i) + ".png"));
@@ -554,12 +545,6 @@ bool GameplayScene::Attach() {
 		m_statsPos[3] = UDim2::fromOffset(statsNumPos[3].X, statsNumPos[3].Y); // MISS
 		m_statsPos[4] = UDim2::fromOffset(statsNumPos[4].X, statsNumPos[4].Y); // MAXCOMBO
 
-		m_lnComboNum = std::make_unique<NumericTexture>(lnComboFileName);
-		auto lnComboPos = conf.GetNumeric("LongNoteCombo");
-		if (lnComboPos.size() < 1) {
-			throw std::runtime_error("Playing.ini : Numerics : LongNoteCombo : Position Not defined!");
-		}
-
 		auto btnExitPos = conf.GetPosition("ExitButton");
 		auto btnExitRect = conf.GetRect("Exit");
 
@@ -580,12 +565,6 @@ bool GameplayScene::Attach() {
 			}
 		);
 
-		m_lnComboNum->Position = UDim2::fromOffset(lnComboPos[0].X, lnComboPos[0].Y);
-		m_lnComboNum->NumberPosition = IntToPos(lnComboPos[0].Direction);
-		m_lnComboNum->MaxDigits = lnComboPos[0].MaxDigit;
-		m_lnComboNum->FillWithZeros = lnComboPos[0].FillWithZero;
-		m_lnComboNum->AlphaBlend = true;
-
 		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
 		std::vector<std::filesystem::path> lnLogoFileName = {};
 		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
@@ -600,6 +579,27 @@ bool GameplayScene::Attach() {
 		m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
 		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
 		m_lnLogo->AlphaBlend = true;
+
+		std::vector<std::filesystem::path> lnComboFileName = {};
+		for (int i = 0; i < 10; i++) {
+			lnComboFileName.push_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
+
+			if (!CheckSkinComponent(lnComboFileName.back())) {
+				throw std::runtime_error("Failed to load Long Note Combo image!");
+			}
+		}
+
+		m_lnComboNum = std::make_unique<NumericTexture>(lnComboFileName);
+		auto lnComboPos = conf.GetNumeric("LongNoteCombo");
+		if (lnComboPos.size() < 1) {
+			throw std::runtime_error("Playing.ini : Numerics : LongNoteCombo : Position Not defined!");
+		}
+
+		m_lnComboNum->Position = UDim2::fromOffset(lnComboPos[0].X, lnComboPos[0].Y);
+		m_lnComboNum->NumberPosition = IntToPos(lnComboPos[0].Direction);
+		m_lnComboNum->MaxDigits = lnComboPos[0].MaxDigit;
+		m_lnComboNum->FillWithZeros = lnComboPos[0].FillWithZero;
+		m_lnComboNum->AlphaBlend = true;
 
 		auto comboLogoPos = conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
