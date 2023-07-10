@@ -30,7 +30,7 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
     std::vector<char> dataVec;
 
     // Determine a suitable buffer size based on the audio size
-    const size_t bufferSize = size; // Adjust the divisor according to your needs (of you can divide it bufferSize = size / 10 but i don't see improvement)
+    const size_t bufferSize = size; // Adjust the divisor according to your needs (or you can divide it bufferSize = size / 10 but i don't see improvement)
 
     char* data = new char[bufferSize];
     DWORD read = 0;
