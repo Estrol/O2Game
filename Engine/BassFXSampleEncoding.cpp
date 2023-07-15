@@ -28,25 +28,34 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
     BASS_CHANNELINFO tempoInfo;
     BASS_ChannelGetInfo(tempoch, &tempoInfo);
 
-    // Calculate buffer size based on input size and desired quality
-    size_t bufferSize = size * static_cast<size_t>(rate);
+    int bufferSize = static_cast<int>(BASS_ChannelSeconds2Bytes(tempoch, 1.0)); // Set buffer size to 1 second
+    std::vector<char> dataVec(bufferSize);
 
-    void* data = new char[bufferSize];
-    DWORD bytesRead = 0;
-    size_t totalBytesRead = 0;
-    while (totalBytesRead < bufferSize) {
-        bytesRead = BASS_ChannelGetData(tempoch, static_cast<char*>(data) + totalBytesRead, bufferSize - totalBytesRead);
+    int totalBytesRead = 0;
+    char* data = dataVec.data();
+    while (true) {
+        int bytesRead = BASS_ChannelGetData(tempoch, data + totalBytesRead, bufferSize - totalBytesRead);
         if (bytesRead <= 0) {
             break;
         }
+
         totalBytesRead += bytesRead;
+        if (totalBytesRead >= bufferSize) {
+            bufferSize *= 2;
+            dataVec.resize(bufferSize);
+            data = dataVec.data();
+        }
     }
 
     BASS_ChannelFree(tempoch);
     BASS_ChannelFree(channel);
 
+    size_t size2 = totalBytesRead;
+    void* data2 = new char[size2];
+    memcpy(data2, dataVec.data(), size2);
+
     // Return tuple: sampleFlags, sampleRate, sampleChannels, sampleLength, void*
-    return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, static_cast<int>(totalBytesRead), data };
+    return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, static_cast<int>(size2), data2 };
 }
 
 std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string filePath, float rate) {
@@ -63,39 +72,39 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(std::string
 
     float frequency = 48000.0f;
     BASS_ChannelGetAttribute(tempoch, BASS_ATTRIB_FREQ, &frequency);
+
     BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_TEMPO, rate * 100.0f - 100.0f);
     BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_FREQ, frequency * rate);
 
     BASS_CHANNELINFO tempoInfo;
     BASS_ChannelGetInfo(tempoch, &tempoInfo);
 
-    // Get input file size
-    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
-    if (!file) {
-        BASS_ChannelFree(tempoch);
-        BASS_ChannelFree(channel);
-        return { 0, 0, 0, 0, nullptr };
-    }
-    std::streamsize fileSize = file.tellg();
-    file.close();
+    int bufferSize = static_cast<int>(BASS_ChannelSeconds2Bytes(tempoch, 1.0)); // Set buffer size to 1 second
+    std::vector<char> dataVec(bufferSize);
 
-    // Calculate buffer size based on input size and desired quality
-    size_t bufferSize = static_cast<size_t>(fileSize) * static_cast<size_t>(rate);
-
-    void* data = new char[bufferSize];
-    DWORD bytesRead = 0;
-    size_t totalBytesRead = 0;
-    while (totalBytesRead < bufferSize) {
-        bytesRead = BASS_ChannelGetData(tempoch, static_cast<char*>(data) + totalBytesRead, bufferSize - totalBytesRead);
+    int totalBytesRead = 0;
+    char* data = dataVec.data();
+    while (true) {
+        int bytesRead = BASS_ChannelGetData(tempoch, data + totalBytesRead, bufferSize - totalBytesRead);
         if (bytesRead <= 0) {
             break;
         }
+
         totalBytesRead += bytesRead;
+        if (totalBytesRead >= bufferSize) {
+            bufferSize *= 2;
+            dataVec.resize(bufferSize);
+            data = dataVec.data();
+        }
     }
 
     BASS_ChannelFree(tempoch);
     BASS_ChannelFree(channel);
 
+    size_t size2 = totalBytesRead;
+    void* data2 = new char[size2];
+    memcpy(data2, dataVec.data(), size2);
+
     // Return tuple: sampleFlags, sampleRate, sampleChannels, sampleLength, void*
-    return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, static_cast<int>(totalBytesRead), data };
+    return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, static_cast<int>(size2), data2 };
 }
