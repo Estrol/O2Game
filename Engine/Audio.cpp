@@ -242,10 +242,10 @@ void Audio::SetVolume(int vol) {
 	BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_VOL, (float)vol / 100.0f);
 }
 
-void Audio::SetPan(int _pan) {
-	pan = _pan;
-	BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_PAN, (float)pan / 100.0f);
-}
+//void Audio::SetPan(int _pan) {
+//	pan = _pan;
+//	BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_PAN, (float)pan / 100.0f);
+//}
 
 void Audio::SetRate(float _rate) {
 	rate = _rate;
