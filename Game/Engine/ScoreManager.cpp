@@ -82,6 +82,11 @@ void ScoreManager::OnHit(NoteHitInfo info) {
         }
     }
 
+    m_combo = std::clamp(m_combo, 0, INT_MAX);
+    m_jamCombo = std::clamp(m_jamCombo, 0, INT_MAX);
+    m_jamGauge = std::clamp(m_jamGauge, 0, 100);
+    m_score = std::clamp(m_score, 0, INT_MAX);
+
     if (info.Result == NoteResult::COOL) {
         m_coolCombo += 1;
 
@@ -116,11 +121,6 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 
         m_callback(info);
     }
-
-    m_combo = std::clamp(m_combo, 0, INT_MAX);
-    m_jamCombo = std::clamp(m_jamCombo, 0, INT_MAX);
-    m_jamGauge = std::clamp(m_jamGauge, 0, 100);
-    m_score = std::clamp(m_score, 0, INT_MAX);
 }
 
 void ScoreManager::OnLongNoteHold(HoldResult result) {
