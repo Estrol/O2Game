@@ -26,11 +26,11 @@ ScoreManager::ScoreManager() {
 }
 
 ScoreManager::~ScoreManager() {
-
+	
 }
 
 void ScoreManager::OnHit(NoteHitInfo info) {
-	//float multiplier = static_cast<float>(m_jamCombo) / 15.0f;
+	float multiplier = static_cast<float>(m_jamCombo) / 15.0f;
 
 	switch (info.Result) {
 	case NoteResult::COOL: {
@@ -75,8 +75,8 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 		m_jamGauge = 0;
 
 		if (m_life > 0) {
-			int totalNotes = m_cool + m_good + m_bad + m_miss;
-			int jams = m_cool + m_good + m_bad;
+			int totalNotes = m_cool + m_good + m_bad - m_miss;
+			int jams = m_cool + m_good;
 			m_score = 200 * totalNotes + 10 * jams * totalNotes - 135 * jams - 125 * jams * jams;
 		}
 
@@ -128,15 +128,15 @@ void ScoreManager::OnHit(NoteHitInfo info) {
 
 void ScoreManager::OnLongNoteHold(HoldResult result) {
 	switch (result) {
-	case HoldResult::HoldBreak: {
-		m_lnCombo = 0;
-		break;
-	}
+		case HoldResult::HoldBreak: {
+			m_lnCombo = 0;
+			break;
+		}
 
-	case HoldResult::HoldAdd: {
-		m_lnCombo += 1;
-		break;
-	}
+		case HoldResult::HoldAdd: {
+			m_lnCombo += 1;
+			break;
+		}
 	}
 
 	m_lnMaxCombo = (std::max)(m_lnCombo, m_lnMaxCombo);
@@ -171,7 +171,7 @@ int ScoreManager::GetJamGauge() const {
 }
 
 std::tuple<int, int, int, int, int, int, int, int, int, int, int> ScoreManager::GetScore() const {
-	return { m_score, m_cool, m_good, m_bad, m_miss, m_jamCombo, m_maxJamCombo, m_combo, m_maxCombo, m_lnCombo, m_lnMaxCombo };
+    return { m_score, m_cool, m_good, m_bad, m_miss, m_jamCombo, m_maxJamCombo, m_combo, m_maxCombo, m_lnCombo, m_lnMaxCombo };
 }
 
 void ScoreManager::AddLife(int sz) {
