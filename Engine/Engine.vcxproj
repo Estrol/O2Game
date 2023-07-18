@@ -249,7 +249,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/Zc:__cplusplus /fsanitize=address %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions></AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -277,7 +277,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/Zc:__cplusplus /fsanitize=address %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions></AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

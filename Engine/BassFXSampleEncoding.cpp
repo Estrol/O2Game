@@ -42,7 +42,7 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
 	BASS_ChannelFree(tempoch);
 	BASS_ChannelFree(channel);
 
-	// check if less than 25000 then append zeros to rest if less than
+	// Check if less than 25000 then append zeros to rest if less than
 	if (dataVec.size() < 25000) {
 		dataVec.resize(25000, 0);
 	}

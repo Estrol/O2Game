@@ -35,9 +35,8 @@ public:
 
 private:
 	double m_delay = 1.0;
-	double m_current = 0.0;
+	float m_currentTime = 0;
 	int m_currentIndex = 0;
 
 	std::vector<Texture2D*> m_textures;
 };
-
