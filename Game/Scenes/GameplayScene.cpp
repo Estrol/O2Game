@@ -45,7 +45,7 @@ void GameplayScene::Update(double delta) {
 				}
 			}
 		}
-		
+
 		return;
 	}
 
@@ -58,23 +58,23 @@ void GameplayScene::Update(double delta) {
 		m_ended = true;
 		SceneManager::DisplayFade(100, [] {
 			SceneManager::ChangeScene(GameScene::RESULT);
-		});
+			});
 	}
 
 	if (m_doExit && !m_ended) {
 		m_ended = true;
-		
+
 		auto scores = m_game->GetScoreManager()->GetScore();
 
 		if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::RESULT);
-			});
+				});
 		}
 		else {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::MAINMENU);
-			});
+				});
 		}
 	}
 
@@ -103,7 +103,7 @@ void GameplayScene::Render(double delta) {
 
 	auto scores = m_game->GetScoreManager()->GetScore();
 	m_scoreNum->DrawNumber(std::get<0>(scores));
-	
+
 	// Draw stats
 	{
 		m_statsNum->Position = m_statsPos[0];
@@ -132,7 +132,7 @@ void GameplayScene::Render(double delta) {
 	rc.right = rc.left + curLifeTex->AbsoluteSize.X;
 	rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
 	float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
-	
+
 	// Add wiggle effect
 	float yOffset = 0.0f;
 	// Wiggle effect after the first second
@@ -189,10 +189,10 @@ void GameplayScene::Render(double delta) {
 			m_drawCombo = false;
 		}
 	}
-	
+
 	if (m_drawLN && std::get<9>(scores) > 0) {
 		m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-		m_wiggleOffset = std::sin(m_wiggleTime) * 6; // Amplitude 
+		m_wiggleOffset = std::sin(m_wiggleTime) * 4; // Amplitude 
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, (m_wiggleTime < M_PI) ? m_wiggleOffset : 0);
 		m_lnLogo->Draw(delta);
@@ -203,6 +203,7 @@ void GameplayScene::Render(double delta) {
 		m_lnTimer += delta;
 		if (m_lnTimer > 1) {
 			m_drawLN = false;
+			m_lnLogo->Reset();
 		}
 	}
 
@@ -264,11 +265,11 @@ void GameplayScene::Render(double delta) {
 	m_secondNum->DrawNumber(currentSeconds);
 
 	for (int i = 0; i < 7; i++) {
+		m_hitEffect[i]->Draw(delta); 
+
 		if (m_drawHold[i]) {
 			m_holdEffect[i]->Draw(delta);
 		}
-
-		m_hitEffect[i]->Draw(delta);
 	}
 
 	if (m_drawExitButton) {
@@ -342,14 +343,14 @@ bool GameplayScene::Attach() {
 
 		for (int i = 0; i < 7; i++) {
 			m_keyState[i] = false;
-			m_drawHold[i] = false;
 			m_drawHit[i] = false;
+			m_drawHold[i] = false;
 		}
 
 		m_title = std::make_unique<Text>(13);
-        auto TitlePos = conf.GetPosition("Title");
-        m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
-        m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
+		auto TitlePos = conf.GetPosition("Title");
+		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
+		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
 
 		m_autoText = std::make_unique<Text>(13);
 		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
@@ -367,37 +368,37 @@ bool GameplayScene::Attach() {
 		}
 
 		m_PlayBG = std::make_unique<Texture2D>(playingPath / ("PlayingBG_" + std::to_string(arena) + ".png"));
-        auto PlayBGPos = conf.GetPosition("PlayingBG");
-        m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
-        m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
+		auto PlayBGPos = conf.GetPosition("PlayingBG");
+		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
+		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
 
-        auto conKeyLight = conf.GetPosition("KeyLighting");
-        auto conKeyButton = conf.GetPosition("KeyButton");
-        
-        if (conKeyLight.size() < 7 || conKeyButton.size() < 7) {
-            throw std::runtime_error("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
-        }
+		auto conKeyLight = conf.GetPosition("KeyLighting");
+		auto conKeyButton = conf.GetPosition("KeyButton");
 
-        m_Playfield = std::make_unique<Texture2D>(playingPath / "Playfield.png");
-        for (int i = 0; i < 7; i++) {
-            m_keyLighting[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyLighting" + std::to_string(i) + ".png")));
-            m_keyButtons[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyButton" + std::to_string(i) + ".png")));
+		if (conKeyLight.size() < 7 || conKeyButton.size() < 7) {
+			throw std::runtime_error("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
+		}
 
-            m_keyLighting[i]->Position = UDim2::fromOffset(conKeyLight[i].X, conKeyLight[i].Y);
-            m_keyButtons[i]->Position = UDim2::fromOffset(conKeyButton[i].X, conKeyButton[i].Y);
-        }
+		m_Playfield = std::make_unique<Texture2D>(playingPath / "Playfield.png");
+		for (int i = 0; i < 7; i++) {
+			m_keyLighting[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyLighting" + std::to_string(i) + ".png")));
+			m_keyButtons[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyButton" + std::to_string(i) + ".png")));
 
-        std::vector<std::filesystem::path> numComboPaths = {};
-        for (int i = 0; i < 10; i++) {
-            numComboPaths.push_back(playingPath / ("ComboNum" + std::to_string(i) + ".png"));
+			m_keyLighting[i]->Position = UDim2::fromOffset(conKeyLight[i].X, conKeyLight[i].Y);
+			m_keyButtons[i]->Position = UDim2::fromOffset(conKeyButton[i].X, conKeyButton[i].Y);
+		}
 
-            if (!CheckSkinComponent(numComboPaths.back())) {
-                throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
-            }
-        }
+		std::vector<std::filesystem::path> numComboPaths = {};
+		for (int i = 0; i < 10; i++) {
+			numComboPaths.emplace_back(playingPath / ("ComboNum" + std::to_string(i) + ".png"));
 
-        m_comboNum = std::make_unique<NumericTexture>(numComboPaths);
-        auto numPos = conf.GetNumeric("Combo").front();
+			if (!CheckSkinComponent(numComboPaths.back())) {
+				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
+			}
+		}
+
+		m_comboNum = std::make_unique<NumericTexture>(numComboPaths);
+		auto numPos = conf.GetNumeric("Combo").front();
 
 		m_comboNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 		m_comboNum->NumberPosition = IntToPos(numPos.Direction);
@@ -407,7 +408,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numJamPaths = {};
 		for (int i = 0; i < 10; i++) {
-			numJamPaths.push_back(playingPath / ("JamNum" + std::to_string(i) + ".png"));
+			numJamPaths.emplace_back(playingPath / ("JamNum" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(numJamPaths.back())) {
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
@@ -424,7 +425,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numScorePaths = {};
 		for (int i = 0; i < 10; i++) {
-			numScorePaths.push_back(playingPath / ("ScoreNum" + std::to_string(i) + ".png"));
+			numScorePaths.emplace_back(playingPath / ("ScoreNum" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(numScorePaths.back())) {
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
@@ -468,7 +469,7 @@ bool GameplayScene::Attach() {
 		auto jamLogoPos = conf.GetSprite("JamLogo");
 		std::vector<std::filesystem::path> jamLogoFileName = {};
 		for (int i = 0; i < jamLogoPos.numOfFrames; i++) {
-			jamLogoFileName.push_back(playingPath / ("JamLogo" + std::to_string(i) + ".png"));
+			jamLogoFileName.emplace_back(playingPath / ("JamLogo" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(jamLogoFileName.back())) {
 				throw std::runtime_error("Failed to load Jam Logo image!");
@@ -482,7 +483,7 @@ bool GameplayScene::Attach() {
 		auto lifeBarPos = conf.GetSprite("LifeBar");
 		std::vector<std::filesystem::path> lifeBarFileName = {};
 		for (int i = 0; i < lifeBarPos.numOfFrames; i++) {
-			lifeBarFileName.push_back(playingPath / ("LifeBar" + std::to_string(i) + ".png"));
+			lifeBarFileName.emplace_back(playingPath / ("LifeBar" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(lifeBarFileName.back())) {
 				throw std::runtime_error("Failed to load Life Bar image!");
@@ -495,7 +496,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> lnComboFileName = {};
 		for (int i = 0; i < 10; i++) {
-			lnComboFileName.push_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
+			lnComboFileName.emplace_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(lnComboFileName.back())) {
 				throw std::runtime_error("Failed to load Long Note Combo image!");
@@ -504,7 +505,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> statsNumFileName = {};
 		for (int i = 0; i < 10; i++) {
-			statsNumFileName.push_back(playingPath / ("StatsNum" + std::to_string(i) + ".png"));
+			statsNumFileName.emplace_back(playingPath / ("StatsNum" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(statsNumFileName.back())) {
 				throw std::runtime_error("Failed to load Stats Number image!");
@@ -564,7 +565,7 @@ bool GameplayScene::Attach() {
 		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
 		std::vector<std::filesystem::path> lnLogoFileName = {};
 		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
-			lnLogoFileName.push_back(playingPath / ("LongNoteLogo" + std::to_string(i) + ".png"));
+			lnLogoFileName.emplace_back(playingPath / ("LongNoteLogo" + std::to_string(i) + ".png"));
 
 			if (!CheckSkinComponent(lnLogoFileName.back())) {
 				throw std::runtime_error("Failed to load Long Note Logo image!");
@@ -585,7 +586,7 @@ bool GameplayScene::Attach() {
 				break;
 			}
 
-			comboFileName.push_back(file);
+			comboFileName.emplace_back(file);
 		}
 
 		m_comboLogo = std::make_unique<Sprite2D>(comboFileName, 0.25);
@@ -682,8 +683,8 @@ bool GameplayScene::Attach() {
 				if (e.IsHitEvent) {
 					if (e.IsHitLongEvent) {
 						m_holdEffect[e.Lane]->ResetIndex();
-						m_drawHold[e.Lane] = e.State;
 						m_drawHit[e.Lane] = false;
+						m_drawHold[e.Lane] = e.State;
 
 						if (!e.State) {
 							m_hitEffect[e.Lane]->ResetIndex();
@@ -692,12 +693,12 @@ bool GameplayScene::Attach() {
 					}
 					else {
 						m_hitEffect[e.Lane]->ResetIndex();
-						m_drawHold[e.Lane] = false;
 						m_drawHit[e.Lane] = true;
+						m_drawHold[e.Lane] = false;
 					}
 				}
 			}
-		});
+			});
 
 		m_game->Load(chart);
 
@@ -738,7 +739,7 @@ bool GameplayScene::Attach() {
 				break;
 			}
 
-			HitEffect.push_back(path);
+			HitEffect.emplace_back(path);
 		}
 
 		std::vector<std::filesystem::path> holdEffect = {};
@@ -749,7 +750,7 @@ bool GameplayScene::Attach() {
 				break;
 			}
 
-			holdEffect.push_back(path);
+			holdEffect.emplace_back(path);
 		}
 
 		auto lanePos = m_game->GetLanePos();
@@ -787,20 +788,20 @@ bool GameplayScene::Attach() {
 			m_comboTimer = 0; // Fix crash :troll:
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
-		});
+			});
 
 		m_game->GetScoreManager()->ListenJam([&](int combo) {
 			m_jamLogo->SetFPS(13.33);
 			m_drawJam = true;
 			m_jamTimer = 0;
 			m_jamLogo->Reset();
-		});
+			});
 
 		m_game->GetScoreManager()->ListenLongNote([&] {
 			m_lnLogo->SetFPS(60);
 			m_lnTimer = 0;
 			m_drawLN = true;
-		});
+			});
 	}
 	catch (std::exception& e) {
 		MsgBox::Show("GameplayError", "Error", e.what(), MsgBoxType::OK);
@@ -868,14 +869,14 @@ bool GameplayScene::Detach() {
 	m_game.reset();
 	m_title.reset();
 	m_exitButtonFunc.reset();
-	
+
 	GameNoteResource::Dispose();
 	SceneManager::GetInstance()->SetFrameLimitMode(FrameLimitMode::MENU);
 	return true;
 }
 
 void* GameplayScene::CreateScreenshotWin32() {
-	
-	
+
+
 	return nullptr;
 }
