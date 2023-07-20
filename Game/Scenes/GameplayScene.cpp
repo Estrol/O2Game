@@ -173,7 +173,7 @@ void GameplayScene::Render(double delta) {
 		m_amplitude = 30; // Maximum amplitude
 		double halfAmplitude = m_amplitude / 2; // Half of the maximum amplitude
 		double comboLogoReduceAmplitude = 3;
-		double dampingFactor = 0.5; // Damping factor to reduce amplitude over time
+		double dampingFactor = 0.6; // Damping factor to reduce amplitude over time
 		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
 
 		double currentAmplitude = (m_wiggleTime < M_PI) ? (halfAmplitude + (m_wiggleTime / M_PI) * (m_amplitude - halfAmplitude)) : (m_amplitude * std::pow(dampingFactor, m_wiggleTime - M_PI));
@@ -192,7 +192,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
 		m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-		m_wiggleOffset = std::sin(m_wiggleTime) * 4; // Amplitude 
+		m_wiggleOffset = std::sin(m_wiggleTime) * 5; // Amplitude 
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, (m_wiggleTime < M_PI) ? m_wiggleOffset : 0);
 		m_lnLogo->Draw(delta);
@@ -865,7 +865,7 @@ bool GameplayScene::Detach() {
 		EnvironmentSetup::SetInt("LNCombo", std::get<9>(score));
 		EnvironmentSetup::SetInt("LNMaxCombo", std::get<10>(score));
 	}
-
+	
 	m_game.reset();
 	m_title.reset();
 	m_exitButtonFunc.reset();
@@ -876,7 +876,5 @@ bool GameplayScene::Detach() {
 }
 
 void* GameplayScene::CreateScreenshotWin32() {
-
-
 	return nullptr;
 }
