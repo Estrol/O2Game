@@ -78,11 +78,11 @@ Game::~Game() {
 	}
 
 	// Release the resources
-	AudioManager::GetInstance()->Release();
-	SceneManager::GetInstance()->Release();
-	InputManager::GetInstance()->Release();
-	Renderer::GetInstance()->Release();
-	Window::GetInstance()->Release();
+	AudioManager::Release();
+	SceneManager::Release();
+	InputManager::Release();
+	Renderer::Release();
+	Window::Release();
 
 	DeInitSDL();
 }
