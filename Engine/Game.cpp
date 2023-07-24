@@ -149,7 +149,7 @@ void Game::Run(double frameRate) {
 	mAudioThread.Run([&] {
 		double delta = FrameLimit(60.0);
 		AudioManager::GetInstance()->Update(delta);
-		}, true);
+	}, true);
 
 	std::mutex m1, m2;
 
@@ -158,15 +158,15 @@ void Game::Run(double frameRate) {
 			double delta = 0;
 
 			switch (m_frameLimitMode) {
-			case FrameLimitMode::GAME: {
-				delta = FrameLimit(m_frameLimit);
-				break;
-			}
+				case FrameLimitMode::GAME: {
+					delta = FrameLimit(m_frameLimit);
+					break;
+				}
 
-			case FrameLimitMode::MENU: {
-				delta = FrameLimit(60.0);
-				break;
-			}
+				case FrameLimitMode::MENU: {
+					delta = FrameLimit(60.0);
+					break;
+				}
 			}
 
 			if (m_window->ShouldResizeRenderer()) {
@@ -229,7 +229,7 @@ void Game::Run(double frameRate) {
 		else {
 			m_sceneManager->OnKeyUp(state);
 		}
-		});
+	});
 
 	m_inputManager->ListenMouseEvent([&](const MouseState& state) {
 		if (state.isDown) {
@@ -238,21 +238,21 @@ void Game::Run(double frameRate) {
 		else {
 			m_sceneManager->OnMouseUp(state);
 		}
-		});
+	});
 
 	m_minimized = false;
 	mLocalThread.Run([&] {
 		double delta = 0;
 		switch (m_frameLimitMode) {
-		case FrameLimitMode::GAME: {
-			delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
-			break;
-		}
+			case FrameLimitMode::GAME: {
+				delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
+				break;
+			}
 
-		case FrameLimitMode::MENU: {
-			delta = FrameLimit(60.0);
-			break;
-		}
+			case FrameLimitMode::MENU: {
+				delta = FrameLimit(60.0);
+				break;
+			}
 		}
 
 		m_imguiInterval += delta;
@@ -337,7 +337,7 @@ void Game::Run(double frameRate) {
 				}
 			}
 		}
-		}, false);
+	}, false);
 
 	while (m_running) {
 		mLocalThread.Update();
