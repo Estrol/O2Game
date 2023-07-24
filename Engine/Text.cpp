@@ -5,6 +5,8 @@
 #include "FontResources.hpp"
 #include <codecvt>
 #include "MathUtils.hpp"
+#include <sstream>
+#include <iomanip>
 
 Text::Text() {
     Rotation = 0.0f;
@@ -19,13 +21,31 @@ Text::Text(int sz) : Text() {
     Size = sz;
 }
 
+void Text::DrawNumber(double number) { // Add DrawNumber ability to Text
+    // Convert the number to a string with up to 3 digits after the decimal point (BMS Rules)
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(3) << number;
+    std::string numString = stream.str();
+
+    // Remove trailing zero from the decimal part if present
+    size_t dotIndex = numString.find('.');
+    if (dotIndex != std::string::npos) {
+        size_t zeroIndex = numString.find_last_not_of('0');
+        if (zeroIndex != std::string::npos && numString[zeroIndex] == '.')
+            zeroIndex--; // Remove the decimal point as well
+        numString.erase(zeroIndex + 1); // Remove the trailing zero and/or decimal point
+    }
+
+    Draw(numString);
+}
+
 void Text::Draw(std::string text) {
     Draw(std::u8string(text.begin(), text.end()));
 }
 
 void Text::Draw(std::wstring text) {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> mcov;
-	Draw(mcov.to_bytes(text));
+    Draw(mcov.to_bytes(text));
 }
 
 void Text::Draw(std::u8string text) {
@@ -51,10 +71,10 @@ void Text::Draw(std::u8string text) {
 
     Window* wnd = Window::GetInstance();
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
-	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
+    float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
-	float scale = targetScale / originScale;
-	
+    float scale = targetScale / originScale;
+
     auto textSize = ImGui::CalcTextSizeWithSize((const char*)text.c_str(), Size * scale);
 
     Window* window = Window::GetInstance();
@@ -65,15 +85,15 @@ void Text::Draw(std::u8string text) {
     float yPos = static_cast<float>((wHeight * Position.Y.Scale) + Position.Y.Offset);
 
     xPos *= wnd->GetWidthScale();
-	yPos *= wnd->GetHeightScale();
-	
+    yPos *= wnd->GetHeightScale();
+
     ImRotationStart();
 
     draw_list->AddText(
-        NULL, 
+        NULL,
         Size * scale,
         ImVec2(xPos, yPos) - MathUtil::ScaleVec2(0, 2.5),
-        ImColor(255 * red, 255 * green, 255 * blue), 
+        ImColor(255 * red, 255 * green, 255 * blue),
         (const char*)text.c_str()
     );
 

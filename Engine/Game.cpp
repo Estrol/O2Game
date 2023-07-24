@@ -31,26 +31,19 @@ namespace {
 		IMG_Quit();
 	}
 
-	//Improve accuracy frame limiter
+	// Improve accuracy frame limiter also fix framedrop if fps limit is enabled
 	double FrameLimit(double MaxFrameRate) {
 		double newTick = SDL_GetTicks();
 		double deltaTick = 1000.0 / MaxFrameRate - (newTick - lastTick);
 
 		if (deltaTick > 0.0) {
-			int delayTicks = (int)deltaTick;
-			if (delayTicks > 0) {
-				SDL_Delay(delayTicks);
-				newTick += delayTicks;
-				deltaTick -= delayTicks;
-			}
+			int delayTicks = static_cast<int>(deltaTick);
+			SDL_Delay(delayTicks);
+			newTick += delayTicks;
+			deltaTick -= delayTicks;
 		}
 
-		if (deltaTick < -30.0) {
-			lastTick = newTick;
-		}
-		else {
-			lastTick = newTick + deltaTick;
-		}
+		lastTick = (deltaTick < -30.0) ? newTick : newTick + deltaTick;
 
 		double delta = (newTick - curTick) / 1000.0;
 		curTick = newTick;
@@ -63,7 +56,7 @@ Game::Game() {
 	m_frameLimit = 60.0;
 	m_running = false;
 	m_notify = false;
-	
+
 	m_window = nullptr;
 	m_renderer = nullptr;
 	m_inputManager = nullptr;
@@ -84,11 +77,12 @@ Game::~Game() {
 		}
 	}
 
-	AudioManager::Release();
-	SceneManager::Release();
-	InputManager::Release();
-	Renderer::Release();
-	Window::Release();
+	// Release the resources
+	AudioManager::GetInstance()->Release();
+	SceneManager::GetInstance()->Release();
+	InputManager::GetInstance()->Release();
+	Renderer::GetInstance()->Release();
+	Window::GetInstance()->Release();
 
 	DeInitSDL();
 }
@@ -115,7 +109,7 @@ bool Game::Init() {
 	if (!m_window->Create(m_renderMode, "Game", width, height, m_bufferWidth, m_bufferHeight)) {
 		return false;
 	}
-	
+
 	std::cout << "Renderer::Create << " << std::endl;
 	m_renderer = Renderer::GetInstance();
 	if (!m_renderer->Create(m_renderMode, m_window)) {
@@ -142,7 +136,7 @@ bool Game::Init() {
 	m_frameText = new Text(13);
 	m_currentFade = 0;
 	m_targetFade = 0;
-	
+
 	return true;
 }
 
@@ -153,9 +147,9 @@ void Game::Run(double frameRate) {
 	m_frameLimitMode = FrameLimitMode::MENU;
 
 	mAudioThread.Run([&] {
-		double delta = FrameLimit(144.0);
+		double delta = FrameLimit(60.0);
 		AudioManager::GetInstance()->Update(delta);
-	}, true);
+		}, true);
 
 	std::mutex m1, m2;
 
@@ -164,15 +158,15 @@ void Game::Run(double frameRate) {
 			double delta = 0;
 
 			switch (m_frameLimitMode) {
-				case FrameLimitMode::GAME: {
-					delta = FrameLimit(m_frameLimit);
-					break;
-				}
+			case FrameLimitMode::GAME: {
+				delta = FrameLimit(m_frameLimit);
+				break;
+			}
 
-				case FrameLimitMode::MENU: {
-					delta = FrameLimit(60.0);
-					break;
-				}
+			case FrameLimitMode::MENU: {
+				delta = FrameLimit(60.0);
+				break;
+			}
 			}
 
 			if (m_window->ShouldResizeRenderer()) {
@@ -224,7 +218,7 @@ void Game::Run(double frameRate) {
 			}
 		}
 		else {
-			FrameLimit(15.0f);
+			FrameLimit(30.0f);
 		}
 	}, true);
 
@@ -235,7 +229,7 @@ void Game::Run(double frameRate) {
 		else {
 			m_sceneManager->OnKeyUp(state);
 		}
-	});
+		});
 
 	m_inputManager->ListenMouseEvent([&](const MouseState& state) {
 		if (state.isDown) {
@@ -244,21 +238,21 @@ void Game::Run(double frameRate) {
 		else {
 			m_sceneManager->OnMouseUp(state);
 		}
-	});
+		});
 
 	m_minimized = false;
 	mLocalThread.Run([&] {
 		double delta = 0;
 		switch (m_frameLimitMode) {
-			case FrameLimitMode::GAME: {
-				delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
-				break;
-			}
+		case FrameLimitMode::GAME: {
+			delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
+			break;
+		}
 
-			case FrameLimitMode::MENU: {
-				delta = FrameLimit(60.0);
-				break;
-			}
+		case FrameLimitMode::MENU: {
+			delta = FrameLimit(60.0);
+			break;
+		}
 		}
 
 		m_imguiInterval += delta;
@@ -266,9 +260,9 @@ void Game::Run(double frameRate) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
-				case SDL_QUIT:
-					MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
-					break;
+			case SDL_QUIT:
+				MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
+				break;
 			}
 
 			m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
@@ -343,7 +337,7 @@ void Game::Run(double frameRate) {
 				}
 			}
 		}
-	}, false);
+		}, false);
 
 	while (m_running) {
 		mLocalThread.Update();
@@ -410,15 +404,15 @@ ThreadMode Game::GetThreadMode() {
 }
 
 void Game::Update(double deltaTime) {
-	
+
 }
 
 void Game::Render(double deltaTime) {
-	
+
 }
 
 void Game::Input(double deltaTime) {
-	
+
 }
 
 void Game::Mouse(double deltaTime) {

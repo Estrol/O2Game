@@ -92,7 +92,7 @@ bool Renderer::Create(RendererMode mode, Window* window, bool failed) {
                 }
 
                 SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"); // Fix Aliasing
             }
 
             m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
