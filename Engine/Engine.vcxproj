@@ -29,9 +29,6 @@
     <ClCompile Include="Data\estring.cpp" />
     <ClCompile Include="Imgui\imgui_impl_sdlrenderer2.cpp" />
     <ClCompile Include="Imgui\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="Imgui\implot.cpp" />
-    <ClCompile Include="Imgui\implot_demo.cpp" />
-    <ClCompile Include="Imgui\implot_items.cpp" />
     <ClCompile Include="ResizableImage.cpp" />
     <ClCompile Include="FontResources.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
@@ -82,8 +79,6 @@
     <ClInclude Include="FallbackFonts\jp.ttf.h" />
     <ClInclude Include="Imgui\imgui_impl_sdlrenderer2.h" />
     <ClInclude Include="Imgui\imgui_impl_vulkan.h" />
-    <ClInclude Include="Imgui\implot.h" />
-    <ClInclude Include="Imgui\implot_internal.h" />
     <ClInclude Include="Data\mINI.h" />
     <ClInclude Include="ResizableImage.hpp" />
     <ClInclude Include="FallbackFonts\arial.ttf.h" />
@@ -249,7 +244,8 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions></AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -277,7 +273,8 @@
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass.lib;$(SolutionDir)Lib\$(Platform)\$(Configuration)\bass_fx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions></AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

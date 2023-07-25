@@ -132,15 +132,6 @@
     <ClCompile Include="Threading\GameThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Imgui\implot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Imgui\implot_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Imgui\implot_items.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Configuration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -300,12 +291,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Threading\GameThread.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Imgui\implot.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Imgui\implot_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Configuration.hpp">
