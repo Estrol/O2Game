@@ -31,26 +31,19 @@ namespace {
 		IMG_Quit();
 	}
 
-	//Improve accuracy frame limiter
+	// Improve accuracy frame limiter also fix framedrop if fps limit is enabled
 	double FrameLimit(double MaxFrameRate) {
 		double newTick = SDL_GetTicks();
 		double deltaTick = 1000.0 / MaxFrameRate - (newTick - lastTick);
 
 		if (deltaTick > 0.0) {
-			int delayTicks = (int)deltaTick;
-			if (delayTicks > 0) {
-				SDL_Delay(delayTicks);
-				newTick += delayTicks;
-				deltaTick -= delayTicks;
-			}
+			int delayTicks = static_cast<int>(deltaTick);
+			SDL_Delay(delayTicks);
+			newTick += delayTicks;
+			deltaTick -= delayTicks;
 		}
 
-		if (deltaTick < -30.0) {
-			lastTick = newTick;
-		}
-		else {
-			lastTick = newTick + deltaTick;
-		}
+		lastTick = (deltaTick < -30.0) ? newTick : newTick + deltaTick;
 
 		double delta = (newTick - curTick) / 1000.0;
 		curTick = newTick;
@@ -63,7 +56,7 @@ Game::Game() {
 	m_frameLimit = 60.0;
 	m_running = false;
 	m_notify = false;
-	
+
 	m_window = nullptr;
 	m_renderer = nullptr;
 	m_inputManager = nullptr;
@@ -84,6 +77,7 @@ Game::~Game() {
 		}
 	}
 
+	// Release the resources
 	AudioManager::Release();
 	SceneManager::Release();
 	InputManager::Release();
@@ -115,7 +109,7 @@ bool Game::Init() {
 	if (!m_window->Create(m_renderMode, "Game", width, height, m_bufferWidth, m_bufferHeight)) {
 		return false;
 	}
-	
+
 	std::cout << "Renderer::Create << " << std::endl;
 	m_renderer = Renderer::GetInstance();
 	if (!m_renderer->Create(m_renderMode, m_window)) {
@@ -142,7 +136,7 @@ bool Game::Init() {
 	m_frameText = new Text(13);
 	m_currentFade = 0;
 	m_targetFade = 0;
-	
+
 	return true;
 }
 
@@ -153,7 +147,7 @@ void Game::Run(double frameRate) {
 	m_frameLimitMode = FrameLimitMode::MENU;
 
 	mAudioThread.Run([&] {
-		double delta = FrameLimit(144.0);
+		double delta = FrameLimit(60.0);
 		AudioManager::GetInstance()->Update(delta);
 	}, true);
 
@@ -224,7 +218,7 @@ void Game::Run(double frameRate) {
 			}
 		}
 		else {
-			FrameLimit(15.0f);
+			FrameLimit(30.0f);
 		}
 	}, true);
 
@@ -266,9 +260,9 @@ void Game::Run(double frameRate) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
-				case SDL_QUIT:
-					MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
-					break;
+			case SDL_QUIT:
+				MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
+				break;
 			}
 
 			m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
@@ -410,15 +404,15 @@ ThreadMode Game::GetThreadMode() {
 }
 
 void Game::Update(double deltaTime) {
-	
+
 }
 
 void Game::Render(double deltaTime) {
-	
+
 }
 
 void Game::Input(double deltaTime) {
-	
+
 }
 
 void Game::Mouse(double deltaTime) {

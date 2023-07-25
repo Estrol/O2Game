@@ -15,6 +15,7 @@ public:
     void Draw(std::string);
     void Draw(std::wstring);
     void Draw(std::u8string);
+    void DrawNumber(double number);
     int CalculateSize(std::u8string u);
 
     bool DrawOverEverything;
