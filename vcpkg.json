@@ -1,0 +1,21 @@
+{
+    "name": "o2game",
+    "version": "1.0.0",
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "dependencies": [
+        {
+            "name": "sdl2",
+            "features": ["vulkan"]
+        },
+        {
+            "name": "sdl2-image",
+            "features": [ "libjpeg-turbo" ]
+        },
+        {
+            "name": "glm"
+        },
+        {
+            "name": "freetype"
+        }
+    ]
+}

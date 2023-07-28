@@ -29,27 +29,22 @@ Written in C++ with SDL (+ imgui for it's GUI elements)
 # Compiling
 ### Requirements
 - vcpkg
-- Visual Studio 2022 with C++20 Desktop Development
+- Visual Studio 2022 with C++20 Desktop Development or GCC 11.2.0
 - BASS Library from https://www.un4seen.com/
 
 ### Installing external library
-- Install SDL2 with vulkan support: `vcpkg install sdl2[vulkan]:x64-windows`
-- Install freetype: `vcpkg install freetype:x64-windows`
-- Install curlpp: `vcpkg install curlpp:x64-windows`
-- Install SDL_Image with JPEG support: `vcpkg install sdl2-image[libjpeg-turbo]:x64-windows`
-- Put BASS x64 library (.lib) to Lib/x64
+- Install vcpkg first
+- then add VCPKG_ROOT in your environment variable to your vcpkg directory
+- and let build system handle the rest.
 
 ### Compiling
-- Open project with visual studio
-- Click Compile
-- Copy BASS x64 DLL to build folder
-- Copy skins folder from my build in discord server :troll:
-- Run/Debug it
+- Open this project in Visual Studio Code with CMake Tools extension or Visual Studio 2022 with C\+\+20 Desktop Development and Linux Development with C++.
+- Select your build target (x64-Debug or x64-Release)
+- Build it.
 
 # Crossplatform
-There will be no crossplatform until:
-- Cleaned every windows-only function (or wrap it).
-- Convert vcproject and solution to cmake project.
+Currently the CMakeLists not properly configured for crossplatform, but you can try to compile it with CMake. \
+Make sure you contribute back when you successfully compiled it.
 
 # License
 MIT License
