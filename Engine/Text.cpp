@@ -5,8 +5,7 @@
 #include "FontResources.hpp"
 #include <codecvt>
 #include "MathUtils.hpp"
-#include <sstream>
-#include <iomanip>
+#include <cstdio>
 
 Text::Text() {
     Rotation = 0.0f;
@@ -21,19 +20,17 @@ Text::Text(int sz) : Text() {
     Size = sz;
 }
 
-void Text::DrawNumber(double number) { // Add DrawNumber ability to Text
-    // Convert the number to a string with up to 3 digits after the decimal point (BMS Rules)
-    std::ostringstream stream;
-    stream << std::fixed << std::setprecision(3) << number;
-    std::string numString = stream.str();
+void Text::DrawNumber(double number) { // Add DrawNumber ability to Text with decimal up to 3 digits after the decimal point (BMS Rules)
+    char numBuffer[12]; // Avoid buffer overflow
+    sprintf_s(numBuffer, "%.3f", number);
+    std::string numString = numBuffer;
 
-    // Remove trailing zero from the decimal part if present
     size_t dotIndex = numString.find('.');
     if (dotIndex != std::string::npos) {
         size_t zeroIndex = numString.find_last_not_of('0');
         if (zeroIndex != std::string::npos && numString[zeroIndex] == '.')
-            zeroIndex--; // Remove the decimal point as well
-        numString.erase(zeroIndex + 1); // Remove the trailing zero and/or decimal point
+            zeroIndex--;
+        numString.erase(zeroIndex + 1);
     }
 
     Draw(numString);
