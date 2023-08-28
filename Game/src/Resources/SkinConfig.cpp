@@ -23,7 +23,7 @@ SkinConfig::SkinConfig(std::filesystem::path path, int keyCount) {
 void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 	std::filesystem::path current = path.parent_path();
 	if (!std::filesystem::exists(path)) {
-		throw std::exception("File does not exist");
+		throw std::runtime_error("File does not exist");
 	}
 
 	mINI::INIFile f(path);

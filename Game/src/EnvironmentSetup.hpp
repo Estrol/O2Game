@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+
+// if GCC
 #include <filesystem>
 
 namespace EnvironmentSetup {

@@ -77,6 +77,7 @@ struct LineInfo {
 
 EditorScene::EditorScene() {
 	m_exit = false;
+	m_ready = false;
 	m_currentNotespeed = 0.25;
 	m_currentTime = 0;
 }
@@ -95,6 +96,8 @@ void EditorScene::Update(double delta) {
 }
 
 void EditorScene::Render(double delta) {
+	if (!m_ready) return;
+	
 	ImguiUtil::NewFrame();
 
 	auto flags = ImGuiWindowFlags_NoTitleBar
@@ -790,6 +793,7 @@ bool EditorScene::Attach() {
 
 	m_measureGridSize = 16, m_measureGridSeparator = 4;
 
+	m_ready = true;
 	SceneManager::DisplayFade(0, [] {});
 	return true;
 }
@@ -808,6 +812,7 @@ bool EditorScene::Detach() {
 	m_lines.clear();
 	m_majorLines.clear();
 
+	m_ready = false;
 	AudioManager::GetInstance()->RemoveAll();
 
 	return true;

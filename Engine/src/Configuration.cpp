@@ -49,7 +49,9 @@ void Configuration::Set(std::string key, std::string prop, std::string value) {
 	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
 	
 	mINI::INIFile file(path);
-	file.write(Config, true);
+	if (!file.write(Config, true)) {
+		std::cout << "Failed to write configuration to file" << std::endl;
+	}
 }
 
 std::filesystem::path Configuration::Skin_GetPath(std::string name) {

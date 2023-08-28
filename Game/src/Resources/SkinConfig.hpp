@@ -1,7 +1,10 @@
 #pragma once
 #include <string>
-#include <filesystem>
 #include <unordered_map>
+#include <vector>
+
+// if GCC then include experimental/filesystem, else filesytem
+#include <filesystem>
 
 // Value Format: X, Y, AnchorPointX?, AnchorPointY?, TintColor?
 struct PositionValue {

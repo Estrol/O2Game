@@ -6,7 +6,9 @@
 
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 #include <SDL2/SDL_image.h>
+#include "MsgBox.h"
 
 #include "SkinConfig.hpp"
 
@@ -130,99 +132,96 @@ ESTHANDLE* InternalLoadFileData(OPIFile* file, std::ifstream* stream) {
 	return nullptr;
 }
 
-namespace GameInterfaceResource {
+std::tuple<std::vector<OPIFile>, std::ifstream*> LoadOPI(std::filesystem::path& path) {
+	std::vector<OPIFile> files;
+
+	if (std::filesystem::exists(path)) {
+		throw std::runtime_error("Missing: " + path.string());
+	}
+
+	std::fstream file(path, std::ios::in | std::ios::binary);
+	if (!file.good()) {
+		throw std::runtime_error("Failed to open: " + path.string());
+	}
+
+	size_t bufferSize = 0;
+	file.seekg(0, std::ios::end);
+	bufferSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	char opi_magic[4];
+	file.read(opi_magic, 4);
+
+	if (memcmp(opi_magic, "OPI", 3) != 0) {
+		throw std::runtime_error("Invalid OPI file: " + path.string());
+	}
+
+	int fileCount = 0;
+	file.read((char*)&fileCount, 4);
+
+	if ((size_t)(fileCount * 152) > bufferSize) {
+		throw std::runtime_error("Invalid OPI file: " + path.string());
+	}
+
+	file.seekg((bufferSize - ((size_t)fileCount * 152)), std::ios::beg);
+
+	for (int i = 0; i < fileCount; i++) {
+		char file_magic[4] = {};
+		file.read(file_magic, 4);
+
+		if (memcmp(file_magic, OPI_FILES_MAGIC, 4) != 0) {
+			std::cout << "Unknown file magic: " << std::hex << file_magic << " at index: " << file.tellg() << std::endl;
+		}
+
+		OPIFile idx = {};
+
+		char fileName[128] = {};
+		file.read(fileName, 128);
+		strcpy_s(idx.Name, fileName);
+
+		file.read((char*)&idx.FileOffset, 4);
+		file.read((char*)&idx.FileSize, 4);
+
+		int FileSize2 = 0;
+		file.read((char*)&FileSize2, 4);
+
+		idx.FileSize = (std::max)(idx.FileSize, FileSize2);
+
+		file.seekg(8, std::ios::cur);
+
+		files.push_back(idx);
+	}
+
+	// not really got idea but whatever
+	return { files, new std::ifstream(path, std::ios::binary) };
+}
+
+namespace GameAvatarResource {
 	std::vector<OPIFile> files;
 	std::ifstream* file;
 
-	uint8_t* buffer;
-	size_t bufferSize;
-
 	bool Load() {
-		// get current path
 		char path[MAX_PATH];
 		GetModuleFileNameA(NULL, path, MAX_PATH);
 
 		// get path to .opi file
 		std::string opiPath = std::string(path);
-		opiPath = opiPath.substr(0, opiPath.find_last_of("\\/")) + "\\Image\\Interface.opi";
+		std::filesystem::path _path = opiPath.substr(0, opiPath.find_last_of("\\/")) + "\\Image\\Avatar.opi";
 
-		if (!std::filesystem::exists(opiPath)) {
-			MessageBoxA(NULL, "Missing interface.opi!", "Error", MB_ICONERROR);
+		if (!std::filesystem::exists(_path)) {
+			MsgBox::ShowOut("Error", "Missing: " + _path.string(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
 		}
 
-		file = new std::ifstream(opiPath, std::ios::binary);
-		if (!file->is_open()) {
-			MessageBoxA(NULL, "Failed to open interface.opi!", "Error", MB_ICONERROR);
+		try {
+			auto res = LoadOPI(_path);
 
-			Dispose();
-			return false;
+			files = std::move(std::get<0>(res));
+			file = std::get<1>(res);
 		}
-
-		file->seekg(0, std::ios::end);
-
-		bufferSize = file->tellg();
-		if (bufferSize < (size_t)(4 * 2)) {
-			MessageBoxA(NULL, "Invalid opi header [1]", "Error", MB_ICONERROR);
+		catch (std::runtime_error& e) {
+			MsgBox::ShowOut("Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
-		}
-
-		file->seekg(0, std::ios::beg);
-
-		buffer = new uint8_t[bufferSize];
-		file->read((char*)buffer, bufferSize);
-
-		if (buffer == nullptr) {
-			MessageBoxA(NULL, "Failed to allocate memory for opi file!", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		file->seekg(0, std::ios::beg);
-
-		char opi_magic[4];
-		file->read(opi_magic, 4);
-		if (memcmp(opi_magic, OPI_MAGIC_FILE, 4) != 0) {
-			MessageBoxA(NULL, "Invalid opi header [2]", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		int fileCount;
-		file->read((char*)&fileCount, 4);
-
-		if ((size_t)(fileCount * 152) > bufferSize) {
-			MessageBoxA(NULL, "Invalid opi header [3]", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		file->seekg(bufferSize - (fileCount * 152), std::ios::beg);
-
-		for (int i = 0; i < fileCount; i++) {
-			char file_magic[4];
-			file->read(file_magic, 4);
-
-			if (memcmp(file_magic, OPI_FILES_MAGIC, 4) != 0) {
-				std::cout << "Unknown file magic: " << std::hex << file_magic << " at index: " << file->tellg() << std::endl;
-			}
-
-			OPIFile idx = {};
-
-			char fileName[128];
-			file->read(fileName, 128);
-			strcpy_s(idx.Name, fileName);
-
-			//std::cout << "[Debug] Load: " << idx.Name << std::endl;
-
-			file->read((char*)&idx.FileOffset, 4);
-			file->read((char*)&idx.FileSize, 4);
-
-			int FileSize2 = 0;
-			file->read((char*)&FileSize2, 4);
-
-			idx.FileSize = (std::max)(idx.FileSize, FileSize2);
-
-			file->seekg(8, std::ios::cur);
-
-			files.push_back(idx);
 		}
 
 		return true;
@@ -232,7 +231,52 @@ namespace GameInterfaceResource {
 		file->close();
 		files.clear();
 
-		if (buffer != nullptr) delete[] buffer;
+		return true;
+	}
+
+	OPIFile* GetFile(std::string name) {
+		return InternalGetFile(name, files);
+	}
+
+	ESTHANDLE* LoadFileData(OPIFile* opiFile) {
+		return InternalLoadFileData(opiFile, file);
+	}
+}
+
+namespace GameInterfaceResource {
+	std::vector<OPIFile> files;
+	std::ifstream* file;
+
+	bool Load() {
+		char path[MAX_PATH];
+		GetModuleFileNameA(NULL, path, MAX_PATH);
+
+		// get path to .opi file
+		std::string opiPath = std::string(path);
+		std::filesystem::path _path = opiPath.substr(0, opiPath.find_last_of("\\/")) + "\\Image\\Interface.opi";
+
+		if (!std::filesystem::exists(_path)) {
+			MsgBox::ShowOut("Error", "Missing: " + _path.string(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+			return false;
+		}
+
+		try {
+			auto res = LoadOPI(_path);
+
+			files = std::move(std::get<0>(res));
+			file = std::get<1>(res);
+		}
+		catch (std::runtime_error& e) {
+			MsgBox::ShowOut("Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Dispose() {
+		file->close();
+		files.clear();
 
 		return true;
 	}
@@ -250,93 +294,28 @@ namespace GamePlayingResource {
 	std::vector<OPIFile> files;
 	std::ifstream* file;
 
-	uint8_t* buffer;
-	size_t bufferSize;
-
 	bool Load() {
-		// get current path
 		char path[MAX_PATH];
 		GetModuleFileNameA(NULL, path, MAX_PATH);
 
 		// get path to .opi file
 		std::string opiPath = std::string(path);
-		opiPath = opiPath.substr(0, opiPath.find_last_of("\\/")) + "\\Image\\Playing.opi";
+		std::filesystem::path _path = opiPath.substr(0, opiPath.find_last_of("\\/")) + "\\Image\\Playing.opi";
 
-		if (!std::filesystem::exists(opiPath)) {
-			MessageBoxA(NULL, "Missing Playing.opi!", "Error", MB_ICONERROR);
+		if (!std::filesystem::exists(_path)) {
+			MsgBox::ShowOut("Error", "Missing: " + _path.string(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
 		}
 
-		file = new std::ifstream(opiPath, std::ios::binary);
-		if (!file->is_open()) {
-			MessageBoxA(NULL, "Failed to open interface.opi!", "Error", MB_ICONERROR);
+		try {
+			auto res = LoadOPI(_path);
 
-			Dispose();
-			return false;
+			files = std::move(std::get<0>(res));
+			file = std::get<1>(res);
 		}
-
-		file->seekg(0, std::ios::end);
-
-		bufferSize = file->tellg();
-		if (bufferSize < (size_t)(4 * 2)) {
-			MessageBoxA(NULL, "Invalid opi header [1]", "Error", MB_ICONERROR);
+		catch (std::runtime_error& e) {
+			MsgBox::ShowOut("Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
-		}
-
-		file->seekg(0, std::ios::beg);
-
-		buffer = new uint8_t[bufferSize];
-		file->read((char*)buffer, bufferSize);
-
-		if (buffer == nullptr) {
-			MessageBoxA(NULL, "Failed to allocate memory for opi file!", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		file->seekg(0, std::ios::beg);
-
-		char opi_magic[4];
-		file->read(opi_magic, 4);
-		if (memcmp(opi_magic, OPI_MAGIC_FILE, 4) != 0) {
-			MessageBoxA(NULL, "Invalid opi header [2]", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		int fileCount;
-		file->read((char*)&fileCount, 4);
-
-		if ((size_t)(fileCount * 152) > bufferSize) {
-			MessageBoxA(NULL, "Invalid opi header [3]", "Error", MB_ICONERROR);
-			return false;
-		}
-
-		file->seekg(bufferSize - (fileCount * 152), std::ios::beg);
-
-		for (int i = 0; i < fileCount; i++) {
-			char file_magic[4];
-			file->read(file_magic, 4);
-
-			if (memcmp(file_magic, OPI_FILES_MAGIC, 4) != 0) {
-				std::cout << "Unknown file magic: " << std::hex << file_magic << " at index: " << file->tellg() << std::endl;
-			}
-
-			OPIFile idx = {};
-
-			char fileName[128];
-			file->read(fileName, 128);
-			strcpy_s(idx.Name, fileName);
-
-			file->read((char*)&idx.FileOffset, 4);
-			file->read((char*)&idx.FileSize, 4);
-
-			int FileSize2 = 0;
-			file->read((char*)&FileSize2, 4);
-
-			idx.FileSize = (std::max)(idx.FileSize, FileSize2);
-
-			file->seekg(8, std::ios::cur);
-
-			files.push_back(idx);
 		}
 
 		return true;
@@ -345,8 +324,6 @@ namespace GamePlayingResource {
 	bool Dispose() {
 		file->close();
 		files.clear();
-
-		if (buffer != nullptr) delete[] buffer;
 
 		return true;
 	}

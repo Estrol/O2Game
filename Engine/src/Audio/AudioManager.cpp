@@ -1,10 +1,16 @@
 #include "Audio/AudioManager.h"
 #include "Rendering/Window.h"
+#if _WIN32
 #include <bass.h>
 #include <bass_fx.h>
+#elif __linux__
+#include <bass_linux.h>
+#include <bass_fx_linux.h>
+#endif
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include "MsgBox.h"
 #include "Audio/AudioSample.h"
 #include "Misc/bass_ogg_silent.hpp"
 
@@ -38,12 +44,12 @@ bool AudioManager::Init(Window* window) {
 	m_currentWindow = window;
 
 	if (HIWORD(BASS_GetVersion()) != BASSVERSION) {
-		MessageBoxA(0, "An incorrect version of BASS.DLL was loaded (2.4 is required)", "Incorrect BASS.DLL", MB_ICONERROR);
+		MsgBox::ShowOut("An incorrect version of BASS was loaded (2.4 is required)", "Incorrect BASS", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 
 	if (HIWORD(BASS_FX_GetVersion()) != BASSVERSION) {
-		MessageBoxA(0, "An incorrect version of BASS_FX.DLL was loaded (2.4 is required)", "Incorrect BASS_FX.DLL", MB_ICONERROR);
+		MsgBox::ShowOut("An incorrect version of BASS was loaded (2.4 is required)", "Incorrect BASS", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 

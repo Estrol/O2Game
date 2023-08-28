@@ -1,6 +1,7 @@
 #include "MyGame.h"
 #include "GameScenes.h"
 #include <fstream>
+#include "MsgBox.h"
 
 #include "Fonts/FontResources.h"
 #include "Configuration.h"
@@ -27,6 +28,7 @@ bool MyGame::Init() {
 	SetRenderMode(RendererMode::DIRECTX);
 	SetBufferSize(800, 600);
 	SetWindowSize(1280, 720);
+	SetFullscreen(false);
 	
 	{
 		auto value = Configuration::Load("Game", "Renderer");
@@ -72,7 +74,8 @@ bool MyGame::Init() {
 	{
 		auto value = Configuration::Load("Game", "Skin");
 		if (!Configuration::Skin_Exist(value)) {
-			MessageBoxA(NULL, ("Skin: " + value + " is not found!").c_str(), "EstGame Error", MB_ICONERROR);
+			MsgBox::ShowOut("EstGame Error", ("Skin: " + value + " is not found!").c_str(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+			//MessageBoxA(NULL, ("Skin: " + value + " is not found!").c_str(), "EstGame Error", MB_ICONERROR);
 			return false;
 		}
 
@@ -83,7 +86,8 @@ bool MyGame::Init() {
 			SetBufferSize(std::stoi(split[0]), std::stoi(split[1]));
 		}
 		else {
-			MessageBoxA(NULL, "Invalid Skin::Window::NativeSize configuration value!", "EstGame Error", MB_ICONERROR);
+			MsgBox::ShowOut("EstGame Error", "Invalid Skin::Window::NativeSize configuration value!", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+			//MessageBoxA(NULL, "Invalid Skin::Window::NativeSize configuration value!", "EstGame Error", MB_ICONERROR);
 			return false;
 		}
 	}
@@ -96,7 +100,8 @@ bool MyGame::Init() {
 			SetWindowSize(std::stoi(split[0]), std::stoi(split[1]));
 		}
 		else {
-			MessageBoxA(NULL, "Invalid Game::Resolution configuration value!", "EstGame Error", MB_ICONERROR);
+			//MessageBoxA(NULL, "Invalid Game::Resolution configuration value!", "EstGame Error", MB_ICONERROR);
+			MsgBox::ShowOut("EstGame Error", "Invalid Game::Resolution configuration value!", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
 		}
 	}
@@ -116,6 +121,11 @@ bool MyGame::Init() {
 		m_window->SetWindowTitle(title);
 
 		if (EnvironmentSetup::GetPath("FILE").empty()) {
+			std::filesystem::path path = Configuration::Load("Music", "Folder");
+			if (!path.empty() && std::filesystem::exists(path)) {
+				Configuration::Set("Music", "Folder", path.string());
+			}
+
 			SceneManager::ChangeScene(GameScene::INTRO);
 		}
 		else {

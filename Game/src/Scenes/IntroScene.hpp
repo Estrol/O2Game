@@ -19,8 +19,14 @@ public:
 	bool Detach() override;
 
 private:
+	void PrepareDB();
+
 	bool IsReady = false;
+	bool IsOpenPrompt = false;
 	double waitFrame = 0; // this is :evil:
+
+	int currentState = 0;
+	std::vector<std::string> SelectedFolders;
 
 	Text* m_text;
 	int nextIndex = 0;

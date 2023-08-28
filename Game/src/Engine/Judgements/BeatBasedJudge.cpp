@@ -10,7 +10,7 @@ namespace {
 	const double kNoteCoolHitRatio = 0.2;
 	const double kNoteGoodHitRatio = 0.5;
 	const double kNoteBadHitRatio = 0.8;
-	//const double kNoteEarlyMissRatio = 0.85;
+	const double kNoteEarlyMissRatio = 0.85;
 }
 
 double CalculateBeatDiff(RhythmEngine* engine, JudgeBase* judge, Note* note) {
@@ -46,6 +46,9 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
     }
     else if (beatDiff <= kNoteBadHitRatio - decrement) {
         return { true, NoteResult::BAD };
+    }
+    else if (beatDiff <= kNoteEarlyMissRatio - decrement) {
+		
     }
 
     return { false, NoteResult::MISS };

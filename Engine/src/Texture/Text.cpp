@@ -5,6 +5,8 @@
 #include "Fonts/FontResources.h"
 #include <codecvt>
 #include "Texture/MathUtils.h"
+#include <cmath>
+#include <algorithm>
 
 #if _WIN32
 #include <windows.h>
@@ -27,10 +29,6 @@ Text::Text(int sz) : Text() {
     Size = sz;
 }
 
-// void Text::Draw(std::string text) {
-//     Draw(std::u8string(text.begin(), text.end()));
-// }
-
 void Text::Draw(std::wstring text, ...) {
 #if _WIN32
     int len = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, NULL, 0, NULL, NULL);
@@ -49,11 +47,25 @@ void Text::Draw(std::wstring text, ...) {
     delete[] buf;
 #endif
 
-    Draw("%s", (const char*)u8str.c_str());
+    va_list args;
+    va_start(args, text);
+    char buffer[MAX_FORMATTED_TEXT_SIZE];
+    int b_sz = vsnprintf(buffer, MAX_FORMATTED_TEXT_SIZE, (const char*)u8str.c_str(), args);
+    std::u8string formated(buffer, buffer + b_sz);
+    va_end(args);
+
+    InternalDraw(formated);
 }
 
 void Text::Draw(std::u8string text, ...) {
-    Draw("%s", (const char*)text.c_str());
+    va_list args;
+    va_start(args, text);
+    char buffer[MAX_FORMATTED_TEXT_SIZE];
+    int b_sz = vsnprintf(buffer, MAX_FORMATTED_TEXT_SIZE, (const char*)text.c_str(), args);
+    std::u8string formated(buffer, buffer + b_sz);
+    va_end(args);
+
+    InternalDraw(formated);
 }
 
 void Text::Draw(std::string text, ...) {
@@ -64,6 +76,10 @@ void Text::Draw(std::string text, ...) {
     std::u8string formated(buffer, buffer + b_sz);
     va_end(args);
 
+    InternalDraw(formated);
+}
+
+void Text::InternalDraw(std::u8string& formated) {
     Size = std::clamp(Size, 5, 36);
 
     float radians = ((Rotation + 90.0f) * ((22.0f / 7.0f) / 180.0f));
@@ -114,7 +130,7 @@ void Text::Draw(std::string text, ...) {
 
     ImRotationEnd(radians, ImRotationCenter());
     ImguiUtil::EndText();
-}   
+}
 
 
 Text::~Text() {

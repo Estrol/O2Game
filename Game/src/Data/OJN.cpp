@@ -4,6 +4,8 @@
 #include <filesystem>
 #include "Util/Util.hpp"
 #include <assert.h>
+#include <string.h>
+#include <cmath>
 
 using namespace O2;
 

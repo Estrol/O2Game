@@ -2,9 +2,29 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include "MsgBox.h"
+#include <cmath>
 
+#if _WIN32
 #include <bass.h>
 #include <bass_fx.h>
+#elif __linux__
+#include <bass_linux.h>
+#include <bass_fx_linux.h>
+#endif
+
+// if G++
+#ifdef __GNUC__
+#include <string.h>
+
+//namespace std {
+//	template <class T>
+//	T round(T val) {
+//		return (val + 0.5);
+//	}
+//}
+
+#endif
 
 Audio::Audio(std::string id) {
 	m_pBuffer = nullptr;
@@ -41,7 +61,7 @@ bool Audio::Release() {
 	}
 
 	BASS_StreamFree(m_hStream);
-	m_hStream = NULL;
+	m_hStream = 0;
 
 	delete[] m_pBuffer;
 
@@ -52,7 +72,7 @@ bool Audio::Create(std::filesystem::path fileName) {
 	std::fstream fs(fileName, std::ios::binary | std::ios::in);
 	if (!fs.is_open()) {
 		std::string msg = "Failed to open file: " + fileName.string();
-		MessageBoxA(NULL, msg.c_str(), "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut(msg, "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 
 		return false;
 	}
@@ -77,7 +97,7 @@ bool Audio::Create(uint8_t* buffer, size_t size) {
 	return CreateStream();
 }
 
-bool Audio::Play(DWORD dwStartPosition, BOOL bLoop) {
+bool Audio::Play(uint32_t dwStartPosition, bool bLoop) {
 	if (!m_hStream) {
 		return false;
 	}
@@ -110,14 +130,14 @@ bool Audio::CreateStream() {
 	m_hStream = BASS_StreamCreateFile(TRUE, m_pBuffer, 0, m_dwSize, BASS_STREAM_DECODE | BASS_SAMPLE_FLOAT);
 	if (!m_hStream) {
 		int a = BASS_ErrorGetCode();
-		MessageBoxA(NULL, "Failed to create stream", "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut("Failed to create Stream", "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 
 	m_hStream = BASS_FX_TempoCreate(m_hStream, BASS_FX_FREESOURCE);
 	if (!m_hStream) {
 		int a = BASS_ErrorGetCode();
-		MessageBoxA(NULL, "Failed to create tempo stream", "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut("Failed to create tempo stream", "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 
@@ -125,7 +145,7 @@ bool Audio::CreateStream() {
 	SetVolume(volume);
 
 	if (!BASS_ChannelUpdate(m_hStream, 1000)) {
-		MessageBoxA(NULL, "Failed to update stream", "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut("Failed to update stream", "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 
@@ -176,7 +196,7 @@ bool Audio::FadeIn() {
 	}
 
 	is_fade_rn = false;
-	CreateFadeProc(lockFade, m_hStream, volume, false);
+	CreateFadeProc(lockFade, (HSTREAM&)m_hStream, volume, false);
 
 	return true;
 }
@@ -187,7 +207,7 @@ bool Audio::FadeOut() {
 	}
 
 	is_fade_rn = true;
-	CreateFadeProc(lockFade, m_hStream, volume, true);
+	CreateFadeProc(lockFade, (HSTREAM&)m_hStream, volume, true);
 
 	return true;
 }
@@ -268,10 +288,20 @@ void Audio::SetPitch(bool enabled) {
 	SetRate(rate);
 }
 
+#if __GCC__
+double round(double value) {
+	return value < 0.0 ? ceil(value - 0.5) : floor(value + 0.5);
+}
+#endif
+
 int Audio::GetDuration() const {
 	double length = BASS_ChannelBytes2Seconds(m_hStream, BASS_ChannelGetLength(m_hStream, BASS_POS_BYTE));
 
+#if __GCC__
+	return static_cast<int>(round(length));
+#else
 	return static_cast<int>(std::round(length));
+#endif
 }
 
 std::string Audio::GetName() const {

@@ -9,6 +9,7 @@
 #endif
 #include <string>
 #include <codecvt>
+#include <cmath>
 
 std::vector<std::string> splitString(std::string& input, char delimeter) {
 	std::stringstream ss(input);
@@ -117,15 +118,15 @@ void flipArray(uint8_t* arr, size_t size) {
 	}
 }
 
-std::u8string CodepageToUtf8(const char* string, size_t len, int codepage) {
+std::u8string CodepageToUtf8(const char* string, size_t str_len, int codepage) {
 #if _WIN32
-	int size_needed = MultiByteToWideChar(codepage, 0, &string[0], (int)len, NULL, 0);
+	int size_needed = MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, NULL, 0);
 	wchar_t* temp_string = new wchar_t[size_needed];
 	if (!temp_string) {
 		throw std::runtime_error("Out of memory");
 	}
 
-	MultiByteToWideChar(codepage, 0, &string[0], (int)len, temp_string, size_needed);
+	MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, temp_string, size_needed);
 
 	int utf8_size_needed = WideCharToMultiByte(CP_UTF8, 0, temp_string, size_needed, NULL, 0, NULL, NULL);
 	char8_t* result = new char8_t[utf8_size_needed];

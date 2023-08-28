@@ -1,5 +1,13 @@
 #pragma once
+#ifdef __GNUC__
+//#include <experimental/filesystem>
 #include <filesystem>
+#else
+#include <filesystem>
+#endif
+
+#include <stdint.h>
+#include <fstream>
 
 // Forward declaration, intended only for HANDLE only!
 // See: Texture2DVulkan_Internal.h

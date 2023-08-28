@@ -2,9 +2,15 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#if _WIN32
 #include <bass.h>
 #include <bass_fx.h>
+#elif __linux__
+#include <bass_linux.h>
+#include <bass_fx_linux.h>
+#endif
 #include <vector>
+#include <string.h>
 
 std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audioData, size_t size, float rate) {
 	HCHANNEL channel = BASS_StreamCreateFile(TRUE, audioData, 0, size, BASS_STREAM_DECODE);

@@ -32,7 +32,7 @@ Index of this file:
 
 #include "Imgui/imgui.h"
 #ifndef IMGUI_DISABLE
-#include "imgui/imgui_internal.h"
+#include "Imgui/imgui_internal.h"
 #ifdef IMGUI_ENABLE_FREETYPE
 #include "misc/freetype/imgui_freetype.h"
 #endif

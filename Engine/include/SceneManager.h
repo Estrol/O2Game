@@ -3,6 +3,7 @@
 #include <mutex>
 #include <functional>
 #include <chrono>
+#include <thread>
 
 /* Forward Declaration */
 class Game;

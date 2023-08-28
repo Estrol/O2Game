@@ -1,10 +1,16 @@
+#if _WIN32
 #include <bass.h>
+#include <bass_fx.h>
+#elif __linux__
+#include <bass_linux.h>
+#include <bass_fx_linux.h>
+#endif
 
 #include "Audio/AudioSampleChannel.h"
 #include <iostream>
 
 AudioSampleChannel::AudioSampleChannel() {
-	m_hCurrentSample = NULL;
+	m_hCurrentSample = 0;
 	m_rate = 1.0f;
 	m_vol = 1.0f;
 	m_pan = 0.0f;
@@ -13,7 +19,7 @@ AudioSampleChannel::AudioSampleChannel() {
 	m_silent = true;
 }
 
-AudioSampleChannel::AudioSampleChannel(DWORD sampleHandle, float rate, float vol, bool pitch) {
+AudioSampleChannel::AudioSampleChannel(uint32_t sampleHandle, float rate, float vol, bool pitch) {
 	m_hCurrentSample = BASS_SampleGetChannel(sampleHandle, 0);
 	if (!m_hCurrentSample) {
 		::printf("[BASS] Error: %d\n", BASS_ErrorGetCode());
@@ -58,17 +64,17 @@ bool AudioSampleChannel::Play() {
 	// Pitch is not possible atm, in sample channel!
 	if (m_rate != 1.0f) {
 		float frequency = 48000.0f;
-		BASS_ChannelGetAttribute(m_hCurrentSample, BASS_ATTRIB_FREQ, &frequency);
-		BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_FREQ, frequency * m_rate);
+		BASS_ChannelGetAttribute((HSTREAM)m_hCurrentSample, BASS_ATTRIB_FREQ, &frequency);
+		BASS_ChannelSetAttribute((HSTREAM)m_hCurrentSample, BASS_ATTRIB_FREQ, frequency * m_rate);
 	}
 
 	float vol = m_vol / 100.0f;
 	float pan = m_pan / 100.0f;
 
-	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_VOL, vol);
-	BASS_ChannelSetAttribute(m_hCurrentSample, BASS_ATTRIB_PAN, pan);
+	BASS_ChannelSetAttribute((HSTREAM)m_hCurrentSample, BASS_ATTRIB_VOL, vol);
+	BASS_ChannelSetAttribute((HSTREAM)m_hCurrentSample, BASS_ATTRIB_PAN, pan);
 
-	if (!BASS_ChannelPlay(m_hCurrentSample, FALSE)) {
+	if (!BASS_ChannelPlay((HSTREAM)m_hCurrentSample, FALSE)) {
 		return false;
 	}
 	
@@ -85,8 +91,8 @@ bool AudioSampleChannel::Stop() {
 		return false;
 	}
 
-	BASS_ChannelStop(m_hCurrentSample);
-	BASS_ChannelFree(m_hCurrentSample);
+	BASS_ChannelStop((HSTREAM)m_hCurrentSample);
+	BASS_ChannelFree((HSTREAM)m_hCurrentSample);
 
 	return true;
 }
@@ -100,7 +106,7 @@ bool AudioSampleChannel::Pause() {
 		return false;
 	}
 
-	if (!BASS_ChannelPause(m_hCurrentSample)) {
+	if (!BASS_ChannelPause((HSTREAM)m_hCurrentSample)) {
 		return false;
 	}
 
@@ -108,9 +114,9 @@ bool AudioSampleChannel::Pause() {
 }
 
 bool AudioSampleChannel::IsPlaying() {
-	return BASS_ChannelIsActive(m_hCurrentSample) == BASS_ACTIVE_PLAYING;
+	return BASS_ChannelIsActive((HSTREAM)m_hCurrentSample) == BASS_ACTIVE_PLAYING;
 }
 
 bool AudioSampleChannel::IsStopped() {
-	return m_silent || BASS_ChannelIsActive(m_hCurrentSample) == BASS_ACTIVE_STOPPED;
+	return m_silent || BASS_ChannelIsActive((HSTREAM)m_hCurrentSample) == BASS_ACTIVE_STOPPED;
 }

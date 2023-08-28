@@ -1,6 +1,6 @@
 #pragma once
 #include "UDim2.h"
-#include "../imgui/imgui.h"
+#include "../Imgui/imgui.h"
 
 namespace MathUtil {
 	ImVec2 ScaleVec2(ImVec2 input);

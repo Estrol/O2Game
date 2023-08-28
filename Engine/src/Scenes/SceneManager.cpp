@@ -5,6 +5,7 @@
 #include <string>
 #include <mutex>
 #include <iostream>
+#include <exception>
 
 SceneManager::SceneManager() {
 	m_scenes = std::unordered_map<int, Scene*>();
@@ -105,15 +106,17 @@ void SceneManager::OnMouseUp(const MouseState& state) {
 	if (m_currentScene) m_currentScene->OnMouseUp(state);
 }
 
+static const char* notInitialized = "SceneManager is not initalized";
+
 void SceneManager::AddScene(int idx, Scene* scene) {
-	if (s_instance == nullptr) throw std::exception("SceneManager is not initialized");
+	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
 
 	std::cout << "Added scene: " << idx << std::endl;
 	s_instance->m_scenes[idx] = scene;
 }
 
 void SceneManager::ChangeScene(int idx) {
-	if (s_instance == nullptr) throw std::exception("SceneManager is not initialized");
+	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
 
 	std::cout << "Change scene: " << idx << std::endl;
 	s_instance->IChangeScene(idx);

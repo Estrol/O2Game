@@ -1,10 +1,11 @@
 #pragma once
 #include "../Rendering/WindowsTypes.h"
+#include <stdint.h>
 
 class AudioSampleChannel {
 public:
 	AudioSampleChannel();
-	AudioSampleChannel(DWORD sampleHandle, float rate, float vol, bool pitch);
+	AudioSampleChannel(uint32_t sampleHandle, float rate, float vol, bool pitch);
 	~AudioSampleChannel();
 
 	void SetVolume(int vol);
@@ -19,7 +20,7 @@ public:
 	bool IsStopped();
 
 private:
-	DWORD m_hCurrentSample = NULL;
+	uint32_t m_hCurrentSample = 0;
 
 	float m_rate;
 	float m_vol;

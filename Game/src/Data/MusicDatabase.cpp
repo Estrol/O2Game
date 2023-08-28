@@ -1,6 +1,7 @@
 #include "MusicDatabase.h"
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 MusicDatabase* MusicDatabase::m_instance = nullptr;
 

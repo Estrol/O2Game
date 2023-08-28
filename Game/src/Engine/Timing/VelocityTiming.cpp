@@ -1,5 +1,6 @@
 #include "VelocityTiming.h"
 #include "../../Data/Chart.hpp"
+#include <cmath>
 
 VelocityTiming::VelocityTiming(std::vector<TimingInfo>& _timings, std::vector<TimingInfo>& _velocities, double base) : TimingBase(_timings, _velocities, base) {
     if (velocities.size() > 0) {
@@ -12,10 +13,6 @@ VelocityTiming::VelocityTiming(std::vector<TimingInfo>& _timings, std::vector<Ti
 			offsets.push_back(pos);
         }
     }
-}
-
-double VelocityTiming::GetBeatAt(double offset) {
-    return 0.0;
 }
 
 double VelocityTiming::GetOffsetAt(double offset) {

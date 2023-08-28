@@ -1,7 +1,7 @@
 #pragma once
 
-
 #include <iostream>
+#include <vector>
 #include <unordered_map>
 #include <SDL2/SDL.h>
 
@@ -68,6 +68,12 @@ enum class NoteImageType {
 	TRAIL_DOWN,
 };
 
+enum class O2ResourceType {
+	O2_INTERFACE,
+	O2_PLAYING,
+	O2_AVATAR
+};
+
 struct NoteImage {
 	std::vector<SDL_Texture*> Texture;
 	std::vector<SDL_Surface*> Surface;
@@ -75,6 +81,14 @@ struct NoteImage {
 	std::vector<Texture2D_Vulkan*> VulkanTexture;
 	Rect TextureRect;
 };
+
+namespace GameAvatarResource {
+	bool Load();
+	bool Dispose();
+
+	OPIFile* GetFile(std::string filename);
+	ESTHANDLE* LoadFileData(OPIFile* file);
+}
 
 namespace GameInterfaceResource {
 	bool Load();

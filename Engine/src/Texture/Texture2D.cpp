@@ -11,7 +11,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include "Rendering/Vulkan/VulkanEngine.h"
 #include "Rendering/Vulkan/Texture2DVulkan.h"
-#include "../Rendering/VulkanDriver/Texture2DVulkan_Internal.h"
+#include "../Rendering/Vulkan/Texture2DVulkan_Internal.h"
 #include "../Data/Imgui/imgui_impl_vulkan.h"
 
 Texture2D::Texture2D() {

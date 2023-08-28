@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <stdint.h>
 
 std::vector<std::string> splitString(std::string& input, char delimeter);
 

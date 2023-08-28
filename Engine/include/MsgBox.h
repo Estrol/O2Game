@@ -9,6 +9,13 @@ enum class MsgBoxType {
 	YESNOCANCEL
 };
 
+enum class MsgBoxFlags {
+	BTN_NOTHING,
+	BTN_INFO,
+	BTN_WARNING,
+	BTN_ERROR
+};
+
 namespace MsgBox {
 	int GetResult(std::string Id);
 	void Draw();
@@ -19,5 +26,5 @@ namespace MsgBox {
 
 	// Provide a way to do OS MessageBox
 	int ShowOut(std::string title, std::string fmt);
-	int ShowOut(std::string title, std::string fmt, MsgBoxType type);
+	int ShowOut(std::string title, std::string fmt, MsgBoxType type, MsgBoxFlags flags);
 }

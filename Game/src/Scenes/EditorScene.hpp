@@ -54,6 +54,7 @@ private:
 
 	std::unique_ptr<O2::OJN> m_ojn;
 
+	bool m_ready;
 	bool m_autoscroll;
 	bool m_exit;
 };

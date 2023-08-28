@@ -118,7 +118,6 @@ bool RhythmEngine::Load(Chart* chart) {
 		isSV = true;
 	}
 
-	isSV = false;
 	if (isSV) {
 		m_timings = new VelocityTiming(chart->m_bpms, chart->m_svs, chart->InitialSvMultiplier);
 	} else {
@@ -264,7 +263,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
 			desc.EndTrackPosition = m_timings->GetOffsetAt(note.EndTime); //GetPositionFromOffset(note.EndTime);
-			desc.EndBPM = GetBPMAt(note.EndTime);
+			desc.EndBPM = m_timings->GetBeatAt(note.EndTime);
 		}
 
 		if ((m_audioOffset != 0 && desc.KeysoundIndex != -1) || IsAutoSound) {

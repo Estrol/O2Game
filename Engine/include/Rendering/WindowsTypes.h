@@ -1,7 +1,10 @@
 #pragma once
 
+#if _WIN32
 // Windows type replacement for 'DWORD'
+#ifndef DWORD
 typedef unsigned long DWORD;
+#endif
 
 // Windows type replacement for 'BOOL'
 typedef int BOOL;
@@ -11,6 +14,7 @@ typedef int BOOL;
 #endif
 
 #include <windows.h>
+#endif
 
 struct RectF {
 	float left;

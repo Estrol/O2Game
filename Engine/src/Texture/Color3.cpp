@@ -2,10 +2,19 @@
 #include <algorithm>
 #include <iostream>
 
+template <class T>
+T clamp(T value, T min, T max) {
+	return std::min(std::max(value, min), max);
+}
+
+#if defined(__GNUC__) || defined(__GNUG__)
+#include <cmath>
+#endif
+
 Color3::Color3(float r, float g, float b) {
-	R = std::clamp(r, 0.0f, 1.0f);
-	G = std::clamp(g, 0.0f, 1.0f);
-	B = std::clamp(b, 0.0f, 1.0f);
+	R = clamp(r, 0.0f, 1.0f);
+	G = clamp(g, 0.0f, 1.0f);
+	B = clamp(b, 0.0f, 1.0f);
 }
 
 Color3 Color3::FromRGB(float r, float g, float b) {

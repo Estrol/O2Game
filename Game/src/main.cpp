@@ -32,22 +32,19 @@ int Run(int argc, wchar_t** argv) {
 			parentPath = std::filesystem::current_path();
 		}
 
+#if _WIN32
 		if (SetCurrentDirectoryW((LPWSTR)parentPath.wstring().c_str()) == FALSE) {
 			std::cout << "GetLastError(): " << GetLastError() << ", with path: " << parentPath.string();
-			
+
 			MessageBoxA(NULL, "Failed to set directory!", "EstGame Error", MB_ICONERROR);
 			return -1;
 		}
-
-		std::filesystem::path path = Configuration::Load("Music", "Folder");
-        // TODO: Add ImGui file browser
-
-		if (path.empty() || !std::filesystem::exists(path)) {
+#elif	
+		if (chdir(parentPath.string().c_str()) != 0) {
+			std::cout << "Failed to set directory!" << std::endl;
 			return -1;
 		}
-		else {
-			Configuration::Set("Music", "Folder", path.string());
-		}
+#endif
 
 		for (int i = 1; i < argc; i++) {
 			std::wstring arg = argv[i];
@@ -83,7 +80,7 @@ int Run(int argc, wchar_t** argv) {
 		return 0;
 	}
 	catch (std::exception& e) {
-        MsgBox::ShowOut("EstGame Error", e.what(), MsgBoxType::OK);
+        MsgBox::ShowOut("EstGame Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return -1;
 	}
 }
@@ -99,14 +96,22 @@ int main(int argc, char* argv[]) {
 #if _WIN32 && _DEBUG && MEM_LEAK_DEBUG
 // msvc
 #if _MSC_VER
-#pragma warning("Memory leak detection is enabled. This will cause performance issues.")
+#pragma message("Memory leak detection is enabled. This will cause performance issues.")
 #elif
 #warning "Memory leak detection is enabled. This will cause performance issues."
 #endif
-
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); 
+	//_CrtSetBreakAlloc(6297);
 #endif
-	setlocale(LC_ALL, "C.UTF-8");
+	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
+	if (retVal == nullptr) {
+#if WIN32 
+		MessageBoxA(NULL, "setlocale(): Failed to set locale!", "EstGame Error", MB_ICONERROR);
+#else
+		std::cout << "setlocale(): Failed to set locale!" << std::endl;
+#endif
+		return -1;
+	}
 
     wchar_t** wargv = new wchar_t*[argc]; 
     for (int i = 0; i < argc; i++) {
@@ -117,7 +122,7 @@ int main(int argc, char* argv[]) {
 
 	int ret = 0;
 
-#if _WIN32
+#if _WIN32 & _MSC_VER
 	__try {
 		ret = Run(argc, wargv);
 	}

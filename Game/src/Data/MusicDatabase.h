@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <vector>
 
 const char signature[2] = { 'D', 'B' };
 const int version = 2;

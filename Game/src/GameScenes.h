@@ -7,4 +7,5 @@ namespace GameScene {
 	constexpr int RESULT = 3;
 	constexpr int GAME = 4;
 	constexpr int EDITOR = 5;
+	constexpr int INITIALSETUP = 6;
 }

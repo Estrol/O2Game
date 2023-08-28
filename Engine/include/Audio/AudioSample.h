@@ -23,7 +23,7 @@ private:
 	void CheckAudioTime();
 	std::string m_id;
 	
-	DWORD m_handle;
+	uint32_t m_handle;
 	
 	float m_rate;
 	float m_vol;

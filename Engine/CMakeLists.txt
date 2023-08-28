@@ -11,7 +11,76 @@ set(CMAKE_CXX_STANDARD 20)
 # _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 
-add_library(EstEngine ${MAIN})
+add_library(EstEngine 
+	# Audio
+	"src/Audio/Audio.cpp"
+	"src/Audio/AudioManager.cpp"
+	"src/Audio/AudioSample.cpp"
+	"src/Audio/AudioSampleChannel.cpp"
+	"src/Audio/BassFXSampleEncoding.cpp"
+
+	#Data
+	"src/Data/Imgui/imgui.cpp"
+	"src/Data/Imgui/imgui_demo.cpp"
+	"src/Data/Imgui/imgui_draw.cpp"
+	"src/Data/Imgui/imgui_impl_sdl2.cpp"
+	"src/Data/Imgui/imgui_impl_sdlrenderer2.cpp"
+	"src/Data/Imgui/imgui_impl_vulkan.cpp"
+	"src/Data/Imgui/imgui_tables.cpp"
+	"src/Data/Imgui/imgui_widgets.cpp"
+	"src/Data/Imgui/ImguiUtil.cpp"
+
+	#Data/misc/freetype
+	"src/Data/Imgui/misc/freetype/imgui_freetype.cpp"
+
+	#Fonts
+	"src/Fonts/FontResources.cpp"
+	"src/Fonts/FallbackFonts/arial.ttf.cpp"  
+	"src/Fonts/FallbackFonts/ch.ttf.cpp" 
+	"src/Fonts/FallbackFonts/jp.ttf.cpp" 
+	"src/Fonts/FallbackFonts/kr.ttf.cpp"
+	
+	#Inputs
+	"src/Inputs/InputManager.cpp"
+	"src/Inputs/InputEvent.cpp"
+
+	#Misc
+	"src/Misc/MathUtils.cpp"
+	"src/Misc/SDLException.cpp"
+
+	#Rendering
+	"src/Rendering/Renderer.cpp"
+	"src/Rendering/Window.cpp"
+	"src/Rendering/Vulkan/Texture2DVulkan.cpp"
+	"src/Rendering/Vulkan/vkinit.cpp"
+	"src/Rendering/Vulkan/VulkanEngine.cpp"
+	"src/Rendering/Vulkan/vk_mem_alloc/Common.cpp"
+	"src/Rendering/Vulkan/vk_mem_alloc/VmaUsage.cpp"
+	"src/Rendering/Vulkan/VkBootstrap/VkBootstrap.cpp"
+
+	#Scenes
+	"src/Scenes/SceneManager.cpp"
+	"src/Scenes/Scene.cpp"
+	"src/Scenes/MsgBox.cpp"
+
+	#Texture
+	"src/Texture/Color3.cpp"
+	"src/Texture/NumericTexture.cpp"
+	"src/Texture/ResizableImage.cpp"
+	"src/Texture/Sprite2D.cpp"
+	"src/Texture/Text.cpp"
+	"src/Texture/Texture2D.cpp"
+	"src/Texture/UDim.cpp"
+	"src/Texture/UDim2.cpp"
+	"src/Texture/Vector2.cpp"
+
+	#Threading
+	"src/Threading/GameThread.cpp"
+
+	#Main
+	"src/Configuration.cpp"
+	"src/Game.cpp"
+)
 
 target_include_directories(EstEngine PUBLIC ./include/)
 

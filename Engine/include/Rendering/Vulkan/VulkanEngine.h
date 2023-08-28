@@ -29,16 +29,20 @@ struct DeletionQueue
 };
 
 struct AllocatedImage {
+	const char SIGNATURE[25] = "AllocatedImage";
+
 	VkImage _image;
 	VmaAllocation _allocation;
 };
 
 struct AllocatedBuffer {
+	const char SIGNATURE[25] = "AllocatedBuffer";
 	VkBuffer _buffer;
 	VmaAllocation _allocation;
 };
 
 struct FrameData {
+	const char SIGNATURE[25] = "FrameData";
 	VkSemaphore _presentSemaphore, _renderSemaphore;
 	VkFence _renderFence;
 
@@ -57,6 +61,7 @@ struct FrameData {
 };
 
 struct UploadContext {
+	const char SIGNATURE[25] = "UploadContext";
 	VkFence _uploadFence;
 	VkCommandPool _commandPool;
 	VkCommandBuffer _commandBuffer;
@@ -65,6 +70,7 @@ struct UploadContext {
 struct ImDrawVert;
 
 struct SubmitQueueInfo {
+	const char SIGNATURE[25] = "SubmitQueueInfo";
 	std::vector<ImDrawVert> vertices;
 	std::vector<uint16_t> indices;
 
@@ -76,6 +82,8 @@ struct SubmitQueueInfo {
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
+	const char SIGNATURE[25] = "VulkanEngine";
+
 public:
 	bool _isInitialized{ false };
 	bool _swapChainOutdated{ false };
@@ -165,6 +173,7 @@ public:
 	VkBuffer _indexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory _indexBufferMemory = VK_NULL_HANDLE;
+	VkAllocationCallbacks* _allocCallback = VK_NULL_HANDLE;
 	
 	void re_init_swapchains(int width, int height);
 

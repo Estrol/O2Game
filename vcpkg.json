@@ -1,21 +1,36 @@
 {
-    "name": "o2game",
-    "version": "1.0.0",
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-    "dependencies": [
-        {
-            "name": "sdl2",
-            "features": ["vulkan"]
-        },
-        {
-            "name": "sdl2-image",
-            "features": [ "libjpeg-turbo" ]
-        },
-        {
-            "name": "glm"
-        },
-        {
-            "name": "freetype"
-        }
-    ]
+  "name": "o2game",
+  "version": "1.0.0",
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    {
+      "name": "sdl2",
+      "features": [ "vulkan" ]
+    },
+    {
+      "name": "sdl2-image",
+      "features": [ "libjpeg-turbo" ]
+    },
+    {
+      "name": "glm"
+    },
+    {
+      "name": "freetype",
+      "default-features": false,
+      "features": [ "bzip2", "png", "zlib" ]
+    },
+    {
+      "name": "vulkan"
+    },
+    {
+      "name": "libpng"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "freetype",
+      "version": "2.12.1#3"
+    }
+  ],
+  "builtin-baseline": "8b04a7bd93bef991818fc372bb83ce00ec1c1c16"
 }

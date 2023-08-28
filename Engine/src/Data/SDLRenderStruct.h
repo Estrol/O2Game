@@ -1,4 +1,6 @@
 #pragma once
+
+#if 0
 /*
   Simple DirectMedia Layer
   Copyright (C) 1997-2023 Sam Lantinga <slouken@libsdl.org>
@@ -556,4 +558,5 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
 #endif

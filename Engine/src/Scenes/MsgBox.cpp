@@ -146,14 +146,36 @@ void MsgBox::Show(std::string Id, std::string Title, std::string fmt, MsgBoxType
 }
 
 int MsgBox::ShowOut(std::string title, std::string fmt) {
-	return ShowOut(title, fmt, MsgBoxType::OK);
+	return ShowOut(title, fmt, MsgBoxType::OK, MsgBoxFlags::BTN_NOTHING);
 }
 
-int MsgBox::ShowOut(std::string title, std::string fmt, MsgBoxType type) {
+int MsgBox::ShowOut(std::string title, std::string fmt, MsgBoxType type, MsgBoxFlags flags) {
 	SDL_MessageBoxData data = {};
 	data.title = title.c_str();
 	data.message = fmt.c_str();
 	data.flags = 0;
+
+	switch (flags) {
+		case MsgBoxFlags::BTN_INFO: {
+			data.flags |= SDL_MESSAGEBOX_INFORMATION;
+			break;
+		}
+
+		case MsgBoxFlags::BTN_WARNING: {
+			data.flags |= SDL_MESSAGEBOX_WARNING;
+			break;
+		}
+
+		case MsgBoxFlags::BTN_ERROR: {
+			data.flags |= SDL_MESSAGEBOX_ERROR;
+			break;
+		}
+
+		default: {
+			data.flags = 0;
+			break;
+		}
+	}
 
 	std::vector<SDL_MessageBoxButtonData> buttons;
 	switch (type) {

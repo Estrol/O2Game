@@ -3,6 +3,7 @@
 #include <SDL2/SDL_syswm.h>
 #include "../Data/Imgui/imgui_impl_sdl2.h"
 #include <codecvt>
+#include "MsgBox.h"
 
 Window::Window() {
 	m_window = nullptr;
@@ -55,7 +56,7 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 	m_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 
 	if (m_window == nullptr) {
-		MessageBoxA(NULL, SDL_GetError(), "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut(SDL_GetError(), "EstEngine Error");
 
 		return false;
 	}

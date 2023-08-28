@@ -29,6 +29,8 @@ public:
     Vector2 AbsolutePosition;
     Vector2 AbsoluteSize;
 private:
+    void InternalDraw(std::u8string& text);
+
     int rotation_start_index;
     void ImRotationStart();
     ImVec2 ImRotationCenter();

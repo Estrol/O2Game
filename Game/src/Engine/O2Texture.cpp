@@ -1,6 +1,41 @@
 #include "O2Texture.hpp"
 #include "Lodepng.h"
 
+struct CBITMAPFILEHEADER {
+	uint16_t bfType;
+	uint32_t bfSize;
+	uint16_t bfReserved1;
+	uint16_t bfReserved2;
+	uint32_t bfOffBits;
+};
+
+struct CBITMAPINFOHEADER {
+	uint32_t biSize;
+	int32_t biWidth;
+	int32_t biHeight;
+	uint16_t biPlanes;
+	uint16_t biBitCount;
+	uint32_t biCompression;
+	uint32_t biSizeImage;
+	int32_t biXPelsPerMeter;
+	int32_t biYPelsPerMeter;
+	uint32_t biClrUsed;
+	uint32_t biClrImportant;
+};
+
+enum BIT_COMPRESSION {
+	BIT_RGB = 0,
+	BIT_RLE8 = 1,
+	BIT_RLE4 = 2,
+	BIT_BITFIELDS = 3,
+	BIT_JPEG = 4,
+	BIT_PNG = 5,
+	BIT_ALPHABITFIELDS = 6,
+	BIT_CMYK = 11,
+	BIT_CMYKRLE8 = 12,
+	BIT_CMYKRLE4 = 13
+};
+
 struct rgba_t {
 	uint8_t R;
 	uint8_t G;
@@ -27,7 +62,11 @@ struct rgba_t {
 	}
 };
 
-O2Texture::O2Texture(OJSFrame* frame) {
+O2Texture::O2Texture() {
+	
+}
+
+O2Texture::O2Texture(OJSFrame* frame) : O2Texture() {
 	if (frame->FrameSize == 0) {
 		throw std::invalid_argument("Invalid frame buffer size!");
 	}
@@ -95,15 +134,15 @@ O2Texture::O2Texture(OJSFrame* frame) {
 		m_bufferSize = result_buffer.size();
 	}
 	else {
-		BITMAPFILEHEADER bmfHeader = { 0 };
-		BITMAPINFOHEADER bi = { 0 };
+		CBITMAPFILEHEADER bmfHeader = { 0 };
+		CBITMAPINFOHEADER bi = { 0 };
 
 		bi.biSize = sizeof(BITMAPINFOHEADER);
 		bi.biWidth = frame->Width;
 		bi.biHeight = frame->Height;
 		bi.biPlanes = 1;
 		bi.biBitCount = 16;
-		bi.biCompression = BI_RGB;
+		bi.biCompression = BIT_COMPRESSION::BIT_RGB;
 		bi.biSizeImage = frame->Width * frame->Height * 2;
 		bi.biXPelsPerMeter = 0;
 		bi.biYPelsPerMeter = 0;
@@ -118,7 +157,7 @@ O2Texture::O2Texture(OJSFrame* frame) {
 		int biStride = (frame->Width * bi.biBitCount + 31) / 32 * 4;
 		int biSizeImage = abs(biStride) * frame->Height;
 
-		bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
+		bmfHeader.bfOffBits = (uint32_t)sizeof(BITMAPFILEHEADER) + (uint32_t)sizeof(BITMAPINFOHEADER);
 
 		uint8_t* data;
 		int totalSize = 0;
@@ -180,6 +219,55 @@ O2Texture::O2Texture(OJSFrame* frame) {
 	LoadImageResources(frame);
 
 	m_bDisposeTexture = true;
+}
+
+std::vector<O2Texture> O2Texture::Load(O2ResourceType opi, std::string filename) {
+	OJS* ojs = nullptr;
+
+	switch (opi) {
+		case O2ResourceType::O2_AVATAR: {
+			throw std::runtime_error("Not implemented yet");
+		}
+
+		case O2ResourceType::O2_INTERFACE: {
+			OPIFile* index = GameInterfaceResource::GetFile(filename);
+			if (index == nullptr) {
+				throw std::runtime_error("Failed to load the resource");
+			}
+
+			OJS* ojs = (OJS*)GameInterfaceResource::LoadFileData(index);
+			if (ojs == nullptr) {
+				throw std::runtime_error("Failed to load the resource");
+			}
+
+			break;
+		}
+
+		case O2ResourceType::O2_PLAYING: {
+			OPIFile* index = GamePlayingResource::GetFile(filename);
+			if (index == nullptr) {
+				throw std::runtime_error("Failed to load the resource");
+			}
+
+			OJS* ojs = (OJS*)GamePlayingResource::LoadFileData(index);
+			if (ojs == nullptr) {
+				throw std::runtime_error("Failed to load the resource");
+			}
+
+			break;
+		}
+
+		default: {
+			throw std::runtime_error("Invalid resource type");
+		}
+	}
+
+	std::vector<O2Texture> textures(ojs->FrameCount);
+	for (int i = 0; i < ojs->FrameCount; i++) {
+		textures[i] = ojs->Frames[i].get();
+	}
+
+	return textures;
 }
 
 void O2Texture::LoadImageResources(Boundary* position) {

@@ -18,7 +18,7 @@ public:
 	bool Create(std::filesystem::path fileName);
 	bool Create(uint8_t* buffer, size_t size);
 
-	bool Play(DWORD dwStartPosition = 0, BOOL bLoop = 0);
+	bool Play(uint32_t dwStartPosition = 0, bool bLoop = false);
 	bool Pause();
 	bool Resume();
 	bool Stop();
@@ -57,8 +57,8 @@ protected:
 	
 	std::mutex* lockFade;
 	uint32_t fadeState = -1;
-	DWORD fadeStartTime = -1;
-	DWORD fadeEndTime = -1;
+	uint32_t fadeStartTime = -1;
+	uint32_t fadeEndTime = -1;
 
-	DWORD m_hStream;
+	uint32_t m_hStream;
 };

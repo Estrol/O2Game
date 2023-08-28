@@ -18,7 +18,7 @@ namespace {
 	thread_local double lastTick = 0.0;
 
 	bool InitSDL() {
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
 			return false;
 		}
 
@@ -87,7 +87,7 @@ Game::~Game() {
 
 bool Game::Init() {
 	if (!InitSDL()) {
-		MessageBoxA(NULL, "SDL Failed to Initialize", "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut("SDL Failed to Initialize", "EstEngine Error");
 
 		return false;
 	}
