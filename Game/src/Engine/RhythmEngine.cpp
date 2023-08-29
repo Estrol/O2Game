@@ -73,6 +73,8 @@ RhythmEngine::~RhythmEngine() {
 }
 
 bool RhythmEngine::Load(Chart* chart) {
+	GameNoteResource::Load();
+	
 	m_state = GameState::PreParing;
 	m_currentChart = chart;
 
@@ -672,5 +674,6 @@ void RhythmEngine::Release() {
 	delete m_judge;
 
 	NoteImageCacheManager::Release();
+	GameNoteResource::Dispose();
 	GameAudioSampleCache::StopAll();
 }

@@ -21,7 +21,7 @@
 
 
 MyGame::~MyGame() {
-	GameNoteResource::Dispose();
+	
 }
 
 bool MyGame::Init() {

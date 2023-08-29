@@ -339,8 +339,13 @@ namespace GamePlayingResource {
 
 namespace GameNoteResource {
 	std::unordered_map<NoteImageType, NoteImage*> noteTextures;
+	bool Loaded = false;
 
-	bool Load() {		
+	bool Load() {
+		if (Loaded) {
+			throw std::runtime_error("NoteResource already loaded");
+		}
+
 		bool IsVulkan = Renderer::GetInstance()->IsVulkan();
 		
 		auto skinName = Configuration::Load("Game", "Skin");
@@ -560,6 +565,7 @@ namespace GameNoteResource {
 		noteTextures[NoteImageType::TRAIL_UP] = trailUpImg;
 		noteTextures[NoteImageType::TRAIL_DOWN] = trailDownImg;
 		
+		Loaded = true;
 		return true;
 	}
 
@@ -589,6 +595,7 @@ namespace GameNoteResource {
 		}
 
 		noteTextures.clear();
+		Loaded = false;
 		return true;
 	}
 

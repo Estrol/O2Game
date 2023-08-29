@@ -338,8 +338,6 @@ bool GameplayScene::Attach() {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
 		}
 
-		GameNoteResource::Load();
-
 		auto skinPath = Configuration::Skin_GetPath(SkinName);
 		auto playingPath = skinPath / "Playing";
 		SkinConfig conf(playingPath / "Playing.ini", 7);
@@ -873,7 +871,6 @@ bool GameplayScene::Detach() {
 	m_title.reset();
 	m_exitButtonFunc.reset();
 
-	GameNoteResource::Dispose();
 	SceneManager::GetInstance()->SetFrameLimitMode(FrameLimitMode::MENU);
 	return true;
 }

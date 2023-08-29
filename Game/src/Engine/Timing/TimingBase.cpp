@@ -17,7 +17,7 @@ double TimingBase::GetBeatAt(double offset) {
         bool beforeMid = mid + 1 >= timings.size() || timings[mid + 1].StartTime > offset;
 
         if (afterMid && beforeMid) {
-            return timings[mid].Value;
+            return timings[mid].CalculateBeat(offset);
         } else if (afterMid) {
             left = mid + 1;
         } else {
@@ -27,7 +27,7 @@ double TimingBase::GetBeatAt(double offset) {
 
     if (timings.size() == 0) return 0;
 
-    return timings[0].Value;
+    return timings[0].CalculateBeat(offset);
 }
 
 

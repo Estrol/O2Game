@@ -15,10 +15,16 @@ namespace {
 
 double CalculateBeatDiff(RhythmEngine* engine, JudgeBase* judge, Note* note) {
     double audioPos = engine->GetGameAudioPosition();
-	double hitTime = note->GetHitTime();
-	double bpm = note->GetBPMTime();
+	double noteTime = note->GetHitTime();
+    double hitTime = noteTime - (noteTime - audioPos);
 
-	return (audioPos - hitTime) * bpm / 60000.0;
+    double noteBeat = engine->GetTiming()->GetBeatAt(noteTime);
+	double hitBeat = engine->GetTiming()->GetBeatAt(hitTime);
+
+    return (noteBeat - hitBeat) / 0.664;
+
+    /*double bpm = note->GetBPMTime();
+	return (audioPos - hitTime) * bpm / 60000.0;*/
 }
 
 std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
@@ -55,9 +61,9 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
 }
 
 bool BeatBasedJudge::IsAccepted(Note* note) {
-    return CalculateBeatDiff(m_engine, this, note) > kNoteBadHitRatio;
+    return CalculateBeatDiff(m_engine, this, note) <= kNoteBadHitRatio;
 }
 
 bool BeatBasedJudge::IsMissed(Note* note) {
-    return CalculateBeatDiff(m_engine, this, note) >= kNoteBadHitRatio;
+    return CalculateBeatDiff(m_engine, this, note) < -kNoteBadHitRatio;
 }
