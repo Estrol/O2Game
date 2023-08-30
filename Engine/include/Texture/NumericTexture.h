@@ -1,5 +1,4 @@
 #pragma once
-#include <d3d11.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -17,7 +16,6 @@ NumericPosition IntToPos(int i);
 class NumericTexture {
 public:
 	NumericTexture() = default;
-	NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsTexture);
 	NumericTexture(std::vector<std::string> numericsFiles);
 	NumericTexture(std::vector<std::filesystem::path> numericsPath);
 	~NumericTexture();

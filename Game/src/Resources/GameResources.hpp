@@ -80,6 +80,7 @@ struct NoteImage {
 
 	std::vector<Texture2D_Vulkan*> VulkanTexture;
 	Rect TextureRect;
+	int MaxFrames;
 };
 
 namespace GameAvatarResource {

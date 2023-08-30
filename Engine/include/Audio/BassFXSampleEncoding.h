@@ -1,10 +1,19 @@
 #pragma once
 #include <tuple>
 #include <string>
+#include <vector>
 
 namespace BASS_FX_SampleEncoding {
+struct FXEncoding {
+	int sampleFlags;
+	int sampleRate;
+	int sampleChannels;
+	int sampleLength;
+	std::vector<char> sampleData;
+};
+
 	// std::tuple<int, int, int, int, void*>
 	// sampleFalgs, sampleRate, sampleChannels, sampleLength, void*
-	std::tuple<int, int, int, int, void*> Encode(void* audioData, size_t size, float rate);
-	std::tuple<int, int, int, int, void*> Encode(std::string filePath, float rate);
+	FXEncoding Encode(void* audioData, size_t size, float rate);
+	FXEncoding Encode(std::string filePath, float rate);
 }

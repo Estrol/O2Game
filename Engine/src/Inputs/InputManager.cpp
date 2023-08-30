@@ -145,7 +145,7 @@ void InputManager::OnMouseEvent(SDL_MouseButtonEvent& event, bool isDown) {
 }
 
 void InputManager::OnMousePositionEvent(SDL_MouseMotionEvent& event) {
-	Window* wnd = Window::GetInstance();
+	GameWindow* wnd = GameWindow::GetInstance();
 	int x = (event.x * wnd->GetBufferWidth()) / wnd->GetWidth();
 	int y = (event.y * wnd->GetBufferHeight()) / wnd->GetHeight();
 	

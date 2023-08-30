@@ -10,6 +10,17 @@
 #include <SDL2/SDL_image.h>
 #include "MsgBox.h"
 
+#if __linux__
+#include <unistd.h>
+#define MAX_PATH 256
+#endif
+
+#if _MSC_VER
+#define STRCPY_F strcpy_s
+#else
+#define STRCPY_F strcpy
+#endif
+
 #include "SkinConfig.hpp"
 
 #pragma warning(disable:26451)
@@ -52,14 +63,14 @@ OPIFile* InternalGetFile(std::string fileName, std::vector<OPIFile>& files) {
 
 ESTHANDLE* InternalLoadFileData(OPIFile* file, std::ifstream* stream) {
 	if (file == nullptr) {
-		MessageBoxA(0, "InternalLoadFileData::file == nullptr", "Error", MB_ICONERROR);
+		MsgBox::ShowOut("Error", "InternalLoadFileData::file == nullptr", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return nullptr;
 	}
 
 	stream->seekg(file->FileOffset, std::ios::beg);
 
 	if (!stream->good()) {
-		MessageBoxA(0, "InternalLoadFileData::stream::good == false", "Error", MB_ICONERROR);
+		MsgBox::ShowOut("Error", "InternalLoadFileData::stream::good == false", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return nullptr;
 	}
 
@@ -72,7 +83,7 @@ ESTHANDLE* InternalLoadFileData(OPIFile* file, std::ifstream* stream) {
 		stream->read((char*)buffer, file->FileSize);
 
 		OJS* ojs = new OJS();
-		strcpy_s(ojs->Name, file->Name);
+		STRCPY_F(ojs->Name, file->Name);
 
 		ojs->RGBFormat = *(uint32_t*)(buffer);
 		ojs->FrameCount = *(uint16_t*)(buffer + 4);
@@ -177,7 +188,7 @@ std::tuple<std::vector<OPIFile>, std::ifstream*> LoadOPI(std::filesystem::path& 
 
 		char fileName[128] = {};
 		file.read(fileName, 128);
-		strcpy_s(idx.Name, fileName);
+		STRCPY_F(idx.Name, fileName);
 
 		file.read((char*)&idx.FileOffset, 4);
 		file.read((char*)&idx.FileSize, 4);
@@ -202,7 +213,14 @@ namespace GameAvatarResource {
 
 	bool Load() {
 		char path[MAX_PATH];
+#if _WIN32
 		GetModuleFileNameA(NULL, path, MAX_PATH);
+#else
+		int len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+		if (len != -1) {
+			path[len] = '\0';
+		}
+#endif
 
 		// get path to .opi file
 		std::string opiPath = std::string(path);
@@ -249,7 +267,14 @@ namespace GameInterfaceResource {
 
 	bool Load() {
 		char path[MAX_PATH];
+#if _WIN32
 		GetModuleFileNameA(NULL, path, MAX_PATH);
+#else
+		int len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+		if (len != -1) {
+			path[len] = '\0';
+		}
+#endif
 
 		// get path to .opi file
 		std::string opiPath = std::string(path);
@@ -296,7 +321,14 @@ namespace GamePlayingResource {
 
 	bool Load() {
 		char path[MAX_PATH];
+#if _WIN32
 		GetModuleFileNameA(NULL, path, MAX_PATH);
+#else
+		int len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+		if (len != -1) {
+			path[len] = '\0';
+		}
+#endif
 
 		// get path to .opi file
 		std::string opiPath = std::string(path);
@@ -359,6 +391,9 @@ namespace GameNoteResource {
 
 			NoteImage* noteImage = new NoteImage();
 			NoteImage* holdImage = new NoteImage();
+
+			noteImage->MaxFrames = note.numOfFiles;
+			holdImage->MaxFrames = hold.numOfFiles;
 
 			noteImage->Surface.resize(note.numOfFiles);
 			holdImage->Surface.resize(hold.numOfFiles);

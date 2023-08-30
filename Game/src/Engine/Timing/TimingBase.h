@@ -8,6 +8,7 @@ public:
 	virtual ~TimingBase() = default;
 
 	virtual double GetBeatAt(double offset);
+	virtual double GetBPMAt(double offset);
 
 	virtual double GetOffsetAt(double offset);
 	virtual double GetOffsetAt(double offset, int index);

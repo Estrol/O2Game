@@ -2,27 +2,22 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#if _WIN32
 #include <bass.h>
 #include <bass_fx.h>
-#elif __linux__
-#include <bass_linux.h>
-#include <bass_fx_linux.h>
-#endif
 #include <vector>
 #include <string.h>
 
-std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audioData, size_t size, float rate) {
+BASS_FX_SampleEncoding::FXEncoding BASS_FX_SampleEncoding::Encode(void* audioData, size_t size, float rate) {
 	HCHANNEL channel = BASS_StreamCreateFile(TRUE, audioData, 0, size, BASS_STREAM_DECODE);
 	if (!channel) {
-		return { 0, 0, 0, 0, nullptr };
+		return { 0, 0, 0, 0, {} };
 	}
 	
 	int code = BASS_ErrorGetCode();
 	HCHANNEL tempoch = BASS_FX_TempoCreate(channel, BASS_STREAM_DECODE);
 	if (!tempoch) {
 		BASS_ChannelFree(channel);
-		return { 0, 0, 0, 0, nullptr };
+		return { 0, 0, 0, 0, {} };
 	}
 
 	float frequency = 48000.0f;
@@ -54,10 +49,13 @@ std::tuple<int, int, int, int, void*> BASS_FX_SampleEncoding::Encode(void* audio
 	}
 
 	delete[] data;
-	size_t size2 = dataVec.size();
-	void* data2 = new char[size2];
-	memcpy(data2, dataVec.data(), size2);
-
-	// return tuple: sampleFalgs, sampleRate, sampleChannels, sampleLength, void*
-	return { tempoInfo.flags, tempoInfo.freq, tempoInfo.chans, (int)size2, data2 };
+	size_t data_size = dataVec.size();
+	
+	return { 
+		(int)tempoInfo.flags, 
+		(int)tempoInfo.freq, 
+		(int)tempoInfo.chans, 
+		(int)data_size,
+		std::move(dataVec)
+	};
 }

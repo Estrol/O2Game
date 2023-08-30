@@ -5,7 +5,7 @@
 
 enum class RendererMode;
 
-class Window {
+class GameWindow {
 public:
 	bool Create(RendererMode mode, std::string title, int width, int height, int bufferWidth, int bufferHeight);
 	bool Destroy();
@@ -30,13 +30,13 @@ public:
 	void SetWindowTitle(std::string& title);
 	void SetWindowSubTitle(std::string& subTitle);
 
-	static Window* GetInstance();
+	static GameWindow* GetInstance();
 	static void Release();
 private:
-	Window();
-	~Window();
+	GameWindow();
+	~GameWindow();
 
-	static Window* s_instance;
+	static GameWindow* s_instance;
 
 	bool m_scaleOutput;
 	bool m_resizeRenderer;

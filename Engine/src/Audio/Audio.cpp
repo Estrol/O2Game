@@ -129,15 +129,15 @@ bool Audio::CreateStream() {
 
 	m_hStream = BASS_StreamCreateFile(TRUE, m_pBuffer, 0, m_dwSize, BASS_STREAM_DECODE | BASS_SAMPLE_FLOAT);
 	if (!m_hStream) {
-		int a = BASS_ErrorGetCode();
-		MsgBox::ShowOut("Failed to create Stream", "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+		std::cout << "BASS_ERROR: " << BASS_ErrorGetCode() << std::endl;
+		MsgBox::ShowOut("EstEngine Error", "Failed to create Stream", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 
 	m_hStream = BASS_FX_TempoCreate(m_hStream, BASS_FX_FREESOURCE);
 	if (!m_hStream) {
-		int a = BASS_ErrorGetCode();
-		MsgBox::ShowOut("Failed to create tempo stream", "EstEngine Error", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+		std::cout << "BASS_ERROR: " << BASS_ErrorGetCode() << std::endl;
+		MsgBox::ShowOut("EstEngine Error", "Failed to create Tempo Stream", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 

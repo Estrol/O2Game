@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "Scene.h"
 #include "Game.h"
+#include "MsgBox.h"
 
 #include <string>
 #include <mutex>
@@ -30,7 +31,7 @@ void SceneManager::Update(double delta) {
 		std::lock_guard<std::mutex> lock(m_mutex);
 
 		if (!m_nextScene->Attach()) {
-			MessageBoxA(NULL, "Failed to init next scene", "EstEngine Error", MB_ICONERROR);
+			MsgBox::ShowOut("EstEngine Error", "Failed to init next scene", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			m_parent->Stop();
 			return;
 		}
@@ -40,7 +41,7 @@ void SceneManager::Update(double delta) {
 			m_currentScene = nullptr;
 
 			if (!curScene->Detach()) {
-				MessageBoxA(NULL, "Failed to detact current scene", "EstEngine Error", MB_ICONERROR);
+				MsgBox::ShowOut("EstEngine Error", "Failed to detach current screen", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 				m_parent->Stop();
 				return;
 			}
@@ -130,7 +131,7 @@ void SceneManager::IChangeScene(int idx) {
 	if (m_scenes.find(idx) == m_scenes.end()) {
 		std::string msg = "Failed to find SceneId: " + std::to_string(idx);
 		
-		MessageBoxA(NULL, msg.c_str(), "EstEngine Error", MB_ICONERROR);
+		MsgBox::ShowOut("EstEngine Error", msg.c_str(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return;
 	}
 

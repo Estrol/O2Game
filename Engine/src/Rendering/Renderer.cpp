@@ -1,10 +1,6 @@
 #include "Rendering/Renderer.h"
+#include "MsgBox.h"
 #include <filesystem>
-#include <d3d11.h>
-#include <dxgi1_3.h>
-#include <d3d11on12.h>
-#include <dxgidebug.h>
-#include <wrl.h>
 #include "../Data/Imgui/imgui_impl_sdl2.h"
 #include "../Data/Imgui/imgui_impl_sdlrenderer2.h"
 #include "Imgui/ImguiUtil.h"
@@ -27,7 +23,7 @@ Renderer::~Renderer() {
 
 Renderer* Renderer::s_instance = nullptr;
 
-bool Renderer::Create(RendererMode mode, Window* window, bool failed) {
+bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
     try {
         std::string rendererName = "";
         bool bUsedSDLRenderer = true;
@@ -157,14 +153,14 @@ bool Renderer::Create(RendererMode mode, Window* window, bool failed) {
         }
     }
 	catch (SDLException& e) {
-		MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
+        MsgBox::ShowOut("EstEngine Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
 }
 
 bool Renderer::Resize() {
     try {
-        Window* window = Window::GetInstance();
+        GameWindow* window = GameWindow::GetInstance();
 
         int new_width = window->GetWidth();
         int new_height = window->GetHeight();
@@ -186,7 +182,7 @@ bool Renderer::Resize() {
         return true;
     }
     catch (SDLException& e) {
-        MessageBoxA(NULL, e.what(), "EstEngine Error", MB_ICONERROR);
+        MsgBox::ShowOut("EstEngine Error", e.what(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
         return false;
     }
 }

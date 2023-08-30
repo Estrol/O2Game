@@ -2,6 +2,12 @@
 #include "Inputs/InputManager.h"
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
+#include "Texture/Bitmap.h"
+
+#if __LINUX__
+#define TRUE 1
+#define FALSE 0
+#endif
 
 struct Vector2 {
 	LONG X, Y;

@@ -5,11 +5,11 @@
 #include "AudioSample.h"
 #include <filesystem>
 
-class Window;
+class GameWindow;
 
 class AudioManager {
 public:
-	bool Init(Window* window);
+	bool Init(GameWindow* window);
 
 	bool Create(std::string id, uint8_t*, size_t size, Audio** out);
 	bool Create(std::string id, std::filesystem::path path, Audio** out);
@@ -43,7 +43,7 @@ private:
 	Audio* m_bootAudio;
 	AudioSample* m_bootSample;
 
-	Window* m_currentWindow;
+	GameWindow* m_currentWindow;
 	std::unordered_map<std::string, Audio*> m_audios;
 	std::unordered_map<std::string, AudioSample*> m_audioSamples;
 };

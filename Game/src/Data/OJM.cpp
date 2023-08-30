@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string.h>
 #include "Util/Util.hpp"
 
 constexpr int kM30Signature = 0x0030334D;

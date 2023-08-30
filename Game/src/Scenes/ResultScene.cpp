@@ -25,7 +25,7 @@ void ResultScene::Render(double delta) {
 	ImguiUtil::NewFrame();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    auto window = Window::GetInstance();
+    auto window = GameWindow::GetInstance();
 
     auto windowNextSz = ImVec2(window->GetBufferWidth(), window->GetBufferHeight());
     ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
@@ -163,7 +163,7 @@ bool ResultScene::Attach() {
     EnvironmentSetup::SetObj("SONG", nullptr);
 
     if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
-        Window* window = Window::GetInstance();
+        GameWindow* window = GameWindow::GetInstance();
 
         m_background = std::make_unique<Texture2D>((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
         m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());

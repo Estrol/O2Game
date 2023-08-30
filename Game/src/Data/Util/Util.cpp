@@ -1,5 +1,4 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
-#define _CRT_SECURE_NO_WARNINGS
 
 #include "Util.hpp"
 #include <numeric>
@@ -143,6 +142,6 @@ std::u8string CodepageToUtf8(const char* string, size_t str_len, int codepage) {
 
 	return str_result;
 #else
-	return std::u8string(string, len);
+	return std::u8string((const char8_t*)string, str_len);
 #endif
 }

@@ -96,7 +96,7 @@ void LoadingScene::Update(double delta) {
 			dirPath /= chart->m_backgroundFile;
 
 			try {
-				Window* window = Window::GetInstance();
+				GameWindow* window = GameWindow::GetInstance();
 				if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
 					m_background = new Texture2D(dirPath.string());
 					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());

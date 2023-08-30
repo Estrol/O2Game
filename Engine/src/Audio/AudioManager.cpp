@@ -40,7 +40,7 @@ AudioManager::~AudioManager() {
 
 AudioManager* AudioManager::s_instance = nullptr;
 
-bool AudioManager::Init(Window* window) {
+bool AudioManager::Init(GameWindow* window) {
 	m_currentWindow = window;
 
 	if (HIWORD(BASS_GetVersion()) != BASSVERSION) {
@@ -53,14 +53,10 @@ bool AudioManager::Init(Window* window) {
 		return false;
 	}
 
-#if _WIN32
 	if (!BASS_Init(-1, DEFAULT_SAMPLE_RATE, BASS_DEVICE_STEREO, NULL, NULL)) {
-		MessageBoxA(0, "Can't initialize device", 0, MB_ICONERROR);
+		MsgBox::ShowOut("Failed to init BASS", "Incorrect BASS", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 		return false;
 	}
-#else
-
-#endif
 
 	//BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
 	BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);

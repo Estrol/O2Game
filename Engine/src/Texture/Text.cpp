@@ -10,7 +10,7 @@
 
 #if _WIN32
 #include <windows.h>
-#elif
+#else
 #include <locale>
 #endif
 
@@ -39,9 +39,9 @@ void Text::Draw(std::wstring text, ...) {
     delete[] buf;
 #else
     // use linux native without std
-    int len = wctomb(NULL, text.c_str());
+    int len = wcstombs(NULL, text.c_str(), 0);
     char* buf = new char[len];
-    wctomb(buf, text.c_str());
+    wcstombs(buf, text.c_str(), len);
     std::u8string u8str(buf, buf + len);
 
     delete[] buf;
@@ -100,7 +100,7 @@ void Text::InternalDraw(std::u8string& formated) {
         draw_list = ImGui::GetWindowDrawList();
     }
 
-    Window* wnd = Window::GetInstance();
+    GameWindow* wnd = GameWindow::GetInstance();
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
 	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
@@ -108,7 +108,7 @@ void Text::InternalDraw(std::u8string& formated) {
 	
     auto textSize = ImGui::CalcTextSizeWithSize((const char*)formated.c_str(), Size * scale);
 
-    Window* window = Window::GetInstance();
+    GameWindow* window = GameWindow::GetInstance();
     int wWidth = window->GetWidth();
     int wHeight = window->GetHeight();
 
@@ -140,7 +140,7 @@ Text::~Text() {
 int Text::CalculateSize(std::u8string text) {
     ImguiUtil::NewFrame();
 
-    Window* wnd = Window::GetInstance();
+    GameWindow* wnd = GameWindow::GetInstance();
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
     float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 

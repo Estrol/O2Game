@@ -110,7 +110,7 @@ void EditorScene::Render(double delta) {
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(1280, 720));
 
-	Window* wnd = Window::GetInstance();
+	GameWindow* wnd = GameWindow::GetInstance();
 
 	float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
 	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;
@@ -258,7 +258,7 @@ void EditorScene::Render(double delta) {
 				}
 
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-					ImGui::SetTooltip(diffDesc[i].c_str());
+					ImGui::SetTooltip("%s", diffDesc[i].c_str());
 				}
 
 				if (m_currentDifficulty == i) {
@@ -761,7 +761,7 @@ bool EditorScene::Attach() {
 	m_autoscroll = false;
 	m_currentTime = 0;
 
-	Window* wnd = Window::GetInstance();
+	GameWindow* wnd = GameWindow::GetInstance();
 	m_oldBufferSize.x = wnd->GetBufferWidth();
 	m_oldBufferSize.y = wnd->GetBufferHeight();
 
@@ -799,7 +799,7 @@ bool EditorScene::Attach() {
 }
 
 bool EditorScene::Detach() {
-	Window::GetInstance()->ResizeBuffer(m_oldBufferSize.x, m_oldBufferSize.y);
+	GameWindow::GetInstance()->ResizeBuffer(m_oldBufferSize.x, m_oldBufferSize.y);
 
 	m_notes.clear();
 	m_samples.clear();

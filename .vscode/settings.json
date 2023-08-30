@@ -85,7 +85,16 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "bitset": "cpp",
+        "cfenv": "cpp",
+        "csignal": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "shared_mutex": "cpp",
+        "valarray": "cpp",
+        "coroutine": "cpp",
+        "resumable": "cpp"
     },
     "C_Cpp.default.compilerPath": "cl.exe"
 }

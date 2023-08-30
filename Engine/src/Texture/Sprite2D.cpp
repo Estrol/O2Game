@@ -58,7 +58,7 @@ void Sprite2D::Draw(double delta, bool manual) {
 
 void Sprite2D::Draw(double delta, Rect* rect, bool manual) {
 	auto tex = m_textures[m_currentIndex];
-	Window* window = Window::GetInstance();
+	GameWindow* window = GameWindow::GetInstance();
 
 	double xPos = (window->GetBufferWidth() * Position.X.Scale) + (Position.X.Offset);
 	double yPos = (window->GetBufferHeight() * Position.Y.Scale) + (Position.Y.Offset);

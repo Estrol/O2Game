@@ -5,6 +5,7 @@
 
 #include "../Rendering/WindowsTypes.h"
 #include "Rendering/Vulkan/VulkanEngine.h"
+#include "Texture/Bitmap.h"
 #include "UDim2.h"
 #include "Vector2.h"
 #include "Color3.h"

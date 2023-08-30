@@ -6,6 +6,10 @@
 #include <filesystem>
 #include <algorithm>
 
+#if __linux__
+#include <unistd.h>
+#endif
+
 // Game Headers
 #include "MyGame.h"
 #include "EnvironmentSetup.hpp"
@@ -39,7 +43,7 @@ int Run(int argc, wchar_t** argv) {
 			MessageBoxA(NULL, "Failed to set directory!", "EstGame Error", MB_ICONERROR);
 			return -1;
 		}
-#elif	
+#else	
 		if (chdir(parentPath.string().c_str()) != 0) {
 			std::cout << "Failed to set directory!" << std::endl;
 			return -1;
@@ -97,11 +101,11 @@ int main(int argc, char* argv[]) {
 // msvc
 #if _MSC_VER
 #pragma message("Memory leak detection is enabled. This will cause performance issues.")
-#elif
+#else
 #warning "Memory leak detection is enabled. This will cause performance issues."
 #endif
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); 
-	//_CrtSetBreakAlloc(6297);
+	_CrtSetBreakAlloc(13067);
 #endif
 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
 	if (retVal == nullptr) {

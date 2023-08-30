@@ -247,6 +247,7 @@ void Note::Render(double delta) {
 		bool b2 = isWithinRange(m_tail->Position.Y.Offset, min, max);
 
 		if (isCollision(m_tail->Position.Y.Offset, m_head->Position.Y.Offset, min, max)) {
+			m_body->SetIndexAt(m_engine->GetNoteImageIndex());
 			m_body->Draw(delta, &playRect);
 		}
 
@@ -262,6 +263,7 @@ void Note::Render(double delta) {
 				m_trail_down->Draw(delta, &playRect);
 			}
 
+			m_head->SetIndexAt(m_engine->GetNoteImageIndex());
 			m_head->Draw(delta, &playRect);
 		}
 
@@ -277,6 +279,7 @@ void Note::Render(double delta) {
 				m_trail_up->Draw(delta, &playRect);
 			}
 
+			m_tail->SetIndexAt(m_engine->GetNoteImageIndex());
 			m_tail->Draw(delta, &playRect);
 		}
 	}
@@ -308,6 +311,7 @@ void Note::Render(double delta) {
 				m_trail_up->Draw(delta, &playRect);
 			}
 
+			m_head->SetIndexAt(m_engine->GetNoteImageIndex());
 			m_head->Draw(delta, &playRect);
 		}
 	}

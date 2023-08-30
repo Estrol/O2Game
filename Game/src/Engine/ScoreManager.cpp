@@ -1,4 +1,5 @@
 #include "ScoreManager.hpp"
+#include <limits.h>
 #include <algorithm>
 
 ScoreManager::ScoreManager() {

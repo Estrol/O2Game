@@ -4,6 +4,7 @@
 #include <future>
 #include <iostream>
 #include <unordered_map>
+#include <limits.h>
 
 #include "Game.h"
 #include "MsgBox.h"
@@ -217,7 +218,7 @@ void GameplayScene::Render(double delta) {
 		int lerp;
 		if (m_jamGauge->AbsoluteSize.Y > m_jamGauge->AbsoluteSize.X) {
 			// Fill from bottom to top
-			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.Y, gaugeVal);
+			lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.Y, (double)gaugeVal));
 			Rect rc = {
 				(LONG)m_jamGauge->AbsolutePosition.X,
 				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y - lerp),
@@ -229,7 +230,7 @@ void GameplayScene::Render(double delta) {
 		}
 		else {
 			// Fill from left to right
-			lerp = (int)std::lerp(0, m_jamGauge->AbsoluteSize.X, gaugeVal);
+			lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.X, gaugeVal));
 			Rect rc = {
 				(LONG)m_jamGauge->AbsolutePosition.X,
 				(LONG)m_jamGauge->AbsolutePosition.Y,
@@ -287,7 +288,7 @@ void GameplayScene::Render(double delta) {
 
 		m_autoTextPos.X.Offset -= delta * 30.0;
 		if (m_autoTextPos.X.Offset < (-m_autoTextSize + 20)) {
-			m_autoTextPos = UDim2::fromOffset(Window::GetInstance()->GetBufferWidth(), 50);
+			m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 		}
 	}
 }
@@ -356,7 +357,7 @@ bool GameplayScene::Attach() {
 		m_autoText = std::make_unique<Text>(13);
 		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
 
-		m_autoTextPos = UDim2::fromOffset(Window::GetInstance()->GetBufferWidth(), 50);
+		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 
 		int arena = EnvironmentSetup::GetInt("Arena");
 		if (arena == 0) {

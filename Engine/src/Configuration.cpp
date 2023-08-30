@@ -1,6 +1,6 @@
 #include "Configuration.h"
 #include <iostream>
-#include "Data/mINI.h"
+#include "Misc/mINI.h"
 
 namespace {
     bool IsLoaded = false;

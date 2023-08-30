@@ -22,9 +22,6 @@ double CalculateBeatDiff(RhythmEngine* engine, JudgeBase* judge, Note* note) {
 	double hitBeat = engine->GetTiming()->GetBeatAt(hitTime);
 
     return (noteBeat - hitBeat) / 0.664;
-
-    /*double bpm = note->GetBPMTime();
-	return (audioPos - hitTime) * bpm / 60000.0;*/
 }
 
 std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
@@ -52,9 +49,6 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
     }
     else if (beatDiff <= kNoteBadHitRatio - decrement) {
         return { true, NoteResult::BAD };
-    }
-    else if (beatDiff <= kNoteEarlyMissRatio - decrement) {
-		
     }
 
     return { false, NoteResult::MISS };

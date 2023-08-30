@@ -95,6 +95,11 @@
 #include <cctype>
 #include <filesystem>
 
+#if __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-fpermissive"
+#endif
+
 namespace mINI
 {
 	namespace INIStringUtil
@@ -683,9 +688,11 @@ namespace mINI
 		bool operator<<(INIStructure& data) {
 			struct stat buf;
 			bool fileExists = (stat(filename.c_str(), &buf) == 0);
-			if (!std::filesystem::exists(usingPath ? path : filename)) {}
+			auto _path = usingPath ? path : std::filesystem::path(filename);
+
+			if (!std::filesystem::exists(_path)) {}
 			{
-				INIGenerator generator(usingPath ? path : filename);
+				INIGenerator generator(_path);
 				generator.prettyPrint = prettyPrint;
 				return generator << data;
 			}
@@ -694,7 +701,7 @@ namespace mINI
 			bool readSuccess = false;
 			bool fileIsBOM = false;
 			{
-				INIReader reader(usingPath ? path : filename, true);
+				INIReader reader(_path, true);
 				if ((readSuccess = reader >> originalData))
 				{
 					lineData = reader.getLines();
@@ -706,7 +713,7 @@ namespace mINI
 				return false;
 			}
 			T_LineData output = getLazyOutput(lineData, data, originalData);
-			std::ofstream fileWriteStream(usingPath ? path : filename, std::ios::out | std::ios::binary);
+			std::ofstream fileWriteStream(_path, std::ios::out | std::ios::binary);
 			if (fileWriteStream.is_open())
 			{
 				if (fileIsBOM) {
@@ -770,29 +777,51 @@ namespace mINI
 				return false;
 			}
 			
-			INIReader reader(usingPath ? path : filename);
-			return reader >> data;
-
+			if (usingPath) {
+				INIReader reader(path);
+				return reader >> data;
+			} else {
+				INIReader reader(filename);
+				return reader >> data;
+			}
 		}
 		bool generate(INIStructure const& data, bool pretty = false) const {
 			if (filename.empty() && !usingPath)
 			{
 				return false;
 			}
-			INIGenerator generator(usingPath ? path : filename);
-			generator.prettyPrint = pretty;
-			return generator << data;
+
+			if (usingPath) {
+				INIGenerator generator(path);
+				generator.prettyPrint = pretty;
+				return generator << data;
+			} else {
+				INIGenerator generator(filename);
+				generator.prettyPrint = pretty;
+				return generator << data;
+			}
 		}
 		bool write(INIStructure& data, bool pretty = false) const {
 			if (filename.empty() && !usingPath)
 			{
 				return false;
 			}
-			INIWriter writer(usingPath ? path : filename);
-			writer.prettyPrint = pretty;
-			return writer << data;
+
+			if (usingPath) {
+				INIWriter writer(path);
+				writer.prettyPrint = pretty;
+				return writer << data;
+			} else {
+				INIWriter writer(filename);
+				writer.prettyPrint = pretty;
+				return writer << data;
+			}
 		}
 	};
 }
+
+#if __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #endif // MINI_INI_H_

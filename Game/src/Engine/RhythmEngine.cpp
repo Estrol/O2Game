@@ -81,6 +81,9 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_autoHitIndex.clear();
 	m_autoHitInfos.clear();
 
+	// default is 99
+	m_noteMaxImageIndex = 99;
+
 	int currentX = m_laneOffset;
 	for (int i = 0; i < 7; i++) {
 		m_tracks.push_back(new GameTrack( this, i, currentX ));
@@ -92,7 +95,10 @@ bool RhythmEngine::Load(Chart* chart) {
 			});
 		}
 
-		int size = GameNoteResource::GetNoteTexture(Key2Type[i])->TextureRect.right;
+		auto noteTex = GameNoteResource::GetNoteTexture(Key2Type[i]);
+
+		int size = noteTex->TextureRect.right;
+		m_noteMaxImageIndex = (std::min)(noteTex->MaxFrames, m_noteMaxImageIndex);
 		
 		m_lanePos[i] = currentX;
 		m_laneSize[i] = size;
@@ -221,7 +227,7 @@ bool RhythmEngine::Load(Chart* chart) {
 
 		// format [%.2f] <title>
 		wchar_t buffer[256];
-		swprintf(buffer, L"[%.2fx] %s", m_rate, widestr);
+		swprintf(buffer, 256, L"[%.2fx] %s", m_rate, widestr);
 
 		// convert back to utf8
 		int mblen = wcstombs(NULL, buffer, 0);
@@ -258,14 +264,14 @@ bool RhythmEngine::Load(Chart* chart) {
 		desc.InitialTrackPosition = m_timings->GetOffsetAt(note.StartTime); //GetPositionFromOffset(note.StartTime);
 		desc.EndTrackPosition = -1;
 		desc.KeysoundIndex = note.Keysound;
-		desc.StartBPM = m_timings->GetBeatAt(note.StartTime);
+		desc.StartBPM = m_timings->GetBPMAt(note.StartTime);
 		desc.Volume = (int)std::round(note.Volume * (float)m_audioVolume);
 		desc.Pan = (int)std::round(note.Pan * (float)m_audioVolume);
 
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
 			desc.EndTrackPosition = m_timings->GetOffsetAt(note.EndTime); //GetPositionFromOffset(note.EndTime);
-			desc.EndBPM = m_timings->GetBeatAt(note.EndTime);
+			desc.EndBPM = m_timings->GetBPMAt(note.EndTime);
 		}
 
 		if ((m_audioOffset != 0 && desc.KeysoundIndex != -1) || IsAutoSound) {
@@ -340,6 +346,10 @@ void RhythmEngine::Update(double delta) {
 	if (m_currentAudioPosition > m_audioLength + 6000) { // Avoid game ended too early
 		m_state = GameState::PosGame;
 		::printf("Audio stopped!\n");
+	}
+
+	if (static_cast<int>(m_currentAudioPosition) % 1000 == 0) {
+		m_noteImageIndex = (m_noteImageIndex + 1) % m_noteMaxImageIndex;
 	}
 
 	UpdateVirtualResolution();
@@ -544,6 +554,10 @@ int RhythmEngine::GetPlayTime() const { // Get game time
 	return m_PlayTime;
 }
 
+int RhythmEngine::GetNoteImageIndex() {
+	return m_noteImageIndex;
+}
+
 int RhythmEngine::GetGuideLineIndex() const {
 	return m_guideLineIndex;
 }
@@ -596,8 +610,8 @@ void RhythmEngine::UpdateGamePosition() {
 }
 
 void RhythmEngine::UpdateVirtualResolution() {
-	double width = Window::GetInstance()->GetBufferHeight();
-	double height = Window::GetInstance()->GetBufferHeight();
+	double width = GameWindow::GetInstance()->GetBufferHeight();
+	double height = GameWindow::GetInstance()->GetBufferHeight();
 
 	m_gameResolution = { width, height };
 

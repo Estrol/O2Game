@@ -1,26 +1,9 @@
-#include <windows.h>
 #include <stdexcept>
 #include <filesystem>
 #include "Rendering/Renderer.h"
 #include "Texture/NumericTexture.h"
+#include "Texture/Bitmap.h"
 
-#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
-
-NumericTexture::NumericTexture(std::vector<ID3D11ShaderResourceView*>& numericsTexture) {
-	if (numericsTexture.size() != 10) {
-		throw std::runtime_error("NumericTexture::NumericTexture: numericsTexture.size() != 10");
-	}
-
-	Position2 = UDim2::fromOffset(0, 0);
-	AnchorPoint = { 0, 0 };
-
-	m_numericsTexture.resize(10);
-	for (int i = 0; i < 10; i++) {
-		auto tex = numericsTexture[i];
-		//m_numericsTexture[i] = new Texture2D(tex);
-		m_numbericsWidth[i] = m_numericsTexture[i]->GetOriginalRECT();
-	}
-}
 
 NumericTexture::NumericTexture(std::vector<std::string> numericsFiles) {
 	if (numericsFiles.size() != 10) {
@@ -61,7 +44,7 @@ NumericTexture::~NumericTexture() {
 }
 
 void NumericTexture::DrawNumber(int number) {
-	Window* window = Window::GetInstance();
+	GameWindow* window = GameWindow::GetInstance();
 
 	std::string numberString = std::to_string(number);
 	if (MaxDigits != 0 && numberString.size() > MaxDigits) {

@@ -62,7 +62,7 @@ void FontResources::PreloadFontCaches() {
     io.Fonts->Clear();
     io.Fonts->ClearFonts();
 
-    Window* wnd = Window::GetInstance();
+    GameWindow* wnd = GameWindow::GetInstance();
 
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
     float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
@@ -156,8 +156,10 @@ void FontResources::PreloadFontCaches() {
         conf.GlyphOffset.y = 1.0f * (iBtnFontSz / 16.0f);
 		
         if (std::filesystem::exists(font)) {
+            conf.FontDataOwnedByAtlas = true;
             gImFontButton = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
             gImFontSlider = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
+            conf.FontDataOwnedByAtlas = false;
         }
         else {
             gImFontButton = io.Fonts->AddFontFromMemoryTTF((void*)get_arial_font_data(), get_arial_font_size(), iBtnFontSz, &conf);

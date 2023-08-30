@@ -7,7 +7,7 @@
 #include "Util/Util.hpp"
 #include <cmath>
 
-double __floorf(double value) {
+double float_floor(double value) {
 #if __GNUC__
 	return ::floorf(value);
 #else
@@ -92,7 +92,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		info.StartTime = note.StartTime;
 		info.Type = NoteType::NORMAL;
 		info.Keysound = note.KeysoundIndex;
-		info.LaneIndex = static_cast<int>(__floorf(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
+		info.LaneIndex = static_cast<int>(float_floor(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
 		info.Volume = static_cast<float>(note.Volume) / 100.0;
 		info.Pan = 0;
 

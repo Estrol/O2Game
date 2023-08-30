@@ -80,7 +80,7 @@ Game::~Game() {
 	SceneManager::Release();
 	InputManager::Release();
 	Renderer::Release();
-	Window::Release();
+	GameWindow::Release();
 
 	DeInitSDL();
 }
@@ -93,7 +93,7 @@ bool Game::Init() {
 	}
 
 	std::cout << "Window::Create << " << std::endl;
-	m_window = Window::GetInstance();
+	m_window = GameWindow::GetInstance();
 
 	int width = m_windowWidth;
 	int height = m_windowHeight;

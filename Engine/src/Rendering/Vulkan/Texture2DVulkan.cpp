@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <mutex>
 
 static std::unordered_map<int, std::unique_ptr<Texture2D_Vulkan>> m_textures;
 static int m_textureCount = 0;

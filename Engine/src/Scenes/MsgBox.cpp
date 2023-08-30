@@ -40,7 +40,7 @@ void MsgBox::Draw() {
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
 		if (ImGui::BeginPopupModal(Id.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
-			ImGui::Text(session.Content.c_str());
+			ImGui::Text("%s", session.Content.c_str());
 
 			switch (session.Type) {
 				case MsgBoxType::YESNOCANCEL: {

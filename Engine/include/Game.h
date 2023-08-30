@@ -46,7 +46,7 @@ protected:
 	virtual void Input(double deltaTime);
 	virtual void Mouse(double deltaTime);
 
-	Window* m_window;
+	GameWindow* m_window;
 	Renderer* m_renderer;
 	InputManager* m_inputManager;
 	SceneManager* m_sceneManager;

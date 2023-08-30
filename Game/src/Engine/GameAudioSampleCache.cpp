@@ -64,18 +64,18 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 			if (audioManager->GetSample(sample.FilePath) == nullptr) {
 				if (!pitch && m_rate != 1.0f) {
 					auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), m_rate);
-					if (std::get<0>(data) == 0) {
+					if (data.sampleFlags == 0) {
 						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
 						continue;
 					}
 
 					if (!audioManager->CreateSampleFromData(
-						sample.FilePath, 
-						std::get<0>(data), 
-						std::get<1>(data), 
-						std::get<2>(data),
-						std::get<3>(data), 
-						std::get<4>(data),
+						sample.FilePath,
+						data.sampleFlags,
+						data.sampleRate,
+						data.sampleChannels,
+						data.sampleLength,
+						data.sampleData.data(),
 						&sample.Sample)) {
 						
 						std::cout << "Failed to load sample: " << it.FileName << std::endl;
@@ -138,18 +138,18 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 					auto data = BASS_FX_SampleEncoding::Encode(buffer, size, m_rate);
 					delete[] buffer;
 
-					if (std::get<0>(data) == 0) {
+					if (data.sampleFlags == 0) {
 						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
 						continue;
 					}
 
 					if (!audioManager->CreateSampleFromData(
 						sample.FilePath + std::to_string(it.Index),
-						std::get<0>(data),
-						std::get<1>(data),
-						std::get<2>(data),
-						std::get<3>(data),
-						std::get<4>(data),
+						data.sampleFlags,
+						data.sampleRate,
+						data.sampleChannels,
+						data.sampleLength,
+						data.sampleData.data(),
 						&sample.Sample)) {
 
 						std::cout << "Failed to load sample: " << it.FileName << std::endl;

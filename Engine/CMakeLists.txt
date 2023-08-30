@@ -50,7 +50,7 @@ add_library(EstEngine
 
 	#Rendering
 	"src/Rendering/Renderer.cpp"
-	"src/Rendering/Window.cpp"
+	"src/Rendering/GameWindow.cpp"
 	"src/Rendering/Vulkan/Texture2DVulkan.cpp"
 	"src/Rendering/Vulkan/vkinit.cpp"
 	"src/Rendering/Vulkan/VulkanEngine.cpp"

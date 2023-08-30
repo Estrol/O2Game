@@ -5,7 +5,7 @@
 #include <codecvt>
 #include "MsgBox.h"
 
-Window::Window() {
+GameWindow::GameWindow() {
 	m_window = nullptr;
 
 	m_width = 0;
@@ -17,15 +17,15 @@ Window::Window() {
 	m_subTitle = "";
 }
 
-Window::~Window() {
+GameWindow::~GameWindow() {
 	if (m_window != nullptr) {
 		Destroy();
 	}
 }
 
-Window* Window::s_instance = nullptr;
+GameWindow* GameWindow::s_instance = nullptr;
 
-bool Window::Create(RendererMode mode, std::string title, int width, int height, int bufferWidth, int bufferHeight) {
+bool GameWindow::Create(RendererMode mode, std::string title, int width, int height, int bufferWidth, int bufferHeight) {
 	if (m_window != nullptr) {
 		return false;
 	}
@@ -68,7 +68,7 @@ bool Window::Create(RendererMode mode, std::string title, int width, int height,
 	return true;
 }
 
-bool Window::Destroy() {
+bool GameWindow::Destroy() {
 	if (m_window == nullptr) {
 		return true;
 	}
@@ -79,7 +79,7 @@ bool Window::Destroy() {
 	return true;
 }
 
-void Window::ResizeWindow(int width, int height) {
+void GameWindow::ResizeWindow(int width, int height) {
 	SDL_DisplayMode dm;
 	SDL_GetCurrentDisplayMode(0, &dm);
 
@@ -102,22 +102,22 @@ void Window::ResizeWindow(int width, int height) {
 	m_resizeRenderer = true;
 }
 
-void Window::ResizeBuffer(int width, int height) {
+void GameWindow::ResizeBuffer(int width, int height) {
 	m_bufferWidth = width;
 	m_bufferHeight = height;
 
 	m_resizeRenderer = true;
 }
 
-bool Window::ShouldResizeRenderer() {
+bool GameWindow::ShouldResizeRenderer() {
 	return m_resizeRenderer;
 }
 
-void Window::HandleResizeRenderer() {
+void GameWindow::HandleResizeRenderer() {
 	m_resizeRenderer = false;
 }
 
-SDL_Window* Window::GetWindow() const {
+SDL_Window* GameWindow::GetWindow() const {
 	return m_window;
 }
 
@@ -155,55 +155,55 @@ std::wstring UTF8_to_wchar(const char8_t* in) {
 	return out;
 }
 
-void Window::SetWindowTitle(std::string& title) {
+void GameWindow::SetWindowTitle(std::string& title) {
 	m_mainTitle = title;
 }
 
-void Window::SetWindowSubTitle(std::string& subTitle) {
+void GameWindow::SetWindowSubTitle(std::string& subTitle) {
 	m_subTitle = subTitle;
 }
 
-int Window::GetWidth() const {
+int GameWindow::GetWidth() const {
 	return m_width;
 }
 
-int Window::GetHeight() const {
+int GameWindow::GetHeight() const {
 	return m_height;
 }
 
-int Window::GetBufferWidth() const {
+int GameWindow::GetBufferWidth() const {
 	return m_bufferWidth;
 }
 
-int Window::GetBufferHeight() const {
+int GameWindow::GetBufferHeight() const {
 	return m_bufferHeight;
 }
 
-float Window::GetWidthScale() {
+float GameWindow::GetWidthScale() {
 	return static_cast<float>(m_width) / static_cast<float>(m_bufferWidth);
 }
 
-float Window::GetHeightScale() {
+float GameWindow::GetHeightScale() {
 	return static_cast<float>(m_height) / static_cast<float>(m_bufferHeight);
 }
 
-void Window::SetScaleOutput(bool value) {
+void GameWindow::SetScaleOutput(bool value) {
 	m_scaleOutput = value;
 }
 
-bool Window::IsScaleOutput() {
+bool GameWindow::IsScaleOutput() {
 	return m_scaleOutput;
 }
 
-Window* Window::GetInstance() {
+GameWindow* GameWindow::GetInstance() {
 	if (s_instance == nullptr) {
-		s_instance = new Window();
+		s_instance = new GameWindow();
 	}
 
 	return s_instance;
 }
 
-void Window::Release() {
+void GameWindow::Release() {
 	if (s_instance != nullptr) {
 		delete s_instance;
 		s_instance = nullptr;

@@ -24,7 +24,7 @@ public:
     float Rotation;
     int Size;
     UDim2 Position;
-    Color3 Color3;
+    typename ::Color3 Color3;
     Vector2 AnchorPoint;
     Vector2 AbsolutePosition;
     Vector2 AbsoluteSize;

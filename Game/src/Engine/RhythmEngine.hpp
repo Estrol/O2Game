@@ -70,6 +70,7 @@ public:
 
 	double GetElapsedTime() const;
 	int GetPlayTime() const;
+	int GetNoteImageIndex();
 
 	int GetGuideLineIndex() const;
 	void SetGuideLineIndex(int idx);
@@ -100,6 +101,9 @@ private:
 	int m_laneOffset = 0;
 	int m_audioVolume = 100;
 	int m_audioOffset = 0;
+
+	int m_noteImageIndex = 0;
+	int m_noteMaxImageIndex = 0;
 
 	int m_guideLineIndex = 0;
 

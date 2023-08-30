@@ -6,7 +6,7 @@ TimingBase::TimingBase(std::vector<TimingInfo>& _timings, std::vector<TimingInfo
     base_multiplier = base;
 }
 
-double TimingBase::GetBeatAt(double offset) {
+TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
     int min = 0, max = timings.size() - 1;
     int left = min, right = max;
 
@@ -17,17 +17,25 @@ double TimingBase::GetBeatAt(double offset) {
         bool beforeMid = mid + 1 >= timings.size() || timings[mid + 1].StartTime > offset;
 
         if (afterMid && beforeMid) {
-            return timings[mid].CalculateBeat(offset);
-        } else if (afterMid) {
+            return timings[mid];
+        }
+        else if (afterMid) {
             left = mid + 1;
-        } else {
+        }
+        else {
             right = mid - 1;
         }
     }
 
-    if (timings.size() == 0) return 0;
+    return timings[0];
+}
 
-    return timings[0].CalculateBeat(offset);
+double TimingBase::GetBeatAt(double offset) {
+    return FindTimingAt(timings, offset).CalculateBeat(offset);
+}
+
+double TimingBase::GetBPMAt(double offset) {
+    return FindTimingAt(timings, offset).Value;
 }
 
 

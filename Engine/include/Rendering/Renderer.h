@@ -18,7 +18,7 @@ enum class RendererMode {
 
 class Renderer {
 public:
-	bool Create(RendererMode mode, Window* window, bool failed = false);
+	bool Create(RendererMode mode, GameWindow* window, bool failed = false);
 	bool Resize();
 	bool Destroy();
 

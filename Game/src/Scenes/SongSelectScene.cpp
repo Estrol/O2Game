@@ -1,5 +1,6 @@
 ﻿#include "SongSelectScene.h"
 #include <iostream>
+#include <array>
 
 #include "MsgBox.h"
 #include "Inputs/Keys.h"
@@ -24,10 +25,14 @@
 #include "../Data/Chart.hpp"
 #include "../Data/Util/Util.hpp"
 
-#define SAFE_DELETE(x) if (x) { delete x; x = nullptr; }
+static std::array<std::string, 4> Mods = { "Mirror", "Random", "Rearrange", "Autoplay" };
+static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
+static std::array<std::string, 5> Graphics = { "OpenGL", "Vulkan (DXVK)", "Direct3D-9", "Direct3D-11", "Direct3D-12" };
+static std::array<std::string, 4> LongNote = { "None", "Short", "Normal", "Long" };
 
 SongSelectScene::SongSelectScene() {
     index = -1;
+    memset(lanePos, 0, sizeof(lanePos));
 }
 
 SongSelectScene::~SongSelectScene() {
@@ -43,7 +48,7 @@ void SongSelectScene::Render(double delta) {
     ImguiUtil::NewFrame();
 
     auto music = MusicDatabase::GetInstance();
-    auto window = Window::GetInstance();
+    auto window = GameWindow::GetInstance();
 	
     bool bPlay = false;
     bool bExitPopup = false;
@@ -67,19 +72,6 @@ void SongSelectScene::Render(double delta) {
         }
     }
 
-    /*image->Position = UDim2::fromOffset(0, 0);
-    image->Size = UDim2::fromOffset(22, 4);
-    image->Draw();
-    image->Position = UDim2::fromOffset(0, 10);
-    image->Draw();
-    image->Position = UDim2::fromOffset(60, 40);
-    image->Draw();
-    image->Position = UDim2::fromOffset(40, 30);
-    image->Draw();
-    image->Position = UDim2::fromOffset(60, 40);
-    image->Draw();*/
-
-	//ImGui::GetForegroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(window->GetWidth(), window->GetHeight()), ImColor(0, 0, 0, 200));
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
 
     ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0, 0.00000001, 1.0);
@@ -184,10 +176,9 @@ void SongSelectScene::Render(double delta) {
                 ImGui::PopItemWidth();
 
                 ImGui::Text("Mods");
-                std::vector<std::string> Mods = { "Mirror", "Random", "Rearrange", "Autoplay" };
 
                 for (int i = 0; i < Mods.size(); i++) {
-                    auto mod = Mods[i];
+                    auto& mod = Mods[i];
 					
                     int value = EnvironmentSetup::GetInt(mod);
                     if (value == 1) {
@@ -239,7 +230,6 @@ void SongSelectScene::Render(double delta) {
 
                 ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
                 ImGui::Text("Arena");
-                std::vector<std::string> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
                 // select
                 int value = EnvironmentSetup::GetInt("Arena");
@@ -483,7 +473,7 @@ void SongSelectScene::Render(double delta) {
         ImVec2 size = ImGui::CalcTextSize(text.c_str());
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - size.x) * 0.5f);
-        ImGui::Text(text.c_str());
+        ImGui::Text("%s", text.c_str());
 
         ImGui::NewLine();
 
@@ -514,8 +504,8 @@ void SongSelectScene::Render(double delta) {
         switch (iWaiting) {
             case 1: {
                 auto key = EnvironmentSetup::Get("iKey");
-                ImGui::Text("Waiting for keybind input...");
-                ImGui::Text(("Press any key to set the Key: " + key).c_str());
+                ImGui::Text("%s", "Waiting for keybind input...");
+                ImGui::Text("%s", ("Press any key to set the Key: " + key).c_str());
 
                 std::map<ImGuiKey, bool> blacklistedKey = {
                     // Space, Enter
@@ -641,15 +631,14 @@ void SongSelectScene::Render(double delta) {
                             catch (std::invalid_argument) {
 
                             }
-
-                            std::vector<std::string> list = { "OpenGL", "Vulkan (DXVK)", "Direct3D-9", "Direct3D-11", "Direct3D-12" };
+							
                             ImGui::Text("Graphics");
                             ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "You need restart game after setting this!");
-                            if (ImGui::BeginCombo("###ComboBox1", list[GraphicsIndex].c_str())) {
-                                for (int i = 0; i < list.size(); i++) {
+                            if (ImGui::BeginCombo("###ComboBox1", Graphics[GraphicsIndex].c_str())) {
+                                for (int i = 0; i < Graphics.size(); i++) {
                                     bool isSelected = (GraphicsIndex == i);
 
-                                    if (ImGui::Selectable(list[i].c_str(), &isSelected)) {
+                                    if (ImGui::Selectable(Graphics[i].c_str(), &isSelected)) {
                                         nextGraphicsIndex = i;
                                     }
 
@@ -731,10 +720,8 @@ void SongSelectScene::Render(double delta) {
 
                         if (ImGui::BeginTabItem("Game")) {
                             ImGui::Text("Guide Line Length");
-							
-							std::vector<std::string> list = { "None", "Short", "Normal", "Long" };
 
-                            for (int i = list.size() - 1; i >= 0; i--) {
+                            for (int i = LongNote.size() - 1; i >= 0; i--) {
                                 bool is_combo_selected = currentGuideLineIndex == i;
 								
                                 ImGui::PushItemWidth(50);
@@ -743,10 +730,10 @@ void SongSelectScene::Render(double delta) {
                                 }
 
                                 ImGui::SameLine();
-                                ImGui::Text(list[i].c_str()); ImGui::SameLine();
+                                ImGui::Text("%s", LongNote[i].c_str()); ImGui::SameLine();
                                 ImGui::Dummy(MathUtil::ScaleVec2(ImVec2(25, 0))); ImGui::SameLine();
                                 
-								if (i < list.size()) {
+								if (i < LongNote.size()) {
                                     ImGui::SameLine();
 								}
                             }
@@ -831,7 +818,7 @@ void SongSelectScene::Render(double delta) {
 
     if (changeResolution) {
         std::vector<std::string> resolution = splitString(m_resolutions[currentResolutionIndex], 'x');
-        Window::GetInstance()->ResizeWindow(std::atoi(resolution[0].c_str()), std::atoi(resolution[1].c_str()));
+        GameWindow::GetInstance()->ResizeWindow(std::atoi(resolution[0].c_str()), std::atoi(resolution[1].c_str()));
     }
 
     if (bOpenEditor) {
@@ -910,7 +897,7 @@ bool SongSelectScene::Attach() {
 
     auto bgPath = path / "Menu" / "MenuBackground.png";
     if (std::filesystem::exists(bgPath) && !m_background) {
-        Window* wnd = Window::GetInstance();
+        GameWindow* wnd = GameWindow::GetInstance();
 
         m_background = std::make_unique<Texture2D>(bgPath);
         m_background->Size = UDim2::fromOffset(wnd->GetBufferWidth(), wnd->GetBufferHeight());
@@ -933,7 +920,7 @@ bool SongSelectScene::Attach() {
         // remove duplicate field
 		m_resolutions.erase(std::unique(m_resolutions.begin(), m_resolutions.end()), m_resolutions.end());
 
-        Window* window = Window::GetInstance();
+        GameWindow* window = GameWindow::GetInstance();
         std::string currentResolution = std::to_string(window->GetWidth()) + "x" + std::to_string(window->GetHeight());
 		
         // find index
@@ -1017,7 +1004,7 @@ bool SongSelectScene::Attach() {
                     bgm->FadeOut();
                 }
 
-                Sleep(1500);
+                SDL_Delay(1500);
                 if (m_bgm) {
                     m_bgm->Play();
                 }
@@ -1085,7 +1072,7 @@ void SongSelectScene::LoadChartImage() {
                 return;
             }
 
-            Window* wnd = Window::GetInstance();
+            GameWindow* wnd = GameWindow::GetInstance();
 
             auto buffer = O2::OJN::LoadOJNFile(file);
             buffer.seekg(item->CoverOffset);

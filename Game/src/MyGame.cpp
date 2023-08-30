@@ -21,7 +21,7 @@
 
 
 MyGame::~MyGame() {
-	
+	MusicDatabase::Release();
 }
 
 bool MyGame::Init() {

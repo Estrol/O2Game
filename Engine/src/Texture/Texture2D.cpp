@@ -157,7 +157,7 @@ void Texture2D::Draw(Rect* clipRect) {
 
 void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 	Renderer* renderer = Renderer::GetInstance();
-	auto window = Window::GetInstance();
+	auto window = GameWindow::GetInstance();
 	bool scaleOutput = window->IsScaleOutput();
 	CalculateSize();
 
@@ -326,7 +326,7 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 }
 
 void Texture2D::CalculateSize() {
-	Window* window = Window::GetInstance();
+	GameWindow* window = GameWindow::GetInstance();
 	int wWidth = window->GetBufferWidth();
 	int wHeight = window->GetBufferHeight();
 

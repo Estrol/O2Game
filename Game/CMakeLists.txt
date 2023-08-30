@@ -65,10 +65,10 @@ if (WIN32)
         ${CMAKE_SOURCE_DIR}/third-party/bin/x64-windows/Debug
         $<TARGET_FILE_DIR:Game>)
 else ()
-    add_custom_command(TARGET Game POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory
-		${CMAKE_SOURCE_DIR}/third-party/bin/x64-linux/Debug
-		$<TARGET_FILE_DIR:Game>)
+    # add_custom_command(TARGET Game POST_BUILD
+	# 	COMMAND ${CMAKE_COMMAND} -E copy_directory
+	# 	${CMAKE_SOURCE_DIR}/third-party/bin/x64-linux/Debug
+	# 	$<TARGET_FILE_DIR:Game>)
 endif ()
 
 if (MSVC AND WIN32 AND NOT MSVC_VERSION VERSION_LESS 142)

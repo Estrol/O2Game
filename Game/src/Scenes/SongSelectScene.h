@@ -53,7 +53,7 @@ private:
 	bool is_update_bgm = false;
 	bool imgui_modal_quit_confirm = false;
 
-	char lanePos[8];
+	char lanePos[8] = {};
 
 	std::unique_ptr<Texture2D> m_background;
 	std::unique_ptr<Texture2D> m_songBackground;
@@ -66,6 +66,4 @@ private:
 	std::vector<std::string> m_fps;
 	std::vector<UDim2> m_songListRect;
 	std::vector<Button> m_buttons;
-
-	Texture2D* image;
 };

@@ -332,10 +332,6 @@ namespace BMS {
 					startTiming.Value = event.Value;
 					startTiming.TimeSignature = measureFraction;
 
-					if (currentBPM == 0) {
-						::printf("");
-					}
-
 					Timings.push_back(startTiming);
 					break;
 				}
