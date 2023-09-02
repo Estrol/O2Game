@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 message("Unnamed O2 Game Clone Project - CMake Build System")
 
+# check if CXX_COMPILER is not cl.exe then set 
+
 project(O2Game)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -78,10 +80,32 @@ elseif (UNIX AND NOT APPLE)
     )
 endif()
 
-list(GET FREETYPE_LIBRARIES ${LIB_INDEX} LIB_FREETYPE)
-list(GET JPEG_LIBRARIES ${LIB_INDEX} LIB_JPEG)
+# check if FREETYPE_LIBRAIES is a list then check first index if optimized
+if (FREETYPE_LIBRARIES MATCHES ";")
+    list(GET FREETYPE_LIBRARIES ${LIB_INDEX} LIB_FREETYPE)
+else()
+    set(LIB_FREETYPE ${FREETYPE_LIBRARIES})
+endif()
+
+if (JPEG_LIBRARIES MATCHES ";")
+    list(GET JPEG_LIBRARIES ${LIB_INDEX} LIB_JPEG)
+else()
+    set(LIB_JPEG ${JPEG_LIBRARIES})
+endif()
+
 list(GET PNG_LIBRARIES ${LIB_INDEX} LIB_PNG)
-list(GET BZIP2_LIBRARIES ${LIB_INDEX} LIB_BZIP2)
+
+if (PNG_LIBRARIES MATCHES ";")
+    list(GET PNG_LIBRARIES ${LIB_INDEX} LIB_PNG)
+else()
+    set(LIB_PNG ${PNG_LIBRARIES})
+endif()
+
+if (BZIP2_LIBRARIES MATCHES ";")
+    list(GET BZIP2_LIBRARIES ${LIB_INDEX} LIB_BZIP2)
+else()
+    set(LIB_BZIP2 ${BZIP2_LIBRARIES})
+endif()
 
 set(O2GAME_LIBRARIES 
     ${Vulkan_LIBRARIES} 
@@ -93,8 +117,6 @@ set(O2GAME_LIBRARIES
     ${LIB_BZIP2} 
     ${THIRD_PARTY_LIBS} 
 )
-
-message("Libraries: ${O2GAME_LIBRARIES}")
 
 add_subdirectory(Engine)
 add_subdirectory(Game)

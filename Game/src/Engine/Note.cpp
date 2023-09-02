@@ -1,9 +1,11 @@
 #include "Note.hpp"
+#include <vector>
 
 #include "RhythmEngine.hpp"
 #include "DrawableNote.hpp"
 #include "NoteImageCacheManager.hpp"
 #include "GameAudioSampleCache.hpp"
+#include "../EnvironmentSetup.hpp"
 
 #define REMOVE_TIME 800
 #define HOLD_COMBO_TICK 100
@@ -463,6 +465,30 @@ void Note::OnHit(NoteResult result) {
 				2
 			});
 		}
+
+		if (result == NoteResult::MISS) {
+			double audioPos = m_engine->GetGameAudioPosition();
+			double noteTime = GetHitTime();
+			double hitTime = noteTime - (noteTime - audioPos);
+
+			double noteBeat = m_engine->GetTiming()->GetBeatAt(noteTime);
+			double hitBeat = m_engine->GetTiming()->GetBeatAt(hitTime);
+			
+			struct MissInfo {
+				int type;
+				float beat;
+				float hit_beat;
+				float time;
+			};
+
+			auto t = (std::vector<MissInfo>*)EnvironmentSetup::GetObj("MissGraphDebug");
+			t->push_back({
+				(int)2,
+				(float)noteBeat,
+				(float)hitBeat,
+				(float)GetHitTime(),
+			});
+		}
 	}
 	else {
 		m_state = NoteState::NORMAL_NOTE_PASSED;
@@ -473,6 +499,30 @@ void Note::OnHit(NoteResult result) {
 			m_ignore,
 			1
 		});
+
+		if (result == NoteResult::MISS) {
+			double audioPos = m_engine->GetGameAudioPosition();
+			double noteTime = GetHitTime();
+			double hitTime = noteTime - (noteTime - audioPos);
+
+			double noteBeat = m_engine->GetTiming()->GetBeatAt(noteTime);
+			double hitBeat = m_engine->GetTiming()->GetBeatAt(hitTime);
+			
+			struct MissInfo {
+				int type;
+				float beat;
+				float hit_beat;
+				float time;
+			};
+
+			auto t = (std::vector<MissInfo>*)EnvironmentSetup::GetObj("MissGraphDebug");
+			t->push_back({
+				(int)1,
+				(float)noteBeat,
+				(float)hitBeat,
+				(float)GetHitTime(),
+			});
+		}
 	}
 }
 
@@ -503,6 +553,30 @@ void Note::OnRelease(NoteResult result) {
 					true,
 					m_ignore,
 					2
+				});
+			}
+
+			if (result == NoteResult::MISS) {
+				double audioPos = m_engine->GetGameAudioPosition();
+				double noteTime = GetHitTime();
+				double hitTime = noteTime - (noteTime - audioPos);
+
+				double noteBeat = m_engine->GetTiming()->GetBeatAt(noteTime);
+				double hitBeat = m_engine->GetTiming()->GetBeatAt(hitTime);
+				
+				struct MissInfo {
+					int type;
+					float beat;
+					float hit_beat;
+					float time;
+				};
+
+				auto t = (std::vector<MissInfo>*)EnvironmentSetup::GetObj("MissGraphDebug");
+				t->push_back({
+					(int)2,
+					(float)noteBeat,
+					(float)hitBeat,
+					(float)GetHitTime(),
 				});
 			}
 		}

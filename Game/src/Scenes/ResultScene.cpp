@@ -7,7 +7,7 @@
 #include "Texture/MathUtils.h"
 #include "Audio/AudioManager.h"
 
-#include "Imgui/ImGui.h"
+#include "Imgui/imgui.h"
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui_internal.h"
 

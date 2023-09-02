@@ -82,6 +82,9 @@ add_library(EstEngine
 	"src/Game.cpp"
 )
 
+if (MSVC)
+	target_compile_options(EstEngine PUBLIC "/MP")
+endif()
 target_include_directories(EstEngine PUBLIC ./include/)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

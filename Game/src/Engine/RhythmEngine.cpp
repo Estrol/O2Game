@@ -152,6 +152,9 @@ bool RhythmEngine::Load(Chart* chart) {
 		for (auto& hit : replay) {
 			m_autoHitInfos[hit.Lane].push_back(hit);
 		}
+
+		m_autoFrames = replay;
+		m_is_autoplay = true;
 	}
 
 	auto audioVolume = Configuration::Load("Game", "AudioVolume");
@@ -380,6 +383,19 @@ void RhythmEngine::Update(double delta) {
 	auto currentTime = std::chrono::system_clock::now();
 	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startClock);
 	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
+
+	if (m_is_autoplay) {
+		auto frames = GetAutoplayAtThisFrame(m_currentAudioPosition);
+
+		for (auto& frame : frames) {
+			if (frame.Type == ReplayHitType::KEY_DOWN) {
+				m_tracks[frame.Lane]->OnKeyDown();
+			}
+			else {
+				m_tracks[frame.Lane]->OnKeyUp();
+			}
+		}
+	}
 }
 
 void RhythmEngine::Render(double delta) {
@@ -396,24 +412,24 @@ void RhythmEngine::Input(double delta) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
 	// Autoplay updates
-	for (int i = 0; i < 7; i++) {
-		int& index = m_autoHitIndex[i];
+	// for (int i = 0; i < 7; i++) {
+	// 	int& index = m_autoHitIndex[i];
 
-		if (index < m_autoHitInfos[i].size()
-			&& m_currentAudioGamePosition >= m_autoHitInfos[i][index].Time) {
+	// 	if (index < m_autoHitInfos[i].size()
+	// 		&& m_currentAudioGamePosition >= m_autoHitInfos[i][index].Time) {
 
-			auto& info = m_autoHitInfos[i][index];
+	// 		auto& info = m_autoHitInfos[i][index];
 
-			if (info.Type == ReplayHitType::KEY_DOWN) {
-				m_tracks[i]->OnKeyDown();
-			}
-			else {
-				m_tracks[i]->OnKeyUp();
-			}
+	// 		if (info.Type == ReplayHitType::KEY_DOWN) {
+	// 			m_tracks[i]->OnKeyDown();
+	// 		}
+	// 		else {
+	// 			m_tracks[i]->OnKeyUp();
+	// 		}
 
-			index++;
-		}
-	}
+	// 		index++;
+	// 	}
+	// }
 }
 
 void RhythmEngine::OnKeyDown(const KeyState& state) {
@@ -428,6 +444,8 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 		std::cout << "Increase Note Speed" << std::endl;
 	}
 
+	if (m_is_autoplay) return;
+
 	for (auto& key : KeyMapping) {
 		if (key.second.key == state.key) {
 			key.second.isPressed = true;
@@ -441,6 +459,8 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 
 void RhythmEngine::OnKeyUp(const KeyState& state) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
+
+	if (m_is_autoplay) return;
 
 	for (auto& key : KeyMapping) {
 		if (key.second.key == state.key) {
@@ -636,6 +656,22 @@ void RhythmEngine::CreateTimingMarkers() {
 			m_timingPositionMarkers.push_back(pos);
 		}
 	}
+}
+
+std::vector<ReplayHitInfo> RhythmEngine::GetAutoplayAtThisFrame(double offset) {
+    std::vector<ReplayHitInfo> actions;
+
+	for (int i = m_autoMinIndex; i < m_autoFrames.size(); i++) {
+		auto& hit = m_autoFrames[i];
+
+		if (offset >= hit.Time) {
+			actions.push_back(hit);
+
+			m_autoMinIndex++;
+		}
+	}
+
+	return actions;
 }
 
 int* RhythmEngine::GetLaneSizes() const {

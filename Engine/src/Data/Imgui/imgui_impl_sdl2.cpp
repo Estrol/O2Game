@@ -289,8 +289,8 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             ImVec2 mouse_pos((float)event->motion.x, (float)event->motion.y);
             io.AddMouseSourceEvent(event->motion.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
 
-            mouse_pos.x = (mouse_pos.x * io.DisplaySize.x) / io.DisplayOutputSize.x;
-			mouse_pos.y = (mouse_pos.y * io.DisplaySize.y) / io.DisplayOutputSize.y;
+            // mouse_pos.x = (mouse_pos.x * io.DisplaySize.x) / io.DisplayOutputSize.x;
+			// mouse_pos.y = (mouse_pos.y * io.DisplaySize.y) / io.DisplayOutputSize.y;
 
             io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
             return true;

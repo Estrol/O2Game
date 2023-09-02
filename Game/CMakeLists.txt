@@ -64,6 +64,16 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/third-party/bin/x64-windows/Debug
         $<TARGET_FILE_DIR:Game>)
+
+    # Create directory $<TARGET_FILE_DIR:Game>/Skins/Default then
+    # copy from ${CMAKE_SOURCE_DIR}/GameResources/Resources to $<TARGET_FILE_DIR:Game>/Skins/Default
+
+    add_custom_command(TARGET Game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:Game>/Skins/Default
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/GameResources/Resources
+        $<TARGET_FILE_DIR:Game>/Skins/Default)
 else ()
     # add_custom_command(TARGET Game POST_BUILD
 	# 	COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -71,11 +81,9 @@ else ()
 	# 	$<TARGET_FILE_DIR:Game>)
 endif ()
 
-if (MSVC AND WIN32 AND NOT MSVC_VERSION VERSION_LESS 142)
-    # option 2: apply the option on a per-target basis
+if (MSVC)
     target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
-    target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/ZI>)
-
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/ZI> "/MP")
 endif()
 
 # set preprocessor MEM_LEAK_DEBUG

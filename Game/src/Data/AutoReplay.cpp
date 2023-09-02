@@ -1,6 +1,6 @@
 #include "AutoReplay.hpp"
 
-constexpr int kReleaseDelay = 50;
+constexpr int kReleaseDelay = 20;
 
 NoteInfo* GetNextHitObject(std::vector<NoteInfo>& hitObject, int index) {
 	int lane = hitObject[index].LaneIndex;
@@ -16,14 +16,16 @@ NoteInfo* GetNextHitObject(std::vector<NoteInfo>& hitObject, int index) {
 
 double CalculateReleaseTime(NoteInfo* currentHitObject, NoteInfo* nextHitObject) {
 	if (currentHitObject->Type == NoteType::HOLD) {
-		return currentHitObject->EndTime - 1;
+		return currentHitObject->EndTime;
 	}
 
-	double Time = currentHitObject->StartTime;
-	bool canDelayKeyUpFully = !nextHitObject || nextHitObject->StartTime > (Time + kReleaseDelay);
-	return Time + (canDelayKeyUpFully ? kReleaseDelay : (
-			nextHitObject ? nextHitObject->StartTime : 0
-		));
+	double Time = currentHitObject->Type == NoteType::HOLD ? currentHitObject->EndTime 
+		: currentHitObject->StartTime; 
+
+	bool canDelayFully = nextHitObject == nullptr ||
+		nextHitObject->StartTime > Time + kReleaseDelay;
+
+	return Time + (canDelayFully ? kReleaseDelay : (nextHitObject->StartTime - Time) * 0.9 );
 }
 
 std::vector<ReplayHitInfo> AutoReplay::CreateReplay(Chart* chart) {

@@ -6,8 +6,16 @@
     "configurations": [
         {
             "program": "${workspaceFolder}/build/Game/Game",
-            "name": "Game",
+            "name": "Game - Linux Debug",
             "type": "cppdbg",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}/build/Game",
+        },
+        {
+            "program": "${workspaceFolder}/build/Game/Debug/Game.exe",
+            "name": "Game - Windows Debug",
+            "type": "cppvsdbg",
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder}/build/Game",

@@ -105,7 +105,6 @@ int main(int argc, char* argv[]) {
 #warning "Memory leak detection is enabled. This will cause performance issues."
 #endif
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); 
-	_CrtSetBreakAlloc(13067);
 #endif
 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
 	if (retVal == nullptr) {

@@ -28,7 +28,7 @@ The manual and changelog are in the header file "lodepng.h"
 Rename this file to lodepng.cpp to use it for C++, or to lodepng.c to use it for C.
 */
 
-#include "lodepng.h"
+#include "Lodepng.h"
 #pragma warning(push, 0)
 
 #ifdef LODEPNG_COMPILE_DISK

@@ -12,6 +12,8 @@
 
 linux-build
 build
+GameResources
+vcpkg_installed
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

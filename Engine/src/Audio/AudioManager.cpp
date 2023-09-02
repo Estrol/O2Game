@@ -172,6 +172,9 @@ bool AudioManager::CreateSampleFromData(std::string id, int sampleFlags, int sam
 		delete m_audioSamples[id];
 	}
 
+	void* data = new uint8_t[sampleLength];
+	memcpy(data, sampleData, sampleLength);
+
 	AudioSample* audio = new AudioSample(id);
 	if (sampleLength == 0) {
 		if (!audio->CreateSilent()) {
@@ -180,7 +183,7 @@ bool AudioManager::CreateSampleFromData(std::string id, int sampleFlags, int sam
 		}
 	}
 	else {
-		if (!audio->CreateFromData(sampleFlags, sampleRate, sampleChannels, sampleLength, sampleData)) {
+		if (!audio->CreateFromData(sampleFlags, sampleRate, sampleChannels, sampleLength, data)) {
 			delete audio;
 			return false;
 		}

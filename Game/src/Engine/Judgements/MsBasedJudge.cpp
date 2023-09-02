@@ -5,9 +5,9 @@
 #include "../Note.hpp"
 
 namespace {
-    const double kNoteCoolHitRatio = 173;
+    const double kNoteCoolHitRatio = 41;
 	const double kNoteGoodHitRatio = 125;
-	const double kNoteBadHitRatio = 41;
+	const double kNoteBadHitRatio = 173;
 	const double kNoteEarlyMissRatio = 184;
 }
 

@@ -14,7 +14,7 @@ TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
         int mid = (left + right) / 2;
 
         bool afterMid = mid < 0 || timings[mid].StartTime < offset;
-        bool beforeMid = mid + 1 >= timings.size() || timings[mid + 1].StartTime > offset;
+        bool beforeMid = mid + 1 >= timings.size() || offset < timings[mid + 1].StartTime;
 
         if (afterMid && beforeMid) {
             return timings[mid];

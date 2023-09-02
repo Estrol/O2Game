@@ -9,8 +9,8 @@
 #include <fstream>
 
 #include "vkinit.h"
-#include "../../Data/imgui/imgui_impl_vulkan.h"
-#include "../../Data/imgui/imgui_impl_sdl2.h"
+#include "../../Data/Imgui/imgui_impl_vulkan.h"
+#include "../../Data/Imgui/imgui_impl_sdl2.h"
 #include "Exception/SDLException.h"
 #include "Rendering/Vulkan/Texture2DVulkan.h"
 

@@ -207,6 +207,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 
 	// default: 240 BPM
 	const int BEATS_PER_MSEC = 4 * 60 * 1000;
+	const int START_TIME = 1500;
 
 	for (int i = 0; i < 3; i++) {
 		std::vector<O2Note> notes;
@@ -215,13 +216,13 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 		std::vector<O2Timing> measureLengthChanges;
 		std::vector<double> measureList;
 
-		bpmChanges.push_back({ Header.bpm, 0 });
-		measureList.push_back(0);
-
 		double currentBPM = Header.bpm;
 		double measureFraction = 1;
 		double measurePosition = 0;
-		double timer = 0;
+		double timer = START_TIME;
+
+		bpmChanges.push_back({ Header.bpm, timer });
+		measureList.push_back(0);
 		
 		double holdNotes[7] = {};
 		float holdNotesPos[7] = { -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 };

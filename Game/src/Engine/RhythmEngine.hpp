@@ -80,6 +80,7 @@ private:
 	void UpdateGamePosition();
 	void UpdateVirtualResolution();
 	void CreateTimingMarkers();
+	std::vector<ReplayHitInfo> GetAutoplayAtThisFrame(double offset);
 
 	void Release();
 
@@ -106,8 +107,11 @@ private:
 	int m_noteMaxImageIndex = 0;
 
 	int m_guideLineIndex = 0;
+	int m_autoMinIndex = 0;
 
 	bool m_started = false;
+	bool m_is_autoplay = false;
+
 	GameState m_state = GameState::NotGame;
 	std::u8string m_title;
 
@@ -125,6 +129,7 @@ private:
 	std::vector<AutoSample> m_autoSamples;
 	std::unordered_map<int, int> m_autoHitIndex;
 	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
+	std::vector<ReplayHitInfo> m_autoFrames;
 
 	/* clock system */
 	int m_PlayTime = 0;

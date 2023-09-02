@@ -13,13 +13,20 @@
 #include "Rendering/Window.h"
 
 #include "Imgui/ImguiUtil.h"
+#include "Imgui/imgui.h"
+#include "Texture/MathUtils.h"
 
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
 #include "../Resources/SkinConfig.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
-#define SAFE_DELETE(x) if (x) { delete x; x = nullptr; }
+struct MissInfo {
+	int type;
+	float beat;
+	float hit_beat;
+	float time;
+};
 
 bool CheckSkinComponent(std::filesystem::path x) {
 	return std::filesystem::exists(x);
@@ -90,6 +97,8 @@ void GameplayScene::Render(double delta) {
 	if (m_resourceFucked) {
 		return;
 	}
+
+	ImguiUtil::NewFrame();
 
 	m_PlayBG->Draw();
 	m_Playfield->Draw();
@@ -282,6 +291,21 @@ void GameplayScene::Render(double delta) {
 
 	m_title->Draw(m_game->GetTitle());
 
+	{
+		std::vector<MissInfo>* info = (std::vector<MissInfo>*)EnvironmentSetup::GetObj("MissGraphDebug");
+
+		ImGui::SetNextWindowSize(MathUtil::ScaleVec2(200,200));
+		ImGui::SetNextWindowPos(MathUtil::ScaleVec2(400,200), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin("Debug Window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
+			// loop from behind
+			for (int i = info->size() - 1; i >= 0; i--) {
+				ImGui::Text("%d: %d, %.2f, %.2f, %.2f", i, info->at(i).type, info->at(i).beat, info->at(i).hit_beat, info->at(i).time);
+			}
+
+			ImGui::End();
+		}
+	}
+
 	if (m_autoPlay) {
 		m_autoText->Position = m_autoTextPos;
 		m_autoText->Draw(u8"Game currently on Autoplay!");
@@ -325,6 +349,9 @@ bool GameplayScene::Attach() {
 	m_resourceFucked = false;
 	m_drawJudge = false;
 	m_autoPlay = EnvironmentSetup::GetInt("Autoplay") == 1;
+
+	std::vector<MissInfo>* info = new std::vector<MissInfo>();
+	EnvironmentSetup::SetObj("MissGraphDebug", (void*)info);
 
 	try {
 		auto SkinName = Configuration::Load("Game", "Skin");

@@ -149,7 +149,7 @@ void EditorScene::Render(double delta) {
 					MsgBox::Show("EditorError", "Error", "Not Implemented");
 				}
 
-				ImGui::Text("------------");
+				ImGui::Separator();
 				if (ImGui::BeginMenu("Import from")) {
 					if (ImGui::MenuItem("BMS")) {
 						MsgBox::Show("EditorError", "Error", "Not Implemented");
@@ -174,7 +174,7 @@ void EditorScene::Render(double delta) {
 					ImGui::EndMenu();
 				}
 
-				ImGui::Text("------------");
+				ImGui::Separator();
 				if (ImGui::MenuItem("Exit")) {
 					m_exit = true;
 				}

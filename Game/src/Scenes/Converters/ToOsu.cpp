@@ -83,6 +83,31 @@ bool Converters::SaveTo(O2::OJN* ojn, const char* path) {
 		for (auto& sample : difficulty.AutoSamples) {
 			fs << "5," << sample.StartTime << ",0,\"Sample-" << sample.SampleRefId << ".ogg\"\n";
 		}
+
+		fs << "\n";
+
+		fs << "[TimingPoints]\n";
+		for (auto& timing : difficulty.Timings) {
+			fs << timing.Time << "," << 60000.0 / timing.BPM << ",4,2,0,100,1,0\n";
+		}
+
+		fs << "\n";
+
+		fs << "[HitObjects]\n";
+
+		for (auto& note : difficulty.Notes) {
+			if (!note.IsLN) {
+				if (note.SampleRefId != -1) {
+					std::string sampleId = "Sample#" + std::to_string(note.SampleRefId) + ".ogg";
+					fs << note.StartTime << ",192,0,128,0,0:0:0:0:" << sampleId << "\n";
+				}
+			}
+			else {
+				fs << note.StartTime << ",192,0,128,0," << note.EndTime << ":0:0:0:\n";
+			}
+		}
+
+		fs.close();
 	}
 
     return true;

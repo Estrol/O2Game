@@ -5,24 +5,34 @@
 #include "OJN.h"
 #include <unordered_map>
 
+// Forward declarations
 class AudioSample;
 
+// Note types: NORMAL, HOLD
 enum class NoteType : uint8_t {
+	// Normal hit note
 	NORMAL,
+
+	// Hold note
 	HOLD
 };
 
+// Timing types: BPM, SV
 enum class TimingType : uint8_t {
+	// Beat per minute
 	BPM,
+
+	// Slider velocity: BPM / 240.0
 	SV
 };
 
+// Note information
 struct NoteInfo {
-	uint32_t StartTime;
-	uint32_t EndTime;
-	NoteType Type;
-	uint32_t LaneIndex;
-	uint32_t Keysound;
+	uint32_t StartTime; // Note start time in milliseconds
+	uint32_t EndTime; // Note end time in milliseconds
+	NoteType Type; // Note type: NORMAL, HOLD
+	uint32_t LaneIndex; // Note lane index in range: 0, 1, 2, 3, 4, 5, 6, 7
+	uint32_t Keysound; // Keysound index to play in-game
 
 	float Volume = 1, Pan = 0;
 };
