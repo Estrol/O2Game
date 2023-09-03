@@ -19,11 +19,11 @@ namespace {
 		return min * (1.0 - alpha) + (max * alpha);
 	}
 
-	bool isWithinRange(int point, int minRange, int maxRange) {
+	bool isWithinRange(double point, double minRange, double maxRange) {
 		return (point >= minRange && point <= maxRange);
 	}
 
-	bool isCollision(int top, int bottom, int min, int max) {
+	bool isCollision(double top, double bottom, double min, double max) {
 		// Check if the top value of the rectangle is within the range
 		if (top >= min && top <= max) {
 			return true;  // Collision detected
@@ -221,8 +221,8 @@ void Note::Render(double delta) {
 		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
 		double y2 = CalculateNotePosition(trackPosition, m_endTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
 
-		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y1));
-		m_tail->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y2)) ;
+		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0.0, (double)hitPos, (float)y1));
+		m_tail->Position = UDim2::fromOffset(m_laneOffset, lerp(0.0, (double)hitPos, (float)y2)) ;
 
 		float Transparency = 0.9f;
 
@@ -287,7 +287,7 @@ void Note::Render(double delta) {
 	}
 	else {
 		double y1 = CalculateNotePosition(trackPosition, m_initialTrackPosition, 1000.0, m_engine->GetNotespeed(), false) / 1000.0;
-		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0, hitPos, y1));
+		m_head->Position = UDim2::fromOffset(m_laneOffset, lerp(0.0, (double)hitPos, (float)y1));
 		m_head->CalculateSize();
 		
 		bool b1 = isWithinRange(m_head->Position.Y.Offset, min, max);

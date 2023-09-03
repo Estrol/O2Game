@@ -7,7 +7,7 @@ TimingLineManager::TimingLineManager(RhythmEngine* engine) {
 	m_timingLines = {};
 	m_timingInfos = {};
 
-	int mapLength = engine->GetAudioLength();
+	double mapLength = engine->GetAudioLength();
 	auto bpms = engine->GetBPMs();
 
 	for (int i = 0; i < bpms.size(); i++) {

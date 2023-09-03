@@ -29,7 +29,7 @@ const std::vector<ImColor> laneColor = {
 };
 
 double FindBPMAt(std::vector<std::pair<double, double>>& bpms, double offset) {
-	int min = 0, max = bpms.size() - 1;
+	int min = 0, max = (int)bpms.size() - 1;
 
 	if (max == 0) {
 		return bpms[0].second;
@@ -112,8 +112,8 @@ void EditorScene::Render(double delta) {
 
 	GameWindow* wnd = GameWindow::GetInstance();
 
-	float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6;
-	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6;
+	float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
+	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 	float fontScale = (targetScale / originScale);
 
 	bool previousState = m_autoscroll;
@@ -202,7 +202,7 @@ void EditorScene::Render(double delta) {
 				ImGui::EndMenu();
 			}
 
-			menu_bar_height = ImGui::GetFrameHeight();
+			menu_bar_height = (int)ImGui::GetFrameHeight();
 
 			ImGui::EndMenuBar();
 		}
@@ -352,14 +352,14 @@ void EditorScene::Render(double delta) {
 
 				ImColor lane_color = laneColor[i];
 				if (ImGui::IsMouseHoveringRect(Pos1, Pos4) && !m_autoscroll) {
-					lane_color.Value.x *= 0.55;
-					lane_color.Value.y *= 0.55;
-					lane_color.Value.z *= 0.55;
+					lane_color.Value.x *= 0.55f;
+					lane_color.Value.y *= 0.55f;
+					lane_color.Value.z *= 0.55f;
 				}
 				else {
-					lane_color.Value.x *= 0.25;
-					lane_color.Value.y *= 0.25;
-					lane_color.Value.z *= 0.25;
+					lane_color.Value.x *= 0.25f;
+					lane_color.Value.y *= 0.25f;
+					lane_color.Value.z *= 0.25f;
 				}
 
 				// draw rectangle filled with that color
@@ -374,7 +374,7 @@ void EditorScene::Render(double delta) {
 
 		{ // Draw Notes Here
 			if (m_autoscroll) {
-				m_currentTime += (delta * 1000);
+				m_currentTime += ((float)delta * 1000.0f);
 			}
 
 			{
@@ -525,8 +525,8 @@ void EditorScene::Render(double delta) {
 					text += std::to_string(i);
 
 					ImVec2 textSize = FontResources::GetButtonFont()->CalcTextSizeA(75 * fontScale, FLT_MAX, 0, text.c_str());
-					middlePos.x -= textSize.x / 2.0;
-					middlePos.y -= textSize.y / 2.0;
+					middlePos.x -= textSize.x / 2.0f;
+					middlePos.y -= textSize.y / 2.0f;
 
 					drawList->AddText(FontResources::GetButtonFont(), 75 * fontScale, middlePos, ImColor(128, 128, 128), text.c_str());
 				}
@@ -596,9 +596,9 @@ void EditorScene::Render(double delta) {
 
 						auto lnColor = color;
 						// multiply it by 0.8
-						lnColor.Value.x *= 0.8;
-						lnColor.Value.y *= 0.8;
-						lnColor.Value.z *= 0.8;
+						lnColor.Value.x *= 0.8f;
+						lnColor.Value.y *= 0.8f;
+						lnColor.Value.z *= 0.8f;
 
 						drawList->AddRectFilled(tail_pos, head_size, lnColor);
 						drawList->AddRectFilled(tail_pos, tail_size, color);
@@ -622,7 +622,7 @@ void EditorScene::Render(double delta) {
 		drawList->AddLine(hitPosVec1, hitPosVec2, ImColor(255, 255, 255), 5.0f);
 
 		/* Input */
-		auto rc1 = MathUtil::ScaleVec2(1260, 0) + ImVec2(0, menu_bar_height + 2.5);
+		auto rc1 = MathUtil::ScaleVec2(1260, 0) + ImVec2(0, menu_bar_height + 2.5f);
 		auto rc2 = MathUtil::ScaleVec2(1277, 715);
 
 		auto window_sz = rc2 - rc1;
@@ -640,7 +640,7 @@ void EditorScene::Render(double delta) {
 			FontResources::GetReallyBigFontForSlider()->FontSize = window_sz.y - MathUtil::ScaleVec2(0, 12).y;
 
 			ImGui::PushFont(FontResources::GetReallyBigFontForSlider());
-			ImGui::SliderFloat("###ProgressSlider", &m_currentTime, 0.0, audio_length, "", flags);
+			ImGui::SliderFloat("###ProgressSlider", &m_currentTime, 0.0f, (float)audio_length, "", flags);
 			ImGui::PopFont();
 
 			FontResources::GetReallyBigFontForSlider()->FontSize = lastSize;
@@ -660,7 +660,7 @@ void EditorScene::Render(double delta) {
 			if (m_autoscroll) {
 				auto it = std::lower_bound(m_time_stop_at.begin(), m_time_stop_at.end(), m_currentTime * 100);
 				if (it != m_time_stop_at.end()) {
-					m_currentTime = (*it) / 100.0;
+					m_currentTime = (float)((*it) / 100.0);
 				}
 			}
 
@@ -670,8 +670,8 @@ void EditorScene::Render(double delta) {
 		if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && !m_autoscroll) {
 			auto it = std::lower_bound(m_time_stop_at.begin(), m_time_stop_at.end(), m_currentTime * 100);
 			if (it != m_time_stop_at.end()) {
-				if (it - m_time_stop_at.begin() < m_time_stop_at.size()) {
-					m_currentTime = (*(it + 1)) / 100.0;
+				if ((int)(it - m_time_stop_at.begin()) < (int)m_time_stop_at.size()) {
+					m_currentTime = (float)((*(it + 1)) / 100.0);
 				}
 			}
 		}
@@ -680,7 +680,7 @@ void EditorScene::Render(double delta) {
 			auto it = std::lower_bound(m_time_stop_at.begin(), m_time_stop_at.end(), m_currentTime * 100);
 			if (it != m_time_stop_at.end()) {
 				if (it - m_time_stop_at.begin() > 0) {
-					m_currentTime = (*(it - 1)) / 100.0;
+					m_currentTime = (float)((*(it - 1)) / 100.0);
 				}
 			}
 		}
@@ -762,8 +762,8 @@ bool EditorScene::Attach() {
 	m_currentTime = 0;
 
 	GameWindow* wnd = GameWindow::GetInstance();
-	m_oldBufferSize.x = wnd->GetBufferWidth();
-	m_oldBufferSize.y = wnd->GetBufferHeight();
+	m_oldBufferSize.x = (float)wnd->GetBufferWidth();
+	m_oldBufferSize.y = (float)wnd->GetBufferHeight();
 
 	GameAudioSampleCache::Dispose();
 
@@ -799,7 +799,7 @@ bool EditorScene::Attach() {
 }
 
 bool EditorScene::Detach() {
-	GameWindow::GetInstance()->ResizeBuffer(m_oldBufferSize.x, m_oldBufferSize.y);
+	GameWindow::GetInstance()->ResizeBuffer((int)m_oldBufferSize.x, (int)m_oldBufferSize.y);
 
 	m_notes.clear();
 	m_samples.clear();

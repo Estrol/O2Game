@@ -2,8 +2,8 @@
 #include "Judgements/NoteResult.h"
 #include <functional>
 
-constexpr int kMaxJamGauge = 100;
-constexpr int kMaxLife = 100;
+constexpr float kMaxJamGauge = 100;
+constexpr float kMaxLife = 100;
 
 struct NoteHitInfo {
 	NoteResult Result;
@@ -25,11 +25,11 @@ public:
 	void ListenLongNote(std::function<void()>);
 
 	int GetPills() const;
-	int GetLife() const;
-	int GetJamGauge() const;
+	float GetLife() const;
+	float GetJamGauge() const;
 	std::tuple<int, int, int, int, int, int, int, int, int, int, int> GetScore() const;
 private:
-	void AddLife(int sz);
+	void AddLife(float sz);
 
 	int m_score;
 	int m_cool;
@@ -44,8 +44,8 @@ private:
 	int m_numOfPills;
 	int m_coolCombo;
 
-	int m_jamGauge;
-	int m_life;
+	float m_jamGauge;
+	float m_life;
 
 	int m_lnCombo;
 	int m_lnMaxCombo;

@@ -94,7 +94,8 @@
         "shared_mutex": "cpp",
         "valarray": "cpp",
         "coroutine": "cpp",
-        "resumable": "cpp"
+        "resumable": "cpp",
+        "*.ipp": "cpp"
     },
     "C_Cpp.default.compilerPath": "cl.exe"
 }

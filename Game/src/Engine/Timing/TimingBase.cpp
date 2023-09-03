@@ -7,7 +7,7 @@ TimingBase::TimingBase(std::vector<TimingInfo>& _timings, std::vector<TimingInfo
 }
 
 TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
-    int min = 0, max = timings.size() - 1;
+    int min = 0, max = (int)timings.size() - 1;
     int left = min, right = max;
 
     while (left <= right) {

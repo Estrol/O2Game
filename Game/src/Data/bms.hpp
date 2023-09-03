@@ -32,14 +32,14 @@ namespace BMS {
 	};
 
 	struct BMSNote {
-		int StartTime;
-		int EndTime;
+		double StartTime;
+		double EndTime;
 		int Lane;
 		int SampleIndex;
 	};
 
 	struct BMSAutoSample {
-		int StartTime;
+		double StartTime;
 		int SampleIndex;
 	};
 

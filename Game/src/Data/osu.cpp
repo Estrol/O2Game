@@ -162,7 +162,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			try {
 				ev.StartTime = std::stof(event[1]);
 			}
-			catch (std::invalid_argument& e) {
+			catch (std::invalid_argument) {
 				ev.StartTime = 0; // WHY TF people set invalid things on invalid row
 			}
 
@@ -216,8 +216,8 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 
 			OsuTimingPoint tp = {};
 			try {
-				tp.Offset = std::stod(timingPoint[0]);
-				tp.BeatLength = std::stod(timingPoint[1]);
+				tp.Offset = std::stof(timingPoint[0]);
+				tp.BeatLength = std::stof(timingPoint[1]);
 				tp.TimeSignature = std::stof(timingPoint[2]);
 				tp.SampleSet = std::stoi(timingPoint[3]);
 				tp.SampleIndex = std::stoi(timingPoint[4]);
@@ -225,7 +225,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 				tp.Inherited = std::stoi(timingPoint[6]) == 1;
 				tp.KiaiMode = std::stoi(timingPoint[7]);
 			}
-			catch (std::invalid_argument& e) {
+			catch (std::invalid_argument) {
 				std::cout << "[osu::TimingPoints] Syntax error: " << line << std::endl;
 				continue;
 			}
@@ -251,8 +251,8 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			}
 
 			OsuHitObject ho;
-			ho.X = std::stoi(hitObject[0]);
-			ho.Y = std::stoi(hitObject[1]);
+			ho.X = std::stof(hitObject[0]);
+			ho.Y = std::stof(hitObject[1]);
 			ho.StartTime = std::stoi(hitObject[2]);
 			ho.Type = std::stoi(hitObject[3]);
 			ho.HitSound = std::stoi(hitObject[4]);
@@ -305,7 +305,7 @@ int Osu::Beatmap::GetCustomSampleIndex(std::string path) {
 	}
 
 	HitSamples.push_back(path);
-	return HitSamples.size() - 1;
+	return (int)HitSamples.size() - 1;
 }
 
 bool Osu::Beatmap::IsValid() {

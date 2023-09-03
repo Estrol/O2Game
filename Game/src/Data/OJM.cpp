@@ -62,7 +62,7 @@ const unsigned char WeirdRearrangeTable[] = {
 };
 
 std::vector<char> WeirdRearrange(char* data, size_t sz) {
-	int len = sz;
+	int len = (int)sz;
 	int key = ((len % 17) << 4) + (len % 17);
 	int blockSz = len / 17;
 
@@ -258,7 +258,7 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 			auto data = WeirdRearrange((char*)buffer, SampleHeader.chunkSize);
 			data = XorDecrypt(data);
 
-			SampleHeader.chunkSize = data.size();
+			SampleHeader.chunkSize = (int)data.size();
 			delete[] buffer;
 
 			buffer = new uint8_t[SampleHeader.chunkSize];

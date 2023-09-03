@@ -140,19 +140,19 @@ void GameplayScene::Render(double delta) {
 	curLifeTex->CalculateSize();
 
 	Rect rc = {};
-	rc.left = curLifeTex->AbsolutePosition.X;
-	rc.top = curLifeTex->AbsolutePosition.Y;
-	rc.right = rc.left + curLifeTex->AbsoluteSize.X;
-	rc.bottom = rc.top + curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+	rc.left = (int)curLifeTex->AbsolutePosition.X;
+	rc.top = (int)curLifeTex->AbsolutePosition.Y;
+	rc.right = rc.left + (int)curLifeTex->AbsoluteSize.X;
+	rc.bottom = rc.top + (int)curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
 	float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
 
 	// Add wiggle effect
 	float yOffset = 0.0f;
 	// Wiggle effect after the first second
-	yOffset = sinf(m_game->GetElapsedTime() * 75.0f) * 5.0f;
+	yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 5.0f;
 
-	LONG topCur = (1.0f - alpha) * rc.top + alpha * rc.bottom;
-	rc.top = topCur + static_cast<LONG>(yOffset);
+	int topCur = (int)std::round((1.0f - alpha) * rc.top + alpha * rc.bottom);
+	rc.top = topCur + static_cast<int>(std::round(yOffset));
 	if (rc.top >= rc.bottom) {
 		rc.top = rc.bottom - 1;
 	}
@@ -229,10 +229,10 @@ void GameplayScene::Render(double delta) {
 			// Fill from bottom to top
 			lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.Y, (double)gaugeVal));
 			Rect rc = {
-				(LONG)m_jamGauge->AbsolutePosition.X,
-				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y - lerp),
-				(LONG)(m_jamGauge->AbsolutePosition.X + m_jamGauge->AbsoluteSize.X),
-				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
+				(int)m_jamGauge->AbsolutePosition.X,
+				(int)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y - lerp),
+				(int)(m_jamGauge->AbsolutePosition.X + m_jamGauge->AbsoluteSize.X),
+				(int)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
 			};
 
 			m_jamGauge->Draw(&rc);
@@ -241,28 +241,28 @@ void GameplayScene::Render(double delta) {
 			// Fill from left to right
 			lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.X, gaugeVal));
 			Rect rc = {
-				(LONG)m_jamGauge->AbsolutePosition.X,
-				(LONG)m_jamGauge->AbsolutePosition.Y,
-				(LONG)(m_jamGauge->AbsolutePosition.X + lerp),
-				(LONG)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
+				(int)m_jamGauge->AbsolutePosition.X,
+				(int)m_jamGauge->AbsolutePosition.Y,
+				(int)(m_jamGauge->AbsolutePosition.X + lerp),
+				(int)(m_jamGauge->AbsolutePosition.Y + m_jamGauge->AbsoluteSize.Y)
 			};
 
 			m_jamGauge->Draw(&rc);
 		}
 	}
 
-	float currentProgress = m_game->GetAudioPosition() / m_game->GetAudioLength();
+	float currentProgress = (float)m_game->GetAudioPosition() / (float)m_game->GetAudioLength();
 	if (currentProgress > 0) {
 		m_waveGage->CalculateSize();
 
-		int min = 0, max = m_waveGage->AbsoluteSize.X;
+		int min = 0, max = (int)m_waveGage->AbsoluteSize.X;
 		int lerp = (int)std::lerp(min, max, currentProgress);
 
 		Rect rc = {
-			(LONG)m_waveGage->AbsolutePosition.X,
-			(LONG)m_waveGage->AbsolutePosition.Y,
-			(LONG)(m_waveGage->AbsolutePosition.X + lerp),
-			(LONG)(m_waveGage->AbsolutePosition.Y + m_waveGage->AbsoluteSize.Y)
+			(int)m_waveGage->AbsolutePosition.X,
+			(int)m_waveGage->AbsolutePosition.Y,
+			(int)(m_waveGage->AbsolutePosition.X + lerp),
+			(int)(m_waveGage->AbsolutePosition.Y + m_waveGage->AbsoluteSize.Y)
 		};
 
 		m_waveGage->Draw(&rc);
@@ -290,21 +290,6 @@ void GameplayScene::Render(double delta) {
 	}
 
 	m_title->Draw(m_game->GetTitle());
-
-	{
-		std::vector<MissInfo>* info = (std::vector<MissInfo>*)EnvironmentSetup::GetObj("MissGraphDebug");
-
-		ImGui::SetNextWindowSize(MathUtil::ScaleVec2(200,200));
-		ImGui::SetNextWindowPos(MathUtil::ScaleVec2(400,200), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Debug Window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-			// loop from behind
-			for (int i = info->size() - 1; i >= 0; i--) {
-				ImGui::Text("%d: %d, %.2f, %.2f, %.2f", i, info->at(i).type, info->at(i).beat, info->at(i).hit_beat, info->at(i).time);
-			}
-
-			ImGui::End();
-		}
-	}
 
 	if (m_autoPlay) {
 		m_autoText->Position = m_autoTextPos;
@@ -349,9 +334,6 @@ bool GameplayScene::Attach() {
 	m_resourceFucked = false;
 	m_drawJudge = false;
 	m_autoPlay = EnvironmentSetup::GetInt("Autoplay") == 1;
-
-	std::vector<MissInfo>* info = new std::vector<MissInfo>();
-	EnvironmentSetup::SetObj("MissGraphDebug", (void*)info);
 
 	try {
 		auto SkinName = Configuration::Load("Game", "Skin");
@@ -505,9 +487,9 @@ bool GameplayScene::Attach() {
 			}
 		}
 
-		m_jamLogo = std::make_unique<Sprite2D>(jamLogoFileName, 0.25);
+		m_jamLogo = std::make_unique<Sprite2D>(jamLogoFileName, 0.25f);
 		m_jamLogo->Position = UDim2::fromOffset(jamLogoPos.X, jamLogoPos.Y);
-		m_jamLogo->AnchorPoint = { jamLogoPos.AnchorPointX, jamLogoPos.AnchorPointY };
+		m_jamLogo->AnchorPoint = { (double)jamLogoPos.AnchorPointX, (double)jamLogoPos.AnchorPointY };
 
 		auto lifeBarPos = conf.GetSprite("LifeBar");
 		std::vector<std::filesystem::path> lifeBarFileName = {};
@@ -519,7 +501,7 @@ bool GameplayScene::Attach() {
 			}
 		}
 
-		m_lifeBar = std::make_unique<Sprite2D>(lifeBarFileName, 0.15);
+		m_lifeBar = std::make_unique<Sprite2D>(lifeBarFileName, 0.15f);
 		m_lifeBar->Position = UDim2::fromOffset(lifeBarPos.X, lifeBarPos.Y);
 		m_lifeBar->AnchorPoint = { lifeBarPos.AnchorPointX, lifeBarPos.AnchorPointY };
 
@@ -601,7 +583,7 @@ bool GameplayScene::Attach() {
 			}
 		}
 
-		m_lnLogo = std::make_unique<Sprite2D>(lnLogoFileName, 0.25);
+		m_lnLogo = std::make_unique<Sprite2D>(lnLogoFileName, 0.25f);
 		m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
 		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
 		m_lnLogo->AlphaBlend = true;
@@ -618,7 +600,7 @@ bool GameplayScene::Attach() {
 			comboFileName.emplace_back(file);
 		}
 
-		m_comboLogo = std::make_unique<Sprite2D>(comboFileName, 0.25);
+		m_comboLogo = std::make_unique<Sprite2D>(comboFileName, 0.25f);
 		m_comboLogo->Position = UDim2::fromOffset(comboLogoPos.X, comboLogoPos.Y);
 		m_comboLogo->AnchorPoint = { comboLogoPos.AnchorPointX, comboLogoPos.AnchorPointY };
 		m_comboLogo->AlphaBlend = true;
@@ -795,7 +777,7 @@ bool GameplayScene::Attach() {
 			m_hitEffect[i]->AlphaBlend = true;
 			m_holdEffect[i]->AlphaBlend = true;
 
-			int pos = std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
+			int pos = (int)std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
 			m_hitEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
 			m_holdEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
 			m_hitEffect[i]->AnchorPoint = { .5, .45 };
@@ -817,20 +799,20 @@ bool GameplayScene::Attach() {
 			m_comboTimer = 0; // Fix crash :troll:
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
-			});
+		});
 
 		m_game->GetScoreManager()->ListenJam([&](int combo) {
-			m_jamLogo->SetFPS(13.33);
+			m_jamLogo->SetFPS(13.33f);
 			m_drawJam = true;
 			m_jamTimer = 0;
 			m_jamLogo->Reset();
-			});
+		});
 
 		m_game->GetScoreManager()->ListenLongNote([&] {
 			m_lnLogo->SetFPS(60);
 			m_lnTimer = 0;
 			m_drawLN = true;
-			});
+		});
 	}
 	catch (std::exception& e) {
 		MsgBox::Show("GameplayError", "Error", e.what(), MsgBoxType::OK);

@@ -148,10 +148,10 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 					ev.Channel = package.Channel;
 					ev.CellSize = package.EventCount;
 					ev.Position = position;
-					ev.Value = event.Value - 1;
+					ev.Value = (float)event.Value - 1.0f;
 
 					if (event.Type % 8 > 3 || event.Type == 4) {
-						ev.Value += 1000;
+						ev.Value += 1000.0f;
 					}
 
 					// nvm, we need parse it :troll:
@@ -161,7 +161,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						volume = 1.0f;
 					}
 
-					float pan = (event.VolPan & 0x0F);
+					float pan = (float)(event.VolPan & 0x0F);
 					if (pan == 0.0f) {
 						pan = 8.0f;	
 					}
@@ -263,7 +263,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 				switch (event.Type) {
 					case NoteEventType::HoldStart: {
 						holdNotes[laneIndex] = timer;
-						holdNotesPos[laneIndex] = event.Measure + event.Position;
+						holdNotesPos[laneIndex] = (float)(event.Measure + event.Position);
 						break;
 					}
 
@@ -279,7 +279,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 							note.Pan = event.Pan;
 							note.Channel = event.Channel;
 							note.Position = holdNotesPos[laneIndex];
-							note.EndPosition = event.Measure + event.Position;
+							note.EndPosition = (float)(event.Measure + event.Position);
 							holdNotesPos[laneIndex] = -1;
 							holdNotes[laneIndex] = -1;
 
@@ -300,7 +300,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 						note.Volume = event.Volume;
 						note.Pan = event.Pan;
 						note.Channel = event.Channel;
-						note.Position = event.Measure + event.Position;
+						note.Position = (float)(event.Measure + event.Position);
 
 						assert(note.Position != -1);
 
@@ -317,7 +317,7 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 				sample.Volume = event.Volume;
 				sample.Pan = event.Pan;
 				sample.Channel = event.Channel;
-				sample.Position = event.Measure + event.Position;
+				sample.Position = (float)(event.Measure + event.Position);
 
 				assert(sample.Position != -1);
 

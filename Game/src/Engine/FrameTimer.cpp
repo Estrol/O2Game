@@ -92,7 +92,7 @@ void FrameTimer::ResetIndex() {
 }
 
 void FrameTimer::LastIndex() {
-	m_currentFrame = m_frames.size() - 1;
+	m_currentFrame = (int)m_frames.size() - 1;
 }
 
 void FrameTimer::SetIndexAt(int idx) {

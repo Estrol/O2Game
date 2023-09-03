@@ -48,7 +48,7 @@ public:
 	double GetBPMAt(double offset) const;
 	double GetCurrentBPM() const;
 	double GetSongRate() const;
-	int GetAudioLength() const;
+	double GetAudioLength() const;
 	int GetGameVolume() const;
 
 	int* GetLaneSizes() const;
@@ -97,7 +97,7 @@ private:
 	int m_currentBPMIndex = 0;
 	int m_currentSVIndex = 0;
 	int m_scrollSpeed = 0;
-	int m_audioLength = 0;
+	double m_audioLength = 0;
 	int m_hitPosition = 0;
 	int m_laneOffset = 0;
 	int m_audioVolume = 100;

@@ -25,7 +25,7 @@ namespace GameAudioSampleCache {
 }
 
 int LastIndexOf(std::string& str, char c) {
-	for (int i = str.length() - 1; i >= 0; i--) {
+	for (int i = (int)str.length() - 1; i >= 0; i--) {
 		if (str[i] == c) {
 			return i;
 		}
@@ -63,7 +63,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 			
 			if (audioManager->GetSample(sample.FilePath) == nullptr) {
 				if (!pitch && m_rate != 1.0f) {
-					auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), m_rate);
+					auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), (float)m_rate);
 					if (data.sampleFlags == 0) {
 						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
 						continue;
@@ -135,7 +135,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 					fs.read(buffer, size);
 					fs.close();
 
-					auto data = BASS_FX_SampleEncoding::Encode(buffer, size, m_rate);
+					auto data = BASS_FX_SampleEncoding::Encode(buffer, size, (float)m_rate);
 					delete[] buffer;
 
 					if (data.sampleFlags == 0) {

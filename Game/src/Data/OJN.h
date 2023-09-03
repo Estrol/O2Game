@@ -87,8 +87,8 @@ struct O2Timing {
 };
 
 struct O2Note {
-	int32_t StartTime;
-	int32_t EndTime;
+	double StartTime;
+	double EndTime;
 
 	bool IsLN;
 	int LaneIndex;

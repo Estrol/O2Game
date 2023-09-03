@@ -28,8 +28,8 @@ enum class TimingType : uint8_t {
 
 // Note information
 struct NoteInfo {
-	uint32_t StartTime; // Note start time in milliseconds
-	uint32_t EndTime; // Note end time in milliseconds
+	double StartTime; // Note start time in milliseconds
+	double EndTime; // Note end time in milliseconds
 	NoteType Type; // Note type: NORMAL, HOLD
 	uint32_t LaneIndex; // Note lane index in range: 0, 1, 2, 3, 4, 5, 6, 7
 	uint32_t Keysound; // Keysound index to play in-game
@@ -45,7 +45,7 @@ struct BMSMeasureInfo {
 struct TimingInfo {
 	double StartTime;
 	float Value;
-	float Beat;
+	double Beat;
 	float TimeSignature;
 	TimingType Type;
 
@@ -61,8 +61,8 @@ struct Sample {
 };
 
 struct AutoSample {
-	uint32_t StartTime;
-	uint32_t Index;
+	double StartTime;
+	int Index;
 
 	float Volume = 1, Pan = 0;
 };
@@ -87,7 +87,7 @@ public:
 	int m_keyCount;
 	float BaseBPM;
 	
-	int GetLength();
+	double GetLength();
 	std::string MD5Hash;
 
 	std::string m_backgroundFile;

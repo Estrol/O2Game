@@ -178,6 +178,6 @@ void IntroScene::PrepareDB() {
 			return id1 < id2;
 			});
 
-		db->Resize(m_songFiles.size());
+		db->Resize((int)m_songFiles.size());
 	}
 }

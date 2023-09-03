@@ -59,7 +59,7 @@ void Button::Render(double delta) {
 
 		auto draw_list = ImGui::GetWindowDrawList();
 
-		draw_list->AddRect(ImVec2(targetRect.left, targetRect.top), ImVec2(targetRect.right, targetRect.bottom), ImColor(255, 255, 255, 255));
+		draw_list->AddRect(ImVec2((float)targetRect.left, (float)targetRect.top), ImVec2((float)targetRect.right, (float)targetRect.bottom), ImColor(255, 255, 255, 255));
 
 		ImguiUtil::EndText();
 	}

@@ -69,12 +69,12 @@ uint64_t Base36_Decode(const std::string& str) {
 	std::string reversed = str;
 	std::reverse(reversed.begin(), reversed.end());
 	std::transform(reversed.begin(), reversed.end(), reversed.begin(), ::tolower);
-
+	
 	uint64_t result = 0;
 	int pos = 0;
 
 	for (char c : reversed) {
-		result += CharList.find(c) * pow(36, pos);
+		result += (uint64_t)(CharList.find(c) * pow(36, pos));
 		pos++;
 	}
 

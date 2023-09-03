@@ -4,7 +4,7 @@
 #include <future>
 
 class Chart;
-class AutoSample;
+struct AutoSample;
 
 class BGMPreview {
 public:
@@ -31,10 +31,10 @@ private:
 	bool OnStarted;
 	bool Ready;
 
-	int m_startOffset = 0;
+	double m_startOffset = 0;
 	int m_currentSampleIndex = 0;
 	int m_bgmIndex;
-	int m_length;
+	double m_length;
 	int m_currentState = 0;
 
 	std::vector<AutoSample> m_autoSamples;

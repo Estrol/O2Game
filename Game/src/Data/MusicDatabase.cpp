@@ -53,7 +53,7 @@ void MusicDatabase::Load(std::filesystem::path path) {
 }
 
 int MusicDatabase::GetMusicCount() {
-	return Items.size();
+	return static_cast<int>(Items.size());
 }
 
 DB_MusicItem& MusicDatabase::GetMusicItem(int index) {
@@ -88,7 +88,7 @@ void MusicDatabase::Save(std::filesystem::path path) {
 	DB_Header header = {};
 	memcpy((char*)&header.Signature, signature, 2);
 	header.Version = version;
-	header.MusicCount = Items.size();
+	header.MusicCount = static_cast<int>(Items.size());
 	
 	fs.write((char*)&header, sizeof(DB_Header));
 

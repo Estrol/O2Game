@@ -370,7 +370,7 @@ void RhythmEngine::Update(double delta) {
 		auto& sample = m_autoSamples[i];
 		if (m_currentAudioPosition >= sample.StartTime) {
 			if (sample.StartTime - m_currentAudioPosition < 5) {
-				GameAudioSampleCache::Play(sample.Index, sample.Volume * m_audioVolume, sample.Pan * 100);
+				GameAudioSampleCache::Play(sample.Index, (int)std::round(sample.Volume * m_audioVolume), (int)std::round(sample.Pan * 100));
 			}
 
 			m_currentSampleIndex++;
@@ -500,15 +500,15 @@ double RhythmEngine::GetPrebufferTiming() const {
 double RhythmEngine::GetNotespeed() const {
 	double speed = static_cast<double>(m_scrollSpeed);
 	double scrollingFactor = 1920.0 / 1366.0;
-	float virtualRatio = m_virtualResolution.Y / m_gameResolution.Y;
-	float value = (speed / 10.0) / (20.0 * m_rate) * scrollingFactor * virtualRatio;
+	float virtualRatio = (float)(m_virtualResolution.Y / m_gameResolution.Y);
+	float value = (float)((speed / 10.0) / (20.0 * m_rate) * scrollingFactor * virtualRatio);
 
 	return value;
 }
 
 double RhythmEngine::GetBPMAt(double offset) const {
 	auto& bpms = m_currentChart->m_bpms;
-	int min = 0, max = bpms.size() - 1;
+	int min = 0, max = (int)(bpms.size() - 1);
 
 	if (max == 0) {
 		return bpms[0].Value;
@@ -542,7 +542,7 @@ double RhythmEngine::GetSongRate() const {
 	return m_rate;
 }
 
-int RhythmEngine::GetAudioLength() const {
+double RhythmEngine::GetAudioLength() const {
 	return m_audioLength;
 }
 

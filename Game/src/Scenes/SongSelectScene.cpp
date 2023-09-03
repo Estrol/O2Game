@@ -61,7 +61,7 @@ void SongSelectScene::Render(double delta) {
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-    auto windowNextSz = ImVec2(window->GetBufferWidth(), window->GetBufferHeight());
+    auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
 
     if (m_songBackground) {
         m_songBackground->Draw();
@@ -74,7 +74,7 @@ void SongSelectScene::Render(double delta) {
 
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
 
-    ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0, 0.00000001, 1.0);
+    ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0f, 0.00000001f, 1.0f);
     auto flags = ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoResize
         | ImGuiWindowFlags_NoMove
@@ -185,7 +185,7 @@ void SongSelectScene::Render(double delta) {
                         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
                         ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x * 1.2, color.y * 1.2, color.z * 1.2, 1));
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x * 1.2f, color.y * 1.2f, color.z * 1.2f, 1.0f));
                     }
 
                     if (ImGui::Button(mod.c_str(), MathUtil::ScaleVec2(ImVec2(80, 0)))) {
@@ -721,7 +721,7 @@ void SongSelectScene::Render(double delta) {
                         if (ImGui::BeginTabItem("Game")) {
                             ImGui::Text("Guide Line Length");
 
-                            for (int i = LongNote.size() - 1; i >= 0; i--) {
+                            for (int i = (int)LongNote.size() - 1; i >= 0; i--) {
                                 bool is_combo_selected = currentGuideLineIndex == i;
 								
                                 ImGui::PushItemWidth(50);
@@ -782,9 +782,9 @@ void SongSelectScene::Render(double delta) {
     ImGui::EndDisabled();
 
     if (!is_update_bgm && index != -1 && isWait) {
-        waitTime += delta;
+        waitTime += (float)delta;
 
-        if (waitTime > 0.25) {
+        if (waitTime > 0.25f) {
             isWait = false;
             bSelectNewSong = true;
         }
@@ -851,10 +851,10 @@ void SongSelectScene::Update(double delta) {
         }
         else {
             if (currentAlpha < nextAlpha) {
-                currentAlpha = std::clamp(currentAlpha + increment, 0.0, 100.0);
+                currentAlpha = std::clamp(currentAlpha + (float)increment, 0.0f, 100.0f);
             }
             else {
-                currentAlpha = std::clamp(currentAlpha - increment, 0.0, 100.0);
+                currentAlpha = std::clamp(currentAlpha - (float)increment, 0.0f, 100.0f);
             }
         }
     }
@@ -924,7 +924,7 @@ bool SongSelectScene::Attach() {
         std::string currentResolution = std::to_string(window->GetWidth()) + "x" + std::to_string(window->GetHeight());
 		
         // find index
-		currentResolutionIndex = std::find(m_resolutions.begin(), m_resolutions.end(), currentResolution) - m_resolutions.begin();
+        currentResolutionIndex = (int)(std::find(m_resolutions.begin(), m_resolutions.end(), currentResolution) - m_resolutions.begin());
     }
 
     auto rateValue = EnvironmentSetup::Get("SongRate");
@@ -940,10 +940,10 @@ bool SongSelectScene::Attach() {
     try {
         int value = std::atoi(noteValue.c_str());
 
-		noteValue = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
+		currentSpeed = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
 	} 
     catch (std::invalid_argument) {
-        noteValue = 2.2f;
+        currentSpeed = 2.2f;
     }
 
     try {
@@ -977,7 +977,7 @@ bool SongSelectScene::Attach() {
             currentFPSIndex = 4;
         }
         else {
-            currentFPSIndex = it - m_fps.begin();
+            currentFPSIndex = (int)(it - m_fps.begin());
         }
     }
     catch (std::invalid_argument) {

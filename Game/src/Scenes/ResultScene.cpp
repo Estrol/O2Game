@@ -27,7 +27,7 @@ void ResultScene::Render(double delta) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     auto window = GameWindow::GetInstance();
 
-    auto windowNextSz = ImVec2(window->GetBufferWidth(), window->GetBufferHeight());
+    auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
     ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
 
     if (m_background) {

@@ -7,11 +7,11 @@
 #include "Util/Util.hpp"
 #include <cmath>
 
-double float_floor(double value) {
+float float_floor(float value) {
 #if __GNUC__
-	return ::floorf(value);
+	return (float)::floorf(value);
 #else
-	return std::floorf(value);
+	return (float)std::floorf(value);
 #endif
 }
 
@@ -43,7 +43,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 
 	//m_audio = beatmap.AudioFilename;
 	m_title = std::u8string(beatmap.Title.begin(), beatmap.Title.end());
-	m_keyCount = beatmap.CircleSize;
+	m_keyCount = (int)beatmap.CircleSize;
 	m_artist = std::u8string(beatmap.Artist.begin(), beatmap.Artist.end());
 	m_beatmapDirectory = beatmap.CurrentDir;
 
@@ -93,7 +93,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		info.Type = NoteType::NORMAL;
 		info.Keysound = note.KeysoundIndex;
 		info.LaneIndex = static_cast<int>(float_floor(note.X * static_cast<float>(beatmap.CircleSize) / 512.0f));
-		info.Volume = static_cast<float>(note.Volume) / 100.0;
+		info.Volume = static_cast<float>(note.Volume) / 100.0f;
 		info.Pan = 0;
 
 		if (note.Type == 128) {
@@ -118,7 +118,7 @@ Chart::Chart(Osu::Beatmap& beatmap) {
 		else {
 			TimingInfo info = {};
 			info.StartTime = timing.Offset;
-			info.Value = 60000.0 / timing.BeatLength;
+			info.Value = 60000.0f / timing.BeatLength;
 			info.TimeSignature = timing.TimeSignature;
 			info.Type = TimingType::BPM;
 
@@ -194,7 +194,7 @@ Chart::Chart(BMS::BMSFile& file) {
 	BaseBPM = file.BPM;
 	m_customMeasures = file.Measures;
 
-	int lastTime[7] = {};
+	double lastTime[7] = {};
 	std::sort(file.Notes.begin(), file.Notes.end(), [](const BMS::BMSNote& note1, const BMS::BMSNote note2) {
 		return note1.StartTime < note2.StartTime;
 	});
@@ -215,7 +215,7 @@ Chart::Chart(BMS::BMSFile& file) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
+			::printf("[Warning] overlapped note found at %.2f ms and conflict with %.2f ms\n", info.StartTime, lastTime[info.LaneIndex]);
 
 			if (note.SampleIndex != -1) {
 				AutoSample sm = {};
@@ -239,7 +239,7 @@ Chart::Chart(BMS::BMSFile& file) {
 		if (IsSV) {
 			TimingInfo info = {};
 			info.StartTime = timing.StartTime;
-			info.Value = std::clamp(timing.Value, 0.1, 10.0);
+			info.Value = (float)std::clamp(timing.Value, 0.1, 10.0);
 			info.Type = TimingType::SV;
 
 			m_svs.push_back(info);
@@ -247,9 +247,9 @@ Chart::Chart(BMS::BMSFile& file) {
 		else {
 			TimingInfo info = {};
 			info.StartTime = timing.StartTime;
-			info.Value = timing.Value;
+			info.Value = (float)timing.Value;
 			info.Type = TimingType::BPM;
-			info.TimeSignature = 4.0 * timing.TimeSignature;
+			info.TimeSignature = 4.0f * timing.TimeSignature;
 
 			m_bpms.push_back(info);
 		}
@@ -315,7 +315,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	m_keyCount = 7;
 	m_customMeasures = diff.Measures;
 
-	int lastTime[7] = {};
+	double lastTime[7] = {};
 	for (auto& note : diff.Notes) {
 		NoteInfo info = {};
 		info.StartTime = note.StartTime;
@@ -332,7 +332,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			::printf("[Warning] overlapped note found at %d ms and conflict with %d ms\n", info.StartTime, lastTime[info.LaneIndex]);
+			::printf("[Warning] overlapped note found at %.2f ms and conflict with %.2f ms\n", info.StartTime, lastTime[info.LaneIndex]);
 
 			if (note.SampleRefId != -1) {
 				AutoSample sm = {};
@@ -353,7 +353,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	for (auto& timing : diff.Timings) {
 		TimingInfo info = {};
 		info.StartTime = timing.Time;
-		info.Value = timing.BPM;
+		info.Value = (float)timing.BPM;
 		info.TimeSignature = 4;
 		info.Type = TimingType::BPM;
 
@@ -406,7 +406,7 @@ Chart::~Chart() {
 	
 }
 
-int Chart::GetLength() {
+double Chart::GetLength() {
 	if (PredefinedAudioLength != -1) {
 		return PredefinedAudioLength;
 	}
@@ -432,7 +432,7 @@ void Chart::ApplyMod(Mod mod, void* data) {
 			}
 
 			auto rng = std::default_random_engine{};
-			rng.seed(time(NULL));
+			rng.seed((uint32_t)time(NULL));
 
 			std::shuffle(std::begin(lanes), std::end(lanes), rng);
 
@@ -590,7 +590,7 @@ void Chart::NormalizeTimings() {
 
 		currentBPM = tp.Value;
 
-		float multiplier = currentSvMultiplier * (currentBPM / baseBPM);
+		float multiplier = (float)(currentSvMultiplier * (currentBPM / baseBPM));
 
 		if (currentAdjustedSvMultiplier == -1.0f) {
 			currentAdjustedSvMultiplier = multiplier;
@@ -623,7 +623,7 @@ void Chart::NormalizeTimings() {
 		}
 	}
 
-	InitialSvMultiplier = initialSvMultiplier == -1.0f ? 1 : initialSvMultiplier;
+	InitialSvMultiplier = (float)initialSvMultiplier == -1.0f ? 1.0f : (float)initialSvMultiplier;
 
 	m_svs.clear();
 	m_svs = result;

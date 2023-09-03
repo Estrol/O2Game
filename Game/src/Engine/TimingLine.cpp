@@ -9,7 +9,7 @@ namespace {
 }
 
 TimingLine::TimingLine() {
-	m_line = new ResizableImage(198, 1, 0xFF);
+	m_line = new ResizableImage(198, 1, (char)0xFF);
 	m_engine = nullptr;
 }
 

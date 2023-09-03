@@ -69,7 +69,7 @@ namespace BMS {
 							}
 						}
 					}
-					catch (std::invalid_argument& e) {
+					catch (std::invalid_argument) {
 						::printf("[BMS] [ERROR] Failed to parse #PLAYER, the notes might not able correctly load\n");
 					}
 
@@ -93,7 +93,7 @@ namespace BMS {
 
 				if (command.starts_with("BPM") 
 					&& command.size() == 3) {
-					BPM = std::atof(mergeVector(data, 1).c_str());
+					BPM = (float)std::atof(mergeVector(data, 1).c_str());
 					continue;
 				}
 
@@ -230,7 +230,7 @@ namespace BMS {
 								ev.Channel = channel;
 								ev.Measure = measure;
 								ev.Position = position;
-								ev.Value = Base36_Decode(value);
+								ev.Value = static_cast<double>(Base36_Decode(value));
 
 								m_events.push_back(ev);
 							}
@@ -252,7 +252,7 @@ namespace BMS {
 		constexpr auto IsExist = [](const std::vector<int>& vec, int value, int* index) {
 			auto it = std::find(vec.begin(), vec.end(), value);
 			if (it != vec.end()) {
-				*index = it - vec.begin();
+				*index = (int)(it - vec.begin());
 				return true;
 			}
 			else {
@@ -279,8 +279,8 @@ namespace BMS {
 		double holdNotes[7] = { -1, -1, -1, -1, -1, -1, -1 };
 		int currentMeasure = 0;
 		
-		std::sort(m_events.begin(), m_events.end(), [](const auto& a, const auto& b) {
-			float aPos = (a.Measure + a.Position), bPos = (b.Measure + b.Position);
+		std::sort(m_events.begin(), m_events.end(), [](const BMSEvent& a, const BMSEvent& b) {
+			float aPos = (float)(a.Measure + a.Position), bPos = (float)(b.Measure + b.Position);
 
 			// Any scrolling modifier must be behind the notes if same position
 			// I hope there will no be any conflict with this :troll:
@@ -330,7 +330,7 @@ namespace BMS {
 					BMSTiming startTiming = {};
 					startTiming.StartTime = timer;
 					startTiming.Value = event.Value;
-					startTiming.TimeSignature = measureFraction;
+					startTiming.TimeSignature = (float)measureFraction;
 
 					Timings.push_back(startTiming);
 					break;
@@ -340,14 +340,14 @@ namespace BMS {
 					BMSTiming startTiming = {};
 					startTiming.StartTime = timer;
 					startTiming.Value = 0;
-					startTiming.TimeSignature = measureFraction;
+					startTiming.TimeSignature = (float)measureFraction;
 
 					double stopTime = (event.Value / 192.0) * BEATS_PER_MSEC / currentBPM;
 
 					BMSTiming endTiming = {};
 					endTiming.StartTime = timer + stopTime;
 					endTiming.Value = currentBPM;
-					endTiming.TimeSignature = measureFraction;
+					endTiming.TimeSignature = (float)measureFraction;
 
 					Timings.push_back(startTiming);
 					Timings.push_back(endTiming);

@@ -13,10 +13,10 @@ class Sprite2D {
 public:
 	Sprite2D() = default;
 
-	Sprite2D(std::vector<Texture2D*> textures, float delay = 1.0);
-	Sprite2D(std::vector<std::string> textures, float delay = 1.0);
-	Sprite2D(std::vector<std::filesystem::path> textures, float delay = 1.0);
-	Sprite2D(std::vector<SDL_Texture*> textures, float delay = 1.0);
+	Sprite2D(std::vector<Texture2D*> textures, float delay = 1.0f);
+	Sprite2D(std::vector<std::string> textures, float delay = 1.0f);
+	Sprite2D(std::vector<std::filesystem::path> textures, float delay = 1.0f);
+	Sprite2D(std::vector<SDL_Texture*> textures, float delay = 1.0f);
 
 	~Sprite2D();
 
