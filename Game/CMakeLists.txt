@@ -54,6 +54,10 @@ add_executable(Game
     "src/Scenes/LoadingScene.cpp"
     "src/Scenes/ResultScene.cpp"
     "src/Scenes/SongSelectScene.cpp"
+    "src/Scenes/MainMenu.cpp"
+
+    # Overlays
+    "src/Scenes/Overlays/Settings.cpp"
 )
 
 #include "../Engine/include"
@@ -82,8 +86,8 @@ else ()
 endif ()
 
 if (MSVC)
-    target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
-    target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/ZI> "/MP")
+    target_link_options(Game PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
+    target_compile_options(Game PRIVATE $<$<CONFIG:Debug>:/ZI> "/MP")
 endif()
 
 # set preprocessor MEM_LEAK_DEBUG

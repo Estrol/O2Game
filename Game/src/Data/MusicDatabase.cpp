@@ -41,6 +41,14 @@ void MusicDatabase::Load(std::filesystem::path path) {
 		throw std::runtime_error("Invalid version!");
 	}
 
+	char8_t* buffer = new char8_t[header.MusicPathSize];
+	fs.read((char*)buffer, header.MusicPathSize);
+
+	std::u8string _path(buffer, header.MusicPathSize);
+	delete[] buffer;
+
+	Path = _path;
+
 	Items.resize(header.MusicCount);
 	for (int i = 0; i < header.MusicCount; i++) {
 		DB_MusicItem item = {};
@@ -82,6 +90,14 @@ void MusicDatabase::Resize(int size) {
 	Items.resize(size);
 }
 
+void MusicDatabase::SetPath(std::u8string path) {
+	Path = path;
+}
+
+std::u8string MusicDatabase::GetPath() {
+	return Path;
+}
+
 void MusicDatabase::Save(std::filesystem::path path) {
 	std::fstream fs(path, std::ios::binary | std::ios::out);
 
@@ -89,8 +105,10 @@ void MusicDatabase::Save(std::filesystem::path path) {
 	memcpy((char*)&header.Signature, signature, 2);
 	header.Version = version;
 	header.MusicCount = static_cast<int>(Items.size());
+	header.MusicPathSize = Path.size();
 	
 	fs.write((char*)&header, sizeof(DB_Header));
+	fs.write((char*)Path.c_str(), Path.size());
 
 	for (int i = 0; i < header.MusicCount; i++) {
 		DB_MusicItem item = Items[i];

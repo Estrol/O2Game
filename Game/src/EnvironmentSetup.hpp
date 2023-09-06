@@ -5,6 +5,8 @@
 #include <filesystem>
 
 namespace EnvironmentSetup {
+	void OnExitCheck();
+
 	void Set(std::string key, std::string value);
 	std::string Get(std::string key);
 

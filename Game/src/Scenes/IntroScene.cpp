@@ -14,11 +14,8 @@
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
 
-
-#define SAFE_DELETE(x) if (x) { delete x; x = nullptr; }
-
 IntroScene::IntroScene() {
-	m_text = nullptr;
+	m_text.reset();
 }
 
 void IntroScene::Render(double delta) {
@@ -32,21 +29,12 @@ void IntroScene::Render(double delta) {
 
 				// NoCollapse, AlwaysResize, NoMove
 				ImGuiBackendFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-
-				if (ImGui::Begin("Unnamed O2 Clone's Initial Setup", nullptr, flags)) {
-					ImGui::Text("Hi there, before you can play this game, you need to setup some stuffs first.");
-
-					ImGui::NewLine();
-					ImGui::NewLine();
-
-					ImGui::Text("Please select your O2Jam folder:");
-					ImGui::SameLine();
-					if (ImGui::Button("Select Directory")) {
-						currentState = 1;
-					}
+				if (ImGui::Begin("###BEGIN", nullptr, flags)) {
 					
+
 					ImGui::End();
 				}
+
 				break;
 			}
 
@@ -104,6 +92,7 @@ void IntroScene::Render(double delta) {
 			else {
 				std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
 
+				db->SetPath(musicPath.u8string());
 				db->Save(std::filesystem::current_path() / "Game.db");
 				IsReady = true;
 			}
@@ -118,11 +107,11 @@ void IntroScene::OnKeyDown(const KeyState& state) {
 }
 
 bool IntroScene::Attach() {
-	m_text = new Text(13);
+	m_text = std::make_unique<Text>(13);
 
-	std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
+	auto db = MusicDatabase::GetInstance();
 
-	if (musicPath.empty()) {
+	if (db->GetPath().empty()) {
 		IsOpenPrompt = true;
 	}
 	else {
@@ -133,7 +122,7 @@ bool IntroScene::Attach() {
 }
 
 bool IntroScene::Detach() {
-	SAFE_DELETE(m_text);
+	m_text.reset();
 	return true;
 }
 
@@ -154,7 +143,7 @@ void IntroScene::PrepareDB() {
 	}
 	else {
 	prepare_db:
-		for (const auto& dir_entry : std::filesystem::recursive_directory_iterator(musicPath)) {
+		for (const auto& dir_entry : std::filesystem::directory_iterator(musicPath)) {
 			if (dir_entry.is_regular_file()) {
 				std::string fileName = dir_entry.path().filename().string();
 				if (fileName.starts_with("o2ma") && fileName.ends_with(".ojn")) {
@@ -176,7 +165,7 @@ void IntroScene::PrepareDB() {
 			int id2 = std::atoi(file2.c_str());
 
 			return id1 < id2;
-			});
+		});
 
 		db->Resize((int)m_songFiles.size());
 	}

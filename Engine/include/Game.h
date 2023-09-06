@@ -3,6 +3,7 @@
 #include "Rendering/Renderer.h"
 #include "Inputs/InputManager.h"
 #include "SceneManager.h"
+#include "Overlay.h"
 #include "Rendering/Threading/GameThread.h"
 
 enum class ThreadMode {

@@ -2,6 +2,8 @@
 #include "Scene.h"
 #include "Game.h"
 #include "MsgBox.h"
+#include "Overlay.h"
+#include "Imgui/ImguiUtil.h"
 
 #include <string>
 #include <mutex>
@@ -9,19 +11,22 @@
 #include <exception>
 
 SceneManager::SceneManager() {
-	m_scenes = std::unordered_map<int, Scene*>();
+	m_scenes = {};
+	m_overlays = {};
 	m_parent = nullptr;
 }
 
 SceneManager::~SceneManager() {
-	{
-		std::lock_guard<std::mutex> lock(m_mutex);
-
-		for (auto& it : m_scenes) {
-			it.second->Detach();
-			delete it.second;
-		}
+	for (auto& it : m_scenes) {
+		it.second->Detach();
 	}
+
+	for (auto& it : m_overlays) {
+		it.second->Detach();
+	}
+
+	m_scenes.clear();
+	m_overlays.clear();
 }
 
 SceneManager* SceneManager::s_instance = nullptr;
@@ -65,12 +70,69 @@ void SceneManager::Update(double delta) {
 			}
 		}
 	}
+
+	if (m_nextOverlay != nullptr) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+
+		if (!m_nextOverlay->Attach()) {
+			MsgBox::ShowOut("EstEngine Error", "Failed to init next overlay", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+			m_parent->Stop();
+			return;
+		}
+
+		if (m_currentOverlay) {
+			auto curOverlay = m_currentOverlay;
+			m_currentOverlay = nullptr;
+
+			if (!curOverlay->Detach()) {
+				MsgBox::ShowOut("EstEngine Error", "Failed to detach current overlay", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+				m_parent->Stop();
+				return;
+			}
+		}
+
+		m_currentOverlay = m_nextOverlay;
+		m_nextOverlay = nullptr;
+	} else {
+		if (m_currentOverlay) {
+			m_currentOverlay->Update(delta);
+		}
+	}
 }
 
 void SceneManager::Render(double delta) {
 	m_renderId = std::this_thread::get_id();
 
 	if (m_currentScene) m_currentScene->Render(delta);
+	if (m_currentOverlay && !MsgBox::Any()) {
+		ImguiUtil::NewFrame();
+		auto& io = ImGui::GetIO();
+
+		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(m_currentOverlay->GetSize(), ImGuiCond_Always);
+
+		std::string title = m_currentOverlay->GetName() + "###SceneManagerOverlay";
+		ImGui::OpenPopup(title.c_str());
+		
+		if (ImGui::BeginPopupModal(
+			title.c_str(), 
+			nullptr, 
+			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
+
+			m_currentOverlay->Render(delta);
+			ImGui::EndPopup();
+		}
+
+		if (m_currentOverlay->IsClosed()) {
+			if (!m_currentOverlay->Detach()) {
+				MsgBox::ShowOut("EstEngine Error", "Failed to detach current overlay", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+				m_parent->Stop();
+				return;
+			}
+
+			m_currentOverlay = nullptr;
+		}
+	}
 }
 
 void SceneManager::Input(double delta) {
@@ -113,18 +175,45 @@ void SceneManager::AddScene(int idx, Scene* scene) {
 	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
 
 	std::cout << "Added scene: " << idx << std::endl;
-	s_instance->m_scenes[idx] = scene;
+	s_instance->m_scenes[idx] = std::unique_ptr<Scene>(scene);
 }
 
 void SceneManager::ChangeScene(int idx) {
 	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
-
-	std::cout << "Change scene: " << idx << std::endl;
+	
 	s_instance->IChangeScene(idx);
 }
 
+void SceneManager::AddOverlay(int Idx, Overlay* overlay) {
+	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
+
+	s_instance->m_overlays[Idx] = std::unique_ptr<Overlay>(overlay);
+}
+
+void SceneManager::OverlayShow(int idx) {
+	auto& map = s_instance->m_overlays;
+
+	if (map.find(idx) == map.end()) {
+		std::string msg = "Failed to find OverlayId: " + std::to_string(idx);
+
+		MsgBox::ShowOut("EstEngine Error", msg.c_str(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+		return;
+	}
+
+	s_instance->m_nextOverlay = map[idx].get();
+}
+
+void SceneManager::OverlayClose() {
+	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
+
+	if (s_instance->m_currentOverlay) {
+		s_instance->m_currentOverlay->Detach();
+		s_instance->m_currentOverlay = nullptr;
+	}
+}
+
 void SceneManager::IAddScene(int idx, Scene* scene) {
-	m_scenes[idx] = scene;
+	m_scenes[idx] = std::unique_ptr<Scene>(scene);
 }
 
 void SceneManager::IChangeScene(int idx) {
@@ -135,7 +224,10 @@ void SceneManager::IChangeScene(int idx) {
 		return;
 	}
 
-	m_nextScene = m_scenes[idx];
+	m_lastSceneId = m_currentSceneId;
+	m_currentSceneId = idx;
+
+	m_nextScene = m_scenes[idx].get();
 }
 
 void SceneManager::SetParent(Game* parent) {
@@ -148,6 +240,14 @@ void SceneManager::SetFrameLimit(double frameLimit) {
 
 void SceneManager::SetFrameLimitMode(FrameLimitMode mode) {
 	m_parent->SetFrameLimitMode(mode);
+}
+
+int SceneManager::GetCurrentSceneIndex() const {
+	return m_currentSceneId;
+}
+
+int SceneManager::GetLastSceneIndex() const {
+	return m_lastSceneId;
 }
 
 void SceneManager::DisplayFade(int transparency, std::function<void()> callback) {

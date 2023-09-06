@@ -130,6 +130,10 @@ void MsgBox::Draw() {
 	}
 }
 
+bool MsgBox::Any() {
+	return m_msgbox.size() > 0;
+}
+
 void MsgBox::Show(std::string Id, std::string Title, std::string fmt) {
 	return Show(Id, Title, fmt, MsgBoxType::OK);
 }

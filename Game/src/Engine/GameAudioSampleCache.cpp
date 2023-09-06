@@ -2,6 +2,7 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
+#include <array>
 #include <fstream>
 #include <mutex>
 
@@ -53,7 +54,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 	Dispose();
 	currentHash = chart->MD5Hash;
 
-	std::vector<std::string> ext = { ".wav", ".ogg", ".mp3" };
+	std::array<std::string, 3> ext = { ".wav", ".ogg", ".mp3" };
 
 	for (auto& it : chart->m_samples) {
 		NoteAudioSample sample = {};
@@ -131,12 +132,11 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 					size_t size = fs.tellg();
 					fs.seekg(0, std::ios::beg);
 
-					char* buffer = new char[size];
-					fs.read(buffer, size);
+					std::vector<char> buffer(size);
+					fs.read(buffer.data(), size);
 					fs.close();
 
-					auto data = BASS_FX_SampleEncoding::Encode(buffer, size, (float)m_rate);
-					delete[] buffer;
+					auto data = BASS_FX_SampleEncoding::Encode(buffer.data(), size, (float)m_rate);
 
 					if (data.sampleFlags == 0) {
 						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;

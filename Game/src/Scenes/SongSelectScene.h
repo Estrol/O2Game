@@ -37,16 +37,6 @@ private:
 	
 	float currentAlpha = 100.0;
 	float nextAlpha = 100.0;
-	
-	int startOffset = 0;
-	int currentVolume = 100;
-	int currentFPSIndex = 0;
-	int currentOffset = 0;
-	int currentResolutionIndex = 0;
-	int currentGuideLineIndex = 0;
-	bool LongNoteLighting = false;
-	bool LongNoteOnHitPos = false;
-	bool convertAutoSound = false;
 
 	bool is_departing = false;
 	bool is_quit = false;

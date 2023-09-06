@@ -27,12 +27,13 @@
 
 static std::array<std::string, 4> Mods = { "Mirror", "Random", "Rearrange", "Autoplay" };
 static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
-static std::array<std::string, 5> Graphics = { "OpenGL", "Vulkan (DXVK)", "Direct3D-9", "Direct3D-11", "Direct3D-12" };
-static std::array<std::string, 4> LongNote = { "None", "Short", "Normal", "Long" };
 
 SongSelectScene::SongSelectScene() {
     index = -1;
     memset(lanePos, 0, sizeof(lanePos));
+
+    int* data = new int[7];
+    EnvironmentSetup::SetObj("LaneData", data);
 }
 
 SongSelectScene::~SongSelectScene() {
@@ -42,6 +43,9 @@ SongSelectScene::~SongSelectScene() {
 
     m_songBackground.reset();
     m_background.reset();
+
+    delete[] EnvironmentSetup::GetObj("LaneData");
+    EnvironmentSetup::SetObj("LaneData", nullptr);
 }
 
 void SongSelectScene::Render(double delta) {
@@ -89,7 +93,7 @@ void SongSelectScene::Render(double delta) {
         flags
     )) {
         if (ImGui::BeginMenuBar()) {
-            if (ImGui::Button("Exit", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
+            if (ImGui::Button("Back", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
                 bExitPopup = true;
             }
 
@@ -350,15 +354,8 @@ void SongSelectScene::Render(double delta) {
         ImGui::End();
     }
 
-    if (bExitPopup) {
-        SDL_Event ev = {};
-        ev.type = SDL_QUIT;
-
-        SDL_PushEvent(&ev);
-    }
-
     if (bOptionPopup) {
-        ImGui::OpenPopup("Options###OptionsId");
+        SceneManager::OverlayShow(GameOverlay::SETTINGS);
     }
 
     if (bPlay && index == -1) {
@@ -391,12 +388,6 @@ void SongSelectScene::Render(double delta) {
 
             default: {
                 int* data = reinterpret_cast<int*>(EnvironmentSetup::GetObj("LaneData"));
-                if (data == NULL) {
-                    data = new int[7];
-
-                    EnvironmentSetup::SetObj("LaneData", data);
-                }
-
                 ImGui::InputText("###LanePos", lanePos, sizeof(lanePos), ImGuiInputTextFlags_CharsDecimal);
                 
                 ImGui::NewLine();
@@ -495,289 +486,6 @@ void SongSelectScene::Render(double delta) {
 
         ImGui::EndPopup();
     }
-    
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("Options###OptionsId", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
-        auto bWaiting = EnvironmentSetup::Get("bWaiting");
-        int iWaiting = bWaiting.size() ? std::atoi(bWaiting.c_str()) : -1;
-
-        switch (iWaiting) {
-            case 1: {
-                auto key = EnvironmentSetup::Get("iKey");
-                ImGui::Text("%s", "Waiting for keybind input...");
-                ImGui::Text("%s", ("Press any key to set the Key: " + key).c_str());
-
-                std::map<ImGuiKey, bool> blacklistedKey = {
-                    // Space, Enter
-                    { ImGuiKey_Space, true },
-                    { ImGuiKey_Enter, true },
-                    { ImGuiKey_KeyPadEnter, true },
-                };
-
-                std::string keyCount = EnvironmentSetup::Get("ikeyCount");
-                for (int i = 0; i < IM_ARRAYSIZE(io.KeysDown); i++) {
-                    if (io.KeysDown[i] && !blacklistedKey[(ImGuiKey)i]) {
-                        EnvironmentSetup::Set("bWaiting", "0");
-
-                        auto ikey = SDL_GetKeyFromScancode((SDL_Scancode)i);
-                        std::string name = SDL_GetKeyName(ikey);
-
-                        Configuration::Set("KeyMapping", keyCount + "Lane" + key, name);
-                        break;
-                    }
-                }
-                break;
-            }
-
-            case 2: {
-                ImGui::Text("You sure you want reset the settings?");
-                ImGui::Text("This will reset all settings to default.");
-
-                bool done = false;
-
-                if (ImGui::Button("Yes###ButtonPrompt1", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
-                    done = true;
-                }
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("No###ButtonPrompt2", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
-                    done = true;
-                }
-
-                if (done) {
-                    EnvironmentSetup::Set("bWaiting", "0");
-                }
-                break;
-            }
-
-            default: {
-                auto childSettingVec2 = MathUtil::ScaleVec2(ImVec2(400, 250));
-	
-                if (ImGui::BeginChild("###ChildSettingWnd", MathUtil::ScaleVec2(ImVec2(400, 250)))) {
-                    if (ImGui::BeginTabBar("OptionTabBar")) {
-                        if (ImGui::BeginTabItem("Inputs")) {
-                            ImGui::Text("7 Keys Configuration");
-                            for (int i = 0; i < 7; i++) {
-                                if (i != 0) {
-                                    ImGui::SameLine();
-                                }
-
-                                std::string currentKey = Configuration::Load("KeyMapping", "Lane" + std::to_string(i + 1));
-                                if (ImGui::Button((currentKey + "###7KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                    EnvironmentSetup::Set("bWaiting", "1");
-                                    EnvironmentSetup::Set("ikeyCount", "");
-                                    EnvironmentSetup::Set("iKey", std::to_string(i + 1));
-                                }
-                            }
-
-                            ImGui::NewLine();
-
-                            ImGui::Text("6 Keys Configuration");
-                            for (int i = 0; i < 6; i++) {
-                                if (i != 0) {
-                                    ImGui::SameLine();
-                                }
-
-                                std::string currentKey = Configuration::Load("KeyMapping", "6_Lane" + std::to_string(i + 1));
-                                if (ImGui::Button((currentKey + "###6KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                    EnvironmentSetup::Set("bWaiting", "1");
-                                    EnvironmentSetup::Set("ikeyCount", "6_");
-                                    EnvironmentSetup::Set("iKey", std::to_string(i + 1));
-                                }
-                            }
-
-                            ImGui::NewLine();
-
-                            ImGui::Text("5 Keys Configuration");
-                            for (int i = 0; i < 5; i++) {
-                                if (i != 0) {
-                                    ImGui::SameLine();
-                                }
-
-                                std::string currentKey = Configuration::Load("KeyMapping", "5_Lane" + std::to_string(i + 1));
-                                if (ImGui::Button((currentKey + "###5KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                    EnvironmentSetup::Set("bWaiting", "1");
-                                    EnvironmentSetup::Set("ikeyCount", "5_");
-                                    EnvironmentSetup::Set("iKey", std::to_string(i + 1));
-                                }
-                            }
-
-                            ImGui::NewLine();
-
-                            ImGui::Text("4 Keys Configuration");
-                            for (int i = 0; i < 4; i++) {
-                                if (i != 0) {
-                                    ImGui::SameLine();
-                                }
-
-                                std::string currentKey = Configuration::Load("KeyMapping", "4_Lane" + std::to_string(i + 1));
-                                if (ImGui::Button((currentKey + "###4KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                    EnvironmentSetup::Set("bWaiting", "1");
-                                    EnvironmentSetup::Set("ikeyCount", "4_");
-                                    EnvironmentSetup::Set("iKey", std::to_string(i + 1));
-                                }
-                            }
-
-                            ImGui::EndTabItem();
-                        }
-
-                        if (ImGui::BeginTabItem("Graphics")) {
-                            int GraphicsIndex = 0;
-                            int nextGraphicsIndex = -1;
-                            try {
-                                GraphicsIndex = std::atoi(Configuration::Load("Game", "Renderer").c_str());
-                            }
-                            catch (std::invalid_argument) {
-
-                            }
-							
-                            ImGui::Text("Graphics");
-                            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "You need restart game after setting this!");
-                            if (ImGui::BeginCombo("###ComboBox1", Graphics[GraphicsIndex].c_str())) {
-                                for (int i = 0; i < Graphics.size(); i++) {
-                                    bool isSelected = (GraphicsIndex == i);
-
-                                    if (ImGui::Selectable(Graphics[i].c_str(), &isSelected)) {
-                                        nextGraphicsIndex = i;
-                                    }
-
-                                    if (isSelected) {
-                                        ImGui::SetItemDefaultFocus();
-                                    }
-                                }
-
-                                ImGui::EndCombo();
-                            }
-
-                            if (nextGraphicsIndex != -1 && nextGraphicsIndex != GraphicsIndex) {
-                                Configuration::Set("Game", "Renderer", std::to_string(nextGraphicsIndex));
-                            }
-
-                            int currentResolutionIndexRn = currentResolutionIndex;
-
-                            ImGui::Text("Resolution");
-							if (ImGui::BeginCombo("###ComboBox3", m_resolutions[currentResolutionIndex].c_str())) {
-								for (int i = 0; i < m_resolutions.size(); i++) {
-									bool isSelected = (currentResolutionIndex == i);
-
-									if (ImGui::Selectable(m_resolutions[i].c_str(), &isSelected)) {
-                                        currentResolutionIndex = i;
-									}
-
-									if (isSelected) {
-										ImGui::SetItemDefaultFocus();
-									}
-								}
-
-								ImGui::EndCombo();
-							}
-
-                            if (currentResolutionIndex != currentResolutionIndexRn) {
-                                changeResolution = true;
-                                Configuration::Set("Game", "Resolution", m_resolutions[currentResolutionIndex]);
-                            }
-						
-                            ImGui::NewLine();
-
-                            ImGui::Text("FPS");
-                            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Warning: setting unlimited FPS can cause PC to unstable!");
-                            if (ImGui::BeginCombo("###ComboBox2", m_fps[currentFPSIndex].c_str())) {
-                                for (int i = 0; i < m_fps.size(); i++) {
-                                    bool isSelected = (currentFPSIndex == i);
-
-                                    if (ImGui::Selectable(m_fps[i].c_str(), &isSelected)) {
-                                        currentFPSIndex = i;
-                                    }
-
-                                    if (isSelected) {
-                                        ImGui::SetItemDefaultFocus();
-                                    }
-                                }
-
-                                ImGui::EndCombo();
-                            }
-
-                            ImGui::EndTabItem();
-                        }
-
-                        if (ImGui::BeginTabItem("Audio")) {
-                            ImGui::Text("Audio Volume");
-                            ImGui::SliderInt("###Slider2", &currentVolume, 0, 100);
-
-                            ImGui::NewLine();
-
-                            ImGui::Text("Audio Offset");
-                            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Warning: this will make keysounded sample as auto sample!");
-                            ImGui::SliderInt("###Slider1", &currentOffset, -500, 500);
-
-                            ImGui::NewLine();
-                            ImGui::Checkbox("Convert Sample to Auto Sample###Checkbox1", &convertAutoSound);
-                            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Convert all keysounded sample to auto sample");
-
-                            ImGui::EndTabItem();
-                        }
-
-                        if (ImGui::BeginTabItem("Game")) {
-                            ImGui::Text("Guide Line Length");
-
-                            for (int i = (int)LongNote.size() - 1; i >= 0; i--) {
-                                bool is_combo_selected = currentGuideLineIndex == i;
-								
-                                ImGui::PushItemWidth(50);
-                                if (ImGui::Checkbox(("###ComboCheck" + std::to_string(i)).c_str(), &is_combo_selected)) {
-                                    currentGuideLineIndex = i;
-                                }
-
-                                ImGui::SameLine();
-                                ImGui::Text("%s", LongNote[i].c_str()); ImGui::SameLine();
-                                ImGui::Dummy(MathUtil::ScaleVec2(ImVec2(25, 0))); ImGui::SameLine();
-                                
-								if (i < LongNote.size()) {
-                                    ImGui::SameLine();
-								}
-                            }
-
-                            ImGui::NewLine();
-                            ImGui::NewLine();
-
-                            ImGui::Text("Gameplay-Related Configuration");
-							ImGui::Checkbox("Long Note Lighting###SetCheckbox1", &LongNoteLighting);
-                            if (ImGui::IsItemHovered()) {
-                                ImGui::SetTooltip("When Long note on hold, change the lighting brightness to 100%% else 90%% brightness");
-                            }
-
-                            ImGui::Checkbox("Long Note Head Position at HitPos###SetCheckbox2", &LongNoteOnHitPos);
-                            if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("When Long note on hold, make the head position at hit position else keep going to bottom");
-                            }
-
-                            ImGui::EndTabItem();
-                        }
-
-                        ImGui::EndTabBar();
-                    }
-
-                    ImGui::EndChild();
-                }
-
-                ImGui::NewLine();
-
-                if (ImGui::Button("Reset###Setting1", MathUtil::ScaleVec2(50, 0))) {
-                    EnvironmentSetup::Set("bWaiting", "2");
-                }
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("Close###Setting2", MathUtil::ScaleVec2(50, 0))) {
-                    ImGui::CloseCurrentPopup();
-                }
-                break;
-            }
-        }
-
-        ImGui::EndPopup();
-    }
 
     ImGui::EndDisabled();
 
@@ -816,11 +524,6 @@ void SongSelectScene::Render(double delta) {
         });
     }
 
-    if (changeResolution) {
-        std::vector<std::string> resolution = splitString(m_resolutions[currentResolutionIndex], 'x');
-        GameWindow::GetInstance()->ResizeWindow(std::atoi(resolution[0].c_str()), std::atoi(resolution[1].c_str()));
-    }
-
     if (bOpenEditor) {
         is_departing = true;
         SaveConfiguration();
@@ -835,9 +538,11 @@ void SongSelectScene::Render(double delta) {
         });
     }
 
-    if (is_quit) {
+    if (bExitPopup) {
         SaveConfiguration();
-        SceneManager::GetInstance()->StopGame();
+        SceneManager::DisplayFade(100, [this]() {
+            SceneManager::ChangeScene(GameScene::MAINMENU2);
+        });
     }
 }
 
@@ -878,22 +583,23 @@ bool SongSelectScene::Attach() {
     currentAlpha = 100;
     nextAlpha = 100;
 
-    // if (EnvironmentSetup::GetInt("Difficulty").size() == 0) {
-    //     EnvironmentSetup::Set("Difficulty", "0");
-    // }
-
     auto SkinName = Configuration::Load("Game", "Skin");
     auto path = Configuration::Skin_GetPath(SkinName);
 
     Audio* bgm = AudioManager::GetInstance()->Get("BGM");
     if (!bgm) {
         auto BGMPath = path / "Audio";
-		BGMPath /= "BGM.ogg";
+        BGMPath /= "BGM.ogg";
 
         if (std::filesystem::exists(BGMPath)) {
             AudioManager::GetInstance()->Create("BGM", BGMPath, &bgm);
         }
     }
+
+	if (bgm && !bgm->IsPlaying()) {
+		bgm->SetVolume(50);
+        bgm->Play(0, true);
+	}
 
     auto bgPath = path / "Menu" / "MenuBackground.png";
     if (std::filesystem::exists(bgPath) && !m_background) {
@@ -901,30 +607,6 @@ bool SongSelectScene::Attach() {
 
         m_background = std::make_unique<Texture2D>(bgPath);
         m_background->Size = UDim2::fromOffset(wnd->GetBufferWidth(), wnd->GetBufferHeight());
-    }
-
-    if (bgm) {
-        bgm->SetVolume(50);
-        bgm->Play(0, true);
-    }
-
-    if (m_resolutions.size() == 0) {
-        int displayCount = SDL_GetNumDisplayModes(0);
-        for (int i = 0; i < displayCount; i++) {
-            SDL_DisplayMode mode;
-			SDL_GetDisplayMode(0, i, &mode);
-
-			m_resolutions.push_back(std::to_string(mode.w) + "x" + std::to_string(mode.h));	
-        }
-
-        // remove duplicate field
-		m_resolutions.erase(std::unique(m_resolutions.begin(), m_resolutions.end()), m_resolutions.end());
-
-        GameWindow* window = GameWindow::GetInstance();
-        std::string currentResolution = std::to_string(window->GetWidth()) + "x" + std::to_string(window->GetHeight());
-		
-        // find index
-        currentResolutionIndex = (int)(std::find(m_resolutions.begin(), m_resolutions.end(), currentResolution) - m_resolutions.begin());
     }
 
     auto rateValue = EnvironmentSetup::Get("SongRate");
@@ -944,51 +626,6 @@ bool SongSelectScene::Attach() {
 	} 
     catch (std::invalid_argument) {
         currentSpeed = 2.2f;
-    }
-
-    try {
-        currentOffset = std::atoi(Configuration::Load("Game", "AudioOffset").c_str());
-    }
-    catch (std::invalid_argument) {
-        currentOffset = 0;
-    }
-
-    try {
-        currentVolume = std::atoi(Configuration::Load("Game", "AudioVolume").c_str());
-    }
-    catch (std::invalid_argument) {
-        currentVolume = 0;
-    }
-
-    try {
-		convertAutoSound = std::atoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
-    }
-	catch (std::invalid_argument) {
-		convertAutoSound = true;
-	}
-
-    m_fps = { "30", "60", "75", "120", "144", "165", "180", "240", "360", "480", "600", "800", "1000", "Unlimited" };
-
-    try {
-        int value = std::atoi(Configuration::Load("Game", "FrameLimit").c_str());
-		
-        auto it = std::find(m_fps.begin(), m_fps.end(), std::to_string(value));
-        if (it == m_fps.end()) {
-            currentFPSIndex = 4;
-        }
-        else {
-            currentFPSIndex = (int)(it - m_fps.begin());
-        }
-    }
-    catch (std::invalid_argument) {
-        currentFPSIndex = 4;
-    }
-
-    try {
-        currentGuideLineIndex = std::atoi(Configuration::Load("Game", "GuideLine").c_str());
-    }
-    catch (std::invalid_argument) {
-        currentGuideLineIndex = 2;
     }
 
     is_update_bgm = false;
@@ -1031,8 +668,10 @@ bool SongSelectScene::Detach() {
         bgm->Stop();
     }
 
-    if (m_bgm) {
-        m_bgm->Stop();
+    if (SceneManager::GetInstance()->GetLastSceneIndex() != GameScene::MAINMENU2) {
+        if (m_bgm) {
+            m_bgm->Stop();
+        }
     }
 
     isWait = false;
@@ -1043,13 +682,6 @@ bool SongSelectScene::Detach() {
 void SongSelectScene::SaveConfiguration() {
     EnvironmentSetup::Set("SongRate", std::to_string(currentRate));
     Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(currentSpeed * 100.0)));
-    Configuration::Set("Game", "AudioOffset", std::to_string(currentOffset));
-	Configuration::Set("Game", "AudioVolume", std::to_string(currentVolume));
-	Configuration::Set("Game", "AutoSound", std::to_string(convertAutoSound ? 1 : 0));
-    Configuration::Set("Game", "FrameLimit", m_fps[currentFPSIndex]);
-    Configuration::Set("Game", "GuideLine", std::to_string(currentGuideLineIndex));
-
-    SceneManager::GetInstance()->SetFrameLimit(std::atof(m_fps[currentFPSIndex].c_str()));
 }
 
 void SongSelectScene::LoadChartImage() {
@@ -1064,7 +696,7 @@ void SongSelectScene::LoadChartImage() {
             return;
         }
 
-        std::filesystem::path file = Configuration::Load("Music", "Folder");
+        std::filesystem::path file = MusicDatabase::GetInstance()->GetPath();
         file /= "o2ma" + std::to_string(item->Id) + ".ojn";
 
         try {

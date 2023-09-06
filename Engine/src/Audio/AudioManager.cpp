@@ -19,18 +19,13 @@ constexpr auto DEFAULT_SAMPLE_RATE = 48000;
 AudioManager::AudioManager() {
 	m_initialized = false;
 	m_currentWindow = nullptr;
-	m_audios = std::unordered_map<std::string, Audio*>();
-	m_audioSamples = std::unordered_map<std::string, AudioSample*>();
+	m_audios = std::unordered_map<std::string, std::unique_ptr<Audio>>();
+	m_audioSamples = std::unordered_map<std::string, std::unique_ptr<AudioSample>>();
 }
 
 AudioManager::~AudioManager() {
-	for (auto& it : m_audios) {
-		delete it.second;
-	}
-
-	for (auto& it : m_audioSamples) {
-		delete it.second;
-	}
+	m_audios.clear();
+	m_audioSamples.clear();
 	
 	if (m_initialized) {
 		BASS_Free();
@@ -90,14 +85,13 @@ bool AudioManager::Create(std::string id, uint8_t* buffer, size_t size, Audio** 
 		return false;
 	}
 
-	Audio* audio = new Audio(id);
+	std::unique_ptr<Audio> audio = std::make_unique<Audio>(id);
 	if (!audio->Create((uint8_t*)buffer, size)) {
-		delete audio;
 		return false;
 	}
 
-	m_audios[id] = audio;
-	*out = audio;
+	m_audios[id] = std::move(audio);
+	*out = m_audios[id].get();
 	
 	return true;
 }
@@ -107,16 +101,15 @@ bool AudioManager::Create(std::string id, std::filesystem::path path, Audio** ou
 		return false;
 	}
 
-	Audio* audio = new Audio(id);
+	std::unique_ptr<Audio> audio = std::make_unique<Audio>(id);
 	if (!path.empty()) {
 		if (!audio->Create(path)) {
-			delete audio;
 			return false;
 		}
 	}
 
-	m_audios[id] = audio;
-	*out = audio;
+	m_audios[id] = std::move(audio);
+	*out = m_audios[id].get();
 
 	return true;
 }
@@ -128,69 +121,58 @@ bool AudioManager::CreateSample(std::string id, uint8_t* buffer, size_t size, Au
 		return false;
 	}
 
-	AudioSample* audio = new AudioSample(id);
+	std::unique_ptr<AudioSample> audio = std::make_unique<AudioSample>(id);
 	if (!audio->Create((uint8_t*)buffer, size)) {
-		delete audio;
 		return false;
 	}
 
-	m_audioSamples[id] = audio;
-	*out = m_audioSamples[id];
+	m_audioSamples[id] = std::move(audio);
+	*out = m_audioSamples[id].get();
 
 	return true;
 }
 
 bool AudioManager::CreateSample(std::string id, std::filesystem::path path, AudioSample** out) {
 	if (m_audioSamples.find(id) != m_audioSamples.end()) {
-		delete m_audioSamples[id];
+		m_audioSamples.erase(id);
 	}
 
-	AudioSample* audio = new AudioSample(id);
+	std::unique_ptr<AudioSample> audio = std::make_unique<AudioSample>(id);
 	if (path.empty()) {
 		if (!audio->CreateSilent()) {
-			delete audio;
 			return false;
 		}
 	}
 	else {
 		if (!audio->Create(path)) {
-			int errCode = BASS_ErrorGetCode();
-
-			delete audio;
 			return false;
 		}
 	}
 
-	m_audioSamples[id] = audio;
-	*out = audio;
+	m_audioSamples[id] = std::move(audio);
+	*out = m_audioSamples[id].get();
 
 	return true;
 }
 
 bool AudioManager::CreateSampleFromData(std::string id, int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData, AudioSample** out) {
 	if (m_audioSamples.find(id) != m_audioSamples.end()) {
-		delete m_audioSamples[id];
+		m_audioSamples.erase(id);
 	}
 
-	void* data = new uint8_t[sampleLength];
-	memcpy(data, sampleData, sampleLength);
-
-	AudioSample* audio = new AudioSample(id);
+	std::unique_ptr<AudioSample> audio = std::make_unique<AudioSample>(id);
 	if (sampleLength == 0) {
 		if (!audio->CreateSilent()) {
-			delete audio;
 			return false;
 		}
-	}
-	else {
-		if (!audio->CreateFromData(sampleFlags, sampleRate, sampleChannels, sampleLength, data)) {
-			delete audio;
+	} else {
+		if (!audio->CreateFromData(sampleFlags, sampleRate, sampleChannels, sampleLength, sampleData)) {
 			return false;
 		}
 	}
 
-	m_audioSamples[id] = audio;
-	*out = audio;
+	m_audioSamples[id] = std::move(audio);
+	*out = m_audioSamples[id].get();
 
 	return true;
 }
@@ -209,7 +191,7 @@ Audio* AudioManager::Get(std::string id) {
 		return nullptr;
 	}
 
-	return m_audios[id];
+	return m_audios[id].get();
 }
 
 AudioSample* AudioManager::GetSample(std::string id) {
@@ -217,7 +199,7 @@ AudioSample* AudioManager::GetSample(std::string id) {
 		return nullptr;
 	}
 
-	return m_audioSamples[id];
+	return m_audioSamples[id].get();
 }
 
 bool AudioManager::Remove(std::string id) {
@@ -225,11 +207,7 @@ bool AudioManager::Remove(std::string id) {
 		return false;
 	}
 
-	Audio* audio = m_audios[id];
-	if (audio != nullptr) {
-		delete audio;
-		m_audios.erase(id);
-	}
+	m_audios.erase(id);
 
 	return true;
 }
@@ -239,20 +217,11 @@ bool AudioManager::RemoveSample(std::string id) {
 		return false;
 	}
 
-	AudioSample* sample = m_audioSamples[id];
-	if (sample != nullptr) {
-		delete sample;
-		m_audioSamples.erase(id);
-	}
-
+	m_audioSamples.erase(id);
 	return true;
 }
 
 bool AudioManager::RemoveAll() {
-	for (auto& sample : m_audioSamples) {
-		delete sample.second;
-	}
-
 	m_audioSamples.clear();
 	return true;
 }

@@ -8,6 +8,7 @@
 /* Forward Declaration */
 class Game;
 class Scene;
+class Overlay;
 struct KeyState;
 struct MouseState;
 enum class FrameLimitMode;
@@ -41,12 +42,19 @@ public:
 	void SetFrameLimitMode(FrameLimitMode mode);
 	void StopGame();
 
+	int GetCurrentSceneIndex() const;
+	int GetLastSceneIndex() const;
+
 	static void DisplayFade(int transparency, std::function<void()> callback);
 	static void ExecuteAfter(int ms_time, std::function<void()> callback);
 	static void GameExecuteAfter(ExecuteThread thread, int ms_time, std::function<void()> callback);
 
 	static void AddScene(int idx, Scene* scene);
 	static void ChangeScene(int idx);
+
+	static void AddOverlay(int idx, Overlay* overlay);
+	static void OverlayShow(int idx);
+	static void OverlayClose();
 
 	static SceneManager* GetInstance();
 	static void Release();
@@ -57,10 +65,14 @@ private:
 
 	static SceneManager* s_instance;
 	
-	std::unordered_map<int, Scene*> m_scenes;
+	std::unordered_map<int, std::shared_ptr<Scene>> m_scenes;
+	std::unordered_map<int, std::shared_ptr<Overlay>> m_overlays;
 	
 	Scene* m_nextScene = nullptr;
 	Scene* m_currentScene = nullptr;
+
+	Overlay* m_currentOverlay = nullptr;
+	Overlay* m_nextOverlay = nullptr;
 
 	std::mutex m_mutex;
 
@@ -71,4 +83,7 @@ private:
 	std::vector<QueueInfo> m_queue_input;
 
 	Game* m_parent = nullptr;
+
+	int m_currentSceneId = 0;
+	int m_lastSceneId = 0;
 };

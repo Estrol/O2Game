@@ -38,7 +38,7 @@ void BGMPreview::Load(int index) {
 
 		DB_MusicItem* item = MusicDatabase::GetInstance()->Find(m_bgmIndex);
 
-		auto path = Configuration::Load("Music", "Folder");
+		auto path = MusicDatabase::GetInstance()->GetPath();
 		std::filesystem::path file = path;
 		file /= "o2ma" + std::to_string(item->Id) + ".ojn";
 

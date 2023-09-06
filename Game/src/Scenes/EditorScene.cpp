@@ -14,6 +14,7 @@
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
 #include "../Engine/GameAudioSampleCache.hpp"
+#include "../Data/MusicDatabase.h"
 
 constexpr int noteSize = 12;
 const std::vector<ImColor> laneColor = {
@@ -90,7 +91,7 @@ void EditorScene::Update(double delta) {
 		StopSample();
 
 		SceneManager::DisplayFade(100, [] {
-			SceneManager::ChangeScene(GameScene::MAINMENU);
+			SceneManager::ChangeScene(GameScene::MAINMENU2);
 		});
 	}
 }
@@ -771,23 +772,28 @@ bool EditorScene::Attach() {
 
 	{
 		std::string songId = EnvironmentSetup::Get("Key");
-		std::filesystem::path file;
-
-		if (songId.size() > 0) {
-			file = Configuration::Load("Music", "Folder");
-			file /= "o2ma" + songId + ".ojn";
+		if (songId.empty()) {
+			m_bpms = { { 0, 240.0 } };
 		}
+		else {
+			std::filesystem::path file;
 
-		try {
-			m_ojn.reset();
-			m_ojn = std::make_unique<O2::OJN>();
-			m_ojn->Load(file);
+			if (songId.size() > 0) {
+				file = MusicDatabase::GetInstance()->GetPath();
+				file /= "o2ma" + songId + ".ojn";
+			}
 
-			int diffIndex = EnvironmentSetup::GetInt("Difficulty");
-			LoadDifficulty(diffIndex);
-		}
-		catch (std::runtime_error& e) {
-			MsgBox::Show("Failed", "Error", "Failed to load " + file.string() + ":\n" + e.what());
+			try {
+				m_ojn.reset();
+				m_ojn = std::make_unique<O2::OJN>();
+				m_ojn->Load(file);
+
+				int diffIndex = EnvironmentSetup::GetInt("Difficulty");
+				LoadDifficulty(diffIndex);
+			}
+			catch (std::runtime_error& e) {
+				MsgBox::Show("Failed", "Error", "Failed to load " + file.string() + ":\n" + e.what());
+			}
 		}
 	}
 

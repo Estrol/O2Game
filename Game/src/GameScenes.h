@@ -8,4 +8,9 @@ namespace GameScene {
 	constexpr int GAME = 4;
 	constexpr int EDITOR = 5;
 	constexpr int INITIALSETUP = 6;
+	constexpr int MAINMENU2 = 7;
+}
+
+namespace GameOverlay {
+	constexpr int SETTINGS = 0;
 }

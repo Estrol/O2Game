@@ -2,13 +2,19 @@
 #include <filesystem>
 #include <vector>
 
+constexpr int kMaxPath = 260;
 const char signature[2] = { 'D', 'B' };
-const int version = 2;
+const int version = 3;
 
 struct DB_Header {
+	// DB signature
 	char8_t Signature[2];
+	// Current DB version
 	short Version;
+	// Number of music items
 	int MusicCount;
+	// Music path string size
+	int MusicPathSize;
 };
 
 struct DB_MusicItem {
@@ -37,6 +43,9 @@ public:
 
 	void Insert(int index, DB_MusicItem item);
 	void Resize(int size);
+	void SetPath(std::u8string Path);
+	std::u8string GetPath();
+
 	void Save(std::filesystem::path path);
 
 	static MusicDatabase* GetInstance();
@@ -45,5 +54,6 @@ private:
 	static MusicDatabase* m_instance;
 	MusicDatabase();
 
+	std::u8string Path;
 	std::vector<DB_MusicItem> Items;
 };

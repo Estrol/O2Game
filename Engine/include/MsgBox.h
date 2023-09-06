@@ -19,6 +19,7 @@ enum class MsgBoxFlags {
 namespace MsgBox {
 	int GetResult(std::string Id);
 	void Draw();
+	bool Any();
 
 	// Provide a way to do ImGui MessageBox
 	void Show(std::string Id, std::string Title, std::string fmt);

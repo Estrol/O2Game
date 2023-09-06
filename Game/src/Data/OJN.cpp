@@ -349,8 +349,8 @@ std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
 	size_t sz = fs.tellg();
 	fs.seekg(0, std::ios::beg);
 
-	char* input = new char[sz];
-	fs.read(input, sz);
+	std::vector<char> input(sz);
+	fs.read(input.data(), sz);
 
 	char newSign[3] = { 'n', 'e', 'w' };
 	char checkSign[3];
@@ -366,13 +366,14 @@ std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
 		fs.read((char*)&midKey, 1);
 		fs.read((char*)&initialKey, 1);
 
-		uint8_t* key = new uint8_t[blockSz];
-		memset(key, mainKey, blockSz);
+		std::vector<char> key(blockSz);
+		memset(key.data(), mainKey, blockSz);
 		key[0] = initialKey;
 		key[(int)std::floor(blockSz / 2.0f)] = midKey;
 
 		size_t outputLen = sz - fs.tellg();
-		char* output = new char[outputLen];
+		std::vector<char> output(outputLen);
+
 		for (int i = 0; i < outputLen; i += blockSz) {
 			for (int j = 0; j < blockSz; j++) {
 				int offset = i + j;
@@ -380,7 +381,7 @@ std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
 					goto DONE;
 				}
 
-				output[offset] = (char)(input[sz - (offset + 1)] ^ key[j]);
+				output[offset] = (char)(input[sz - (offset + 1)] ^ key.data()[j]);
 			}
 		}
 
@@ -388,10 +389,7 @@ std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
 		fs.close();
 
 		std::stringstream ss;
-		ss.write(output, outputLen);
-
-		delete[] input;
-		delete[] output;
+		ss.write(output.data(), outputLen);
 
 		return ss;
 	}
@@ -399,9 +397,7 @@ std::stringstream OJN::LoadOJNFile(std::filesystem::path path) {
 		fs.close();
 
 		std::stringstream ss;
-		ss.write(input, sz);
-
-		delete[] input;
+		ss.write(input.data(), sz);
 
 		return ss;
 	}

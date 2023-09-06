@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
 #include <filesystem>
-#include "../Rendering/WindowsTypes.h"
 #include <mutex>
+
+#include "../Rendering/WindowsTypes.h"
 
 enum class AudioType {
 	STREAM,
@@ -43,10 +44,12 @@ public:
 
 protected:
 	bool CreateStream();
+	void FadeStream(int volume, bool state);
+
 	AudioType m_type;
 	std::string m_id;
 
-	uint8_t* m_pBuffer;
+	std::vector<uint8_t> m_vBuffer;
 	size_t m_dwSize;
 
 	int volume = 0;
@@ -55,10 +58,10 @@ protected:
 	bool pitch = false;
 	bool is_fade_rn = false;
 	
-	std::mutex* lockFade;
 	uint32_t fadeState = -1;
 	uint32_t fadeStartTime = -1;
 	uint32_t fadeEndTime = -1;
 
 	uint32_t m_hStream;
+	std::unique_ptr<std::mutex> m_mutex;
 };

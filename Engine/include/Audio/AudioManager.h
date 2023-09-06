@@ -44,6 +44,9 @@ private:
 	AudioSample* m_bootSample;
 
 	GameWindow* m_currentWindow;
-	std::unordered_map<std::string, Audio*> m_audios;
-	std::unordered_map<std::string, AudioSample*> m_audioSamples;
+	// std::unordered_map<std::string, Audio*> m_audios;
+	// std::unordered_map<std::string, AudioSample*> m_audioSamples;
+
+	std::unordered_map<std::string, std::unique_ptr<Audio>> m_audios;
+	std::unordered_map<std::string, std::unique_ptr<AudioSample>> m_audioSamples;
 };

@@ -721,6 +721,7 @@ void RhythmEngine::Release() {
 
 	delete m_timingLineManager;
 	delete m_timings;
+	delete m_scoreManager;
 	delete m_judge;
 
 	NoteImageCacheManager::Release();

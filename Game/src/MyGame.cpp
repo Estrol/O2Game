@@ -13,15 +13,20 @@
 
 /* Scenes */
 #include "./Scenes/GameplayScene.h"
+#include "./Scenes/MainMenu.h"
 #include "./Scenes/LoadingScene.h"
 #include "./Scenes/SongSelectScene.h"
 #include "./Scenes/IntroScene.hpp"
 #include "./Scenes/ResultScene.hpp"
 #include "./Scenes/EditorScene.hpp"
 
+/* Overlays */
+#include "./Scenes/Overlays/Settings.h"
+
 
 MyGame::~MyGame() {
 	MusicDatabase::Release();
+	EnvironmentSetup::OnExitCheck();
 }
 
 bool MyGame::Init() {
@@ -110,12 +115,17 @@ bool MyGame::Init() {
 	if (result) {
 		m_window->SetScaleOutput(true);
 
+		/* Screen */
 		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
 		SceneManager::AddScene(GameScene::MAINMENU, new SongSelectScene());
 		SceneManager::AddScene(GameScene::LOADING, new LoadingScene());
 		SceneManager::AddScene(GameScene::RESULT, new ResultScene());
 		SceneManager::AddScene(GameScene::GAME, new GameplayScene());
 		SceneManager::AddScene(GameScene::EDITOR, new EditorScene());
+		SceneManager::AddScene(GameScene::MAINMENU2, new MainMenu());
+
+		/* Overlays */
+		SceneManager::AddOverlay(GameOverlay::SETTINGS, new SettingsOverlay());
 
 		std::string title = "Unnamed O2 Clone (Beta 5)";
 		m_window->SetWindowTitle(title);
@@ -126,7 +136,7 @@ bool MyGame::Init() {
 				Configuration::Set("Music", "Folder", path.string());
 			}
 
-			SceneManager::ChangeScene(GameScene::INTRO);
+			SceneManager::ChangeScene(GameScene::MAINMENU2);
 		}
 		else {
 			SceneManager::ChangeScene(GameScene::LOADING);

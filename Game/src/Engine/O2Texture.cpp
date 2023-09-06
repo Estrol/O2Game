@@ -83,12 +83,9 @@ O2Texture::O2Texture(OJSFrame* frame) : O2Texture() {
 	int biStride = (frame->Width * 32 + 31) / 32 * 4;
 	int biSizeImage = abs(biStride) * frame->Height;
 
-	uint8_t* raw_data = new uint8_t[frameSize];
-	if (!raw_data) {
-		throw std::runtime_error("Out of memory");
-	}
+	std::vector<uint8_t> raw_data(frameSize);
 
-	memcpy(raw_data, frame->Buffer, frame->FrameSize);
+	memcpy(raw_data.data(), frame->Buffer, frame->FrameSize);
 
 	uint8_t* m_pBuffer;
 	size_t m_bufferSize;
@@ -100,7 +97,7 @@ O2Texture::O2Texture(OJSFrame* frame) : O2Texture() {
 		int offset16 = 0;
 		int offset32 = 0;
 		while (offset16 + 2 <= frameSize) {
-			uint16_t tmp16 = *(uint16_t*)(raw_data + offset16);
+			uint16_t tmp16 = *(uint16_t*)(raw_data.data() + offset16);
 			offset16 += 2;
 
 			rgba_t pixel(tmp16);
@@ -214,7 +211,6 @@ O2Texture::O2Texture(OJSFrame* frame) : O2Texture() {
 		m_bufferSize = size;
 	}
 
-	delete[] raw_data;
 	Texture2D::LoadImageResources(m_pBuffer, m_bufferSize);
 	LoadImageResources(frame);
 

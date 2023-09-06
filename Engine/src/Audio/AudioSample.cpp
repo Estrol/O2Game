@@ -25,18 +25,15 @@ AudioSample::~AudioSample() {
 }
 
 bool AudioSample::Create(uint8_t* buffer, size_t size) {
-	char* data = new char[size];
-	memcpy(data, buffer, size);
+	std::vector<uint8_t> data(size);
+	memcpy(data.data(), buffer, size);
 
-	m_handle = BASS_SampleLoad(TRUE, data, 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS);
+	m_handle = BASS_SampleLoad(TRUE, data.data(), 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS);
 	if (!m_handle) {
-		delete[] data;
-
 		std::cout << "Failed to initialize MEM Sample: " << BASS_ErrorGetCode() << std::endl;
 		return false;
 	}
 
-	delete[] data;
 	CheckAudioTime();
 	return true;
 }
@@ -52,19 +49,16 @@ bool AudioSample::Create(std::filesystem::path path) {
 	size_t size = fs.tellg();
 	fs.seekg(0, std::ios::beg);
 
-	uint8_t* buffer = new uint8_t[size];
-	fs.read((char*)buffer, size);
+	std::vector<uint8_t> buffer(size);
+	fs.read((char*)buffer.data(), size);
 
-	m_handle = BASS_SampleLoad(TRUE, buffer, 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
+	m_handle = BASS_SampleLoad(TRUE, buffer.data(), 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
 	if (!m_handle) {
-		delete[] buffer;
-
 		std::cout << "Failed to initialize FILE Sample: " << BASS_ErrorGetCode() << std::endl;
 		return false;
 	}
 
 	CheckAudioTime();
-	delete[] buffer;
 	return true;
 }
 
@@ -75,19 +69,16 @@ bool AudioSample::CreateFromData(int sampleFlags, int sampleRate, int sampleChan
 		return false;
 	}
 
-	char* data = new char[sampleLength];
-	memcpy(data, sampleData, sampleLength);
+	std::vector<uint8_t> data(sampleLength);
+	memcpy(data.data(), sampleData, sampleLength);
 
-	bool success = BASS_SampleSetData(m_handle, reinterpret_cast<void*>(data));
+	bool success = BASS_SampleSetData(m_handle, reinterpret_cast<void*>(data.data()));
 	if (!success) {
-		delete[] sampleData;
-		
 		std::cout << "Failed to set sample data: " << BASS_ErrorGetCode() << std::endl;
 		return false;
 	}
 
 	CheckAudioTime();
-	delete[] sampleData;
 	return true;
 }
 

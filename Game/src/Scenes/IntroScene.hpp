@@ -27,8 +27,8 @@ private:
 
 	int currentState = 0;
 	std::vector<std::string> SelectedFolders;
-
-	Text* m_text;
+	
+	std::unique_ptr<Text> m_text;
 	int nextIndex = 0;
 	std::vector<std::filesystem::path> m_songFiles;
 };

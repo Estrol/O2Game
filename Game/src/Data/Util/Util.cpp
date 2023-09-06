@@ -120,25 +120,16 @@ void flipArray(uint8_t* arr, size_t size) {
 std::u8string CodepageToUtf8(const char* string, size_t str_len, int codepage) {
 #if _WIN32
 	int size_needed = MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, NULL, 0);
-	wchar_t* temp_string = new wchar_t[size_needed];
-	if (!temp_string) {
-		throw std::runtime_error("Out of memory");
-	}
+	std::vector<wchar_t> temp_string(size_needed);
 
-	MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, temp_string, size_needed);
+	MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, temp_string.data(), size_needed);
 
-	int utf8_size_needed = WideCharToMultiByte(CP_UTF8, 0, temp_string, size_needed, NULL, 0, NULL, NULL);
-	char8_t* result = new char8_t[utf8_size_needed];
-	if (!result) {
-		delete[] temp_string;
-		throw std::runtime_error("Out of memory");
-	}
+	int utf8_size_needed = WideCharToMultiByte(CP_UTF8, 0, temp_string.data(), size_needed, NULL, 0, NULL, NULL);
+	std::vector<char8_t> result(utf8_size_needed);
 
-	WideCharToMultiByte(CP_UTF8, 0, temp_string, size_needed, (LPSTR)&result[0], utf8_size_needed, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, temp_string.data(), size_needed, (LPSTR)&result[0], utf8_size_needed, NULL, NULL);
 
-	delete[] temp_string;
-	std::u8string str_result = result;
-	delete[] result;
+	std::u8string str_result = result.data();
 
 	return str_result;
 #else

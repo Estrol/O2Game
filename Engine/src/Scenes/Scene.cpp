@@ -1,6 +1,5 @@
 #include "Scene.h"
 #include "SceneManager.h"
-#include "Texture/Texture2D.h"
 
 Scene::Scene() {
 	

@@ -36,7 +36,7 @@ void LoadingScene::Update(double delta) {
 			std::filesystem::path file;
 
 			if (songId.size() > 0) {
-				file = Configuration::Load("Music", "Folder");
+				file = MusicDatabase::GetInstance()->GetPath();
 				file /= "o2ma" + songId + ".ojn";
 			}
 			else {

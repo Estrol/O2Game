@@ -30,14 +30,14 @@ BASS_FX_SampleEncoding::FXEncoding BASS_FX_SampleEncoding::Encode(void* audioDat
 	BASS_ChannelGetInfo(tempoch, &tempoInfo);
 	std::vector<char> dataVec;
 
-	char* data = new char[2048];
+	std::vector<char> data(2048);
 	while (true) {
-		DWORD read = BASS_ChannelGetData(tempoch, data, 2048);
+		DWORD read = BASS_ChannelGetData(tempoch, data.data(), 2048);
 		if (read == -1 || read == 0) {
 			break;
 		}
 
-		dataVec.insert(dataVec.end(), data, data + read);
+		dataVec.insert(dataVec.end(), data.data(), data.data() + read);
 	}
 
 	BASS_ChannelFree(tempoch);
@@ -48,7 +48,6 @@ BASS_FX_SampleEncoding::FXEncoding BASS_FX_SampleEncoding::Encode(void* audioDat
 		dataVec.resize(25000, 0);
 	}
 
-	delete[] data;
 	size_t data_size = dataVec.size();
 	
 	return { 

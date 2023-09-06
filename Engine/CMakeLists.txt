@@ -62,6 +62,7 @@ add_library(EstEngine
 	"src/Scenes/SceneManager.cpp"
 	"src/Scenes/Scene.cpp"
 	"src/Scenes/MsgBox.cpp"
+	"src/Scenes/Overlay.cpp"
 
 	#Texture
 	"src/Texture/Color3.cpp"

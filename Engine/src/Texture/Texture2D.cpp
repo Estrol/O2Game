@@ -402,7 +402,6 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 
 		m_bDisposeTexture = true;
 		m_ready = true;
-		delete[] buffer;
 	}
 	else {
 		SDL_RWops* rw = SDL_RWFromMem(buffer, (int)size);
@@ -429,9 +428,10 @@ void Texture2D::LoadImageResources(uint8_t* buffer, size_t size) {
 		SDL_QueryTexture(m_sdl_tex, nullptr, nullptr, &w, &h);
 
 		m_bDisposeTexture = true;
-		delete[] buffer;
 		m_actualSize = { 0, 0, w, h };
 
 		m_ready = true;
 	}
+
+	delete[] buffer;
 }
