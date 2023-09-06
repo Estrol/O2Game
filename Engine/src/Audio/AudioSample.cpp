@@ -3,6 +3,7 @@
 #include <bass_fx.h>
 #include <fstream>
 #include <string.h>
+#include <vector>
 
 AudioSample::AudioSample(std::string id) {
 	m_silent = false;

@@ -1,12 +1,7 @@
 #include "Audio/AudioManager.h"
 #include "Rendering/Window.h"
-#if _WIN32
 #include <bass.h>
 #include <bass_fx.h>
-#elif __linux__
-#include <bass_linux.h>
-#include <bass_fx_linux.h>
-#endif
 #include <sstream>
 #include <fstream>
 #include <vector>
