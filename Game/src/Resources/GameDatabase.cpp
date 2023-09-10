@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <string.h>
 
 GameDatabase* GameDatabase::m_instance = nullptr;
 
@@ -70,7 +71,7 @@ GameDatabase::GameDatabase() {
 
         result = sqlite3_step(stmt);
         if (result == SQLITE_ROW) {
-            strncpy_s(value, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)), 32);
+            strncpy(value, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)), 32);
             sqlite3_finalize(stmt);
 
             // check version
@@ -114,7 +115,7 @@ GameDatabase::GameDatabase() {
             sqlite3_bind_text(stmt, 1, key, -1, SQLITE_STATIC);
 
             char buffer[32] = {};
-            sprintf_s(buffer, "%d", TABLE_VERSION);
+            sprintf(buffer, "%d", TABLE_VERSION);
 
             sqlite3_bind_text(stmt, 2, buffer, -1, SQLITE_STATIC);
 
@@ -310,13 +311,13 @@ DB_MusicItem GameDatabase::Find(int id) {
         item.Id = sqlite3_column_int(stmt, 0);
         item.KeyCount = sqlite3_column_int(stmt, 1);
 
-        strncpy_s(reinterpret_cast<char*>(item.Title), 64, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
-        strncpy_s(reinterpret_cast<char*>(item.Artist), 32, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
-        strncpy_s(reinterpret_cast<char*>(item.Noter), 32, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
+        strncpy(reinterpret_cast<char*>(item.Title), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
+        strncpy(reinterpret_cast<char*>(item.Artist), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
+        strncpy(reinterpret_cast<char*>(item.Noter), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
 
-        strncpy_s(reinterpret_cast<char*>(item.Hash[0]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
-        strncpy_s(reinterpret_cast<char*>(item.Hash[1]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
-        strncpy_s(reinterpret_cast<char*>(item.Hash[2]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
 
         item.Difficulty[0] = sqlite3_column_int(stmt, 8);
         item.Difficulty[1] = sqlite3_column_int(stmt, 9);
@@ -380,13 +381,13 @@ std::vector<DB_MusicItem> GameDatabase::FindQuery(std::string query) {
         item.Id = sqlite3_column_int(stmt, 0);
         item.KeyCount = sqlite3_column_int(stmt, 1);
 
-        strncpy_s(reinterpret_cast<char*>(item.Title), 64, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
-        strncpy_s(reinterpret_cast<char*>(item.Artist), 32, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
-        strncpy_s(reinterpret_cast<char*>(item.Noter), 32, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
+        strncpy(reinterpret_cast<char*>(item.Title), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
+        strncpy(reinterpret_cast<char*>(item.Artist), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
+        strncpy(reinterpret_cast<char*>(item.Noter), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
         
-        strncpy_s(reinterpret_cast<char*>(item.Hash[0]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
-        strncpy_s(reinterpret_cast<char*>(item.Hash[1]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
-        strncpy_s(reinterpret_cast<char*>(item.Hash[2]), 128, reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
         
         item.Difficulty[0] = sqlite3_column_int(stmt, 8);
         item.Difficulty[1] = sqlite3_column_int(stmt, 9);

@@ -4,6 +4,7 @@
 #include <functional>
 #include <chrono>
 #include <thread>
+#include <memory>
 
 /* Forward Declaration */
 class Game;

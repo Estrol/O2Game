@@ -79,10 +79,12 @@ if (WIN32)
         ${CMAKE_SOURCE_DIR}/GameResources/Resources
         $<TARGET_FILE_DIR:Game>/Skins/Default)
 else ()
-    # add_custom_command(TARGET Game POST_BUILD
-	# 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	# 	${CMAKE_SOURCE_DIR}/third-party/bin/x64-linux/Debug
-	# 	$<TARGET_FILE_DIR:Game>)
+    add_custom_command(TARGET Game POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+    $<TARGET_FILE_DIR:Game>/Skins/Default
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/GameResources/Resources
+    $<TARGET_FILE_DIR:Game>/Skins/Default)
 endif ()
 
 if (MSVC)

@@ -1,4 +1,5 @@
 #include "MusicListMaker.h"
+#include <string.h>
 
 #include "../Data/OJN.h"
 #include "../Data/Chart.hpp"

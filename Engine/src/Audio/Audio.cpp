@@ -174,47 +174,7 @@ void Audio::FadeStream(int current_vol, bool state) {
 }
 
 void Audio::Update(double delta) {
-	if (m_is_doing_fading) {
-		float volume = 0;
-		BASS_ChannelGetAttribute(m_hStream, BASS_ATTRIB_VOL, &volume);
-
-		if (m_state) {
-			if (volume <= m_minSlideVolume) {
-				m_slideTargetVolume = m_maxSlideVolume;
-				m_is_doing_fading = false;
-				return;
-			}
-		}
-		else {
-			if (volume >= m_maxSlideVolume) {
-				m_slideTargetVolume = m_minSlideVolume;
-				m_is_doing_fading = false;
-				return;
-			}
-		}
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_lastTime).count() / 1000.0f;
-
-		m_lastTime = currentTime;
-
-		if (volume < m_slideTargetVolume) {
-			volume += 0.01 * deltaTime;
-			if (volume > m_slideTargetVolume) {
-				volume = m_slideTargetVolume;
-			}
-		}
-		else if (volume > m_slideTargetVolume) {
-			volume -= 0.01 * deltaTime;
-			if (volume < m_slideTargetVolume) {
-				volume = m_slideTargetVolume;
-			}
-		}
-
-		volume = std::clamp(volume, 0.0f, 1.0f);
-
-		BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_VOL, volume);
-	}
+	
 }
 
 bool Audio::Pause() {

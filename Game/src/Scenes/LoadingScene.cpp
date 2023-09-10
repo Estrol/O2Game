@@ -28,11 +28,13 @@ LoadingScene::~LoadingScene() {
 
 void LoadingScene::Update(double delta) {
 	if (is_ready) m_counter += delta;
+	int songId = EnvironmentSetup::GetInt("Key");
+	int diffIndex = EnvironmentSetup::GetInt("Difficulty");
+	bool IsO2Jam = false;
 
-	Chart* obj = (Chart*)EnvironmentSetup::GetObj("SONG");
-	if (obj == nullptr || obj->) {
+	Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
+	if (chart == nullptr || chart->GetO2JamId() != songId) {
 		if (!fucked) {
-			int songId = EnvironmentSetup::GetInt("Key");
 			std::filesystem::path file;
 
 			if (songId != -1) {
@@ -51,9 +53,7 @@ void LoadingScene::Update(double delta) {
 
 			const char* bmsfile[] = { ".bms", ".bme", ".bml", ".bmsc" };
 			const char* ojnfile = ".ojn";
-			bool IsO2Jam = false;
 
-			Chart* chart = nullptr;
 			if (file.extension() == bmsfile[0] || file.extension() == bmsfile[1] || file.extension() == bmsfile[2] || file.extension() == bmsfile[3]) {
 				BMS::BMSFile beatmap;
 				beatmap.Load(file);
@@ -78,11 +78,6 @@ void LoadingScene::Update(double delta) {
 					return;
 				}
 
-				int diffIndex = EnvironmentSetup::GetInt("Difficulty");
-				if (diffIndex == -1) {
-					diffIndex = 0;
-				}
-
 				chart = new Chart(o2jamFile, diffIndex);
 
 				IsO2Jam = true;
@@ -101,6 +96,8 @@ void LoadingScene::Update(double delta) {
 
 			EnvironmentSetup::SetObj("SONG", chart);
 		}
+	} else {
+		IsO2Jam = chart->GetO2JamId() == songId; // TODO: refactor this
 	}
 
 	std::filesystem::path dirPath = chart->m_beatmapDirectory;
@@ -109,17 +106,7 @@ void LoadingScene::Update(double delta) {
 	if (IsO2Jam) {
 		auto item = GameDatabase::GetInstance()->Find(songId);
 
-		bool hashFound = false;
-		for (int i = 0; i < 3; i++) {
-			const char* hash1 = item.Hash[i];
-			const char* hash2 = chart->MD5Hash.c_str();
-
-			if (strcmp(hash1, hash2) == 0) {
-				hashFound = true;
-				break;
-			}
-		}
-
+		bool hashFound = strcmp(item.Hash[diffIndex], chart->MD5Hash.c_str());
 		if (!hashFound) {
 			MsgBox::Show("FailChart", "Error", "Invalid map identifier, please refresh music list using F5 key!", MsgBoxType::OK);
 			fucked = true;
@@ -157,7 +144,7 @@ void LoadingScene::Update(double delta) {
 		fucked = true;
 	}
 
-	if (m_counter > 2.5 && obj != nullptr) {
+	if (m_counter > 2.5 && chart != nullptr) {
 		SceneManager::ChangeScene(GameScene::GAME);
 	}
 	else {

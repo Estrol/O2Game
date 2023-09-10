@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <mutex>
 #include <chrono>
+#include <vector>
 
 #include "../Rendering/WindowsTypes.h"
 

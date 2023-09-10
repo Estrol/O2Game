@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 
 	int ret = 0;
 
-#if 0// _WIN32 & _MSC_VER
+#if _WIN32 & _MSC_VER
 	__try {
 		ret = Run(argc, wargv);
 	}
