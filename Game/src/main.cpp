@@ -96,19 +96,39 @@ int HandleStructualException(int code) {
 }
 #endif
 
-int main(int argc, char* argv[]) {
-#if _WIN32 && _DEBUG && MEM_LEAK_DEBUG
-// msvc
-#if _MSC_VER
-#pragma message("Memory leak detection is enabled. This will cause performance issues.")
-#else
-#warning "Memory leak detection is enabled. This will cause performance issues."
-#endif
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); 
-#endif
+// if not DEBUG
+#if NDEBUG && _WIN32
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
 	if (retVal == nullptr) {
-#if WIN32 
+		MessageBoxA(NULL, "setlocale(): Failed to set locale!", "EstGame Error", MB_ICONERROR);
+		return -1;
+	}
+
+	int argc = 0;
+	wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+	int ret = 0;
+
+	__try {
+		ret = Run(argc, argv);
+	}
+
+	__except (HandleStructualException(GetExceptionCode())) {
+		ret = -1;
+	}
+
+	LocalFree(argv);
+
+	return ret;
+}
+
+#else
+
+int main(int argc, char* argv[]) {
+	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
+	if (retVal == nullptr) {
+#if _WIN32 
 		MessageBoxA(NULL, "setlocale(): Failed to set locale!", "EstGame Error", MB_ICONERROR);
 #else
 		std::cout << "setlocale(): Failed to set locale!" << std::endl;
@@ -145,3 +165,5 @@ int main(int argc, char* argv[]) {
 
     return ret;
 }
+
+#endif

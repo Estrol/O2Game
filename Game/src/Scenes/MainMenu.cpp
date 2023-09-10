@@ -44,7 +44,7 @@ void MainMenu::Render(double delta) {
 
     if (ImGui::Begin("###BEGIN", nullptr, flags)) {
         if (ImGui::BeginMenuBar()) {
-            ImGui::Text("Unnamed O2 Clone (Beta 15)");
+            ImGui::Text("Unnamed O2 Clone (Beta 17)");
 
             std::string text = "No Account!";
 			auto textWidth = ImGui::CalcTextSize(text.c_str()).x;

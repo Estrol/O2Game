@@ -106,7 +106,7 @@ void LoadingScene::Update(double delta) {
 	if (IsO2Jam) {
 		auto item = GameDatabase::GetInstance()->Find(songId);
 
-		bool hashFound = strcmp(item.Hash[diffIndex], chart->MD5Hash.c_str());
+		bool hashFound = strcmp(item.Hash[diffIndex], chart->MD5Hash.c_str()) == 0;
 		if (!hashFound) {
 			MsgBox::Show("FailChart", "Error", "Invalid map identifier, please refresh music list using F5 key!", MsgBoxType::OK);
 			fucked = true;

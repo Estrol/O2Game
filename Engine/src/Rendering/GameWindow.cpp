@@ -158,6 +158,8 @@ std::wstring UTF8_to_wchar(const char8_t* in) {
 
 void GameWindow::SetWindowTitle(std::string& title) {
 	m_mainTitle = title;
+
+	SDL_SetWindowTitle(m_window, title.c_str());
 }
 
 void GameWindow::SetWindowSubTitle(std::string& subTitle) {

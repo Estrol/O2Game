@@ -131,7 +131,7 @@ bool MyGame::Init() {
 		/* Overlays */
 		SceneManager::AddOverlay(GameOverlay::SETTINGS, new SettingsOverlay());
 
-		std::string title = "Unnamed O2 Clone (Beta 5)";
+		std::string title = "Unnamed O2 Clone (Beta 17)";
 		m_window->SetWindowTitle(title);
 
 		if (EnvironmentSetup::GetPath("FILE").empty()) {
