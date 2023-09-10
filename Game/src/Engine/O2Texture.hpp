@@ -9,7 +9,7 @@ public:
 	O2Texture();
 	O2Texture(OJSFrame* frame);
 	
-	static std::vector<O2Texture> Load(O2ResourceType opi, std::string ojs);
+	//static std::vector<O2Texture> Load(O2ResourceType opi, std::string ojs);
 
 protected:
 	void LoadImageResources(Boundary* position);

@@ -7,6 +7,7 @@
 
 GameWindow::GameWindow() {
 	m_window = nullptr;
+	m_resizeRenderer = false;
 
 	m_width = 0;
 	m_height = 0;

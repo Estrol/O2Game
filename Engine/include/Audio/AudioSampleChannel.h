@@ -3,6 +3,10 @@
 #include <stdint.h>
 
 class AudioSampleChannel {
+#if _DEBUG
+	const char SIGNATURE[25] = "AudioSampleChannel";
+#endif
+
 public:
 	AudioSampleChannel();
 	AudioSampleChannel(uint32_t sampleHandle, float rate, float vol, bool pitch);

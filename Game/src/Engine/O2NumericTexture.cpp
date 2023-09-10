@@ -1,6 +1,6 @@
 #include "O2NumericTexture.hpp"
 #include "Rendering/Renderer.h"
-#include "Lodepng.h"
+#include "Misc/Lodepng.h"
 #include "O2Texture.hpp"
 
 O2NumericTexture::O2NumericTexture(OJS* ojs) {

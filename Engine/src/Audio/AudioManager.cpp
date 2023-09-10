@@ -179,6 +179,10 @@ void AudioManager::Update(double delta) {
 		nextUpdate = 0;
 		BASS_Update(1000);
 	}
+
+	for (auto& [index, audio] : m_audios) {
+		audio->Update(delta);
+	}
 }
 
 Audio* AudioManager::Get(std::string id) {

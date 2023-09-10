@@ -89,8 +89,34 @@ void Text::InternalDraw(std::u8string& formated) {
     float alpha = Transparency;
 
     auto& displaySize = ImGui::GetIO().DisplaySize;
+    GameWindow* window = GameWindow::GetInstance();
+    int wWidth = window->GetWidth();
+    int wHeight = window->GetHeight();
 
-    ImguiUtil::BeginText();
+    float xPos = static_cast<float>((wWidth * Position.X.Scale) + Position.X.Offset);
+    float yPos = static_cast<float>((wHeight * Position.Y.Scale) + Position.Y.Offset);
+
+    xPos *= window->GetWidthScale();
+	yPos *= window->GetHeightScale();
+
+    float originScale = (window->GetBufferWidth() + window->GetBufferHeight()) / 15.6f;
+	float targetScale = (window->GetWidth() + window->GetHeight()) / 15.6f;
+
+	float scale = targetScale / originScale;
+	
+    auto textSize = ImGui::CalcTextSizeWithSize((const char*)formated.c_str(), Size * scale);
+
+    ImVec2 pos = ImVec2(
+        xPos - 5.0f,
+        yPos - 5.0f
+    );
+
+    ImVec2 size = ImVec2(
+        pos.x + textSize.x + 5.0f,
+        pos.y + textSize.y + 5.0f
+    );
+
+    ImguiUtil::BeginText(pos, size);
 
     ImDrawList* draw_list;
     if (DrawOverEverything) {
@@ -99,24 +125,6 @@ void Text::InternalDraw(std::u8string& formated) {
     else {
         draw_list = ImGui::GetWindowDrawList();
     }
-
-    GameWindow* wnd = GameWindow::GetInstance();
-    float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
-	float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
-
-	float scale = targetScale / originScale;
-	
-    auto textSize = ImGui::CalcTextSizeWithSize((const char*)formated.c_str(), Size * scale);
-
-    GameWindow* window = GameWindow::GetInstance();
-    int wWidth = window->GetWidth();
-    int wHeight = window->GetHeight();
-
-    float xPos = static_cast<float>((wWidth * Position.X.Scale) + Position.X.Offset);
-    float yPos = static_cast<float>((wHeight * Position.Y.Scale) + Position.Y.Offset);
-
-    xPos *= wnd->GetWidthScale();
-	yPos *= wnd->GetHeightScale();
 	
     ImRotationStart();
 

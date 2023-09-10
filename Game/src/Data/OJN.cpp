@@ -206,8 +206,8 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 	}
 
 	// default: 240 BPM
-	const int BEATS_PER_MSEC = 4 * 60 * 1000;
-	const int START_TIME = 1500;
+	const double BEATS_PER_MSEC = 4.0 * 60.0 * 1000.0;
+	const double START_TIME = 1500.0;
 
 	for (int i = 0; i < 3; i++) {
 		std::vector<O2Note> notes;

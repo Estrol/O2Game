@@ -87,6 +87,7 @@ public:
 	int m_keyCount;
 	float BaseBPM;
 	
+	int GetO2JamId();
 	double GetLength();
 	std::string MD5Hash;
 
@@ -112,4 +113,6 @@ private:
 
 	float GetCommonBPM();
 	void NormalizeTimings();
+
+	int O2JamId = -1;
 };

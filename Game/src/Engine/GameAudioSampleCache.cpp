@@ -17,7 +17,7 @@ struct NoteAudioSample {
 
 namespace GameAudioSampleCache {
 	std::unordered_map<int, NoteAudioSample> samples;
-	std::unordered_map<int, AudioSampleChannel*> sampleIndex;
+	std::unordered_map<int, std::unique_ptr<AudioSampleChannel>> sampleIndex;
 
 	std::string currentHash;
 	double m_rate = 1.0;
@@ -198,13 +198,13 @@ void GameAudioSampleCache::Play(int index, int volume, int pan) {
 
 	Stop(index);
 	
-	auto channel = samples[index].Sample->CreateChannel().release();
-	
-	sampleIndex[index] = channel;
+	auto channel = samples[index].Sample->CreateChannel();
 	channel->SetVolume(volume);
 	channel->SetPan(pan);
 
 	bool result = channel->Play();
+	
+	sampleIndex[index] = std::move(channel);
 	if (!result) {
 		::printf("Failed to play index %d\n", index);
 	}
@@ -220,9 +220,6 @@ void GameAudioSampleCache::Stop(int index) {
 			it->Stop();
 		}
 
-		delete it;
-		it = nullptr;
-		
 		sampleIndex.erase(index);
 	}
 }
@@ -268,9 +265,6 @@ void GameAudioSampleCache::StopAll() {
 			if (kv.second->IsPlaying()) {
 				kv.second->Stop();
 			}
-
-			delete kv.second;
-			kv.second = nullptr;
 		}
 	}
 

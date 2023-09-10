@@ -8,8 +8,9 @@
 
 #include "EnvironmentSetup.hpp"
 #include "./Data/Util/Util.hpp"
-#include "./Data/MusicDatabase.h"
 #include "./Resources/GameResources.hpp"
+#include "./Resources/GameDatabase.h"
+#include "./Resources/MusicListMaker.h"
 
 /* Scenes */
 #include "./Scenes/GameplayScene.h"
@@ -25,7 +26,7 @@
 
 
 MyGame::~MyGame() {
-	MusicDatabase::Release();
+	GameDatabase::Release();
 	EnvironmentSetup::OnExitCheck();
 }
 
@@ -80,7 +81,6 @@ bool MyGame::Init() {
 		auto value = Configuration::Load("Game", "Skin");
 		if (!Configuration::Skin_Exist(value)) {
 			MsgBox::ShowOut("EstGame Error", ("Skin: " + value + " is not found!").c_str(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
-			//MessageBoxA(NULL, ("Skin: " + value + " is not found!").c_str(), "EstGame Error", MB_ICONERROR);
 			return false;
 		}
 
@@ -92,7 +92,6 @@ bool MyGame::Init() {
 		}
 		else {
 			MsgBox::ShowOut("EstGame Error", "Invalid Skin::Window::NativeSize configuration value!", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
-			//MessageBoxA(NULL, "Invalid Skin::Window::NativeSize configuration value!", "EstGame Error", MB_ICONERROR);
 			return false;
 		}
 	}
@@ -105,7 +104,6 @@ bool MyGame::Init() {
 			SetWindowSize(std::stoi(split[0]), std::stoi(split[1]));
 		}
 		else {
-			//MessageBoxA(NULL, "Invalid Game::Resolution configuration value!", "EstGame Error", MB_ICONERROR);
 			MsgBox::ShowOut("EstGame Error", "Invalid Game::Resolution configuration value!", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			return false;
 		}
@@ -114,6 +112,12 @@ bool MyGame::Init() {
 	bool result = Game::Init();
 	if (result) {
 		m_window->SetScaleOutput(true);
+		
+		auto db = GameDatabase::GetInstance();
+		auto path = db->GetPath();
+		if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
+			MusicListMaker::MakeMusicList(path);
+		}
 
 		/* Screen */
 		SceneManager::AddScene(GameScene::INTRO, new IntroScene());

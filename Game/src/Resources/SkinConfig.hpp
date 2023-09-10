@@ -26,12 +26,14 @@ struct SpriteValue {
 	int numOfFrames;
 	int X, Y;
 	float AnchorPointX, AnchorPointY;
+	float FrameTime;
 };
 
 // Value format: NumOfFiles, FileName
 struct NoteValue {
 	int numOfFiles;
 	std::string fileName;
+	float FrameTime;
 };
 
 struct RectInfo {

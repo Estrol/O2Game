@@ -14,7 +14,7 @@
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
 #include "../Engine/GameAudioSampleCache.hpp"
-#include "../Data/MusicDatabase.h"
+#include "../Resources/GameDatabase.h"
 
 constexpr int noteSize = 12;
 const std::vector<ImColor> laneColor = {
@@ -779,7 +779,7 @@ bool EditorScene::Attach() {
 			std::filesystem::path file;
 
 			if (songId.size() > 0) {
-				file = MusicDatabase::GetInstance()->GetPath();
+				file = GameDatabase::GetInstance()->GetPath();
 				file /= "o2ma" + songId + ".ojn";
 			}
 

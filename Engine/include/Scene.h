@@ -4,6 +4,10 @@ struct KeyState;
 struct MouseState;
 
 class Scene {
+#if _DEBUG
+	const char SIGNATURE[25] = "Scene";
+#endif
+
 public:
 	Scene();
 	virtual ~Scene() = default;

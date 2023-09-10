@@ -24,6 +24,10 @@ struct QueueInfo {
 };
 
 class SceneManager {
+#if _DEBUG
+	const char SIGNATURE[25] = "SceneManager";
+#endif
+
 public:
 	void Update(double delta);
 	void Render(double delta);

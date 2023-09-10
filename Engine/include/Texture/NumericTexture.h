@@ -14,6 +14,10 @@ enum class NumericPosition {
 NumericPosition IntToPos(int i);
 
 class NumericTexture {
+#if _DEBUG
+	const char SIGNATURE[25] = "NumericTexture";
+#endif
+
 public:
 	NumericTexture() = default;
 	NumericTexture(std::vector<std::string> numericsFiles);

@@ -19,7 +19,7 @@ std::tuple<bool, NoteResult> MsBasedJudge::CalculateResult(Note* note) {
     double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = std::abs(audioPos - noteTime);
+    double diff = std::abs(noteTime - audioPos);
 
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
     float decrement = 0.0f;
@@ -56,7 +56,7 @@ bool MsBasedJudge::IsAccepted(Note* note) {
     double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = std::abs(audioPos - noteTime);
+    double diff = noteTime - audioPos;
 
     return diff <= kNoteBadHitRatio;
 }
@@ -65,7 +65,7 @@ bool MsBasedJudge::IsMissed(Note* note) {
     double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = std::abs(audioPos - noteTime);
+    double diff = noteTime - audioPos;
 
-    return diff > kNoteEarlyMissRatio;
+    return diff < -kNoteEarlyMissRatio;
 }

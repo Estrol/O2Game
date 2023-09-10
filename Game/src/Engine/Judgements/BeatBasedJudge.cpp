@@ -7,56 +7,56 @@
 BeatBasedJudge::BeatBasedJudge(RhythmEngine* engine) : JudgeBase(engine) {}
 
 namespace {
-	const double kNoteCoolHitRatio = 0.2;
-	const double kNoteGoodHitRatio = 0.5;
-	const double kNoteBadHitRatio = 0.8;
-	const double kNoteEarlyMissRatio = 0.85;
+	const double kNoteCoolHitRatio = 6.0;
+	const double kNoteGoodHitRatio = 18.0;
+	const double kNoteBadHitRatio = 25.0;
+	const double kNoteEarlyMissRatio = 30.0;
+
+    const double kBaseBPM = 240.0;
+    const double kMaxTicks = 192.0;
 }
 
-double CalculateBeatDiff(RhythmEngine* engine, JudgeBase* judge, Note* note) {
-    // double audioPos = engine->GetGameAudioPosition();
-	// double noteTime = note->GetHitTime();
-    // double hitTime = noteTime - (noteTime - audioPos);
-
-    // double noteBeat = engine->GetTiming()->GetBeatAt(noteTime);
-	// double hitBeat = engine->GetTiming()->GetBeatAt(hitTime);
-
-    // return (noteBeat - hitBeat) / 0.664;
-
-    double audioPos = engine->GetGameAudioPosition();
-	double hitTime = note->GetHitTime();
-	double bpm = note->GetBPMTime();
-
-	return (audioPos - hitTime) * bpm / 60000.0;
-}
-
-std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
-    double beatDiff = std::abs(CalculateBeatDiff(m_engine, this, note));
-
-    int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    float decrement = 0.0f;
+double GetDifficultyRatio(int difficulty) {
     switch (difficulty) {
         case 1: {
-            decrement = 0.025f;
-            break;
+            return 0.9;
         }
 
         case 2: {
-            decrement = 0.045f;
-            break;
+            return 0.8;
+        }
+
+        default: {
+            return 1.0;
         }
     }
+}
 
-    if (beatDiff <= kNoteCoolHitRatio - decrement) {
+std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
+    double audioPos = m_engine->GetGameAudioPosition();
+	double hitTime = note->GetHitTime();
+    int difficulty = EnvironmentSetup::GetInt("Difficulty");
+
+    double beat = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0;
+    double ratio = GetDifficultyRatio(difficulty);
+
+    double cool = beat * (kNoteCoolHitRatio * ratio);
+    double good = beat * (kNoteGoodHitRatio * ratio);
+    double bad = beat * (kNoteBadHitRatio * ratio);
+    double miss = beat * (kNoteEarlyMissRatio * ratio);
+
+    double time = abs(hitTime - audioPos);
+
+    if (time <= cool) {
         return { true, NoteResult::COOL };
     }
-    else if (beatDiff <= kNoteGoodHitRatio - decrement) {
+    else if (time <= good) {
         return { true, NoteResult::GOOD };
     }
-    else if (beatDiff <= kNoteBadHitRatio - decrement) {
+    else if (time <= bad) {
         return { true, NoteResult::BAD };
     }
-    else if (beatDiff <= kNoteEarlyMissRatio - decrement) {
+    else if (time <= miss) {
         return { true, NoteResult::MISS };
     }
 
@@ -65,36 +65,22 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
 
 bool BeatBasedJudge::IsAccepted(Note* note) {
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    float decrement = 0.0f;
-    switch (difficulty) {
-        case 1: {
-            decrement = 0.025f;
-            break;
-        }
+    double ratio = GetDifficultyRatio(difficulty);
 
-        case 2: {
-            decrement = 0.045f;
-            break;
-        }
-    }
+    double audioPos = m_engine->GetGameAudioPosition();
+	double hitTime = note->GetHitTime();
+    double bad = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * (kNoteBadHitRatio * ratio);
 
-    return CalculateBeatDiff(m_engine, this, note) >= (kNoteBadHitRatio - decrement);
+    return hitTime - audioPos <= bad;
 }
 
 bool BeatBasedJudge::IsMissed(Note* note) {
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    float decrement = 0.0f;
-    switch (difficulty) {
-        case 1: {
-            decrement = 0.025f;
-            break;
-        }
+    double ratio = GetDifficultyRatio(difficulty);
 
-        case 2: {
-            decrement = 0.045f;
-            break;
-        }
-    }
+    double audioPos = m_engine->GetGameAudioPosition();
+    double hitTime = note->GetHitTime();
+    double miss = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * (kNoteEarlyMissRatio * ratio);
 
-    return CalculateBeatDiff(m_engine, this, note) > (kNoteBadHitRatio - decrement);
+    return hitTime - audioPos < -miss;
 }

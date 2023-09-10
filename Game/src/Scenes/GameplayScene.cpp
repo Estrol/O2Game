@@ -15,6 +15,7 @@
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
 #include "Texture/MathUtils.h"
+#include "Texture/ImageGenerator.h"
 
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
@@ -69,7 +70,16 @@ void GameplayScene::Update(double delta) {
 		m_ended = true;
 		SceneManager::DisplayFade(100, [] {
 			SceneManager::ChangeScene(GameScene::RESULT);
-			});
+		});
+	}
+
+	int difficulty = EnvironmentSetup::GetInt("Difficulty");
+	if (difficulty >= 1 && m_starting) {
+		float health = m_game->GetScoreManager()->GetLife();
+
+		if (health <= 0) {
+			m_game->Stop();
+		}
 	}
 
 	if (m_doExit && !m_ended) {
@@ -80,12 +90,12 @@ void GameplayScene::Update(double delta) {
 		if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::RESULT);
-				});
+			});
 		}
 		else {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::MAINMENU);
-				});
+			});
 		}
 	}
 
@@ -100,9 +110,13 @@ void GameplayScene::Render(double delta) {
 
 	ImguiUtil::NewFrame();
 
+	bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
+
 	m_PlayBG->Draw();
 	m_Playfield->Draw();
-	m_targetBar->Draw(delta);
+	if (!is_flhd_enabled) {
+		m_targetBar->Draw(delta);
+	}
 
 	for (auto& [lane, pressed] : m_keyState) {
 		if (pressed) {
@@ -113,6 +127,11 @@ void GameplayScene::Render(double delta) {
 	}
 
 	m_game->Render(delta);
+
+	if (is_flhd_enabled) {
+		m_laneHideImage->Draw();
+		m_targetBar->Draw(delta);
+	}
 
 	auto scores = m_game->GetScoreManager()->GetScore();
 	m_scoreNum->DrawNumber(std::get<0>(scores));
@@ -151,8 +170,8 @@ void GameplayScene::Render(double delta) {
 	// Wiggle effect after the first second
 	yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 5.0f;
 
-	int topCur = (int)std::round((1.0f - alpha) * rc.top + alpha * rc.bottom);
-	rc.top = topCur + static_cast<int>(std::round(yOffset));
+	int topCur = (int)::round((1.0f - alpha) * rc.top + alpha * rc.bottom);
+	rc.top = topCur + static_cast<int>(::round(yOffset));
 	if (rc.top >= rc.bottom) {
 		rc.top = rc.bottom - 1;
 	}
@@ -786,6 +805,48 @@ bool GameplayScene::Attach() {
 			m_lifeBar->SetFPS(15);
 		}
 
+		std::vector<Segment> segments = {
+			{0.0, 0.2, {0, 0, 0, 255}, {0, 0, 0, 255}},
+			{0.33, 0.38, {0, 0, 0, 255}, {0, 0, 0, 0}},
+			{0.38, 0.61, {0, 0, 0, 0}, {0, 0, 0, 0}},
+			{0.61, 0.67, {0, 0, 0, 0}, {0, 0, 0, 255}},
+			{0.67, 1.0, {0, 0, 0, 255}, {0, 0, 0, 255}}
+		};
+
+		bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
+		bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
+		if (IsHD || IsFL) {
+			auto playRect = m_game->GetPlayRectangle();
+			std::vector<Segment> segments;
+
+			if (IsFL) {
+				segments = {
+					{0.00f, 0.20f, {0, 0, 0, 255}, {0, 0, 0, 255}},
+					{0.33f, 0.38f, {0, 0, 0, 255}, {0, 0, 0, 0	}},
+					{0.38f, 0.61f, {0, 0, 0, 0	}, {0, 0, 0, 0	}},
+					{0.61f, 0.67f, {0, 0, 0, 0	}, {0, 0, 0, 255}},
+					{0.67f, 1.00f, {0, 0, 0, 255}, {0, 0, 0, 255}}
+				};
+			} else {
+				segments = {
+					{0.00f, 0.00f, {0, 0, 0, 255}, {0, 0, 0, 255}},
+					{0.00f, 0.00f, {0, 0, 0, 255}, {0, 0, 0, 0	}},
+					{0.00f, 0.45f, {0, 0, 0, 0	}, {0, 0, 0, 0	}},
+					{0.45f, 0.50f, {0, 0, 0, 0	}, {0, 0, 0, 255}},
+					{0.50f, 1.00f, {0, 0, 0, 255}, {0, 0, 0, 255}}
+				};
+			}
+
+			// FIXME: Idk why the image size is not correct
+			playRect.right -= 2;
+
+			std::vector<uint8_t> imageBuffer = ImageGenerator::GenerateGradientImage(playRect.right, playRect.bottom, segments);
+
+			m_laneHideImage = std::make_unique<Texture2D>(imageBuffer.data(), imageBuffer.size());
+			m_laneHideImage->Position = UDim2::fromOffset(playRect.left, playRect.top);
+			m_laneHideImage->Size = UDim2::fromOffset(playRect.right, playRect.bottom);
+		}
+
 		m_game->GetScoreManager()->ListenHit([&](NoteHitInfo info) {
 			m_scoreTimer = 0;
 			m_judgeTimer = 0;
@@ -853,6 +914,7 @@ bool GameplayScene::Detach() {
 	m_lnLogo.reset();
 	m_comboLogo.reset();
 	m_targetBar.reset();
+	m_laneHideImage.reset();
 
 	m_lnComboNum.reset();
 	m_jamNum.reset();

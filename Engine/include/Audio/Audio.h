@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include <mutex>
+#include <chrono>
 
 #include "../Rendering/WindowsTypes.h"
 
@@ -11,6 +12,10 @@ enum class AudioType {
 };
 
 class Audio {
+#if _DEBUG
+	const char SIGNATURE[25] = "Audio";
+#endif
+
 public:
 	Audio(std::string id);
 	~Audio();
@@ -29,7 +34,7 @@ public:
 	bool FadeIn();
 	bool FadeOut();
 
-	void Update();
+	void Update(double dt);
 
 	void SetVolume(int vol);
 	void SetPan(int pan);
@@ -63,5 +68,12 @@ protected:
 	uint32_t fadeEndTime = -1;
 
 	uint32_t m_hStream;
-	std::unique_ptr<std::mutex> m_mutex;
+	float m_slideTargetVolume = 0;
+	bool m_is_doing_fading = false;
+	bool m_state = false;
+
+	float m_minSlideVolume = 0;
+	float m_maxSlideVolume = 0;
+
+	std::chrono::steady_clock::time_point m_lastTime;
 };

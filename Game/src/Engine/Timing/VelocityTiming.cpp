@@ -4,11 +4,11 @@
 
 VelocityTiming::VelocityTiming(std::vector<TimingInfo>& _timings, std::vector<TimingInfo>& _velocities, double base) : TimingBase(_timings, _velocities, base) {
     if (velocities.size() > 0) {
-        double pos = std::round(velocities[0].StartTime * base_multiplier * 100.0);
+        double pos = ::round(velocities[0].StartTime * base_multiplier * 100.0);
         offsets.push_back(pos);
 		
         for (int i = 1; i < velocities.size(); i++) {
-            pos += std::round((velocities[i].StartTime - velocities[i - 1].StartTime) * (velocities[i - 1].Value * 100));
+            pos += ::round((velocities[i].StartTime - velocities[i - 1].StartTime) * (velocities[i - 1].Value * 100));
 
 			offsets.push_back(pos);
         }

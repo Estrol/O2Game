@@ -15,7 +15,7 @@
 
 #include "../EnvironmentSetup.hpp"
 #include "../GameScenes.h"
-#include "../Data/MusicDatabase.h"
+#include "../Resources/GameDatabase.h"
 
 LoadingScene::LoadingScene() {
 	m_background = nullptr;
@@ -29,15 +29,15 @@ LoadingScene::~LoadingScene() {
 void LoadingScene::Update(double delta) {
 	if (is_ready) m_counter += delta;
 
-	auto obj = EnvironmentSetup::GetObj("SONG");
-	if (obj == nullptr) {
+	Chart* obj = (Chart*)EnvironmentSetup::GetObj("SONG");
+	if (obj == nullptr || obj->) {
 		if (!fucked) {
-			std::string songId = EnvironmentSetup::Get("Key");
+			int songId = EnvironmentSetup::GetInt("Key");
 			std::filesystem::path file;
 
-			if (songId.size() > 0) {
-				file = MusicDatabase::GetInstance()->GetPath();
-				file /= "o2ma" + songId + ".ojn";
+			if (songId != -1) {
+				file = GameDatabase::GetInstance()->GetPath();
+				file /= "o2ma" + std::to_string(songId) + ".ojn";
 			}
 			else {
 				file = EnvironmentSetup::GetPath("FILE");
@@ -51,6 +51,7 @@ void LoadingScene::Update(double delta) {
 
 			const char* bmsfile[] = { ".bms", ".bme", ".bml", ".bmsc" };
 			const char* ojnfile = ".ojn";
+			bool IsO2Jam = false;
 
 			Chart* chart = nullptr;
 			if (file.extension() == bmsfile[0] || file.extension() == bmsfile[1] || file.extension() == bmsfile[2] || file.extension() == bmsfile[3]) {
@@ -70,7 +71,7 @@ void LoadingScene::Update(double delta) {
 				o2jamFile.Load(file);
 
 				if (!o2jamFile.IsValid()) {
-					std::string msg = "Failed to load OJN: " + ("o2ma" + songId + ".ojn");
+					std::string msg = "Failed to load OJN: " + ("o2ma" + std::to_string(songId) + ".ojn");
 
 					MsgBox::Show("FailChart", "Error", msg.c_str(), MsgBoxType::OK);
 					fucked = true;
@@ -78,7 +79,13 @@ void LoadingScene::Update(double delta) {
 				}
 
 				int diffIndex = EnvironmentSetup::GetInt("Difficulty");
+				if (diffIndex == -1) {
+					diffIndex = 0;
+				}
+
 				chart = new Chart(o2jamFile, diffIndex);
+
+				IsO2Jam = true;
 			}
 			else {
 				Osu::Beatmap beatmap(file);
@@ -92,39 +99,62 @@ void LoadingScene::Update(double delta) {
 				chart = new Chart(beatmap);
 			}
 
-			std::filesystem::path dirPath = chart->m_beatmapDirectory;
-			dirPath /= chart->m_backgroundFile;
-
-			try {
-				GameWindow* window = GameWindow::GetInstance();
-				if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
-					m_background = new Texture2D(dirPath.string());
-					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-				}
-
-				if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
-					m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
-					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-				}
-
-				if (m_background == nullptr) {
-					auto SkinName = Configuration::Load("Game", "Skin");
-					auto skinPath = Configuration::Skin_GetPath(SkinName);
-					auto noImage = skinPath / "Playing" / "NoImage.png";
-
-					if (std::filesystem::exists(noImage)) {
-						m_background = new Texture2D(noImage);
-						m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-					}
-				}
-			}
-			catch (SDLException& e) {
-				MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
-				fucked = true;
-			}
-
 			EnvironmentSetup::SetObj("SONG", chart);
 		}
+	}
+
+	std::filesystem::path dirPath = chart->m_beatmapDirectory;
+	dirPath /= chart->m_backgroundFile;
+
+	if (IsO2Jam) {
+		auto item = GameDatabase::GetInstance()->Find(songId);
+
+		bool hashFound = false;
+		for (int i = 0; i < 3; i++) {
+			const char* hash1 = item.Hash[i];
+			const char* hash2 = chart->MD5Hash.c_str();
+
+			if (strcmp(hash1, hash2) == 0) {
+				hashFound = true;
+				break;
+			}
+		}
+
+		if (!hashFound) {
+			MsgBox::Show("FailChart", "Error", "Invalid map identifier, please refresh music list using F5 key!", MsgBoxType::OK);
+			fucked = true;
+			return;
+		}
+	}
+
+	try {
+		if (m_background == nullptr) {
+			GameWindow* window = GameWindow::GetInstance();
+			if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
+				m_background = new Texture2D(dirPath.string());
+				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+			}
+
+			if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
+				m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
+				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+			}
+
+			if (m_background == nullptr) {
+				auto SkinName = Configuration::Load("Game", "Skin");
+				auto skinPath = Configuration::Skin_GetPath(SkinName);
+				auto noImage = skinPath / "Playing" / "NoImage.png";
+
+				if (std::filesystem::exists(noImage)) {
+					m_background = new Texture2D(noImage);
+					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				}
+			}
+		}
+	}
+	catch (SDLException& e) {
+		MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
+		fucked = true;
 	}
 
 	if (m_counter > 2.5 && obj != nullptr) {

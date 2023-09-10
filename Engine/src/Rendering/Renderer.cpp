@@ -282,7 +282,7 @@ bool Renderer::Destroy() {
         SDL_DestroyRenderer(m_renderer);
     }
 
-    if (m_vulkan) {
+    if (IsVulkan()) {
         VulkanEngine::Release();
     }
 

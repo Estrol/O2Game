@@ -67,7 +67,7 @@ void FontResources::PreloadFontCaches() {
     float originScale = (wnd->GetBufferWidth() + wnd->GetBufferHeight()) / 15.6f;
     float targetScale = (wnd->GetWidth() + wnd->GetHeight()) / 15.6f;
 
-    float fontSize = std::round(13.0f * (targetScale / originScale));
+    float fontSize = ::round(13.0f * (targetScale / originScale));
 
     auto SkinName = Configuration::Load("Game", "Skin");
     auto skinPath = Configuration::Skin_GetPath(SkinName);
@@ -90,9 +90,7 @@ void FontResources::PreloadFontCaches() {
 
     {
         if (std::filesystem::exists(font)) {
-            conf.FontDataOwnedByAtlas = true;
             io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), fontSize, &conf);
-            conf.FontDataOwnedByAtlas = false;
         }
         else {
             io.Fonts->AddFontFromMemoryTTF((void*)get_arial_font_data(), get_arial_font_size(), fontSize, &conf);
@@ -102,14 +100,12 @@ void FontResources::PreloadFontCaches() {
     {
         conf.MergeMode = true;
 
-        TextRegion selectedRegion = TextRegion::Chinese;
+        TextRegion selectedRegion = TextRegion::Japanese;
 
         switch (selectedRegion) {
             case TextRegion::Japanese: {
                 if (std::filesystem::exists(jpFont)) {
-                    conf.FontDataOwnedByAtlas = true;
                     io.Fonts->AddFontFromFileTTF((const char*)jpFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesJapanese());
-                    conf.FontDataOwnedByAtlas = false;
                 }
                 else {
                     io.Fonts->AddFontFromMemoryTTF((void*)get_jp_font_data(), get_jp_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesJapanese());
@@ -120,9 +116,7 @@ void FontResources::PreloadFontCaches() {
 									
             case TextRegion::Korean: {
                 if (std::filesystem::exists(krFont)) {
-                    conf.FontDataOwnedByAtlas = true;
                     io.Fonts->AddFontFromFileTTF((const char*)krFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
-                    conf.FontDataOwnedByAtlas = false;
                 }
                 else {
                     io.Fonts->AddFontFromMemoryTTF((void*)get_kr_font_data(), get_kr_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
@@ -133,9 +127,7 @@ void FontResources::PreloadFontCaches() {
 
             case TextRegion::Chinese: {
                 if (std::filesystem::exists(krFont)) {
-                    conf.FontDataOwnedByAtlas = true;
                     io.Fonts->AddFontFromFileTTF((const char*)krFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
-                    conf.FontDataOwnedByAtlas = false;
                 }
                 else {
                     io.Fonts->AddFontFromMemoryTTF((void*)get_ch_font_data(), get_ch_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
@@ -151,15 +143,13 @@ void FontResources::PreloadFontCaches() {
     {
 		conf.MergeMode = false;
 
-        float iBtnFontSz = std::round(20.0f * (targetScale / originScale));
+        float iBtnFontSz = ::round(20.0f * (targetScale / originScale));
         conf.SizePixels = iBtnFontSz;
         conf.GlyphOffset.y = 1.0f * (iBtnFontSz / 16.0f);
 		
         if (std::filesystem::exists(font)) {
-            conf.FontDataOwnedByAtlas = true;
             gImFontButton = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
             gImFontSlider = io.Fonts->AddFontFromFileTTF((const char*)font.u8string().c_str(), iBtnFontSz, &conf);
-            conf.FontDataOwnedByAtlas = false;
         }
         else {
             gImFontButton = io.Fonts->AddFontFromMemoryTTF((void*)get_arial_font_data(), get_arial_font_size(), iBtnFontSz, &conf);
@@ -197,7 +187,6 @@ void FontResources::Rebuild() {
 
     ImFontAtlas* atlas = ImGui::GetIO().Fonts;
     atlas->Clear();
-
     atlas->Build();
 
     if (Renderer::GetInstance()->IsVulkan()) {

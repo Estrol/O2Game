@@ -1,5 +1,5 @@
 #include "O2Texture.hpp"
-#include "Lodepng.h"
+#include "Misc/Lodepng.h"
 
 struct CBITMAPFILEHEADER {
 	uint16_t bfType;
@@ -217,54 +217,54 @@ O2Texture::O2Texture(OJSFrame* frame) : O2Texture() {
 	m_bDisposeTexture = true;
 }
 
-std::vector<O2Texture> O2Texture::Load(O2ResourceType opi, std::string filename) {
-	OJS* ojs = nullptr;
+// std::vector<O2Texture> O2Texture::Load(O2ResourceType opi, std::string filename) {
+// 	OJS* ojs = nullptr;
 
-	switch (opi) {
-		case O2ResourceType::O2_AVATAR: {
-			throw std::runtime_error("Not implemented yet");
-		}
+// 	switch (opi) {
+// 		case O2ResourceType::O2_AVATAR: {
+// 			throw std::runtime_error("Not implemented yet");
+// 		}
 
-		case O2ResourceType::O2_INTERFACE: {
-			OPIFile* index = GameInterfaceResource::GetFile(filename);
-			if (index == nullptr) {
-				throw std::runtime_error("Failed to load the resource");
-			}
+// 		case O2ResourceType::O2_INTERFACE: {
+// 			OPIFile* index = GameInterfaceResource::GetFile(filename);
+// 			if (index == nullptr) {
+// 				throw std::runtime_error("Failed to load the resource");
+// 			}
 
-			OJS* ojs = (OJS*)GameInterfaceResource::LoadFileData(index);
-			if (ojs == nullptr) {
-				throw std::runtime_error("Failed to load the resource");
-			}
+// 			OJS* ojs = (OJS*)GameInterfaceResource::LoadFileData(index);
+// 			if (ojs == nullptr) {
+// 				throw std::runtime_error("Failed to load the resource");
+// 			}
 
-			break;
-		}
+// 			break;
+// 		}
 
-		case O2ResourceType::O2_PLAYING: {
-			OPIFile* index = GamePlayingResource::GetFile(filename);
-			if (index == nullptr) {
-				throw std::runtime_error("Failed to load the resource");
-			}
+// 		case O2ResourceType::O2_PLAYING: {
+// 			OPIFile* index = GamePlayingResource::GetFile(filename);
+// 			if (index == nullptr) {
+// 				throw std::runtime_error("Failed to load the resource");
+// 			}
 
-			OJS* ojs = (OJS*)GamePlayingResource::LoadFileData(index);
-			if (ojs == nullptr) {
-				throw std::runtime_error("Failed to load the resource");
-			}
+// 			OJS* ojs = (OJS*)GamePlayingResource::LoadFileData(index);
+// 			if (ojs == nullptr) {
+// 				throw std::runtime_error("Failed to load the resource");
+// 			}
 
-			break;
-		}
+// 			break;
+// 		}
 
-		default: {
-			throw std::runtime_error("Invalid resource type");
-		}
-	}
+// 		default: {
+// 			throw std::runtime_error("Invalid resource type");
+// 		}
+// 	}
 
-	std::vector<O2Texture> textures(ojs->FrameCount);
-	for (int i = 0; i < ojs->FrameCount; i++) {
-		textures[i] = ojs->Frames[i].get();
-	}
+// 	std::vector<O2Texture> textures();
+// 	for (int i = 0; i < ojs->FrameCount; i++) {
+// 		//textures.push_back({ ojs->Frames[i].get() });
+// 	}
 
-	return textures;
-}
+// 	return textures;
+// }
 
 void O2Texture::LoadImageResources(Boundary* position) {
 	Position.X.Offset = position->X;

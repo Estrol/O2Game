@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <array>
 
 #include "Rendering/Renderer.h"
 #include "Texture/MathUtils.h"
@@ -104,6 +105,9 @@ Texture2D::Texture2D(uint8_t* fileData, size_t size) : Texture2D() {
 	m_bDisposeTexture = true;
 	TintColor = { 1.0f, 1.0f, 1.0f };
 
+	m_sdl_tex = nullptr;
+	m_vk_tex = nullptr;
+
 	LoadImageResources(buffer, size);
 }
 
@@ -123,7 +127,7 @@ Texture2D::Texture2D(Texture2D_Vulkan* texture) : Texture2D() {
 
 Texture2D::~Texture2D() {
 	if (m_bDisposeTexture) {
-		if (m_vk_tex) {
+		if (Renderer::GetInstance()->IsVulkan() && m_vk_tex) {
 			auto vk_tex = m_vk_tex;
 
 			vkTexture::ReleaseTexture(vk_tex);
@@ -182,7 +186,6 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 
 		VkDescriptorSet imageId = m_vk_tex->DS;
 
-		std::vector<ImDrawVert> vertexData(6);
 		float x1 = m_calculatedSizeF.left;
 		float y1 = m_calculatedSizeF.top;
 		float x2 = m_calculatedSizeF.left + m_calculatedSizeF.right;
@@ -213,50 +216,44 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 
 		ImU32 color = IM_COL32_WHITE;
 
-		ImDrawVert vertex1;
-		vertex1.pos = ImVec2(x1, y1);
-		vertex1.uv = uv1;
-		vertex1.col = color;
+		std::array<ImDrawVert, 6> vertexData;
 
-		ImDrawVert vertex2;
-		vertex2.pos = ImVec2(x2, y1);
-		vertex2.uv = uv2;
-		vertex2.col = color;
-
-		ImDrawVert vertex3;
-		vertex3.pos = ImVec2(x2, y2);
-		vertex3.uv = uv3;
-		vertex3.col = color;
-
-		ImDrawVert vertex4;
-		vertex4.pos = ImVec2(x1, y1);
-		vertex4.uv = uv1;
-		vertex4.col = color;
-
-		ImDrawVert vertex5;
-		vertex5.pos = ImVec2(x2, y2);
-		vertex5.uv = uv3;
-		vertex5.col = color;
-
-		ImDrawVert vertex6;
-		vertex6.pos = ImVec2(x1, y2);
-		vertex6.uv = uv4;
-		vertex6.col = color;
-
-		vertexData[0] = vertex1;
-		vertexData[1] = vertex2;
-		vertexData[2] = vertex3;
-		vertexData[3] = vertex4;
-		vertexData[4] = vertex5;
-		vertexData[5] = vertex6;
-
-		std::vector<uint16_t> indicies = { 0, 1, 2, 3, 4, 5 };
+		for (int i = 0; i < 6; i++) {
+			ImDrawVert& vertex = vertexData[i];
+			switch (i) {
+				case 0:
+					vertex.pos = ImVec2(x1, y1);
+					vertex.uv = uv1;
+					break;
+				case 1:
+					vertex.pos = ImVec2(x2, y1);
+					vertex.uv = uv2;
+					break;
+				case 2:
+					vertex.pos = ImVec2(x2, y2);
+					vertex.uv = uv3;
+					break;
+				case 3:
+					vertex.pos = ImVec2(x1, y1);
+					vertex.uv = uv1;
+					break;
+				case 4:
+					vertex.pos = ImVec2(x2, y2);
+					vertex.uv = uv3;
+					break;
+				case 5:
+					vertex.pos = ImVec2(x1, y2);
+					vertex.uv = uv4;
+					break;
+			}
+			vertex.col = color;
+		}
 
 		SubmitQueueInfo info = {};
 		info.AlphaBlend = AlphaBlend;
 		info.descriptor = imageId;
-		info.vertices = vertexData;
-		info.indices = indicies;
+		info.vertices = std::vector(vertexData.begin(), vertexData.end());
+		info.indices = { 0, 1, 2, 3, 4, 5 };
 		info.scissor = scissor;
 
 		// submit to queue
@@ -293,7 +290,13 @@ void Texture2D::Draw(Rect* clipRect, bool manualDraw) {
 			SDL_SetTextureBlendMode(m_sdl_tex, renderer->GetSDLBlendMode());
 		}
 
-		SDL_SetTextureColorMod(m_sdl_tex, static_cast<uint8_t>(TintColor.R * 255), static_cast<uint8_t>(TintColor.G * 255), static_cast<uint8_t>(TintColor.B * 255));
+		SDL_Color color = { (uint8_t)(TintColor.R * 255.0f), (uint8_t)(TintColor.G * 255.0f), (uint8_t)(TintColor.B * 255.0f), (uint8_t)255 };
+		if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+			color.r = (uint8_t)(TintColor.B * 255.0f);
+			color.b = (uint8_t)(TintColor.R * 255.0f);
+		}
+
+		SDL_SetTextureColorMod(m_sdl_tex, color.r, color.g, color.b);
 		SDL_SetTextureAlphaMod(m_sdl_tex, static_cast<uint8_t>(255 - (Transparency / 100.0) * 255));
 
 		int error = SDL_RenderCopyExF(

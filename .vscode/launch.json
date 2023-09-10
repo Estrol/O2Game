@@ -19,6 +19,15 @@
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder}/build/Game",
+        },
+        {
+            "name": "Game - Compile and Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "preLaunchTask": "cmake-msvc-build",
+            "program": "${workspaceFolder}/build/Game/Debug/Game",
+            "cwd": "${workspaceFolder}/build/Game/Debug",
+            "args": []
         }
     ]
 }

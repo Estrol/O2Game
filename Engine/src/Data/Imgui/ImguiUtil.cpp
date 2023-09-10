@@ -30,13 +30,13 @@ void ImguiUtil::NewFrame() {
 	}
 }
 
-void ImguiUtil::BeginText() {
+void ImguiUtil::BeginText(ImVec2 pos, ImVec2 size) {
 	if (!ImGui_ImplSDL2_HasAFrame()) {
 		NewFrame();
 	}
 
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowPos(pos);
+	ImGui::SetNextWindowSize(size);
 	ImGui::Begin(
 		"##Main",
 		nullptr,

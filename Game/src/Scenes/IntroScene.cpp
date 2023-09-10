@@ -9,7 +9,7 @@
 #include "../Data/OJN.h"
 #include "../GameScenes.h"
 #include "../Data/Util/Util.hpp"
-#include "../Data/MusicDatabase.h"
+#include "../Resources/GameDatabase.h"
 
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
@@ -19,85 +19,85 @@ IntroScene::IntroScene() {
 }
 
 void IntroScene::Render(double delta) {
-	if (IsOpenPrompt) {
-		ImguiUtil::NewFrame();
+	// if (IsOpenPrompt) {
+	// 	ImguiUtil::NewFrame();
 
-		switch (currentState) {
-			case 0: {
-				ImGui::SetNextWindowSize(MathUtil::ScaleVec2(450, 400), ImGuiCond_Always);
-				ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+	// 	switch (currentState) {
+	// 		case 0: {
+	// 			ImGui::SetNextWindowSize(MathUtil::ScaleVec2(450, 400), ImGuiCond_Always);
+	// 			ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-				// NoCollapse, AlwaysResize, NoMove
-				ImGuiBackendFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-				if (ImGui::Begin("###BEGIN", nullptr, flags)) {
+	// 			// NoCollapse, AlwaysResize, NoMove
+	// 			ImGuiBackendFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+	// 			if (ImGui::Begin("###BEGIN", nullptr, flags)) {
 					
 
-					ImGui::End();
-				}
+	// 				ImGui::End();
+	// 			}
 
-				break;
-			}
+	// 			break;
+	// 		}
 
-			case 1: {
-				break;
-			}
+	// 		case 1: {
+	// 			break;
+	// 		}
 
-			default: {
-				throw std::runtime_error("Invalid state!");
-			}
-		}
-	}
-	else {
-		m_text->Position = UDim2::fromOffset(5, 5);
-		m_text->Draw("Unnamed O2 Clone (Beta 5)");
+	// 		default: {
+	// 			throw std::runtime_error("Invalid state!");
+	// 		}
+	// 	}
+	// }
+	// else {
+	// 	m_text->Position = UDim2::fromOffset(5, 5);
+	// 	m_text->Draw("Unnamed O2 Clone (Beta 5)");
 
-		m_text->Position = UDim2::fromOffset(5, 15);
-		if (IsReady) {
-			m_text->Draw("Press Any key to continue");
-		}
-		else {
-			auto db = MusicDatabase::GetInstance();
+	// 	m_text->Position = UDim2::fromOffset(5, 15);
+	// 	if (IsReady) {
+	// 		m_text->Draw("Press Any key to continue");
+	// 	}
+	// 	else {
+	// 		auto db = GameDatabase::GetInstance();
 
-			waitFrame += delta;
-			if (nextIndex < m_songFiles.size()) {
-				auto& path = m_songFiles[nextIndex];
+	// 		waitFrame += delta;
+	// 		if (nextIndex < m_songFiles.size()) {
+	// 			auto& path = m_songFiles[nextIndex];
 
-				m_text->Draw("Processing file: " + path.string());
+	// 			m_text->Draw("Processing file: " + path.string());
 
-				if (waitFrame > 0.025) {
-					auto fs = O2::OJN::LoadOJNFile(path);
-					OJNHeader Header = {};
-					fs.read((char*)&Header, sizeof(OJNHeader));
+	// 			if (waitFrame > 0.025) {
+	// 				auto fs = O2::OJN::LoadOJNFile(path);
+	// 				OJNHeader Header = {};
+	// 				fs.read((char*)&Header, sizeof(OJNHeader));
 
-					DB_MusicItem item = {};
-					item.Id = Header.songid;
+	// 				DB_MusicItem item = {};
+	// 				item.Id = Header.songid;
 
-					auto title = CodepageToUtf8((const char*)Header.title, sizeof(Header.title), 949);
-					auto noter = CodepageToUtf8((const char*)Header.noter, sizeof(Header.noter), 949);
-					auto artist = CodepageToUtf8((const char*)Header.artist, sizeof(Header.artist), 949);
+	// 				auto title = CodepageToUtf8((const char*)Header.title, sizeof(Header.title), 949);
+	// 				auto noter = CodepageToUtf8((const char*)Header.noter, sizeof(Header.noter), 949);
+	// 				auto artist = CodepageToUtf8((const char*)Header.artist, sizeof(Header.artist), 949);
 
-					memcpy(item.Title, title.c_str(), std::clamp((int)title.size(), 0, (int)(sizeof(item.Title) - 1)));
-					memcpy(item.Noter, noter.c_str(), std::clamp((int)noter.size(), 0, (int)(sizeof(item.Noter) - 1)));
-					memcpy(item.Artist, artist.c_str(), std::clamp((int)artist.size(), 0, (int)(sizeof(item.Artist) - 1)));
+	// 				memcpy(item.Title, title.c_str(), std::clamp((int)title.size(), 0, (int)(sizeof(item.Title) - 1)));
+	// 				memcpy(item.Noter, noter.c_str(), std::clamp((int)noter.size(), 0, (int)(sizeof(item.Noter) - 1)));
+	// 				memcpy(item.Artist, artist.c_str(), std::clamp((int)artist.size(), 0, (int)(sizeof(item.Artist) - 1)));
 
-					item.CoverOffset = Header.data_offset[3];
-					item.CoverSize = Header.cover_size;
-					item.ThumbnailSize = Header.bmp_size;
+	// 				item.CoverOffset = Header.data_offset[3];
+	// 				item.CoverSize = Header.cover_size;
+	// 				item.ThumbnailSize = Header.bmp_size;
 
-					db->Insert(nextIndex++, item);
+	// 				db->Insert(item);
 
-					waitFrame = 0;
-				}
-			}
-			else {
-				std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
+	// 				waitFrame = 0;
+	// 			}
+	// 		}
+	// 		else {
+	// 			std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
 
-				db->SetPath(musicPath.u8string());
-				db->Save(std::filesystem::current_path() / "Game.db");
-				IsReady = true;
-			}
-		}
-	}
+	// 			db->SetPath(musicPath.u8string());
+	// 			db->Save(std::filesystem::current_path() / "Game.db");
+	// 			IsReady = true;
+	// 		}
+	// 	}
+	// }
 }
 
 void IntroScene::OnKeyDown(const KeyState& state) {
@@ -109,14 +109,14 @@ void IntroScene::OnKeyDown(const KeyState& state) {
 bool IntroScene::Attach() {
 	m_text = std::make_unique<Text>(13);
 
-	auto db = MusicDatabase::GetInstance();
+	// auto db = MusicDatabase::GetInstance();
 
-	if (db->GetPath().empty()) {
-		IsOpenPrompt = true;
-	}
-	else {
-		PrepareDB();
-	}
+	// if (db->GetPath().empty()) {
+	// 	IsOpenPrompt = true;
+	// }
+	// else {
+	// 	PrepareDB();
+	// }
 
 	return true;
 }
@@ -127,9 +127,10 @@ bool IntroScene::Detach() {
 }
 
 void IntroScene::PrepareDB() {
+/**	
 	std::filesystem::path musicPath = Configuration::Load("Music", "Folder");
 
-	auto db = MusicDatabase::GetInstance();
+	auto db = GameDatabase::GetInstance();
 	std::filesystem::path dbPath = std::filesystem::current_path() / "Game.db";
 	if (std::filesystem::exists(dbPath)) {
 		try {
@@ -168,5 +169,5 @@ void IntroScene::PrepareDB() {
 		});
 
 		db->Resize((int)m_songFiles.size());
-	}
+	}*/
 }

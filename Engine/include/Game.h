@@ -17,6 +17,10 @@ enum class FrameLimitMode {
 };
 
 class Game {
+#if _DEBUG
+	const char SIGNATURE[25] = "Game";
+#endif
+
 public:
 	Game();
 	virtual ~Game();

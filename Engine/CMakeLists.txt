@@ -47,6 +47,7 @@ add_library(EstEngine
 	#Misc
 	"src/Misc/MathUtils.cpp"
 	"src/Misc/SDLException.cpp"
+	"src/Misc/Lodepng.cpp"
 
 	#Rendering
 	"src/Rendering/Renderer.cpp"
@@ -74,6 +75,7 @@ add_library(EstEngine
 	"src/Texture/UDim.cpp"
 	"src/Texture/UDim2.cpp"
 	"src/Texture/Vector2.cpp"
+	"src/Texture/ImageGenerator.cpp"
 
 	#Threading
 	"src/Threading/GameThread.cpp"

@@ -314,6 +314,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 	m_backgroundBuffer = file.BackgroundImage;
 	m_keyCount = 7;
 	m_customMeasures = diff.Measures;
+	O2JamId = file.Header.songid;
 
 	double lastTime[7] = {};
 	for (auto& note : diff.Notes) {
@@ -406,8 +407,13 @@ Chart::~Chart() {
 	
 }
 
-double Chart::GetLength() {
-	if (PredefinedAudioLength != -1) {
+int Chart::GetO2JamId() {
+    return O2JamId;
+}
+
+double Chart::GetLength()
+{
+    if (PredefinedAudioLength != -1) {
 		return PredefinedAudioLength;
 	}
 
@@ -470,7 +476,6 @@ void Chart::ComputeHash() {
 	}
 
 	MD5Hash = ss.str();
-	std::cout << "Map hash: " << MD5Hash << std::endl;
 }
 
 float Chart::GetCommonBPM() {

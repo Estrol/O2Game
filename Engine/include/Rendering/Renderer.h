@@ -17,6 +17,10 @@ enum class RendererMode {
 };
 
 class Renderer {
+#if _DEBUG
+	const char SIGNATURE[25] = "Renderer";
+#endif
+
 public:
 	bool Create(RendererMode mode, GameWindow* window, bool failed = false);
 	bool Resize();

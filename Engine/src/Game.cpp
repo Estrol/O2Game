@@ -76,8 +76,8 @@ Game::~Game() {
 		}
 	}
 
-	AudioManager::Release();
 	SceneManager::Release();
+	AudioManager::Release();
 	InputManager::Release();
 	Renderer::Release();
 	GameWindow::Release();

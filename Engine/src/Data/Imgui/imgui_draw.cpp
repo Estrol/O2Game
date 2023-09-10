@@ -2145,6 +2145,9 @@ ImFont* ImFontAtlas::AddFontFromFileTTF(const char* filename, float size_pixels,
         return NULL;
     }
     ImFontConfig font_cfg = font_cfg_template ? *font_cfg_template : ImFontConfig();
+    bool previous = font_cfg.FontDataOwnedByAtlas;
+    font_cfg.FontDataOwnedByAtlas = true;
+
     if (font_cfg.Name[0] == '\0')
     {
         // Store a short copy of filename into into the font name for convenience
@@ -2152,7 +2155,11 @@ ImFont* ImFontAtlas::AddFontFromFileTTF(const char* filename, float size_pixels,
         for (p = filename + strlen(filename); p > filename && p[-1] != '/' && p[-1] != '\\'; p--) {}
         ImFormatString(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "%s, %.0fpx", p, size_pixels);
     }
-    return AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
+
+    ImFont* result = AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
+    font_cfg.FontDataOwnedByAtlas = previous;
+
+    return result;
 }
 
 // NB: Transfer ownership of 'ttf_data' to ImFontAtlas, unless font_cfg_template->FontDataOwnedByAtlas == false. Owned TTF buffer will be deleted after Build().

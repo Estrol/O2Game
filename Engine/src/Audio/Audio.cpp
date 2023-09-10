@@ -4,13 +4,13 @@
 #include <thread>
 #include "MsgBox.h"
 #include <cmath>
+#include <vector>
 
 #include <bass.h>
 #include <bass_fx.h>
 #include <string.h>
 
 Audio::Audio(std::string id) {
-	m_mutex = std::make_unique<std::mutex>();
 	m_vBuffer = {};
 	m_dwSize = 0;
 	m_hStream = 0;
@@ -161,30 +161,60 @@ bool Audio::FadeOut() {
 	return true;
 }
 
-void Audio::FadeStream(int volume, bool state) {
-	std::thread tr = std::thread([=] {
-		std::lock_guard<std::mutex> _lock(*m_mutex.get());
+void Audio::FadeStream(int current_vol, bool state) {
+	float target_vol = 0;
+	if (state) {
+		target_vol = 0.0;
+	}
+	else {
+		target_vol = current_vol / 100.0;
+	}
 
-		float initialVolume = state ? (float)volume / 100.0f : 0.0f;
-		float targetVolume = state ? 0.0f : (float)volume / 100.0f;
-
-		BASS_ChannelSlideAttribute(m_hStream, BASS_ATTRIB_VOL, targetVolume, 1000);
-
-		auto fadeStartTime = std::chrono::steady_clock::now();
-		auto fadeEndTime = fadeStartTime + std::chrono::milliseconds(1000);
-
-		while (std::chrono::steady_clock::now() < fadeEndTime) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
-
-		BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_VOL, targetVolume);
-	});
-
-	tr.detach();
+	BASS_ChannelSlideAttribute(m_hStream, BASS_ATTRIB_VOL, target_vol, 1500);
 }
 
-void Audio::Update() {
-	
+void Audio::Update(double delta) {
+	if (m_is_doing_fading) {
+		float volume = 0;
+		BASS_ChannelGetAttribute(m_hStream, BASS_ATTRIB_VOL, &volume);
+
+		if (m_state) {
+			if (volume <= m_minSlideVolume) {
+				m_slideTargetVolume = m_maxSlideVolume;
+				m_is_doing_fading = false;
+				return;
+			}
+		}
+		else {
+			if (volume >= m_maxSlideVolume) {
+				m_slideTargetVolume = m_minSlideVolume;
+				m_is_doing_fading = false;
+				return;
+			}
+		}
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_lastTime).count() / 1000.0f;
+
+		m_lastTime = currentTime;
+
+		if (volume < m_slideTargetVolume) {
+			volume += 0.01 * deltaTime;
+			if (volume > m_slideTargetVolume) {
+				volume = m_slideTargetVolume;
+			}
+		}
+		else if (volume > m_slideTargetVolume) {
+			volume -= 0.01 * deltaTime;
+			if (volume < m_slideTargetVolume) {
+				volume = m_slideTargetVolume;
+			}
+		}
+
+		volume = std::clamp(volume, 0.0f, 1.0f);
+
+		BASS_ChannelSetAttribute(m_hStream, BASS_ATTRIB_VOL, volume);
+	}
 }
 
 bool Audio::Pause() {
@@ -259,20 +289,9 @@ void Audio::SetPitch(bool enabled) {
 	SetRate(rate);
 }
 
-#if __GCC__
-double round(double value) {
-	return value < 0.0 ? ceil(value - 0.5) : floor(value + 0.5);
-}
-#endif
-
 int Audio::GetDuration() const {
 	double length = BASS_ChannelBytes2Seconds(m_hStream, BASS_ChannelGetLength(m_hStream, BASS_POS_BYTE));
-
-#if __GCC__
-	return static_cast<int>(round(length));
-#else
-	return static_cast<int>(std::round(length));
-#endif
+	return static_cast<int>(::round(length));
 }
 
 std::string Audio::GetName() const {

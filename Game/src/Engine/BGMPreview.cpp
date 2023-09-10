@@ -3,8 +3,10 @@
 #include "../Data/Chart.hpp"
 #include "Configuration.h"
 #include "../EnvironmentSetup.hpp"
-#include "../Data/MusicDatabase.h"
 #include <future>
+#include <cmath>
+
+#include "../Resources/GameDatabase.h"
 
 BGMPreview::~BGMPreview() {
 	if (m_mutex) {
@@ -19,7 +21,6 @@ void BGMPreview::Load(int index) {
 	OnStarted = false;
 	OnPause = false;
 	m_rate = 1;
-	m_bgmIndex = index;
 
 	if (m_mutex == nullptr) {
 		m_mutex = new std::mutex();
@@ -29,6 +30,8 @@ void BGMPreview::Load(int index) {
 		m_autoSamples = std::vector<AutoSample>(10);
 		m_autoSamples.reserve(50);
 	}
+	
+    std::string Key = EnvironmentSetup::Get("Key");
 
 	auto tr = std::thread([&] {
 		int state = ++m_currentState;
@@ -36,11 +39,11 @@ void BGMPreview::Load(int index) {
 		std::lock_guard<std::mutex> lock(*m_mutex);
 		Ready = false;
 
-		DB_MusicItem* item = MusicDatabase::GetInstance()->Find(m_bgmIndex);
+		index = EnvironmentSetup::GetInt("Key");
+		DB_MusicItem item = GameDatabase::GetInstance()->Find(index);
 
-		auto path = MusicDatabase::GetInstance()->GetPath();
-		std::filesystem::path file = path;
-		file /= "o2ma" + std::to_string(item->Id) + ".ojn";
+		std::filesystem::path file = GameDatabase::GetInstance()->GetPath();
+		file /= "o2ma" + std::to_string(index) + ".ojn";
 
 		if (file.string() != m_currentFilePath || GameAudioSampleCache::SetRate() != 1.0 || GameAudioSampleCache::IsEmpty()) {
 			try {
@@ -111,7 +114,7 @@ void BGMPreview::Update(double delta) {
 		auto& sample = m_autoSamples[i];
 		if (m_currentAudioPosition >= sample.StartTime) {
 			if (sample.StartTime - m_currentAudioPosition < 5) {
-				GameAudioSampleCache::Play(sample.Index, (int)std::round(sample.Volume * 50.0f), (int)std::round(sample.Pan * 100.0f));
+				GameAudioSampleCache::Play(sample.Index, (int)::round(sample.Volume * 50.0f), (int)::round(sample.Pan * 100.0f));
 			}
 			
 			m_currentSampleIndex++;

@@ -68,6 +68,8 @@ private:
 	std::unique_ptr<Text> m_title;
 	std::unique_ptr<Text> m_autoText;
 
+	std::unique_ptr<Texture2D> m_laneHideImage;
+
 	std::unique_ptr<RhythmEngine> m_game;
 
 	bool m_resourceFucked;

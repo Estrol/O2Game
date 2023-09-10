@@ -8,6 +8,10 @@
 class GameWindow;
 
 class AudioManager {
+#if _DEBUG
+	const char SIGNATURE[25] = "AudioManager";
+#endif
+
 public:
 	bool Init(GameWindow* window);
 

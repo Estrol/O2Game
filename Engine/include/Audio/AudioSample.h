@@ -5,6 +5,10 @@
 #include "../Rendering/WindowsTypes.h"
 
 class AudioSample {
+#if _DEBUG
+	const char SIGNATURE[25] = "AudioSample";
+#endif
+
 public:
 	AudioSample(std::string id);
 	~AudioSample();

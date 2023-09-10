@@ -29,20 +29,28 @@ struct DeletionQueue
 };
 
 struct AllocatedImage {
+#if _DEBUG
 	const char SIGNATURE[25] = "AllocatedImage";
+#endif
 
 	VkImage _image;
 	VmaAllocation _allocation;
 };
 
 struct AllocatedBuffer {
+#if _DEBUG
 	const char SIGNATURE[25] = "AllocatedBuffer";
+#endif
+
 	VkBuffer _buffer;
 	VmaAllocation _allocation;
 };
 
 struct FrameData {
+#if _DEBUG
 	const char SIGNATURE[25] = "FrameData";
+#endif
+
 	VkSemaphore _presentSemaphore, _renderSemaphore;
 	VkFence _renderFence;
 
@@ -61,7 +69,10 @@ struct FrameData {
 };
 
 struct UploadContext {
+#if _DEBUG
 	const char SIGNATURE[25] = "UploadContext";
+#endif
+
 	VkFence _uploadFence;
 	VkCommandPool _commandPool;
 	VkCommandBuffer _commandBuffer;
@@ -70,7 +81,10 @@ struct UploadContext {
 struct ImDrawVert;
 
 struct SubmitQueueInfo {
+#if _DEBUG
 	const char SIGNATURE[25] = "SubmitQueueInfo";
+#endif
+
 	std::vector<ImDrawVert> vertices;
 	std::vector<uint16_t> indices;
 
@@ -82,7 +96,9 @@ struct SubmitQueueInfo {
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
+#if _DEBUG
 	const char SIGNATURE[25] = "VulkanEngine";
+#endif
 
 public:
 	bool _isInitialized{ false };

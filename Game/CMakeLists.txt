@@ -11,7 +11,6 @@ add_executable(Game
     "src/Data/AutoReplay.cpp"
     "src/Data/bms.cpp"
     "src/Data/Chart.cpp"
-    "src/Data/MusicDatabase.cpp"
     "src/Data/OJM.cpp"
     "src/Data/OJN.cpp"
     "src/Data/osu.cpp"
@@ -26,7 +25,6 @@ add_executable(Game
     "src/Engine/FrameTimer.cpp"
     "src/Engine/GameAudioSampleCache.cpp"
     "src/Engine/GameTrack.cpp"
-    "src/Engine/Lodepng.cpp"
     "src/Engine/Note.cpp"
     "src/Engine/NoteImageCacheManager.cpp"
     "src/Engine/O2NumericTexture.cpp"
@@ -45,6 +43,8 @@ add_executable(Game
 	# Resources
 	"src/Resources/GameResources.cpp"
     "src/Resources/SkinConfig.cpp"
+    "src/Resources/GameDatabase.cpp"
+    "src/Resources/MusicListMaker.cpp"
 
     # Scenes
     "src/Scenes/Converters/ToOsu.cpp"

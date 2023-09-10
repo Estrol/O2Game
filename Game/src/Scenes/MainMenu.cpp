@@ -5,6 +5,7 @@
 #include "Texture/MathUtils.h"
 #include "Configuration.h"
 #include <filesystem>
+#include <MsgBox.h>
 #include "Fonts/FontResources.h"
 #include <SceneManager.h>
 #include "../GameScenes.h"
@@ -71,20 +72,29 @@ void MainMenu::Render(double delta) {
                 ImGui::NewLine();
             }
 
+            ImGui::Spacing();
             if (ImGui::Button("Single player", ButtonSize)) {
                 nextScene = 0;
             }
-            ImGui::Button("Multi player", ButtonSize);
+
+            ImGui::Spacing();
+            if (ImGui::Button("Multi player", ButtonSize)) {
+                MsgBox::Show("Multiplayer", "Error", "Multiplayer is not implemented yet!");
+            }
 
             ImGui::NewLine();
+            ImGui::Spacing();
             if (ImGui::Button("Editor", ButtonSize)) {
                 nextScene = 2;
             }
 
 			ImGui::NewLine();
+            ImGui::Spacing();
 			if (ImGui::Button("Options", ButtonSize)) {
                 nextScene = 3;
             }
+
+            ImGui::Spacing();
             if (ImGui::Button("Quit", ButtonSize)) {
                 nextScene = 4;
             }
@@ -147,15 +157,17 @@ bool MainMenu::Attach() {
     }
 
     Audio* bgm = AudioManager::GetInstance()->Get("BGM");
-    if (!bgm) {
-        if (std::filesystem::exists(bgm_path)) {
-            AudioManager::GetInstance()->Create("BGM", bgm_path, &bgm);
+    if (bgm == nullptr || !bgm->IsPlaying()) {
+        if (!bgm) {
+            if (std::filesystem::exists(bgm_path)) {
+                AudioManager::GetInstance()->Create("BGM", bgm_path, &bgm);
+            }
         }
-    }
 
-    if (bgm && !bgm->IsPlaying()) {
-        bgm->SetVolume(50);
-        bgm->Play(0, true);
+        if (bgm && !bgm->IsPlaying()) {
+            bgm->SetVolume(50);
+            bgm->Play(0, true);
+        }
     }
 
     SceneManager::DisplayFade(0, [] {});
@@ -167,7 +179,7 @@ bool MainMenu::Detach() {
         m_background.reset();
     }
 
-    if (SceneManager::GetInstance()->GetLastSceneIndex() != GameScene::MAINMENU) {
+    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
         Audio* bgm = AudioManager::GetInstance()->Get("BGM");
 
         if (bgm) {

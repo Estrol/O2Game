@@ -10,6 +10,10 @@
 class Texture2D;
 
 class Sprite2D {
+#if _DEBUG
+	const char SIGNATURE[25] = "Sprite2D";
+#endif
+
 public:
 	Sprite2D() = default;
 

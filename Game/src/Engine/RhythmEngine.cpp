@@ -105,6 +105,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		currentX += size;
 	}
 
+	currentX = m_lanePos[6] + m_laneSize[6];
 	m_playRectangle = { m_laneOffset, 0, currentX, m_hitPosition };
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
@@ -268,8 +269,8 @@ bool RhythmEngine::Load(Chart* chart) {
 		desc.EndTrackPosition = -1;
 		desc.KeysoundIndex = note.Keysound;
 		desc.StartBPM = m_timings->GetBPMAt(note.StartTime);
-		desc.Volume = (int)std::round(note.Volume * (float)m_audioVolume);
-		desc.Pan = (int)std::round(note.Pan * (float)m_audioVolume);
+		desc.Volume = (int)round(note.Volume * (float)m_audioVolume);
+		desc.Pan = (int)round(note.Pan * (float)m_audioVolume);
 
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
@@ -332,6 +333,7 @@ bool RhythmEngine::Start() { // no, use update event instead
 }
 
 bool RhythmEngine::Stop() { 
+	m_state = GameState::PosGame;
 	return true;
 }
 
@@ -370,7 +372,7 @@ void RhythmEngine::Update(double delta) {
 		auto& sample = m_autoSamples[i];
 		if (m_currentAudioPosition >= sample.StartTime) {
 			if (sample.StartTime - m_currentAudioPosition < 5) {
-				GameAudioSampleCache::Play(sample.Index, (int)std::round(sample.Volume * m_audioVolume), (int)std::round(sample.Pan * 100));
+				GameAudioSampleCache::Play(sample.Index, (int)round(sample.Volume * m_audioVolume), (int)round(sample.Pan * 100));
 			}
 
 			m_currentSampleIndex++;
@@ -410,26 +412,6 @@ void RhythmEngine::Render(double delta) {
 
 void RhythmEngine::Input(double delta) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
-
-	// Autoplay updates
-	// for (int i = 0; i < 7; i++) {
-	// 	int& index = m_autoHitIndex[i];
-
-	// 	if (index < m_autoHitInfos[i].size()
-	// 		&& m_currentAudioGamePosition >= m_autoHitInfos[i][index].Time) {
-
-	// 		auto& info = m_autoHitInfos[i][index];
-
-	// 		if (info.Type == ReplayHitType::KEY_DOWN) {
-	// 			m_tracks[i]->OnKeyDown();
-	// 		}
-	// 		else {
-	// 			m_tracks[i]->OnKeyUp();
-	// 		}
-
-	// 		index++;
-	// 	}
-	// }
 }
 
 void RhythmEngine::OnKeyDown(const KeyState& state) {
@@ -437,11 +419,9 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 
 	if (state.key == Keys::F3) {
 		m_scrollSpeed -= 10;
-		std::cout << "Decrease Note Speed" << std::endl;
 	}
 	else if (state.key == Keys::F4) {
 		m_scrollSpeed += 10;
-		std::cout << "Increase Note Speed" << std::endl;
 	}
 
 	if (m_is_autoplay) return;
@@ -647,11 +627,11 @@ void RhythmEngine::UpdateVirtualResolution() {
 void RhythmEngine::CreateTimingMarkers() {
 	if (m_currentChart->m_svs.size() > 0) {
 		auto& svs = m_currentChart->m_svs;
-		double pos = std::round(svs[0].StartTime * m_currentChart->InitialSvMultiplier * 100);
+		double pos = ::round(svs[0].StartTime * m_currentChart->InitialSvMultiplier * 100);
 		m_timingPositionMarkers.push_back(pos);
 
 		for (int i = 1; i < svs.size(); i++) {
-			pos += std::round((svs[i].StartTime - svs[i - 1].StartTime) * (svs[i - 1].Value * 100));
+			pos += ::round((svs[i].StartTime - svs[i - 1].StartTime) * (svs[i - 1].Value * 100));
 
 			m_timingPositionMarkers.push_back(pos);
 		}

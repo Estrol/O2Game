@@ -15,20 +15,24 @@ message("Platform: ${O2GAME_PLATFORM} - ${CMAKE_SIZEOF_VOID_P}")
 
 set(CMAKE_CXX_STANDARD 20)
 if(MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/utf-8 /D_CRT_SECURE_NO_WARNINGS)
 else()
 	set(CMAKE_C_FLAGS -m64)
 	set(CMAKE_CXX_FLAGS -m64)
 	add_definitions(-D__cpp_lib_char8_t)
 	add_definitions(-D__cpp_lib_clamp)
+    add_compile_options(-finput-charset=UTF-8)
 endif()
 
 set(GFLAGS_USE_TARGET_NAMESPACE ON)
 
 # BEGIN PACKAGES
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL2_image CONFIG REQUIRED)
 set(SDL2_IMAGE_LIBRARIES $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
+
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+set(SQLite3_LIBRARIES unofficial::sqlite3::sqlite3)
 
 find_package(Freetype REQUIRED)
 find_package(PNG REQUIRED)
@@ -53,8 +57,6 @@ include_directories(
 	${SDL2_INCLUDE_DIRS}
 	${GLM_INCLUDE_DIRS}
 )
-
-message("Platform: ${CMAKE_GENERATOR_PLATFORM}")
 
 # third-party libraries
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -111,6 +113,7 @@ set(O2GAME_LIBRARIES
     ${Vulkan_LIBRARIES} 
     ${SDL2_LIBRARIES} 
     ${SDL2_IMAGE_LIBRARIES} 
+    ${SQLite3_LIBRARIES} 
     ${LIB_FREETYPE} 
     ${LIB_PNG} 
     ${LIB_JPEG} 

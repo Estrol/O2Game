@@ -13,6 +13,10 @@
 struct Texture2D_Vulkan;
 
 class Texture2D {
+#if _DEBUG
+	const char SIGNATURE[25] = "Texture2D";
+#endif
+
 public:
 	Texture2D();
 	Texture2D(std::string fileName);
