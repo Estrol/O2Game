@@ -119,6 +119,8 @@ bool MyGame::Init() {
 			MusicListMaker::MakeMusicList(path);
 		}
 
+		EnvironmentSetup::SetInt("Key", -1);
+
 		/* Screen */
 		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
 		SceneManager::AddScene(GameScene::MAINMENU, new SongSelectScene());

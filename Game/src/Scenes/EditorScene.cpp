@@ -745,10 +745,6 @@ void EditorScene::Render(double delta) {
 			ImGui::EndChild();
 		}
 
-		/*if (ImGui::Button("Close###close_pop_up_window", MathUtil::ScaleVec2(100, 25))) {
-			ImGui::CloseCurrentPopup();
-		}*/
-
 		ImGui::EndPopup();
 	}
 
@@ -771,17 +767,14 @@ bool EditorScene::Attach() {
 	wnd->ResizeBuffer(1280, 720);
 
 	{
-		std::string songId = EnvironmentSetup::Get("Key");
-		if (songId.empty()) {
+		int songId = EnvironmentSetup::GetInt("Key");
+		if (songId == -1) {
 			m_bpms = { { 0, 240.0 } };
 		}
 		else {
 			std::filesystem::path file;
-
-			if (songId.size() > 0) {
-				file = GameDatabase::GetInstance()->GetPath();
-				file /= "o2ma" + songId + ".ojn";
-			}
+			file = GameDatabase::GetInstance()->GetPath();
+			file /= "o2ma" + std::to_string(songId) + ".ojn";
 
 			try {
 				m_ojn.reset();

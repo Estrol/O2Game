@@ -805,14 +805,6 @@ bool GameplayScene::Attach() {
 			m_lifeBar->SetFPS(15);
 		}
 
-		std::vector<Segment> segments = {
-			{0.0, 0.2, {0, 0, 0, 255}, {0, 0, 0, 255}},
-			{0.33, 0.38, {0, 0, 0, 255}, {0, 0, 0, 0}},
-			{0.38, 0.61, {0, 0, 0, 0}, {0, 0, 0, 0}},
-			{0.61, 0.67, {0, 0, 0, 0}, {0, 0, 0, 255}},
-			{0.67, 1.0, {0, 0, 0, 255}, {0, 0, 0, 255}}
-		};
-
 		bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
 		bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
 		if (IsHD || IsFL) {

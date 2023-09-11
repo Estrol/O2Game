@@ -290,6 +290,8 @@ void GameDatabase::Insert(DB_MusicItem& item) {
 }
 
 DB_MusicItem GameDatabase::Find(int id) {
+    std::lock_guard lock(g_mutex);
+
     // find from database
     DB_MusicItem item = {};
 
@@ -374,7 +376,9 @@ std::vector<DB_MusicItem> GameDatabase::FindQuery(std::string query) {
         sqlite3_bind_int(stmt, 4, -1);
     }
 
+    int size = GetMusicCount();
     std::vector<DB_MusicItem> items;
+    items.reserve(size);
 
     while ((result = sqlite3_step(stmt)) == SQLITE_ROW) {
         DB_MusicItem item = {};

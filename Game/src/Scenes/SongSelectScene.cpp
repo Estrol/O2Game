@@ -121,7 +121,17 @@ void SongSelectScene::Render(double delta) {
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
 
-                DB_MusicItem item = music->Find(index);
+                DB_MusicItem item = {};
+                if (index != -1) {
+                    auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& item) {
+                        return item.Id == index;
+                    });
+
+                    if (it != m_musicList.end()) {
+                        item = *it;
+                    }
+                }
+
                 ImGui::Text("Title\r");
                 ImGui::Button((const char*)(index != -1 ? item.Title : u8"###EMPTY1"), MathUtil::ScaleVec2(ImVec2(340, 0)));
 
@@ -285,13 +295,23 @@ void SongSelectScene::Render(double delta) {
 
         if (ImGui::BeginChild("#SongSelectChild", MathUtil::ScaleVec2(size), true)) {
             static char search[256] = {};
+            static char previous[256] = {};
 
             if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(ImVec2(400, 500)))) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
 
-                auto lists = music->FindQuery(search);
-                for (int i = 0; i < lists.size(); i++) {
-                    DB_MusicItem& item = lists[i];
+                if (m_musicList.empty() || strcmp(search, previous) != 0) {
+                    previous[0] = '\0';
+                    memset(previous, 0, sizeof(previous));
+
+                    auto lists = music->FindQuery(search);
+                    m_musicList = lists;
+
+                    strcpy(previous, search);
+                }
+
+                for (int i = 0; i < m_musicList.size(); i++) {
+                    DB_MusicItem& item = m_musicList[i];
 
                     std::string Id = "###Button" + std::to_string(i);
                     bool isSelected = item.Id == index;

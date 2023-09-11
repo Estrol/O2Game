@@ -263,6 +263,7 @@ void Game::Run(double frameRate) {
 			}
 
 			m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
+
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			m_inputManager->Update(event);
 		}

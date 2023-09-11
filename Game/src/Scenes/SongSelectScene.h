@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "Scene.h"
 #include "Texture/Text.h"
@@ -8,6 +9,7 @@
 #include "../Engine/BGMPreview.hpp"
 
 struct MouseState;
+struct DB_MusicItem;
 
 class SongSelectScene : public Scene {
 public:
@@ -56,4 +58,5 @@ private:
 	std::vector<std::string> m_fps;
 	std::vector<UDim2> m_songListRect;
 	std::vector<Button> m_buttons;
+	std::vector<DB_MusicItem> m_musicList;
 };
