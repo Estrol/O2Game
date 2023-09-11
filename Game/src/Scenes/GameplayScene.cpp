@@ -200,15 +200,17 @@ void GameplayScene::Render(double delta) {
 		}
 	}
 
-	if (m_drawCombo && std::get<7>(scores) > 0) {
-		m_wiggleTime = m_comboTimer * 60 * 2; // Combo animated by Frames per second
-		m_amplitude = 30; // Maximum amplitude
-		double halfAmplitude = m_amplitude / 2; // Half of the maximum amplitude
-		double comboLogoReduceAmplitude = 3;
-		double dampingFactor = 0.6; // Damping factor to reduce amplitude over time
-		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
+	double maxAmplitude = 30.0;
+	double halfAmplitude = maxAmplitude / 2.0;
+	double comboLogoReduceAmplitude = 3.0;
+	double dampingFactor = 0.6;
 
-		double currentAmplitude = (m_wiggleTime < M_PI) ? (halfAmplitude + (m_wiggleTime / M_PI) * (m_amplitude - halfAmplitude)) : (m_amplitude * std::pow(dampingFactor, m_wiggleTime - M_PI));
+	if (m_drawCombo && std::get<7>(scores) > 0) {
+		m_wiggleTime = m_comboTimer * 60 * 2.5;
+		m_amplitude = 30;
+		m_wiggleOffset = std::sin(m_wiggleTime) * maxAmplitude;
+
+		double currentAmplitude = (m_wiggleTime < 3) ? (halfAmplitude + (m_wiggleTime / 3) * (maxAmplitude - halfAmplitude)) : (maxAmplitude * std::pow(dampingFactor, m_wiggleTime - 3));
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / comboLogoReduceAmplitude);
 		m_comboLogo->Draw(delta);
@@ -223,13 +225,13 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
-		m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-		m_wiggleOffset = std::sin(m_wiggleTime) * 5; // Amplitude 
+		m_wiggleTime = m_lnTimer * 60;
+		m_wiggleOffset = std::sin(m_wiggleTime) * 5;
 
-		m_lnLogo->Position2 = UDim2::fromOffset(0, (m_wiggleTime < M_PI) ? m_wiggleOffset : 0);
+		m_lnLogo->Position2 = UDim2::fromOffset(0, (m_wiggleTime < 3) ? m_wiggleOffset : 0);
 		m_lnLogo->Draw(delta);
 
-		m_lnComboNum->Position2 = UDim2::fromOffset(0, (m_wiggleTime < M_PI) ? m_wiggleOffset : 0);
+		m_lnComboNum->Position2 = UDim2::fromOffset(0, (m_wiggleTime < 3) ? m_wiggleOffset : 0);
 		m_lnComboNum->DrawNumber(std::get<9>(scores));
 
 		m_lnTimer += delta;
