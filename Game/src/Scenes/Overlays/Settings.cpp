@@ -40,14 +40,12 @@ static std::vector<std::string> m_resolutions = {};
 void SettingsOverlay::Render(double delta) {
     auto& io = ImGui::GetIO();
 
-    auto bWaiting = EnvironmentSetup::Get("bWaiting");
-    int iWaiting = bWaiting.size() ? std::atoi(bWaiting.c_str()) : -1;
-
+    int sceneIndex = EnvironmentSetup::GetInt("Setting_SceneIndex");
     bool changeResolution = false;
 
-    switch (iWaiting) {
+    switch (sceneIndex) {
         case 1: {
-            auto key = EnvironmentSetup::Get("iKey");
+            auto key = EnvironmentSetup::Get("Scene_KbKey");
             ImGui::Text("%s", "Waiting for keybind input...");
             ImGui::Text("%s", ("Press any key to set the Key: " + key).c_str());
 
@@ -58,10 +56,10 @@ void SettingsOverlay::Render(double delta) {
                 { ImGuiKey_KeyPadEnter, true },
             };
 
-            std::string keyCount = EnvironmentSetup::Get("ikeyCount");
+            std::string keyCount = EnvironmentSetup::Get("Scene_KbLaneCount");
             for (int i = 0; i < IM_ARRAYSIZE(io.KeysDown); i++) {
                 if (io.KeysDown[i] && !blacklistedKey[(ImGuiKey)i]) {
-                    EnvironmentSetup::Set("bWaiting", "0");
+                    EnvironmentSetup::SetInt("Setting_SceneIndex", 0);
 
                     auto ikey = SDL_GetKeyFromScancode((SDL_Scancode)i);
                     std::string name = SDL_GetKeyName(ikey);
@@ -81,6 +79,9 @@ void SettingsOverlay::Render(double delta) {
 
             if (ImGui::Button("Yes###ButtonPrompt1", MathUtil::ScaleVec2(ImVec2(40, 0)))) {
                 done = true;
+
+                Configuration::ResetConfiguration();
+                LoadConfiguration();
             }
 
             ImGui::SameLine();
@@ -109,9 +110,9 @@ void SettingsOverlay::Render(double delta) {
 
                             std::string currentKey = Configuration::Load("KeyMapping", "Lane" + std::to_string(i + 1));
                             if (ImGui::Button((currentKey + "###7KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                EnvironmentSetup::Set("bWaiting", "1");
-                                EnvironmentSetup::Set("ikeyCount", "");
-                                EnvironmentSetup::Set("iKey", std::to_string(i + 1));
+                                EnvironmentSetup::SetInt("Setting_SceneIndex", 1);
+                                EnvironmentSetup::Set("Scene_KbLaneCount", "");
+                                EnvironmentSetup::Set("Scene_KbKey", std::to_string(i + 1));
                             }
                         }
 
@@ -125,9 +126,9 @@ void SettingsOverlay::Render(double delta) {
 
                             std::string currentKey = Configuration::Load("KeyMapping", "6_Lane" + std::to_string(i + 1));
                             if (ImGui::Button((currentKey + "###6KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                EnvironmentSetup::Set("bWaiting", "1");
-                                EnvironmentSetup::Set("ikeyCount", "6_");
-                                EnvironmentSetup::Set("iKey", std::to_string(i + 1));
+                                EnvironmentSetup::SetInt("Setting_SceneIndex", 1);
+                                EnvironmentSetup::Set("Scene_KbLaneCount", "6_");
+                                EnvironmentSetup::Set("Scene_KbKey", std::to_string(i + 1));
                             }
                         }
 
@@ -141,9 +142,9 @@ void SettingsOverlay::Render(double delta) {
 
                             std::string currentKey = Configuration::Load("KeyMapping", "5_Lane" + std::to_string(i + 1));
                             if (ImGui::Button((currentKey + "###5KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                EnvironmentSetup::Set("bWaiting", "1");
-                                EnvironmentSetup::Set("ikeyCount", "5_");
-                                EnvironmentSetup::Set("iKey", std::to_string(i + 1));
+                                EnvironmentSetup::SetInt("Setting_SceneIndex", 1);
+                                EnvironmentSetup::Set("Scene_KbLaneCount", "5_");
+                                EnvironmentSetup::Set("Scene_KbKey", std::to_string(i + 1));
                             }
                         }
 
@@ -157,9 +158,9 @@ void SettingsOverlay::Render(double delta) {
 
                             std::string currentKey = Configuration::Load("KeyMapping", "4_Lane" + std::to_string(i + 1));
                             if (ImGui::Button((currentKey + "###4KEY" + std::to_string(i)).c_str(), MathUtil::ScaleVec2(ImVec2(50, 0)))) {
-                                EnvironmentSetup::Set("bWaiting", "1");
-                                EnvironmentSetup::Set("ikeyCount", "4_");
-                                EnvironmentSetup::Set("iKey", std::to_string(i + 1));
+                                EnvironmentSetup::SetInt("Setting_SceneIndex", 1);
+                                EnvironmentSetup::Set("Scene_KbLaneCount", "4_");
+                                EnvironmentSetup::Set("Scene_KbKey", std::to_string(i + 1));
                             }
                         }
 
@@ -173,7 +174,7 @@ void SettingsOverlay::Render(double delta) {
                             GraphicsIndex = std::atoi(Configuration::Load("Game", "Renderer").c_str());
                         }
                         catch (std::invalid_argument) {
-
+                            
                         }
                         
                         ImGui::Text("Graphics");
@@ -313,12 +314,13 @@ void SettingsOverlay::Render(double delta) {
             ImGui::NewLine();
 
             if (ImGui::Button("Reset###Setting1", MathUtil::ScaleVec2(50, 0))) {
-                EnvironmentSetup::Set("bWaiting", "2");
+                EnvironmentSetup::SetInt("Setting_SceneIndex", 2);
             }
 
             ImGui::SameLine();
 
-            if (ImGui::Button("Close###Setting2", MathUtil::ScaleVec2(50, 0))) {
+            if (ImGui::Button("OK###Setting2", MathUtil::ScaleVec2(50, 0))) {
+                bSave = true;
                 m_exit = true;
             }
             break;
@@ -332,6 +334,20 @@ void SettingsOverlay::Render(double delta) {
 }
 
 bool SettingsOverlay::Attach() {
+    LoadConfiguration();
+
+    m_exit = false;
+    return true;
+}
+
+bool SettingsOverlay::Detach() {
+    ImGui::CloseCurrentPopup();
+    SaveConfiguration();
+
+    return true;
+}
+
+void SettingsOverlay::LoadConfiguration() {
     if (m_resolutions.size() == 0) {
         int displayCount = SDL_GetNumDisplayModes(0);
         for (int i = 0; i < displayCount; i++) {
@@ -372,8 +388,6 @@ bool SettingsOverlay::Attach() {
 		convertAutoSound = true;
 	}
 
-    m_fps = { "30", "60", "75", "120", "144", "165", "180", "240", "360", "480", "600", "800", "1000", "Unlimited" };
-
     try {
         int value = std::atoi(Configuration::Load("Game", "FrameLimit").c_str());
 		
@@ -395,23 +409,14 @@ bool SettingsOverlay::Attach() {
     catch (std::invalid_argument) {
         currentGuideLineIndex = 2;
     }
-
-    m_exit = false;
-    return true;
 }
 
-bool SettingsOverlay::Detach() {
-    if (bSave) {
-        Configuration::Set("Game", "AudioOffset", std::to_string(currentOffset));
-        Configuration::Set("Game", "AudioVolume", std::to_string(currentVolume));
-        Configuration::Set("Game", "AutoSound", std::to_string(convertAutoSound ? 1 : 0));
-        Configuration::Set("Game", "FrameLimit", m_fps[currentFPSIndex]);
-        Configuration::Set("Game", "GuideLine", std::to_string(currentGuideLineIndex));
+void SettingsOverlay::SaveConfiguration() {
+    Configuration::Set("Game", "AudioOffset", std::to_string(currentOffset));
+    Configuration::Set("Game", "AudioVolume", std::to_string(currentVolume));
+    Configuration::Set("Game", "AutoSound", std::to_string(convertAutoSound ? 1 : 0));
+    Configuration::Set("Game", "FrameLimit", m_fps[currentFPSIndex]);
+    Configuration::Set("Game", "GuideLine", std::to_string(currentGuideLineIndex));
 
-        SceneManager::GetInstance()->SetFrameLimit(std::atof(m_fps[currentFPSIndex].c_str()));
-    }
-
-    ImGui::CloseCurrentPopup();
-    bSave = false;
-    return true;
+    SceneManager::GetInstance()->SetFrameLimit(std::atof(m_fps[currentFPSIndex].c_str()));
 }

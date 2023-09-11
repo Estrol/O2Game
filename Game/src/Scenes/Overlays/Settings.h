@@ -11,6 +11,8 @@ public:
     bool Detach() override;
 
 private:
+	void LoadConfiguration();
+	void SaveConfiguration();
     bool bSave = false;
 
     int startOffset = 0;

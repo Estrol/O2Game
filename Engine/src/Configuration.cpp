@@ -16,6 +16,26 @@ void Configuration::SetDefaultConfiguration(std::string conf) {
 	defaultConfig = conf;
 }
 
+void Configuration::ResetConfiguration() {
+	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
+
+	if (std::filesystem::exists(path)) {
+		std::cout << "Deleting configuration at path: " << path.string() << std::endl;
+		std::filesystem::remove(path);
+	}
+
+	{
+		std::fstream fs(path, std::ios::out);
+		fs << defaultConfig;
+		fs.close();
+	}
+
+	mINI::INIFile file(path);
+	file.read(Config);
+
+	IsLoaded = true;
+}
+
 void LoadConfiguration() {
 	if (IsLoaded) return;
 

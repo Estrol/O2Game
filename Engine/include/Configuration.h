@@ -4,6 +4,7 @@
 
 namespace Configuration {
 	void SetDefaultConfiguration(std::string conf);
+	void ResetConfiguration();
 
 	std::string Load(std::string key, std::string prop);
 	void Set(std::string key, std::string prop, std::string value);
