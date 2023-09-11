@@ -14,14 +14,52 @@ endif()
 message("Platform: ${O2GAME_PLATFORM} - ${CMAKE_SIZEOF_VOID_P}")
 
 set(CMAKE_CXX_STANDARD 20)
-if(MSVC)
+# if(MSVC)
+#     add_compile_options(/utf-8 /D_CRT_SECURE_NO_WARNINGS)
+# else()
+# 	set(CMAKE_C_FLAGS -m64)
+# 	set(CMAKE_CXX_FLAGS -m64)
+# 	add_definitions(-D__cpp_lib_char8_t)
+# 	add_definitions(-D__cpp_lib_clamp)
+#     add_compile_options(-finput-charset=UTF-8)
+# endif()
+
+# if (CMAKE_BUILD_TYPE MATCHES Debug)
+#     set(CMAKE_C_FLAGS_DEBUG "-g")
+#     set(CMAKE_CXX_FLAGS_DEBUG "-g")
+# elseif (CMAKE_BUILD_TYPE MATCHES Release)
+#     set(CMAKE_C_FLAGS_RELEASE "-O3")
+#     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# endif()
+
+if (MSVC)
     add_compile_options(/utf-8 /D_CRT_SECURE_NO_WARNINGS)
 else()
-	set(CMAKE_C_FLAGS -m64)
-	set(CMAKE_CXX_FLAGS -m64)
-	add_definitions(-D__cpp_lib_char8_t)
-	add_definitions(-D__cpp_lib_clamp)
+    set(CMAKE_C_FLAGS "-m64")
+    set(CMAKE_CXX_FLAGS "-m64")
+    add_definitions(-D__cpp_lib_char8_t)
+    add_definitions(-D__cpp_lib_clamp)
     add_compile_options(-finput-charset=UTF-8)
+    add_compile_options(-Wall -Wextra -pedantic -Werror)
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    if (MSVC)
+        set(CMAKE_C_FLAGS_DEBUG "/Od /Zi")
+        set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi")
+    else()
+        set(CMAKE_C_FLAGS_DEBUG "-g")
+        set(CMAKE_CXX_FLAGS_DEBUG "-g")
+    endif()
+elseif (CMAKE_BUILD_TYPE MATCHES Release)
+    if (MSVC)
+        set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL")
+        set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
+    else()
+        set(CMAKE_C_FLAGS_RELEASE "-O3")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+    endif()
 endif()
 
 set(GFLAGS_USE_TARGET_NAMESPACE ON)
@@ -59,12 +97,13 @@ include_directories(
 )
 
 # third-party libraries
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-set(LIB_INDEX 1)
-else()
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 set(LIB_INDEX 3)
+else()
+set(LIB_INDEX 1)
 endif()
 
+message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE} ${LIB_INDEX}")
 
 if (WIN32)
 	set(THIRD_PARTY_LIBS
@@ -120,6 +159,8 @@ set(O2GAME_LIBRARIES
     ${LIB_BZIP2} 
     ${THIRD_PARTY_LIBS} 
 )
+
+message("Libraries: ${O2GAME_LIBRARIES}")
 
 add_subdirectory(Engine)
 add_subdirectory(Game)
