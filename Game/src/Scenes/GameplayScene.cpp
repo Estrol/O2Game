@@ -200,17 +200,15 @@ void GameplayScene::Render(double delta) {
 		}
 	}
 
-	double maxAmplitude = 30.0;
-	double halfAmplitude = maxAmplitude / 2.0;
-	double comboLogoReduceAmplitude = 3.0;
-	double dampingFactor = 0.6;
-
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_wiggleTime = m_comboTimer * 60 * 2.5;
 		m_amplitude = 30;
-		m_wiggleOffset = std::sin(m_wiggleTime) * maxAmplitude;
+		double halfAmplitude = m_amplitude / 2.0;
+		double comboLogoReduceAmplitude = 3.0;
+		double dampingFactor = 0.6;
+		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
 
-		double currentAmplitude = (m_wiggleTime < 3) ? (halfAmplitude + (m_wiggleTime / 3) * (maxAmplitude - halfAmplitude)) : (maxAmplitude * std::pow(dampingFactor, m_wiggleTime - 3));
+		double currentAmplitude = (m_wiggleTime < 3) ? (halfAmplitude + (m_wiggleTime / 3) * (m_amplitude - halfAmplitude)) : (m_amplitude * std::pow(dampingFactor, m_wiggleTime - 3));
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / comboLogoReduceAmplitude);
 		m_comboLogo->Draw(delta);
