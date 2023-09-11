@@ -225,8 +225,8 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
-		m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-		m_wiggleOffset = std::sin(m_wiggleTime) * 5; // Amplitude 
+		m_wiggleTime = m_lnTimer * 60;
+		m_wiggleOffset = std::sin(m_wiggleTime) * 5;
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, (m_wiggleTime < 3) ? m_wiggleOffset : 0);
 		m_lnLogo->Draw(delta);
