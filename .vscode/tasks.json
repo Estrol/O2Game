@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake-gcc-build",
+            "type": "shell",
+            "command": "cmake --build ${workspaceRoot}/build -- -j 4"
+        },
+        {
+            "label": "cmake-msvc-build",
+            "type": "shell",
+            "command": "cmake --build ${workspaceRoot}/build"
+        }
+    ]
+}

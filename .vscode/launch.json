@@ -1,0 +1,33 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "program": "${workspaceFolder}/build/Game/Game",
+            "name": "Game - Linux Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}/build/Game",
+        },
+        {
+            "program": "${workspaceFolder}/build/Game/Debug/Game.exe",
+            "name": "Game - Windows Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}/build/Game",
+        },
+        {
+            "name": "Game - Compile and Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "preLaunchTask": "cmake-msvc-build",
+            "program": "${workspaceFolder}/build/Game/Debug/Game",
+            "cwd": "${workspaceFolder}/build/Game/Debug",
+            "args": []
+        }
+    ]
+}

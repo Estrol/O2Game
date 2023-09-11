@@ -1,0 +1,3 @@
+[submodule "GameResources"]
+	path = GameResources
+	url = https://github.com/Estrol/O2GameResources

@@ -10,6 +10,11 @@
 *.userosscache
 *.sln.docstates
 
+linux-build
+build
+GameResources
+vcpkg_installed
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -32,6 +37,12 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+
+# ignore third-party
+!/third-party/lib/x64-linux/Debug/
+!/third-party/bin/x64-linux/Debug/
+!/third-party/bin/x64-linux/Debug/
+!/third-party/bin/x64-linux/Debug/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -361,3 +372,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/linux-build
