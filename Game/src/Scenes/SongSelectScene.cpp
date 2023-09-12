@@ -29,6 +29,43 @@
 static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
+void IMGUI_TextBackground(ImVec4 bgColor, ImVec2 size, const char* format, ...) {
+    char buf[1024];
+    {
+        va_list args;
+        va_start(args, format);
+        vsnprintf(buf, IM_ARRAYSIZE(buf), format, args);
+        va_end(args);
+    }
+
+    {
+        char tmpBuf[1024];
+        const char* tmpFormat = " %s ";
+        snprintf(tmpBuf, IM_ARRAYSIZE(tmpBuf), tmpFormat, buf);
+
+        strcpy(buf, tmpBuf);
+    }
+
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    ImVec2 text_pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
+
+    ImVec2 text_size = ImGui::CalcTextSize(buf, NULL, true);
+    if (size.x == 0) {
+        size.x = text_size.x;
+    }
+
+    if (size.y == 0) {
+        size.y = text_size.y;
+    }
+
+    // add 2 px padding
+    size.y += 5;
+    size.x += 4;
+
+    ImGui::GetWindowDrawList()->AddRectFilled(text_pos, ImVec2(text_pos.x + size.x, text_pos.y + size.y), ImGui::GetColorU32(bgColor));
+    ImGui::Text("%s", buf);
+}
+
 SongSelectScene::SongSelectScene() {
     index = -1;
     memset(lanePos, 0, sizeof(lanePos));
@@ -132,19 +169,26 @@ void SongSelectScene::Render(double delta) {
                     }
                 }
 
+                ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+
                 ImGui::Text("Title\r");
-                ImGui::Button((const char*)(index != -1 ? item.Title : u8"###EMPTY1"), MathUtil::ScaleVec2(ImVec2(340, 0)));
+                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
 
                 ImGui::Text("Artist\r");
-                ImGui::Button((const char*)(index != -1 ? item.Artist : u8"###EMPTY1"), MathUtil::ScaleVec2(ImVec2(340, 0)));
+                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
 
                 ImGui::Text("Notecharter\r");
-                ImGui::Button((const char*)(index != -1 ? item.Noter : u8"###EMPTY1"), MathUtil::ScaleVec2(ImVec2(340, 0)));
+                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
 
                 ImGui::Text("Note count\r");
 
-                std::string count = std::to_string(index != -1 ? item.MaxNotes[2] : 0);
-                ImGui::Button(count.c_str(), MathUtil::ScaleVec2(ImVec2(340, 0)));
+                int difficulty = EnvironmentSetup::GetInt("Difficulty");
+                int count = item.Id == -1 ? 0 : item.MaxNotes[difficulty];
+                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%d", count);
+
+                ImGui::Text("BPM\r");
+                float bpm = item.Id == -1 ? 0.0f : item.BPM;
+                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%.2f", bpm);
 
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
@@ -297,7 +341,7 @@ void SongSelectScene::Render(double delta) {
             static char search[256] = {};
             static char previous[256] = {};
 
-            if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(ImVec2(400, 500)))) {
+            if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(245, 500), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
 
                 if (m_musicList.empty() || strcmp(search, previous) != 0) {
@@ -326,7 +370,7 @@ void SongSelectScene::Render(double delta) {
 
                     if (ImGui::ButtonEx(
                         (const char*)title.c_str(), 
-                        MathUtil::ScaleVec2(500, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
+                        MathUtil::ScaleVec2(245, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
                         
                         if (item.Id != index) {
                             index = item.Id;
@@ -396,6 +440,14 @@ void SongSelectScene::Render(double delta) {
         }
 
         ImGui::End();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_F5, false)) {
+        MsgBox::Show("DialogResetList", "Notice", "Do you want refresh map list?", MsgBoxType::YESNO);
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_F3, false)) {
+        bPlay = true;
     }
 
     if (bOptionPopup) {
@@ -621,9 +673,7 @@ void SongSelectScene::Update(double delta) {
 }
 
 void SongSelectScene::Input(double delta) {
-	if (ImGui::IsKeyPressed(ImGuiKey_F5)) {
-        MsgBox::Show("DialogResetList", "Notice", "Do you want refresh map list?", MsgBoxType::YESNO);
-    }
+	
 }
 
 void SongSelectScene::OnMouseDown(const MouseState& state) {

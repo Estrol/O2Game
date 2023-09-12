@@ -7,6 +7,7 @@
 struct DB_MusicItem {
 	int Id = -1;
 	int KeyCount = 7;
+	float BPM = 240.0f;
 
 	char8_t Title[64];
 	char8_t Artist[32];

@@ -51,6 +51,7 @@ void MusicListMaker::MakeMusicList(std::filesystem::path path) {
             item.CoverOffset = ojn.Header.data_offset[3];
             item.CoverSize = ojn.Header.cover_size;
             item.ThumbnailSize = ojn.Header.bmp_size;
+            item.BPM = ojn.Header.bpm;
 
             memcpy(item.Title, title.c_str(), std::clamp((int)title.size(), 0, (int)(sizeof(item.Title) - 1)));
             memcpy(item.Noter, noter.c_str(), std::clamp((int)noter.size(), 0, (int)(sizeof(item.Noter) - 1)));

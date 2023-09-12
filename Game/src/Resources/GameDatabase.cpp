@@ -7,7 +7,7 @@
 GameDatabase* GameDatabase::m_instance = nullptr;
 
 static std::mutex g_mutex;
-const int TABLE_VERSION = 3;
+const int TABLE_VERSION = 4;
 const char LEGACY_DB[2] = { 'D', 'B' };
 
 GameDatabase::GameDatabase() {
@@ -139,6 +139,7 @@ GameDatabase::GameDatabase() {
             "Title VARCHAR(64) CHECK(LENGTH(Title) <= 64),"
             "Artist VARCHAR(32) CHECK(LENGTH(Artist) <= 32),"
             "Noter VARCHAR(32) CHECK(LENGTH(Noter) <= 32),"
+            "BPM REAL,"
             "Hash1 VARCHAR(128) CHECK(LENGTH(Hash1) <= 128),"
             "Hash2 VARCHAR(128) CHECK(LENGTH(Hash2) <= 128),"
             "Hash3 VARCHAR(128) CHECK(LENGTH(Hash3) <= 128),"
@@ -237,6 +238,7 @@ void GameDatabase::Insert(DB_MusicItem& item) {
         "Title,"
         "Artist,"
         "Noter,"
+        "BPM,"
         "Hash1,"
         "Hash2,"
         "Hash3,"
@@ -249,7 +251,7 @@ void GameDatabase::Insert(DB_MusicItem& item) {
         "CoverOffset,"
         "ThumbnailSize,"
         "CoverSize"
-    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     int result = sqlite3_prepare_v2(m_database, TABLE_InsertItem, -1, &stmt, nullptr);
     if (result != SQLITE_OK) {
@@ -263,22 +265,23 @@ void GameDatabase::Insert(DB_MusicItem& item) {
     sqlite3_bind_text(stmt, 3, reinterpret_cast<const char*>(item.Title), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 4, reinterpret_cast<const char*>(item.Artist), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 5, reinterpret_cast<const char*>(item.Noter), -1, SQLITE_STATIC);
+    sqlite3_bind_double(stmt, 6, item.BPM);
 
-    sqlite3_bind_text(stmt, 6, reinterpret_cast<const char*>(item.Hash[0]), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 7, reinterpret_cast<const char*>(item.Hash[1]), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 8, reinterpret_cast<const char*>(item.Hash[2]), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 7, reinterpret_cast<const char*>(item.Hash[0]), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 8, reinterpret_cast<const char*>(item.Hash[1]), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 9, reinterpret_cast<const char*>(item.Hash[2]), -1, SQLITE_STATIC);
 
-    sqlite3_bind_int(stmt, 9, item.Difficulty[0]);
-    sqlite3_bind_int(stmt, 10, item.Difficulty[1]);
-    sqlite3_bind_int(stmt, 11, item.Difficulty[2]);
+    sqlite3_bind_int(stmt, 10, item.Difficulty[0]);
+    sqlite3_bind_int(stmt, 11, item.Difficulty[1]);
+    sqlite3_bind_int(stmt, 12, item.Difficulty[2]);
 
-    sqlite3_bind_int(stmt, 12, item.MaxNotes[0]);
-    sqlite3_bind_int(stmt, 13, item.MaxNotes[1]);
-    sqlite3_bind_int(stmt, 14, item.MaxNotes[2]);
+    sqlite3_bind_int(stmt, 13, item.MaxNotes[0]);
+    sqlite3_bind_int(stmt, 14, item.MaxNotes[1]);
+    sqlite3_bind_int(stmt, 15, item.MaxNotes[2]);
 
-    sqlite3_bind_int(stmt, 15, item.CoverOffset);
-    sqlite3_bind_int(stmt, 16, item.ThumbnailSize);
-    sqlite3_bind_int(stmt, 17, item.CoverSize);
+    sqlite3_bind_int(stmt, 16, item.CoverOffset);
+    sqlite3_bind_int(stmt, 17, item.ThumbnailSize);
+    sqlite3_bind_int(stmt, 18, item.CoverSize);
 
     result = sqlite3_step(stmt);
     if (result != SQLITE_DONE) {
@@ -316,22 +319,23 @@ DB_MusicItem GameDatabase::Find(int id) {
         strncpy(reinterpret_cast<char*>(item.Title), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
         strncpy(reinterpret_cast<char*>(item.Artist), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
         strncpy(reinterpret_cast<char*>(item.Noter), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
+        item.BPM = sqlite3_column_double(stmt, 5);
 
-        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
-        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
-        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)), 128);
 
-        item.Difficulty[0] = sqlite3_column_int(stmt, 8);
-        item.Difficulty[1] = sqlite3_column_int(stmt, 9);
-        item.Difficulty[2] = sqlite3_column_int(stmt, 10);
+        item.Difficulty[0] = sqlite3_column_int(stmt, 9);
+        item.Difficulty[1] = sqlite3_column_int(stmt, 10);
+        item.Difficulty[2] = sqlite3_column_int(stmt, 11);
 
-        item.MaxNotes[0] = sqlite3_column_int(stmt, 11);
-        item.MaxNotes[1] = sqlite3_column_int(stmt, 12);
-        item.MaxNotes[2] = sqlite3_column_int(stmt, 13);
+        item.MaxNotes[0] = sqlite3_column_int(stmt, 12);
+        item.MaxNotes[1] = sqlite3_column_int(stmt, 13);
+        item.MaxNotes[2] = sqlite3_column_int(stmt, 14);
 
-        item.CoverOffset = sqlite3_column_int(stmt, 14);
-        item.ThumbnailSize = sqlite3_column_int(stmt, 15);
-        item.CoverSize = sqlite3_column_int(stmt, 16);
+        item.CoverOffset = sqlite3_column_int(stmt, 15);
+        item.ThumbnailSize = sqlite3_column_int(stmt, 16);
+        item.CoverSize = sqlite3_column_int(stmt, 17);
     } else {
         if (result != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -388,22 +392,23 @@ std::vector<DB_MusicItem> GameDatabase::FindQuery(std::string query) {
         strncpy(reinterpret_cast<char*>(item.Title), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)), 64);
         strncpy(reinterpret_cast<char*>(item.Artist), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)), 32);
         strncpy(reinterpret_cast<char*>(item.Noter), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)), 32);
+        item.BPM = sqlite3_column_double(stmt, 5);
         
-        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)), 128);
-        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
-        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[0]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[1]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)), 128);
+        strncpy(reinterpret_cast<char*>(item.Hash[2]), reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)), 128);
         
-        item.Difficulty[0] = sqlite3_column_int(stmt, 8);
-        item.Difficulty[1] = sqlite3_column_int(stmt, 9);
-        item.Difficulty[2] = sqlite3_column_int(stmt, 10);
+        item.Difficulty[0] = sqlite3_column_int(stmt, 9);
+        item.Difficulty[1] = sqlite3_column_int(stmt, 10);
+        item.Difficulty[2] = sqlite3_column_int(stmt, 11);
 
-        item.MaxNotes[0] = sqlite3_column_int(stmt, 11);
-        item.MaxNotes[1] = sqlite3_column_int(stmt, 12);
-        item.MaxNotes[2] = sqlite3_column_int(stmt, 13);
+        item.MaxNotes[0] = sqlite3_column_int(stmt, 12);
+        item.MaxNotes[1] = sqlite3_column_int(stmt, 13);
+        item.MaxNotes[2] = sqlite3_column_int(stmt, 14);
 
-        item.CoverOffset = sqlite3_column_int(stmt, 14);
-        item.ThumbnailSize = sqlite3_column_int(stmt, 15);
-        item.CoverSize = sqlite3_column_int(stmt, 16);
+        item.CoverOffset = sqlite3_column_int(stmt, 15);
+        item.ThumbnailSize = sqlite3_column_int(stmt, 16);
+        item.CoverSize = sqlite3_column_int(stmt, 17);
 
         items.push_back(item);
     }
