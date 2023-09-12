@@ -17,6 +17,8 @@ SettingsOverlay::SettingsOverlay() {
     m_name = "Settings";
     m_position = MathUtil::ScaleVec2(450, 450);
     m_size = ImVec2(0, 0);
+
+    LoadConfiguration();
 }
 
 static std::map<int, std::string> Graphics = {
