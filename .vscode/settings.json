@@ -95,7 +95,10 @@
         "valarray": "cpp",
         "coroutine": "cpp",
         "resumable": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "cinttypes": "cpp",
+        "stack": "cpp",
+        "unordered_set": "cpp"
     },
     "C_Cpp.default.compilerPath": "cl.exe"
 }

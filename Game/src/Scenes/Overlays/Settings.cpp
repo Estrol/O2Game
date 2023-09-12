@@ -389,9 +389,8 @@ void SettingsOverlay::LoadConfiguration() {
 	}
 
     try {
-        int value = std::atoi(Configuration::Load("Game", "FrameLimit").c_str());
-		
-        auto it = std::find(m_fps.begin(), m_fps.end(), std::to_string(value));
+        auto value = Configuration::Load("Game", "FrameLimit");
+        auto it = std::find(m_fps.begin(), m_fps.end(), value);
         if (it == m_fps.end()) {
             currentFPSIndex = 4;
         }

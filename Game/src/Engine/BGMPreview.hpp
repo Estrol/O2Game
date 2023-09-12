@@ -11,7 +11,7 @@ public:
 	BGMPreview() = default;
 	~BGMPreview();
 
-	void Load(int index);
+	void Load();
 	void Update(double delta);
 	void Play();
 	void Stop();

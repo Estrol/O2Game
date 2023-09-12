@@ -17,7 +17,7 @@ BGMPreview::~BGMPreview() {
 	delete m_mutex;
 }
 
-void BGMPreview::Load(int index) {
+void BGMPreview::Load() {
 	OnStarted = false;
 	OnPause = false;
 	m_rate = 1;
@@ -39,7 +39,7 @@ void BGMPreview::Load(int index) {
 		std::lock_guard<std::mutex> lock(*m_mutex);
 		Ready = false;
 
-		index = EnvironmentSetup::GetInt("Key");
+		int index = EnvironmentSetup::GetInt("Key");
 		DB_MusicItem item = GameDatabase::GetInstance()->Find(index);
 
 		std::filesystem::path file = GameDatabase::GetInstance()->GetPath();

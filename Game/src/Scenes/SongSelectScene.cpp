@@ -532,6 +532,7 @@ void SongSelectScene::Render(double delta) {
     }
 
     ImGui::EndDisabled();
+
     EnvironmentSetup::SetInt("Key", index);
 
     if (!is_update_bgm && index != -1 && isWait) {
@@ -551,7 +552,7 @@ void SongSelectScene::Render(double delta) {
             m_bgm->Stop();
         }
 
-        m_bgm->Load(index);
+        m_bgm->Load();
     }
 
     if (bPlay && index != -1 && !is_departing) {
@@ -634,6 +635,7 @@ bool SongSelectScene::Attach() {
 
     currentAlpha = 100;
     nextAlpha = 100;
+    index = -1;
 
     auto SkinName = Configuration::Load("Game", "Skin");
     auto path = Configuration::Skin_GetPath(SkinName);
