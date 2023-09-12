@@ -203,25 +203,22 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
-		m_amplitude = 30;
-		m_wiggleTime = m_comboTimer * 60 * 2.0;
+		m_amplitude = 30.0;
+		m_wiggleTime = m_comboTimer * 60.0 * 2.0;
 		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
 
-		constexpr double dampingFactor = 0.6;
 		constexpr double comboFrame = 3.0;
 
-		double currentAmplitude = 0.0;
+		double currentAmplitude;
 
 		if (m_wiggleTime < comboFrame) {
 			currentAmplitude = m_amplitude / 2 + (m_wiggleTime / comboFrame) * (m_amplitude / 2);
 		}
 		else {
-			currentAmplitude = m_amplitude * std::pow(dampingFactor, m_wiggleTime - comboFrame);
+			currentAmplitude = m_amplitude * std::pow(0.6, m_wiggleTime - comboFrame);
 		}
 
-		double comboAmplitude = currentAmplitude / 3.0;
-
-		m_comboLogo->Position2 = UDim2::fromOffset(0, comboAmplitude);
+		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
 		m_comboLogo->Draw(delta);
 
 		m_comboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
@@ -234,21 +231,28 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
-		m_wiggleTime = m_lnTimer * 60; // LNCombo animated by Frame per second
-		m_wiggleOffset = std::sin(m_wiggleTime) * 5; // Amplitude 
+		m_wiggleTime = m_lnTimer * 60.0;
+		m_wiggleOffset = std::sin(m_wiggleTime) * 5.0;
 
-		if (m_wiggleTime < 3) {
+		constexpr double comboFrameLN = 3.0;
+
+		m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
+		m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
+
+		if (m_wiggleTime < comboFrameLN) {
 			m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
 			m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
-		}
-		else {
-			m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
-			m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
 		}
 
 		m_lnLogo->Draw(delta);
 
-		m_lnComboNum->Position2 = UDim2::fromOffset(0, (m_wiggleTime < M_PI) ? m_wiggleOffset : 0);
+		if (m_wiggleTime < comboFrameLN) {
+			m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+		}
+		else {
+			m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
+		}
+
 		m_lnComboNum->DrawNumber(std::get<9>(scores));
 
 		m_lnTimer += delta;
@@ -257,6 +261,7 @@ void GameplayScene::Render(double delta) {
 			m_lnLogo->Reset();
 		}
 	}
+
 
 	float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
 	if (gaugeVal > 0) {
