@@ -61,8 +61,8 @@ void BGMPreview::Load(int index) {
 				m_currentFilePath = file.string();
 				m_currentChart = new Chart(o2jamFile, 2);
 			}
-			catch (std::exception) {
-				std::cout << "[BGMPreview] Failed to load the audio chart!" << std::endl;
+			catch (std::exception& e) {
+				std::cout << "[BGMPreview] Failed to load the audio chart!\n" << e.what() << std::endl;
 				return;
 			}
 

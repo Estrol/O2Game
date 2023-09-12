@@ -301,7 +301,6 @@ void SongSelectScene::Render(double delta) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
 
                 if (m_musicList.empty() || strcmp(search, previous) != 0) {
-                    previous[0] = '\0';
                     memset(previous, 0, sizeof(previous));
 
                     auto lists = music->FindQuery(search);

@@ -1,6 +1,7 @@
 #include "RhythmEngine.hpp"
 #include <unordered_map>
 #include <filesystem>
+#include <numeric>
 
 #include "../EnvironmentSetup.hpp"
 #include "Configuration.h"
@@ -105,8 +106,8 @@ bool RhythmEngine::Load(Chart* chart) {
 		currentX += size;
 	}
 
-	currentX = m_lanePos[6] + m_laneSize[6];
-	m_playRectangle = { m_laneOffset, 0, currentX, m_hitPosition };
+	currentX = std::accumulate(m_laneSize, m_laneSize + 7, 0);
+	m_playRectangle = { m_laneOffset, 0, m_laneOffset + currentX, m_hitPosition };
 
 	std::filesystem::path audioPath = chart->m_beatmapDirectory;
 	audioPath /= chart->m_audio;

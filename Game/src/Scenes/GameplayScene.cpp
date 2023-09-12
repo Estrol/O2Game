@@ -1,10 +1,12 @@
 #include "GameplayScene.h"
+#include <Exception/SDLException.h>
 
 #include <random>
 #include <future>
 #include <iostream>
 #include <unordered_map>
 #include <limits.h>
+#include <numeric>
 
 #include "Game.h"
 #include "MsgBox.h"
@@ -46,7 +48,7 @@ GameplayScene::GameplayScene() : Scene::Scene() {
 void GameplayScene::Update(double delta) {
 	if (m_resourceFucked) {
 		if (!m_ended) {
-			if (EnvironmentSetup::Get("Key").size() > 0) {
+			if (EnvironmentSetup::GetInt("Key") >= 0) {
 				m_ended = true;
 				SceneManager::ChangeScene(GameScene::MAINMENU);
 			}
@@ -808,7 +810,6 @@ bool GameplayScene::Attach() {
 		bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
 		bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
 		if (IsHD || IsFL) {
-			auto playRect = m_game->GetPlayRectangle();
 			std::vector<Segment> segments;
 
 			if (IsFL) {
@@ -829,14 +830,15 @@ bool GameplayScene::Attach() {
 				};
 			}
 
-			// FIXME: Idk why the image size is not correct
-			playRect.right -= 2;
+			int imageWidth = std::accumulate(laneSize, laneSize + 7, 0);
+			int imageHeight = HitPos;
+			int imagePos = lanePos[0];
 
-			std::vector<uint8_t> imageBuffer = ImageGenerator::GenerateGradientImage(playRect.right, playRect.bottom, segments);
+			std::vector<uint8_t> imageBuffer = ImageGenerator::GenerateGradientImage(imageWidth, imageHeight, segments);
 
 			m_laneHideImage = std::make_unique<Texture2D>(imageBuffer.data(), imageBuffer.size());
-			m_laneHideImage->Position = UDim2::fromOffset(playRect.left, playRect.top);
-			m_laneHideImage->Size = UDim2::fromOffset(playRect.right, playRect.bottom);
+			m_laneHideImage->Position = UDim2::fromOffset(imagePos, 0);
+			m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight );
 		}
 
 		m_game->GetScoreManager()->ListenHit([&](NoteHitInfo info) {
@@ -866,6 +868,11 @@ bool GameplayScene::Attach() {
 			m_lnTimer = 0;
 			m_drawLN = true;
 		});
+	}
+	catch (SDLException& e) {
+		MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
+		m_resourceFucked = true;
+		return true;
 	}
 	catch (std::exception& e) {
 		MsgBox::Show("GameplayError", "Error", e.what(), MsgBoxType::OK);
