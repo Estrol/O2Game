@@ -16,34 +16,16 @@ namespace {
     const double kMaxTicks = 192.0;
 }
 
-double GetDifficultyRatio(int difficulty) {
-    switch (difficulty) {
-        case 1: {
-            return 0.9;
-        }
-
-        case 2: {
-            return 0.8;
-        }
-
-        default: {
-            return 1.0;
-        }
-    }
-}
-
 std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
     double audioPos = m_engine->GetGameAudioPosition();
 	double hitTime = note->GetHitTime();
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
 
     double beat = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0;
-    double ratio = GetDifficultyRatio(difficulty);
-
-    double cool = beat * (kNoteCoolHitRatio * ratio);
-    double good = beat * (kNoteGoodHitRatio * ratio);
-    double bad = beat * (kNoteBadHitRatio * ratio);
-    double miss = beat * (kNoteEarlyMissRatio * ratio);
+    double cool = beat * kNoteCoolHitRatio;
+    double good = beat * kNoteGoodHitRatio;
+    double bad = beat * kNoteBadHitRatio;
+    double miss = beat * kNoteEarlyMissRatio;
 
     double time = abs(hitTime - audioPos);
 
@@ -64,23 +46,18 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note* note) {
 }
 
 bool BeatBasedJudge::IsAccepted(Note* note) {
-    int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    double ratio = GetDifficultyRatio(difficulty);
-
     double audioPos = m_engine->GetGameAudioPosition();
 	double hitTime = note->GetHitTime();
-    double bad = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * (kNoteBadHitRatio * ratio);
+    double bad = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * kNoteBadHitRatio;
 
     return hitTime - audioPos <= bad;
 }
 
 bool BeatBasedJudge::IsMissed(Note* note) {
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    double ratio = GetDifficultyRatio(difficulty);
-
     double audioPos = m_engine->GetGameAudioPosition();
     double hitTime = note->GetHitTime();
-    double miss = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * (kNoteEarlyMissRatio * ratio);
+    double miss = kBaseBPM / kMaxTicks / note->GetBPMTime() * 1000.0 * kNoteEarlyMissRatio;
 
     return hitTime - audioPos < -miss;
 }

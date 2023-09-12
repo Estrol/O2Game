@@ -20,32 +20,16 @@ std::tuple<bool, NoteResult> MsBasedJudge::CalculateResult(Note* note) {
     double noteTime = note->GetHitTime();
 
     double diff = std::abs(noteTime - audioPos);
-
-    int difficulty = EnvironmentSetup::GetInt("Difficulty");
-    float decrement = 0.0f;
-    switch (difficulty) {
-        case 1: {
-            decrement = 0.1f;
-            break;
-        }
-
-        case 2: {
-            decrement = 0.15f;
-            break;
-        }
-    }
-
-    // (BASE - (BASE * decrement))
-    if (diff <= kNoteCoolHitRatio - (kNoteCoolHitRatio * decrement)) {
+    if (diff <= kNoteCoolHitRatio - kNoteCoolHitRatio) {
         return { true, NoteResult::COOL };
     }
-    else if (diff <= kNoteGoodHitRatio - (kNoteGoodHitRatio * decrement)) {
+    else if (diff <= kNoteGoodHitRatio - kNoteGoodHitRatio) {
         return { true, NoteResult::GOOD };
     }
-    else if (diff <= kNoteBadHitRatio - (kNoteBadHitRatio * decrement)) {
+    else if (diff <= kNoteBadHitRatio - kNoteBadHitRatio) {
         return { true, NoteResult::BAD };
     }
-    else if (diff <= kNoteEarlyMissRatio - (kNoteEarlyMissRatio * decrement)) {
+    else if (diff <= kNoteEarlyMissRatio - kNoteEarlyMissRatio) {
         return { true, NoteResult::MISS };
     }
 
