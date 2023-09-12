@@ -77,8 +77,7 @@ int Run(int argc, wchar_t** argv) {
 		
 		MyGame game;
 		if (game.Init()) {
-			double frameLimit = std::atof(Configuration::Load("Game", "FrameLimit").c_str());
-			game.Run(frameLimit);
+			game.Run();
 		}
 
 		return 0;

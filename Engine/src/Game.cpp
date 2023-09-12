@@ -137,10 +137,10 @@ bool Game::Init() {
 	return true;
 }
 
-void Game::Run(double frameRate) {
+void Game::Run() {
 	m_running = true;
 	m_notify = true;
-	m_frameLimit = frameRate;
+	m_frameLimit = 60.0;
 	m_frameLimitMode = FrameLimitMode::MENU;
 
 	mAudioThread.Run([&] {

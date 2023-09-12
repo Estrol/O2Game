@@ -6,7 +6,7 @@ public:
 	~MyGame();
 
 	bool Init() override;
-	void Run(double frameRate) override;
+	void Run() override;
 	void SelectSkin(std::string name);
 
 protected:

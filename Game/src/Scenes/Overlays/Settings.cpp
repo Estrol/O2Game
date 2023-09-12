@@ -410,6 +410,13 @@ void SettingsOverlay::LoadConfiguration() {
     catch (std::invalid_argument) {
         currentGuideLineIndex = 2;
     }
+
+    auto frame = m_fps[currentFPSIndex];
+    if (frame == m_fps[13]) {
+        frame = "9999";
+    }
+
+    SceneManager::GetInstance()->SetFrameLimit(std::atof(frame.c_str()));
 }
 
 void SettingsOverlay::SaveConfiguration() {
@@ -419,5 +426,10 @@ void SettingsOverlay::SaveConfiguration() {
     Configuration::Set("Game", "FrameLimit", m_fps[currentFPSIndex]);
     Configuration::Set("Game", "GuideLine", std::to_string(currentGuideLineIndex));
 
-    SceneManager::GetInstance()->SetFrameLimit(std::atof(m_fps[currentFPSIndex].c_str()));
+    auto frame = m_fps[currentFPSIndex];
+    if (frame == m_fps[13]) {
+        frame = "9999";
+    }
+
+    SceneManager::GetInstance()->SetFrameLimit(std::atof(frame.c_str()));
 }

@@ -26,7 +26,7 @@ public:
 	virtual ~Game();
 	
 	bool virtual Init();
-	void virtual Run(double frameRate);
+	void virtual Run();
 	void virtual Stop();
 
 	void SetThreadMode(ThreadMode mode);

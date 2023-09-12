@@ -85,7 +85,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
                 }
 
                 SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
             }
 
             m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
@@ -105,7 +105,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
                 SDL_BLENDFACTOR_ZERO,
                 SDL_BLENDOPERATION_ADD);
 
-            if (SDL_SetRenderDrawBlendMode(m_renderer, m_blendMode) == -1) {
+            if (SDL_SetRenderDrawBlendMode(m_renderer, m_blendMode) <= -1) {
                 throw SDLException();
             }
 
