@@ -204,7 +204,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = m_comboTimer * 60.0 * 2.0;
+		m_wiggleTime = m_comboTimer * 60.0 * 4.0; // Ntah lah edit2 dikit ini paling nggak mirip2
 		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
 
 		constexpr double comboFrame = 3.0;
@@ -215,7 +215,7 @@ void GameplayScene::Render(double delta) {
 			currentAmplitude = m_amplitude / 2 + (m_wiggleTime / comboFrame) * (m_amplitude / 2);
 		}
 		else {
-			currentAmplitude = m_amplitude * std::pow(0.6, m_wiggleTime - comboFrame);
+			currentAmplitude = m_amplitude * std::pow(0.75, m_wiggleTime - comboFrame); // Ntah lah edit2 dikit ini paling nggak mirip2
 		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
