@@ -119,34 +119,6 @@ void ResultScene::Render(double delta) {
                     ImGui::EndChild();
                 }
 
-                ImGui::SetNextWindowPos(nextPos);
-                if (ImGui::BeginChild("#Mods", MathUtil::ScaleVec2(185, 0))) {
-                    ImGui::SeparatorText("Mods");
-                    int count = 0;
-                    for (int i = 0; i < Mods.size(); i++) {
-                        auto& key = Mods[i];
-                        int value = EnvironmentSetup::GetInt(key);
-                        if (value == 1) {
-                            ImguiUtil::Text::ColoredBackground(
-                                ImGui::GetStyleColorVec4(ImGuiCol_Button), 
-                                MathUtil::ScaleVec2(80, 0), 
-                                "%s", Mods[i].c_str()
-                            );
-
-                            // sameline until 3 mods
-                            if (count < 2) {
-                                ImGui::SameLine();
-                                count++;
-                            }
-                            else {
-                                count = 0;
-                            }
-                        }
-                    }
-
-                    ImGui::EndChild();
-                }
-
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
 

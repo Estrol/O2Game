@@ -13,6 +13,7 @@
 #include "Imgui/imgui.h"
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui_internal.h"
+#include "Imgui/imgui_extends.h"
 
 #include "Fonts/FontResources.h"
 #include "Exception/SDLException.h"
@@ -28,56 +29,6 @@
 
 static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
-
-void IMGUI_TextAligment(const char* text, float alignment = 0.0f) {
-    ImGuiStyle& style = ImGui::GetStyle();
-
-    float size = ImGui::CalcTextSize(text).x + style.FramePadding.x * 2.0f;
-    float avail = ImGui::GetContentRegionAvail().x;
-
-    float off = (avail - size) * alignment;
-    if (off > 0.0f)
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-    return ImGui::Text("%s", text);
-}
-
-void IMGUI_TextBackground(ImVec4 bgColor, ImVec2 size, const char* format, ...) {
-    char buf[1024];
-    {
-        va_list args;
-        va_start(args, format);
-        vsnprintf(buf, IM_ARRAYSIZE(buf), format, args);
-        va_end(args);
-    }
-
-    {
-        char tmpBuf[1024];
-        const char* tmpFormat = " %s ";
-        snprintf(tmpBuf, IM_ARRAYSIZE(tmpBuf), tmpFormat, buf);
-
-        strcpy(buf, tmpBuf);
-    }
-
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    ImVec2 text_pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
-
-    ImVec2 text_size = ImGui::CalcTextSize(buf, NULL, true);
-    if (size.x == 0) {
-        size.x = text_size.x;
-    }
-
-    if (size.y == 0) {
-        size.y = text_size.y;
-    }
-
-    // add 2 px padding
-    size.y += 5;
-    size.x += 4;
-
-    ImGui::GetWindowDrawList()->AddRectFilled(text_pos, ImVec2(text_pos.x + size.x, text_pos.y + size.y), ImGui::GetColorU32(bgColor));
-    ImGui::Text("%s", buf);
-}
 
 SongSelectScene::SongSelectScene() {
     index = -1;
@@ -415,7 +366,7 @@ void SongSelectScene::OnGameLoadMusic(double delta) {
         ImGui::NewLine();
 
         std::string text = "Processing file: " + file.filename().string();
-        IMGUI_TextAligment(text.c_str(), 0.5f);
+        imgui_extends::TextAligment(text.c_str(), 0.5f);
 
         if (scene_index == 0) {
             ImGui::CloseCurrentPopup();
@@ -452,23 +403,23 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
             ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 
             ImGui::Text("Title\r");
-            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
 
             ImGui::Text("Artist\r");
-            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
 
             ImGui::Text("Notecharter\r");
-            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
 
             ImGui::Text("Note count\r");
 
             int difficulty = EnvironmentSetup::GetInt("Difficulty");
             int count = item.Id == -1 ? 0 : item.MaxNotes[difficulty];
-            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%d", count);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%d", count);
 
             ImGui::Text("BPM\r");
             float bpm = item.Id == -1 ? 0.0f : item.BPM;
-            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%.2f", bpm);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%.2f", bpm);
 
             ImGui::PopItemFlag();
             ImGui::PopStyleVar();

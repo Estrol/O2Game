@@ -29,6 +29,7 @@ add_library(EstEngine
 	"src/Data/Imgui/imgui_tables.cpp"
 	"src/Data/Imgui/imgui_widgets.cpp"
 	"src/Data/Imgui/ImguiUtil.cpp"
+	"src/Data/Imgui/imgui_extends.cpp" 
 
 	#Data/misc/freetype
 	"src/Data/Imgui/misc/freetype/imgui_freetype.cpp"
