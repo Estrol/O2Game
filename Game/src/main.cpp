@@ -88,41 +88,45 @@ int Run(int argc, wchar_t** argv) {
 	}
 }
 
-#if _WIN32
-int HandleStructualException(int code) {
-	MessageBoxA(NULL, ("Uncaught exception: " + std::to_string(code)).c_str(), "FATAL ERROR", MB_ICONERROR);
-	return EXCEPTION_EXECUTE_HANDLER;
-}
-#endif
+// #if _WIN32
+// int HandleStructualException(int code) {
+// 	MessageBoxA(NULL, ("Uncaught exception: " + std::to_string(code)).c_str(), "FATAL ERROR", MB_ICONERROR);
+// 	return EXCEPTION_EXECUTE_HANDLER;
+// }
+// #endif
 
-// if not DEBUG
-#if !defined(_DEBUG) && _WIN32
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
-	if (retVal == nullptr) {
-		MessageBoxA(NULL, "setlocale(): Failed to set locale!", "EstGame Error", MB_ICONERROR);
-		return -1;
-	}
+// // if not DEBUG
+// #if !defined(_DEBUG) && _WIN32
+// int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+// 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
+// 	if (retVal == nullptr) {
+// 		MessageBoxA(NULL, "setlocale(): Failed to set locale!", "EstGame Error", MB_ICONERROR);
+// 		return -1;
+// 	}
 
-	int argc = 0;
-	wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+// 	int argc = 0;
+// 	wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
-	int ret = 0;
+// 	int ret = 0;
 
-	__try {
-		ret = Run(argc, argv);
-	}
+// 	__try {
+// 		ret = Run(argc, argv);
+// 	}
 
-	__except (HandleStructualException(GetExceptionCode())) {
-		ret = -1;
-	}
+// 	__except (HandleStructualException(GetExceptionCode())) {
+// 		ret = -1;
+// 	}
 
-	LocalFree(argv);
+// 	LocalFree(argv);
 
-	return ret;
-}
+// 	return ret;
+// }
 
-#else
+// #else
+
+
+
+// #endif
 
 int main(int argc, char* argv[]) {
 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
@@ -166,5 +170,3 @@ int main(int argc, char* argv[]) {
 
     return ret;
 }
-
-#endif
