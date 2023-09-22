@@ -48,6 +48,7 @@ add_library(EstEngine
 	"src/Misc/MathUtils.cpp"
 	"src/Misc/SDLException.cpp"
 	"src/Misc/Lodepng.cpp"
+	"src/Misc/md5.cpp"
 
 	#Rendering
 	"src/Rendering/Renderer.cpp"
@@ -55,6 +56,7 @@ add_library(EstEngine
 	"src/Rendering/Vulkan/Texture2DVulkan.cpp"
 	"src/Rendering/Vulkan/vkinit.cpp"
 	"src/Rendering/Vulkan/VulkanEngine.cpp"
+	"src/Rendering/Vulkan/volk/volk.cpp" 
 	"src/Rendering/Vulkan/vk_mem_alloc/Common.cpp"
 	"src/Rendering/Vulkan/vk_mem_alloc/VmaUsage.cpp"
 	"src/Rendering/Vulkan/VkBootstrap/VkBootstrap.cpp"
@@ -64,7 +66,7 @@ add_library(EstEngine
 	"src/Scenes/Scene.cpp"
 	"src/Scenes/MsgBox.cpp"
 	"src/Scenes/Overlay.cpp"
-
+	
 	#Texture
 	"src/Texture/Color3.cpp"
 	"src/Texture/NumericTexture.cpp"

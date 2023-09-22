@@ -9,6 +9,9 @@ public:
 	void Run() override;
 	void SelectSkin(std::string name);
 
+private:
+	bool LoadConfiguration();
+
 protected:
 	void Update(double deltaTime) override;
 	void Render(double deltaTime) override;

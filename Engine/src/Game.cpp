@@ -13,6 +13,10 @@
 #include "Rendering/Vulkan/VulkanEngine.h"
 #include "Texture/MathUtils.h"
 
+constexpr auto kInputDefaultRate = 1000.0;
+constexpr auto kMenuDefaultRate = 60.0;
+constexpr auto kAudioDefaultRate = 144.0;
+
 namespace {
 	thread_local double curTick = 0.0;
 	thread_local double lastTick = 0.0;
@@ -140,15 +144,18 @@ bool Game::Init() {
 void Game::Run() {
 	m_running = true;
 	m_notify = true;
-	m_frameLimit = 60.0;
+	m_frameLimit = m_frameLimit == 0 ? kMenuDefaultRate : m_frameLimit;
 	m_frameLimitMode = FrameLimitMode::MENU;
 
 	mAudioThread.Run([&] {
-		double delta = FrameLimit(144.0);
+		double delta = FrameLimit(kAudioDefaultRate);
 		AudioManager::GetInstance()->Update(delta);
 	}, true);
 
 	std::mutex m1, m2;
+
+	int frames = 0;
+	double time = 0;
 
 	mRenderThread.Run([&] {
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
@@ -161,40 +168,16 @@ void Game::Run() {
 				}
 
 				case FrameLimitMode::MENU: {
-					delta = FrameLimit(60.0);
+					delta = FrameLimit(kMenuDefaultRate);
 					break;
 				}
 			}
 
-			if (m_window->ShouldResizeRenderer()) {
-				m_renderer->Resize();
-
-				FontResources::DoRebuild();
-				m_window->HandleResizeRenderer();
-			}
-
-			if (FontResources::ShouldRebuild()) {
-				FontResources::PreloadFontCaches();
-			}
+			CheckFont();
 
 			Update(delta);
 
-			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
-
-				// compare it using epsilon
-				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
-					m_currentFade = m_targetFade;
-				}
-				else {
-					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
-					}
-					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
-					}
-				}
-			}
+			UpdateFade(delta);
 
 			if (!m_minimized) {
 				std::lock_guard<std::mutex> lock(m1);
@@ -202,16 +185,12 @@ void Game::Run() {
 				if (m_renderer->BeginRender()) {
 					Render(delta);
 					MsgBox::Draw();
-
-					if (static_cast<int>(m_currentFade) != 0) {
-						auto drawList = ImGui::GetForegroundDrawList();
-						float a = static_cast<int>(m_currentFade) / 100.0f;
-
-						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
-					}
+					DrawFade(delta);
 
 					m_renderer->EndRender();
 				}
+
+				frames++;
 			}
 		}
 		else {
@@ -242,12 +221,12 @@ void Game::Run() {
 		double delta = 0;
 		switch (m_frameLimitMode) {
 			case FrameLimitMode::GAME: {
-				delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? 1000.0 : m_frameLimit);
+				delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? kInputDefaultRate : m_frameLimit);
 				break;
 			}
 
 			case FrameLimitMode::MENU: {
-				delta = FrameLimit(60.0);
+				delta = FrameLimit(kMenuDefaultRate);
 				break;
 			}
 		}
@@ -272,68 +251,35 @@ void Game::Run() {
 			Stop();
 		}
 
-		if (m_renderer->IsVulkan() && m_renderer->GetVulkanEngine()->_swapChainOutdated) {
-			std::lock_guard<std::mutex> lock(m1);
-
-			int new_width = m_window->GetWidth();
-			int new_height = m_window->GetHeight();
-
-			if (new_width > 0 && new_height > 0) {
-				m_renderer->GetVulkanEngine()->re_init_swapchains(new_width, new_height);
-			}
-		}
-
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			Input(delta);
 		}
 		else {
-			if (m_window->ShouldResizeRenderer()) {
-				m_renderer->Resize();
-
-				FontResources::DoRebuild();
-				m_window->HandleResizeRenderer();
-			}
-
-			if (FontResources::ShouldRebuild()) {
-				FontResources::PreloadFontCaches();
-			}
+			CheckFont();
 
 			Input(delta);
 
 			Update(delta);
 
-			if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
-				float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
-
-				// compare it using epsilon
-				if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
-					m_currentFade = m_targetFade;
-				}
-				else {
-					if (m_currentFade < m_targetFade) {
-						m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
-					}
-					else {
-						m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
-					}
-				}
-			}
+			UpdateFade(delta);
 
 			if (!m_minimized) {
 				if (m_renderer->BeginRender()) {
 					Render(delta);
 					MsgBox::Draw();
-
-					if (static_cast<int>(m_currentFade) != 0) {
-						auto drawList = ImGui::GetForegroundDrawList();
-						float a = static_cast<int>(m_currentFade) / 100.0f;
-
-						drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
-					}
+					DrawFade(delta);
 
 					m_renderer->EndRender();
 				}
 			}
+		}
+
+		if ((time += delta) > 1.0) {
+			std::string fps = "FPS: " + std::to_string(frames);
+			m_window->SetWindowSubTitle(fps);
+
+			frames = 0;
+			time = 0;
 		}
 	}, false);
 
@@ -345,6 +291,47 @@ void Game::Run() {
 	mRenderThread.Stop();
 
 	m_notify = false;
+}
+
+void Game::DrawFade(double delta) {
+	if (static_cast<int>(m_currentFade) != 0) {
+		auto drawList = ImGui::GetForegroundDrawList();
+		float a = m_currentFade / 100.0f;
+
+		drawList->AddRectFilled(ImVec2(0, 0), MathUtil::ScaleVec2(m_window->GetBufferWidth(), m_window->GetBufferHeight()), IM_COL32(0, 0, 0, a * 255));
+	}
+}
+
+void Game::UpdateFade(double delta) {
+	if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
+		float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
+
+		// compare it using epsilon
+		if (std::abs(m_currentFade - m_targetFade) < FLT_EPSILON) {
+			m_currentFade = m_targetFade;
+		}
+		else {
+			if (m_currentFade < m_targetFade) {
+				m_currentFade = std::clamp(m_currentFade + increment, 0.0f, 100.0f);
+			}
+			else {
+				m_currentFade = std::clamp(m_currentFade - increment, 0.0f, 100.0f);
+			}
+		}
+	}
+}
+
+void Game::CheckFont() {
+	if (m_window->ShouldResizeRenderer()) {
+		m_renderer->Resize();
+
+		FontResources::DoRebuild();
+		m_window->HandleResizeRenderer();
+	}
+
+	if (FontResources::ShouldRebuild()) {
+		FontResources::PreloadFontCaches();
+	}
 }
 
 void Game::Stop() {

@@ -85,6 +85,7 @@ public:
 
 	float InitialSvMultiplier;
 	int m_keyCount;
+	int m_level = 0;
 	float BaseBPM;
 	
 	int GetO2JamId();

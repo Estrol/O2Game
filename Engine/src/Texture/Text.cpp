@@ -99,6 +99,13 @@ void Text::InternalDraw(std::u8string& formated) {
     xPos *= window->GetWidthScale();
 	yPos *= window->GetHeightScale();
 
+    ImVec4 clipRect = ImVec4(
+        Clip.left * window->GetWidthScale(),
+        Clip.top * window->GetHeightScale(),
+        (Clip.left + Clip.right) * window->GetWidthScale(),
+        (Clip.top + Clip.bottom) * window->GetHeightScale()
+    );
+
     float originScale = (window->GetBufferWidth() + window->GetBufferHeight()) / 15.6f;
 	float targetScale = (window->GetWidth() + window->GetHeight()) / 15.6f;
 
@@ -128,13 +135,18 @@ void Text::InternalDraw(std::u8string& formated) {
 	
     ImRotationStart();
 
+    ImGui::PushFont(FontResources::GetFont());
     draw_list->AddText(
         NULL, 
         Size * scale,
         ImVec2(xPos, yPos) - MathUtil::ScaleVec2(0, 2.5),
         ImColor(255 * red, 255 * green, 255 * blue), 
-        (const char*)formated.c_str()
+        (const char*)formated.c_str(),
+        NULL,
+        0.0f,
+        &clipRect
     );
+    ImGui::PopFont();
 
     ImRotationEnd(radians, ImRotationCenter());
     ImguiUtil::EndText();

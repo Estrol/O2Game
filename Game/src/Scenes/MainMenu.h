@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene.h"
 #include "Texture/Texture2D.h"
+#include "../Resources/SkinConfig.hpp"
 
 class MainMenu : public Scene {
 public:
@@ -14,4 +15,6 @@ public:
 private:
     std::unique_ptr<Texture2D> m_background;
     int m_targetScene = -1;
+
+    SkinConfig m_skin;
 };

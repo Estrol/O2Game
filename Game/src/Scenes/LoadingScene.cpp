@@ -31,6 +31,7 @@ void LoadingScene::Update(double delta) {
 	int songId = EnvironmentSetup::GetInt("Key");
 	int diffIndex = EnvironmentSetup::GetInt("Difficulty");
 	bool IsO2Jam = false;
+	bool IsFile = false;
 
 	Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
 	if (chart == nullptr || chart->GetO2JamId() != songId) {
@@ -43,6 +44,7 @@ void LoadingScene::Update(double delta) {
 			}
 			else {
 				file = EnvironmentSetup::GetPath("FILE");
+				IsFile = true;
 
 				auto autoplay = EnvironmentSetup::GetInt("ParameterAutoplay");
 				auto rate = EnvironmentSetup::Get("ParameterRate");
@@ -103,7 +105,7 @@ void LoadingScene::Update(double delta) {
 	std::filesystem::path dirPath = chart->m_beatmapDirectory;
 	dirPath /= chart->m_backgroundFile;
 
-	if (IsO2Jam) {
+	if (IsO2Jam && !IsFile) {
 		auto item = GameDatabase::GetInstance()->Find(songId);
 
 		bool hashFound = strcmp(item.Hash[diffIndex], chart->MD5Hash.c_str()) == 0;
@@ -128,8 +130,7 @@ void LoadingScene::Update(double delta) {
 			}
 
 			if (m_background == nullptr) {
-				auto SkinName = Configuration::Load("Game", "Skin");
-				auto skinPath = Configuration::Skin_GetPath(SkinName);
+				auto skinPath = Configuration::Skin_GetPath();
 				auto noImage = skinPath / "Playing" / "NoImage.png";
 
 				if (std::filesystem::exists(noImage)) {
@@ -145,7 +146,7 @@ void LoadingScene::Update(double delta) {
 	}
 
 	if (m_counter > 2.5 && chart != nullptr) {
-		SceneManager::ChangeScene(GameScene::GAME);
+		SceneManager::ChangeScene(GameScene::GAMEPLAY);
 	}
 	else {
 		if (fucked) {

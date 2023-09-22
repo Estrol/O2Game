@@ -89,6 +89,9 @@ void GameWindow::ResizeWindow(int width, int height) {
 		is_fullscreen = true;
 	}
 
+	int lastWidth = m_width;
+	int lastHeight = m_height;
+
 	m_width = width;
 	m_height = height;
 
@@ -100,14 +103,15 @@ void GameWindow::ResizeWindow(int width, int height) {
 		SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	}
 
-	m_resizeRenderer = true;
+	m_resizeRenderer = lastWidth != m_width || lastHeight != m_height;
 }
 
 void GameWindow::ResizeBuffer(int width, int height) {
+	int lastWidth = m_bufferWidth;
+	int lastHeight = m_bufferHeight;
+
 	m_bufferWidth = width;
 	m_bufferHeight = height;
-
-	m_resizeRenderer = true;
 }
 
 bool GameWindow::ShouldResizeRenderer() {
@@ -122,48 +126,25 @@ SDL_Window* GameWindow::GetWindow() const {
 	return m_window;
 }
 
-std::wstring UTF8_to_wchar(const char8_t* in) {
-	std::wstring out;
-	unsigned int codepoint;
-	while (*in != 0)
-	{
-		unsigned char ch = static_cast<unsigned char>(*in);
-		if (ch <= 0x7f)
-			codepoint = ch;
-		else if (ch <= 0xbf)
-			codepoint = (codepoint << 6) | (ch & 0x3f);
-		else if (ch <= 0xdf)
-			codepoint = ch & 0x1f;
-		else if (ch <= 0xef)
-			codepoint = ch & 0x0f;
-		else
-			codepoint = ch & 0x07;
-		++in;
-		if (((*in & 0xc0) != 0x80) && (codepoint <= 0x10ffff))
-		{
-			if (sizeof(wchar_t) > 2)
-				out.append(1, static_cast<wchar_t>(codepoint));
-			else if (codepoint > 0xffff)
-			{
-				codepoint -= 0x10000;
-				out.append(1, static_cast<wchar_t>(0xd800 + (codepoint >> 10)));
-				out.append(1, static_cast<wchar_t>(0xdc00 + (codepoint & 0x03ff)));
-			}
-			else if (codepoint < 0xd800 || codepoint >= 0xe000)
-				out.append(1, static_cast<wchar_t>(codepoint));
-		}
-	}
-	return out;
-}
-
 void GameWindow::SetWindowTitle(std::string& title) {
 	m_mainTitle = title;
+
+	if (m_subTitle.size()) {
+		title += " - " + m_subTitle;
+	}
 
 	SDL_SetWindowTitle(m_window, title.c_str());
 }
 
 void GameWindow::SetWindowSubTitle(std::string& subTitle) {
 	m_subTitle = subTitle;
+	std::string title = m_mainTitle;
+
+	if (m_mainTitle.size()) {
+		title += " - " + subTitle;
+	}
+
+	SDL_SetWindowTitle(m_window, title.c_str());
 }
 
 int GameWindow::GetWidth() const {

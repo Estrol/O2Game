@@ -19,6 +19,8 @@
 #include <chrono>
 #include <codecvt>
 
+#define MAX_BUFFER_TXT_SIZE 256
+
 struct ManiaKeyState {
 	Keys key;
 	bool isPressed;
@@ -205,45 +207,15 @@ bool RhythmEngine::Load(Chart* chart) {
 	}
 
 	m_title = chart->m_title;
+	char buffer[MAX_BUFFER_TXT_SIZE];
+	sprintf(buffer, "Lv.%d %s", chart->m_level, (const char*)chart->m_title.c_str());
+
+	m_title = std::u8string(buffer, buffer + strlen(buffer));
 	if (m_rate != 1.0) {
-#if defined(WIN32)
-		int widelen = MultiByteToWideChar(CP_UTF8, 0, (char*)m_title.c_str(), -1, NULL, 0);
-		wchar_t* widestr = new wchar_t[widelen];
-		MultiByteToWideChar(CP_UTF8, 0, (char*)m_title.c_str(), -1, widestr, widelen);
+		memset(buffer, 0, MAX_BUFFER_TXT_SIZE);
+		sprintf(buffer, "[%.2f] %s", m_rate, (const char*)chart->m_title.c_str());
 
-		// format [%.2f] <title>
-		wchar_t buffer[256];
-		swprintf_s(buffer, L"[%.2fx] %s", m_rate, widestr);
-
-		// convert back to utf8
-		int mblen = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
-		char8_t* mbstr = new char8_t[mblen];
-
-		WideCharToMultiByte(CP_UTF8, 0, buffer, -1, (char*)mbstr, mblen, NULL, NULL);
-
-		m_title = mbstr;
-		delete[] widestr;
-		delete[] mbstr;
-#elif defined(__linux__)
-		// convert to wchar_t
-		int widelen = mbstowcs(NULL, (const char*)m_title.c_str(), 0);
-		wchar_t* widestr = new wchar_t[widelen];
-		mbstowcs(widestr, (const char*)m_title.c_str(), widelen);
-
-		// format [%.2f] <title>
-		wchar_t buffer[256];
-		swprintf(buffer, 256, L"[%.2fx] %s", m_rate, widestr);
-
-		// convert back to utf8
-		int mblen = wcstombs(NULL, buffer, 0);
-		char8_t* mbstr = new char8_t[mblen];
-
-		wcstombs((char*)mbstr, buffer, mblen);
-
-		m_title = mbstr;
-		delete[] widestr;
-		delete[] mbstr;
-#endif
+		m_title = std::u8string(buffer, buffer + strlen(buffer));
 	}
 
 	m_beatmapOffset = chart->m_bpms[0].StartTime;
@@ -252,8 +224,9 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_currentBPM = m_baseBPM;
 	m_currentSVMultiplier = chart->InitialSvMultiplier;
 
+	bool isPitch = Configuration::Load("Game", "AudioPitch") == "1";
 	GameAudioSampleCache::SetRate(m_rate);
-	GameAudioSampleCache::Load(chart, Configuration::Load("Game", "AudioPitch") == "1");
+	GameAudioSampleCache::Load(chart, isPitch);
 	
 	CreateTimingMarkers();
 	UpdateVirtualResolution();
@@ -266,7 +239,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		desc.Lane = note.LaneIndex;
 		desc.Type = note.Type;
 		desc.EndTime = -1;
-		desc.InitialTrackPosition = m_timings->GetOffsetAt(note.StartTime); //GetPositionFromOffset(note.StartTime);
+		desc.InitialTrackPosition = m_timings->GetOffsetAt(note.StartTime);
 		desc.EndTrackPosition = -1;
 		desc.KeysoundIndex = note.Keysound;
 		desc.StartBPM = m_timings->GetBPMAt(note.StartTime);
@@ -275,7 +248,7 @@ bool RhythmEngine::Load(Chart* chart) {
 
 		if (note.Type == NoteType::HOLD) {
 			desc.EndTime = note.EndTime;
-			desc.EndTrackPosition = m_timings->GetOffsetAt(note.EndTime); //GetPositionFromOffset(note.EndTime);
+			desc.EndTrackPosition = m_timings->GetOffsetAt(note.EndTime);
 			desc.EndBPM = m_timings->GetBPMAt(note.EndTime);
 		}
 

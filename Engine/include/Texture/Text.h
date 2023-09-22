@@ -3,6 +3,7 @@
 #include "UDim2.h"
 #include "Color3.h"
 #include "Vector2.h"
+#include "Rendering/WindowsTypes.h"
 
 struct ImVec2;
 
@@ -19,6 +20,7 @@ public:
     int CalculateSize(std::u8string u);
 
     bool DrawOverEverything;
+    Rect Clip;
 
     float Transparency;
     float Rotation;

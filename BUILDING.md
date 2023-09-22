@@ -13,18 +13,19 @@ To able build this project you need to have installed:
 ### Windows
 - Visual Studio 2022
 - CMake 3.21.3
-- Vulkan SDK
+- Vulkan SDK (1.2.198.1)
 - Vcpkg
 
 ### Linux
 - GCC 10.3.0
 - CMake 3.21.3
-- Vulkan SDK
+- Vulkan SDK (1.2.198.1)
 - Vcpkg
 
 Make sure you have the requirements installed and configured correctly.
 - set `VCPKG_ROOT` environment variable to your vcpkg root directory
 - If you using Windows then set `VULKAN_SDK` environment variable to your Vulkan SDK directory
+- It's recommended to use Vulkan 1.2.198.1 to support most system
 
 ## Building
 To build the project, follow these steps:

@@ -3,10 +3,13 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/Engine/include",
+                "${workspaceFolder}/Game/src",
+                "${workspaceFolder}/build/vcpkg_installed/x64-windows/include",
+                "${workspaceFolder}/build/vcpkg_installed/x86-windows/include",
                 "${vcpkgRoot}/x64-windows/include",
                 "${vcpkgRoot}/x86-windows/include",
-                "${VULKAN_SDK}"
+                "${VULKAN_SDK}/include"
             ],
             "defines": [
                 "_DEBUG",

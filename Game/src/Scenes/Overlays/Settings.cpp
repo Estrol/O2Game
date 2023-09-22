@@ -18,6 +18,14 @@ SettingsOverlay::SettingsOverlay() {
     m_position = MathUtil::ScaleVec2(450, 450);
     m_size = ImVec2(0, 0);
 
+    for (auto& dir : std::filesystem::directory_iterator(std::filesystem::current_path() / "Skins")) {
+        if (dir.is_directory()) {
+            if (std::filesystem::exists(dir.path() / "GameSkin.ini")) {
+                skins.push_back(dir.path().filename().string());
+            }
+        }
+    }
+
     LoadConfiguration();
 }
 
@@ -307,6 +315,27 @@ void SettingsOverlay::Render(double delta) {
                         ImGui::EndTabItem();
                     }
 
+                    if (ImGui::BeginTabItem("Skins")) {
+                        ImGui::Text("Current selected skin: ");
+                        if (ImGui::BeginCombo("#SkinsComboBox", currentSkin.c_str())) {
+                            for (int i = 0; i < skins.size(); i++) {
+                                bool isSelected = (currentSkin == skins[i]);
+
+                                if (ImGui::Selectable(skins[i].c_str(), &isSelected)) {
+                                    currentSkin = skins[i];
+                                }
+
+                                if (isSelected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+
+                            ImGui::EndCombo();
+                        }
+
+                        ImGui::EndTabItem();
+                    }
+
                     ImGui::EndTabBar();
                 }
 
@@ -411,12 +440,14 @@ void SettingsOverlay::LoadConfiguration() {
         currentGuideLineIndex = 2;
     }
 
-    auto frame = m_fps[currentFPSIndex];
-    if (frame == m_fps[13]) {
-        frame = "9999";
+    auto fps = m_fps[currentFPSIndex];
+    if (fps == *(m_fps.end() - 1)) {
+        fps = "9999";
     }
 
-    SceneManager::GetInstance()->SetFrameLimit(std::atof(frame.c_str()));
+    SceneManager::GetInstance()->SetFrameLimit(std::atof(fps.c_str()));
+    currentSkin = Configuration::Load("Game", "Skin");
+    PreloadSkin();
 }
 
 void SettingsOverlay::SaveConfiguration() {
@@ -432,4 +463,26 @@ void SettingsOverlay::SaveConfiguration() {
     }
 
     SceneManager::GetInstance()->SetFrameLimit(std::atof(frame.c_str()));
+
+    if (currentSkin.empty()) {
+        throw std::runtime_error("SKIN_NAME Undefined!");
+    }
+
+    Configuration::Set("Game", "Skin", currentSkin);
+    PreloadSkin();
+}
+
+void SettingsOverlay::PreloadSkin() {
+    Configuration::Skin_Load(currentSkin);
+
+    std::string resolution = Configuration::Skin_LoadValue("Window", "NativeSize");
+    if (resolution.empty()) {
+        resolution = "800x600";
+    }
+
+    std::vector<std::string> resolutionVec = splitString(resolution, 'x');
+    GameWindow::GetInstance()->ResizeBuffer(
+        std::atoi(resolutionVec[0].c_str()), 
+        std::atoi(resolutionVec[1].c_str())
+    );
 }

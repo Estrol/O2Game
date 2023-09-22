@@ -10,6 +10,9 @@
 #include <iostream>
 #include <exception>
 
+static std::condition_variable m_cv;
+static bool m_ready_change_state = false;
+
 SceneManager::SceneManager() {
 	m_scenes = {};
 	m_overlays = {};
@@ -33,8 +36,7 @@ SceneManager* SceneManager::s_instance = nullptr;
 
 void SceneManager::Update(double delta) {
 	if (m_nextScene != nullptr) {
-		std::lock_guard<std::mutex> lock(m_mutex);
-
+		//std::lock_guard<std::mutex> lock(m_mutex);
 		if (!m_nextScene->Attach()) {
 			MsgBox::ShowOut("EstEngine Error", "Failed to init next scene", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			m_parent->Stop();
@@ -72,7 +74,7 @@ void SceneManager::Update(double delta) {
 	}
 
 	if (m_nextOverlay != nullptr) {
-		std::lock_guard<std::mutex> lock(m_mutex);
+		//std::lock_guard<std::mutex> lock(m_mutex);
 
 		if (!m_nextOverlay->Attach()) {
 			MsgBox::ShowOut("EstEngine Error", "Failed to init next overlay", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
@@ -102,6 +104,7 @@ void SceneManager::Update(double delta) {
 
 void SceneManager::Render(double delta) {
 	m_renderId = std::this_thread::get_id();
+	m_ready_change_state = false;
 
 	if (m_currentScene) m_currentScene->Render(delta);
 	if (m_currentOverlay && !MsgBox::Any()) {
@@ -132,6 +135,11 @@ void SceneManager::Render(double delta) {
 
 			m_currentOverlay = nullptr;
 		}
+	}
+
+	if (m_nextScene != nullptr) {
+		m_ready_change_state = true;
+		m_cv.notify_one();
 	}
 }
 

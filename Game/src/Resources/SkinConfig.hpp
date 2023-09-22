@@ -43,6 +43,7 @@ struct RectInfo {
 
 class SkinConfig {
 public:
+	SkinConfig() = default;
 	SkinConfig(std::string filePath, int keyCount);
 	SkinConfig(std::filesystem::path path, int keyCount);
 	~SkinConfig();

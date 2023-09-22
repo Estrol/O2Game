@@ -27,6 +27,9 @@
     },
     {
       "name": "sqlite3"
+    },
+    {
+      "name": "libiconv"
     }
   ],
   "overrides": [

@@ -14,7 +14,6 @@ add_executable(Game
     "src/Data/OJM.cpp"
     "src/Data/OJN.cpp"
     "src/Data/osu.cpp"
-    "src/Data/Util/md5.cpp"
     "src/Data/Util/Util.cpp"
 
     # Engine
@@ -55,6 +54,7 @@ add_executable(Game
     "src/Scenes/ResultScene.cpp"
     "src/Scenes/SongSelectScene.cpp"
     "src/Scenes/MainMenu.cpp"
+    "src/Scenes/ReloadScene.cpp"
 
     # Overlays
     "src/Scenes/Overlays/Settings.cpp"

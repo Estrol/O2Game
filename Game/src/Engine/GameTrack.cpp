@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <mutex>
 
+// Max Object per lane
+constexpr int kMaxObjectCount = 500;
+
 GameTrack::GameTrack(RhythmEngine* engine, int laneIndex, int offset) {
 	m_engine = engine;
 	m_laneIndex = laneIndex;
@@ -77,12 +80,18 @@ void GameTrack::Update(double delta) {
 }
 
 void GameTrack::Render(double delta) {
+	int ObjectCount = 0;
+
 	for (auto& note : m_notes) {
-		note->Render(delta);
+		if (++ObjectCount < kMaxObjectCount) {
+			note->Render(delta);
+		}
 	}
 
 	for (auto& note : m_inactive_notes) {
-		note->Render(delta);
+		if (++ObjectCount < kMaxObjectCount) {
+			note->Render(delta);
+		}
 	}
 }
 

@@ -14,23 +14,6 @@ endif()
 message("Platform: ${O2GAME_PLATFORM} - ${CMAKE_SIZEOF_VOID_P}")
 
 set(CMAKE_CXX_STANDARD 20)
-# if(MSVC)
-#     add_compile_options(/utf-8 /D_CRT_SECURE_NO_WARNINGS)
-# else()
-# 	set(CMAKE_C_FLAGS -m64)
-# 	set(CMAKE_CXX_FLAGS -m64)
-# 	add_definitions(-D__cpp_lib_char8_t)
-# 	add_definitions(-D__cpp_lib_clamp)
-#     add_compile_options(-finput-charset=UTF-8)
-# endif()
-
-# if (CMAKE_BUILD_TYPE MATCHES Debug)
-#     set(CMAKE_C_FLAGS_DEBUG "-g")
-#     set(CMAKE_CXX_FLAGS_DEBUG "-g")
-# elseif (CMAKE_BUILD_TYPE MATCHES Release)
-#     set(CMAKE_C_FLAGS_RELEASE "-O3")
-#     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-# endif()
 
 if (MSVC)
     add_compile_options(/utf-8 /D_CRT_SECURE_NO_WARNINGS)
@@ -45,20 +28,20 @@ endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     if (MSVC)
-        set(CMAKE_C_FLAGS_DEBUG "/Od /Zi")
-        set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi")
+        set(CMAKE_C_FLAGS_DEBUG "/Od /Zi /DVK_NO_PROTOTYPES")
+        set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /DVK_NO_PROTOTYPES")
     else()
-        set(CMAKE_C_FLAGS_DEBUG "-g")
-        set(CMAKE_CXX_FLAGS_DEBUG "-g")
+        set(CMAKE_C_FLAGS_DEBUG "-g -DVK_NO_PROTOTYPES")
+        set(CMAKE_CXX_FLAGS_DEBUG "-g -DVK_NO_PROTOTYPES")
     endif()
 elseif (CMAKE_BUILD_TYPE MATCHES Release)
     if (MSVC)
-        set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL")
-        set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL")
+        set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL /DVK_NO_PROTOTYPES")
+        set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Oi /Ot /GL /DVK_NO_PROTOTYPES")
         set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
     else()
-        set(CMAKE_C_FLAGS_RELEASE "-O3")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+        set(CMAKE_C_FLAGS_RELEASE "-O3 -DVK_NO_PROTOTYPES")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DVK_NO_PROTOTYPES")
     endif()
 endif()
 
@@ -77,6 +60,7 @@ find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(BZip2 REQUIRED)
+find_package(Iconv REQUIRED)
 find_package(Vulkan)
 
 if (NOT DEFINED Vulkan_INCLUDE_DIRS)
@@ -93,7 +77,8 @@ include_directories(
 	third-party/headers 
 	${Vulkan_INCLUDE_DIRS} 
 	${SDL2_INCLUDE_DIRS}
-	${GLM_INCLUDE_DIRS}
+	${GLM_INCLUDE_DIRS} 
+    ${Iconv_INCLUDE_DIRS} 
 )
 
 # third-party libraries
@@ -148,8 +133,13 @@ else()
     set(LIB_BZIP2 ${BZIP2_LIBRARIES})
 endif()
 
-set(O2GAME_LIBRARIES 
-    ${Vulkan_LIBRARIES} 
+if (WIN32)
+    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+elseif (UNIX AND NOT APPLE)
+    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_XCB_KHR)
+endif()
+
+set(O2GAME_LIBRARIES
     ${SDL2_LIBRARIES} 
     ${SDL2_IMAGE_LIBRARIES} 
     ${SQLite3_LIBRARIES} 
@@ -158,6 +148,7 @@ set(O2GAME_LIBRARIES
     ${LIB_JPEG} 
     ${LIB_BZIP2} 
     ${THIRD_PARTY_LIBS} 
+    ${Iconv_LIBRARIES}
 )
 
 message("Libraries: ${O2GAME_LIBRARIES}")

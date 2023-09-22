@@ -33,7 +33,7 @@ bool Converters::SaveTo(O2::OJN* ojn, const char* path) {
 		fs << "[Metadata]\n";
 		fs << "Title: ";
 
-		auto title = CodepageToUtf8(ojn->Header.title, sizeof(ojn->Header.title), 949);
+		auto title = CodepageToUtf8(ojn->Header.title, sizeof(ojn->Header.title), "euc-kr");
 		fs.write((char*)title.c_str(), title.size());
 
 		fs << "\n";
@@ -45,7 +45,7 @@ bool Converters::SaveTo(O2::OJN* ojn, const char* path) {
 
 		fs << "Artist: ";
 
-		auto artist = CodepageToUtf8(ojn->Header.artist, sizeof(ojn->Header.artist), 949);
+		auto artist = CodepageToUtf8(ojn->Header.artist, sizeof(ojn->Header.artist), "euc-kr");
 		fs.write((char*)artist.c_str(), artist.size());
 
 		fs << "\n";
@@ -57,7 +57,7 @@ bool Converters::SaveTo(O2::OJN* ojn, const char* path) {
 
 		fs << "Creator: ";
 
-		auto creator = CodepageToUtf8(ojn->Header.noter, sizeof(ojn->Header.noter), 949);
+		auto creator = CodepageToUtf8(ojn->Header.noter, sizeof(ojn->Header.noter), "euc-kr");
 		fs.write((char*)creator.c_str(), creator.size());
 
 		fs << "\n";

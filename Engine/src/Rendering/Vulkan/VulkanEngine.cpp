@@ -15,7 +15,7 @@
 #include "Rendering/Vulkan/Texture2DVulkan.h"
 
 #if _DEBUG
-constexpr bool bUseValidationLayers = true;
+constexpr bool bUseValidationLayers = false;
 #else
 constexpr bool bUseValidationLayers = false;
 #endif
@@ -89,16 +89,6 @@ void VulkanEngine::init(SDL_Window* window, int width, int height) {
 void VulkanEngine::cleanup() {
 	if (_isInitialized) {
 		vkDeviceWaitIdle(_device);
-		
-		if (_vertexBuffer != VK_NULL_HANDLE) {
-			vkDestroyBuffer(_device, _vertexBuffer, nullptr);
-			vkFreeMemory(_device, _vertexBufferMemory, nullptr);
-		}
-
-		if (_indexBuffer != VK_NULL_HANDLE) {
-			vkDestroyBuffer(_device, _indexBuffer, nullptr);
-			vkFreeMemory(_device, _indexBufferMemory, nullptr);
-		}
 
 		vkTexture::Cleanup();
 
@@ -338,6 +328,10 @@ FrameData& VulkanEngine::get_last_frame() {
 }
 
 void VulkanEngine::init_vulkan() {
+	if (volkInitialize() != VK_SUCCESS) {
+		throw std::runtime_error("Vulkan not supported on this system!");
+	}
+
 	vkb::InstanceBuilder builder;
 
 	auto inst_ret = builder.set_app_name("EstEngine")
@@ -351,6 +345,8 @@ void VulkanEngine::init_vulkan() {
 	_instance = vkb_inst.instance;
 	_debug_messenger = vkb_inst.debug_messenger;
 	_allocCallback = vkb_inst.allocation_callbacks;
+
+	volkLoadInstance(_instance);
 
 	if (!SDL_Vulkan_CreateSurface(_window, _instance, &_surface)) {
 		throw SDLException();
@@ -373,11 +369,16 @@ void VulkanEngine::init_vulkan() {
 	_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 
 	_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+
+	VmaVulkanFunctions vma_vulkan_func{};
+	vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	vma_vulkan_func.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
 	
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice = _chosenGPU;
 	allocatorInfo.device = _device;
 	allocatorInfo.instance = _instance;
+	allocatorInfo.pVulkanFunctions = &vma_vulkan_func;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 
 	_mainDeletionQueue.push_function([&]() {
@@ -406,7 +407,7 @@ bool VulkanEngine::init_swapchain() {
 		swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR);
 	}
 	else {
-		swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_RELAXED_KHR);
+		swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR);
 	}
 
 	vkb::Result vkbSwapchainResult = swapchainBuilder.build();
@@ -599,6 +600,76 @@ void VulkanEngine::init_commands() {
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_uploadContext._commandPool, 1);
 
 	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_uploadContext._commandBuffer));
+
+	const int MAX_OBJECTS = 50000;
+	_maxVertexBufferSize = sizeof(ImDrawVert) * MAX_OBJECTS;
+	_maxIndexBufferSize = sizeof(int) * MAX_OBJECTS;
+
+	{
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = _maxVertexBufferSize;
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		vkCreateBuffer(_device, &bufferInfo, nullptr, &_vertexBuffer);
+		
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(_device, _vertexBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = vkTexture::FindMemoryType(
+			memRequirements.memoryTypeBits,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		);
+
+		vkAllocateMemory(_device, &allocInfo, nullptr, &_vertexBufferMemory);
+		
+		vkBindBufferMemory(_device, _vertexBuffer, _vertexBufferMemory, 0);
+	}
+
+	{
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = _maxIndexBufferSize;
+		bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		vkCreateBuffer(_device, &bufferInfo, nullptr, &_indexBuffer);
+
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(_device, _indexBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = vkTexture::FindMemoryType(
+			memRequirements.memoryTypeBits,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		);
+
+		vkAllocateMemory(_device, &allocInfo, nullptr, &_indexBufferMemory);
+		
+		vkBindBufferMemory(_device, _indexBuffer, _indexBufferMemory, 0);
+	}
+
+	_mainDeletionQueue.push_function([=]() {
+		if (_vertexBuffer != VK_NULL_HANDLE) {
+			vkDestroyBuffer(_device, _vertexBuffer, nullptr);
+			vkFreeMemory(_device, _vertexBufferMemory, nullptr);
+			_vertexBuffer = VK_NULL_HANDLE;
+			_vertexBufferMemory = VK_NULL_HANDLE;
+		}
+
+		if (_indexBuffer != VK_NULL_HANDLE) {
+			vkDestroyBuffer(_device, _indexBuffer, nullptr);
+			vkFreeMemory(_device, _indexBufferMemory, nullptr);
+			_indexBuffer = VK_NULL_HANDLE;
+			_indexBufferMemory = VK_NULL_HANDLE;
+		}
+	});
 }
 
 void VulkanEngine::init_sync_structures() {
@@ -679,78 +750,21 @@ void VulkanEngine::flush_queue() {
 		indices_size += info.indices.size() * sizeof(info.indices[0]);
 	}
 
-	if (_vertexBuffer != VK_NULL_HANDLE && _vertexBufferSize != vertex_size) {
-		vkDestroyBuffer(_device, _vertexBuffer, nullptr);
-		vkFreeMemory(_device, _vertexBufferMemory, nullptr);
-		_vertexBuffer = VK_NULL_HANDLE;
-		_vertexBufferMemory = VK_NULL_HANDLE;
-	}
-
-	if (_indexBuffer != VK_NULL_HANDLE && _indexBufferSize != indices_size) {
-		vkDestroyBuffer(_device, _indexBuffer, nullptr);
-		vkFreeMemory(_device, _indexBufferMemory, nullptr);
-		_indexBuffer = VK_NULL_HANDLE;
-		_indexBufferMemory = VK_NULL_HANDLE;
-	}
-
-	if (_vertexBuffer == VK_NULL_HANDLE) {
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = vertex_size;
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		vkCreateBuffer(_device, &bufferInfo, nullptr, &_vertexBuffer);
-		
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(_device, _vertexBuffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = vkTexture::FindMemoryType(
-			memRequirements.memoryTypeBits,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		);
-
-		vkAllocateMemory(_device, &allocInfo, nullptr, &_vertexBufferMemory);
-		
-		vkBindBufferMemory(_device, _vertexBuffer, _vertexBufferMemory, 0);
-	}
-
-	if (_indexBuffer == VK_NULL_HANDLE) {
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = indices_size;
-		bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		vkCreateBuffer(_device, &bufferInfo, nullptr, &_indexBuffer);
-
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(_device, _indexBuffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = vkTexture::FindMemoryType(
-			memRequirements.memoryTypeBits,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		);
-
-		vkAllocateMemory(_device, &allocInfo, nullptr, &_indexBufferMemory);
-		
-		vkBindBufferMemory(_device, _indexBuffer, _indexBufferMemory, 0);
-	}
+	vertex_size = std::clamp((uint64_t)vertex_size, (uint64_t)0, _maxVertexBufferSize);
+	indices_size = std::clamp((uint64_t)indices_size, (uint64_t)0, _maxIndexBufferSize);
 	
 	void* data;
-	vkMapMemory(_device, _vertexBufferMemory, 0, vertex_size, 0, &data);
+	VK_CHECK(vkMapMemory(_device, _vertexBufferMemory, 0, vertex_size, 0, &data));
 	
 	void* data2;
-	vkMapMemory(_device, _indexBufferMemory, 0, indices_size, 0, &data2);
+	VK_CHECK(vkMapMemory(_device, _indexBufferMemory, 0, indices_size, 0, &data2));
 
 	VkDeviceSize offset = 0;
 	for (auto& info : _queueInfos) {
+		if (offset >= _maxVertexBufferSize) {
+			continue;
+		}
+
 		memcpy((char*)data + offset, info.vertices.data(), info.vertices.size() * sizeof(info.vertices[0]));
 		offset += info.vertices.size() * sizeof(info.vertices[0]);
 	}
@@ -811,8 +825,6 @@ void VulkanEngine::flush_queue() {
 		currentIndiIndex += (int)info.indices.size();
 	}
 
-	_vertexBufferSize = (int)vertex_size;
-	_indexBufferSize = (int)indices_size;
 	_queueInfos.clear();
 }
 
@@ -1228,20 +1240,6 @@ void VulkanEngine::re_init_swapchains(int width, int height) {
 	// _swapchainImageViews
 	for (int i = 0; i < _swapchainImageViews.size(); i++) {
 		vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
-	}
-
-	if (_vertexBuffer != VK_NULL_HANDLE) {
-		vkDestroyBuffer(_device, _vertexBuffer, nullptr);
-		vkFreeMemory(_device, _vertexBufferMemory, nullptr);
-		_vertexBuffer = VK_NULL_HANDLE;
-		_vertexBufferMemory = VK_NULL_HANDLE;
-	}
-
-	if (_indexBuffer != VK_NULL_HANDLE) {
-		vkDestroyBuffer(_device, _indexBuffer, nullptr);
-		vkFreeMemory(_device, _indexBufferMemory, nullptr);
-		_indexBuffer = VK_NULL_HANDLE;
-		_indexBufferMemory = VK_NULL_HANDLE;
 	}
 
 	bool swapchain_recreated = init_swapchain();

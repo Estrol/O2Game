@@ -96,7 +96,7 @@ int HandleStructualException(int code) {
 #endif
 
 // if not DEBUG
-#if NDEBUG && _WIN32
+#if !defined(_DEBUG) && _WIN32
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
 	const char* retVal = setlocale(LC_ALL, "en_US.UTF-8");
 	if (retVal == nullptr) {
@@ -145,16 +145,18 @@ int main(int argc, char* argv[]) {
 	int ret = 0;
 
 #if _WIN32 & _MSC_VER
-	__try {
-		ret = Run(argc, wargv);
-	}
+	// __try {
+	// 	ret = Run(argc, wargv);
+	// }
 
-	__except (HandleStructualException(GetExceptionCode())) {
-		ret = -1;
-	}
+	// __except (HandleStructualException(GetExceptionCode())) {
+	// 	ret = -1;
+	// }
 #else
 	ret = Run(argc, wargv);
 #endif
+
+	ret = Run(argc, wargv);
 
     for (int i = 0; i < argc; i++) {
         delete[] wargv[i];

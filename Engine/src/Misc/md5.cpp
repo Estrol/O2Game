@@ -3,7 +3,7 @@
  * and modified slightly to be functionally identical but condensed into control structures.
  */
 
-#include "md5.h"
+#include <Misc/md5.h>
 
  /*
   * Constants defined by the MD5 algorithm
@@ -199,6 +199,28 @@ void md5String(char* input, uint8_t* result) {
     MD5Context ctx;
     md5Init(&ctx);
     md5Update(&ctx, (uint8_t*)input, strlen(input));
+    md5Finalize(&ctx);
+
+    memcpy(result, ctx.digest, 16);
+}
+
+void md5Buffer(char* input, size_t input_len, uint8_t* result) {
+    MD5Context ctx;
+    md5Init(&ctx);
+
+    const int maxSize = 1024;
+    int offset = 0;
+
+    while (offset < input_len) {
+        int size = input_len - offset;
+        if (size > maxSize) {
+            size = maxSize;
+        }
+
+        md5Update(&ctx, (uint8_t*)(input + offset), size);
+        offset += size;
+    }
+
     md5Finalize(&ctx);
 
     memcpy(result, ctx.digest, 16);

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
-#include "Util/md5.h"
+#include <Misc/md5.h>
 #include <random>
 #include "Util/Util.hpp"
 #include <cmath>
@@ -308,12 +308,13 @@ Chart::Chart(BMS::BMSFile& file) {
 Chart::Chart(O2::OJN& file, int diffIndex) {
 	auto& diff = file.Difficulties[diffIndex];
 
-	m_title = CodepageToUtf8(file.Header.title, sizeof(file.Header.title), 949);
-	m_artist = CodepageToUtf8(file.Header.artist, sizeof(file.Header.artist), 949);
+	m_title = CodepageToUtf8(file.Header.title, sizeof(file.Header.title), "euc-kr");
+	m_artist = CodepageToUtf8(file.Header.artist, sizeof(file.Header.artist), "euc-kr");
 
 	m_backgroundBuffer = file.BackgroundImage;
 	m_keyCount = 7;
 	m_customMeasures = diff.Measures;
+	m_level = file.Header.level[diffIndex];
 	O2JamId = file.Header.songid;
 
 	double lastTime[7] = {};

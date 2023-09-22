@@ -10,6 +10,7 @@
 #include <SceneManager.h>
 #include "../GameScenes.h"
 #include <Audio/AudioManager.h>
+#include "../Version.h"
 
 MainMenu::MainMenu() {
 
@@ -41,10 +42,10 @@ void MainMenu::Render(double delta) {
         | ImGuiWindowFlags_MenuBar;
 
     int nextScene = -1;
-
     if (ImGui::Begin("###BEGIN", nullptr, flags)) {
         if (ImGui::BeginMenuBar()) {
-            ImGui::Text("Unnamed O2 Clone (Beta 17)");
+            std::string title = std::string(O2GAME_TITLE) + " " + std::string(O2GAME_VERSION);
+            ImGui::Text("%s", title.c_str());
 
             std::string text = "No Account!";
 			auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
@@ -111,7 +112,7 @@ void MainMenu::Render(double delta) {
         switch (nextScene) {
             case 0: {
                 SceneManager::DisplayFade(100, [this]() {
-                    SceneManager::ChangeScene(GameScene::MAINMENU);
+                    SceneManager::ChangeScene(GameScene::SONGSELECT);
                 });
                 break;
             }
@@ -144,10 +145,11 @@ void MainMenu::Render(double delta) {
 }
 
 bool MainMenu::Attach() {
+    m_skin = SkinConfig(Configuration::Skin_GetPath() / "MainMenu" / "MainMenu.ini", -1);
+
     auto window = GameWindow::GetInstance();
 
-    auto SkinName = Configuration::Load("Game", "Skin");
-    auto path = Configuration::Skin_GetPath(SkinName);
+    auto path = Configuration::Skin_GetPath();
     auto background_path = path / "Menu" / "MenuBackground.png";
     auto bgm_path = path / "Audio" / "BGM.ogg";
 
@@ -179,7 +181,7 @@ bool MainMenu::Detach() {
         m_background.reset();
     }
 
-    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
+    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::SONGSELECT) {
         Audio* bgm = AudioManager::GetInstance()->Get("BGM");
 
         if (bgm) {

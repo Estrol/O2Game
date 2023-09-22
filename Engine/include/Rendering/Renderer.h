@@ -1,6 +1,6 @@
 #pragma once
 #include "Window.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #undef main
 
 #include <unordered_map>
@@ -51,4 +51,5 @@ private:
 	SDL_Renderer* m_renderer = nullptr; /* May be used with DirectX11, DirectX12 or OpenGL */
 	SDL_BlendMode m_blendMode;
 	VulkanEngine* m_vulkan = nullptr;
+	GameWindow* m_window = nullptr;
 };

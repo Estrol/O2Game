@@ -1,4 +1,4 @@
-#include "EditorScene.hpp"
+#include "EditorScene.h"
 
 #include "MsgBox.h"
 #include "SceneManager.h"
@@ -91,7 +91,7 @@ void EditorScene::Update(double delta) {
 		StopSample();
 
 		SceneManager::DisplayFade(100, [] {
-			SceneManager::ChangeScene(GameScene::MAINMENU2);
+			SceneManager::ChangeScene(SceneManager::GetInstance()->GetLastSceneIndex());
 		});
 	}
 }

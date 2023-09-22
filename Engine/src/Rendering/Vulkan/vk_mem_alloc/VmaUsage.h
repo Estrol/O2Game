@@ -34,7 +34,7 @@
 
 #else  // #ifdef _WIN32
 
-#include <vulkan/vulkan.h>
+#include <Rendering/Vulkan/volk/volk.h>
 
 #endif  // #ifdef _WIN32
 

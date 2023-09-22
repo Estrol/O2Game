@@ -29,6 +29,7 @@ public:
 
     void Insert(DB_MusicItem& item);
     DB_MusicItem Find(int id);
+	DB_MusicItem Random();
 
     std::vector<DB_MusicItem> FindAll();
 	std::vector<DB_MusicItem> FindQuery(std::string query);

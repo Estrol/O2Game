@@ -29,6 +29,19 @@
 static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
+void IMGUI_TextAligment(const char* text, float alignment = 0.0f) {
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    float size = ImGui::CalcTextSize(text).x + style.FramePadding.x * 2.0f;
+    float avail = ImGui::GetContentRegionAvail().x;
+
+    float off = (avail - size) * alignment;
+    if (off > 0.0f)
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+    return ImGui::Text("%s", text);
+}
+
 void IMGUI_TextBackground(ImVec4 bgColor, ImVec2 size, const char* format, ...) {
     char buf[1024];
     {
@@ -89,22 +102,18 @@ SongSelectScene::~SongSelectScene() {
 void SongSelectScene::Render(double delta) {
     ImguiUtil::NewFrame();
 
-    auto music = GameDatabase::GetInstance();
     auto window = GameWindow::GetInstance();
 	
-    bool bPlay = false;
-    bool bExitPopup = false;
-    bool bOptionPopup = false;
-    bool bSelectNewSong = false;
-    bool bOpenSongContext = false;
-    bool bOpenEditor = false;
-    bool bOpenRearrange = false;
-    bool bScaleOutput = window->IsScaleOutput();
-
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    bPlay = false;
+    bExitPopup = false;
+    bOptionPopup = false;
+    bSelectNewSong = false;
+    bOpenSongContext = false;
+    bOpenEditor = false;
+    bOpenRearrange = false;
+    bScaleOutput = window->IsScaleOutput();
 
     auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
-
     if (m_songBackground) {
         m_songBackground->Draw();
     }
@@ -114,6 +123,7 @@ void SongSelectScene::Render(double delta) {
         }
     }
 
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
 
     ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0f, 0.00000001f, 1.0f);
@@ -141,7 +151,7 @@ void SongSelectScene::Render(double delta) {
 
             ImGuiIO& io = ImGui::GetIO();
 
-            ImGui::Text("Song Select");
+            ImGui::Text("Song Selection....");
 
             std::string text = "No Account!";
 			auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
@@ -151,289 +161,18 @@ void SongSelectScene::Render(double delta) {
 
             ImGui::EndMenuBar();
         }
+
+        switch (scene_index) {
+            case 0: {
+                OnGameSelectMusic(delta);
+                break;
+            }
+            case 1: {
+                OnGameLoadMusic(delta);
+                break;
+            }
+        }
 	
-        // create child window
-        if (ImGui::BeginChild("#Container1", MathUtil::ScaleVec2(ImVec2(200, 500)))) {
-            if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(ImVec2(200, 200)), true)) {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
-
-                DB_MusicItem item = {};
-                if (index != -1) {
-                    auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& item) {
-                        return item.Id == index;
-                    });
-
-                    if (it != m_musicList.end()) {
-                        item = *it;
-                    }
-                }
-
-                ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-
-                ImGui::Text("Title\r");
-                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
-
-                ImGui::Text("Artist\r");
-                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
-
-                ImGui::Text("Notecharter\r");
-                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
-
-                ImGui::Text("Note count\r");
-
-                int difficulty = EnvironmentSetup::GetInt("Difficulty");
-                int count = item.Id == -1 ? 0 : item.MaxNotes[difficulty];
-                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%d", count);
-
-                ImGui::Text("BPM\r");
-                float bpm = item.Id == -1 ? 0.0f : item.BPM;
-                IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%.2f", bpm);
-
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-
-                ImGui::EndChild();
-            }
-
-            if (ImGui::BeginChild("#test2", MathUtil::ScaleVec2(ImVec2(200, 290)), true)) {
-                int currentDifficulty = EnvironmentSetup::GetInt("Difficulty");
-                std::vector<std::string> difficulty = { "EX", "NX", "HX" };
-
-                ImGui::Text("Note difficulty");
-                for (int i = 0; i < difficulty.size(); i++) {
-                    int index = currentDifficulty;
-
-                    if (index == i) {
-                        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                    }
-
-                    if (ImGui::Button(difficulty[i].c_str(), MathUtil::ScaleVec2(ImVec2(30, 30)))) {
-                        EnvironmentSetup::SetInt("Difficulty", i);
-                    }
-
-                    if (index == i) {
-                        ImGui::PopItemFlag();
-                        ImGui::PopStyleVar();
-                    }
-
-                    if (i != difficulty.size() - 1) {
-                        ImGui::SameLine();
-                    }
-                }
-
-                ImGui::Spacing();
-                ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
-
-                ImGui::Text("Notespeed");
-                {
-                    ImGui::InputFloat("###NoteSpeed", &currentSpeed, 0.05f, 0.1f, "%.2f");
-                    currentSpeed = std::clamp(currentSpeed, 0.1f, 4.0f);
-                }
-
-                ImGui::Text("Rate");
-                {
-                    ImGui::InputFloat("###Rate", &currentRate, 0.05f, 0.1f, "%.2f");
-                    currentRate = std::clamp(currentRate, 0.5f, 2.0f);
-                }
-
-                ImGui::PopItemWidth();
-
-                ImGui::Text("Mods");
-
-                for (int i = 0; i < Mods.size(); i++) {
-                    auto& mod = Mods[i];
-					
-                    int value = EnvironmentSetup::GetInt(mod);
-                    if (value == 1) {
-                        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
-                        ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x * 1.2f, color.y * 1.2f, color.z * 1.2f, 1.0f));
-                    }
-
-                    if (ImGui::Button(mod.c_str(), MathUtil::ScaleVec2(ImVec2(80, 0)))) {
-                        EnvironmentSetup::SetInt(mod, value == 1 ? 0 : 1);
-
-                        switch (i) {
-                            case 0: {
-                                EnvironmentSetup::SetInt(Mods[1], 0);
-                                EnvironmentSetup::SetInt(Mods[2], 0);
-                                break;
-                            }
-
-                            case 1: {
-                                EnvironmentSetup::SetInt(Mods[0], 0);
-                                EnvironmentSetup::SetInt(Mods[2], 0);
-                                break;
-                            }
-
-                            case 2: {
-                                bOpenRearrange = EnvironmentSetup::GetInt(Mods[2]) == 1;
-
-                                EnvironmentSetup::SetInt(Mods[0], 0);
-                                EnvironmentSetup::SetInt(Mods[1], 0);
-                                break;
-                            }
-
-                            case 4: { 
-                                EnvironmentSetup::SetInt(Mods[5], 0);
-                                break;
-                            }
-
-                            case 5: {
-                                EnvironmentSetup::SetInt(Mods[4], 0);
-                                break;
-                            }
-                        }
-                    }
-
-                    if (value == 1) {
-                        ImGui::PopStyleVar();
-                        ImGui::PopStyleColor();
-                    }
-
-                    // NewLine after 2 button on SameLine
-					if ((i + 1) % 2 == 1) {
-						ImGui::SameLine();
-					}
-                }
-				
-
-                ImGui::NewLine();
-
-                ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
-                ImGui::Text("Arena");
-
-                // select
-                int value = EnvironmentSetup::GetInt("Arena");
-                if (ImGui::BeginCombo("###ComboBox1Arena", Arena[value].c_str(), 0)) {
-                    for (int i = 0; i < Arena.size(); i++) {
-                        bool is_selected = i == value;
-                        if (ImGui::Selectable(Arena[i].c_str(), is_selected)) {
-                            EnvironmentSetup::SetInt("Arena", i);
-                        }
-                    }
-
-                    ImGui::EndCombo();
-                }
-                ImGui::PopItemWidth();
-
-                ImGui::EndChild();
-            }
-
-            ImGui::EndChild();
-        }
-
-		// get current cursor pos
-		ImVec2 cursorPos = ImGui::GetCursorPos();
-
-        ImGui::SameLine();
-        auto size = ImVec2(250, 575);
-        auto xPos = MathUtil::ScaleVec2(ImVec2(windowNextSz.x - size.x - 5, 0));
-
-        ImGui::SetCursorPosX(xPos.x);
-
-        const int MAX_ROWS = 18;
-
-        if (ImGui::BeginChild("#SongSelectChild", MathUtil::ScaleVec2(size), true)) {
-            static char search[256] = {};
-            static char previous[256] = {};
-
-            if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(245, 500), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
-                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
-
-                if (m_musicList.empty() || strcmp(search, previous) != 0) {
-                    memset(previous, 0, sizeof(previous));
-
-                    auto lists = music->FindQuery(search);
-                    m_musicList = lists;
-
-                    strcpy(previous, search);
-                }
-
-                for (int i = 0; i < m_musicList.size(); i++) {
-                    DB_MusicItem& item = m_musicList[i];
-
-                    std::string Id = "###Button" + std::to_string(i);
-                    bool isSelected = item.Id == index;
-
-                    ImVec4 previousColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-
-                    if (isSelected) {
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-                    }
-
-                    std::u8string title = std::u8string(item.Title) + std::u8string(Id.begin(), Id.end());
-                    auto cursorPos = ImGui::GetCursorPos();
-
-                    if (ImGui::ButtonEx(
-                        (const char*)title.c_str(), 
-                        MathUtil::ScaleVec2(245, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
-                        
-                        if (item.Id != index) {
-                            index = item.Id;
-
-                            bSelectNewSong = true;
-                        }
-                    }
-
-                    /*
-                        FIXME: Goddamit!, this is hack because for some reason
-                        ImGui::IsMouseClicked won't work if ImGui::ButtonEx handled it.
-                    */
-                    title += u8"_Context";
-                    if (ImGui::BeginPopupContextWindow((const char*)title.c_str())) {
-                        ImGui::CloseCurrentPopup();
-                        ImGui::EndPopup();
-
-                        bOpenSongContext = true;
-                    }
-
-                    if (isSelected) {
-                        ImGui::PopStyleColor();
-                    }
-                }
-                ImGui::PopStyleVar();
-                ImGui::EndChild();
-            }
-
-			// set cursor pos Y at bottom of window
-			ImGui::SetCursorPosY(cursorPos.y - 20);
-            ImGui::Separator();
-
-            if (ImGui::BeginChild("###CHILD", ImVec2(0,0), false, 0)) {
-                ImGui::PushItemWidth(ImGui::GetWindowSize().x);
-                ImGui::Text("Search:");
-                ImGui::InputTextEx("###Search", "Search by Title, Artist, Noter or Id....", search, sizeof(search), ImVec2(0, 0), ImGuiInputTextFlags_AutoSelectAll);
-
-                // if press Enter
-                if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
-                    // set focus to InputText
-                    ImGui::SetKeyboardFocusHere();
-                }
-
-                ImGui::PopItemWidth();
-                ImGui::EndChild();
-            }
-
-            ImGui::EndChild();
-        }
-
-        ImGui::SetCursorPos(cursorPos);
-        //float oldScale = FontResources::GetButtonFont()->Scale;
-
-        //FontResources::GetButtonFont()->Scale = 1.5f;
-        ImGui::PushFont(FontResources::GetButtonFont());
-
-        if (ImGui::Button("Play", MathUtil::ScaleVec2(ImVec2(200, 60)))) {
-            bPlay = true;
-        }
-		
-        // FontResources::GetButtonFont()->Scale = oldScale;
-        ImGui::PopFont();
-
         // fuck it, whatever rebuild the font, this thing is required!
         if (ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_ChildWindow) {
             ImGui::EndChild();
@@ -637,9 +376,345 @@ void SongSelectScene::Render(double delta) {
     if (bExitPopup) {
         SaveConfiguration();
         SceneManager::DisplayFade(100, [this]() {
-            SceneManager::ChangeScene(GameScene::MAINMENU2);
+            SceneManager::ChangeScene(GameScene::MAINMENU);
         });
     }
+}
+
+void SongSelectScene::OnGameLoadMusic(double delta) {
+    auto db = GameDatabase::GetInstance();
+	auto path = db->GetPath();
+    auto& io = ImGui::GetIO();
+
+    m_lastTime += delta;
+	
+    bool bExit = false;
+    if (m_tempMusicIndex < m_tempMusicLists.size()) {
+        if (m_lastTime >= 0.5) {
+            m_lastTime = 0;
+
+            file = m_tempMusicLists[m_tempMusicIndex];
+            MusicListMaker::Insert(file);
+
+            m_tempMusicIndex++;
+        }
+    } else {
+        scene_index = 0;
+        m_tempMusicLists.clear();
+        m_musicList = db->FindAll();
+    }
+
+    if (!file.empty()) {
+        ImGui::OpenPopup("###imgui_ui_load_music");
+    }
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(MathUtil::ScaleVec2(250, 80));
+    if (ImGui::BeginPopupModal("Rebuild database....###imgui_ui_load_music", nullptr, flags)) {
+        ImGui::NewLine();
+
+        std::string text = "Processing file: " + file.filename().string();
+        IMGUI_TextAligment(text.c_str(), 0.5f);
+
+        if (scene_index == 0) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::NewLine();
+        ImGui::EndPopup();
+    }
+}
+
+void SongSelectScene::OnGameSelectMusic(double delta) {
+    auto music = GameDatabase::GetInstance();
+    auto window = GameWindow::GetInstance();
+    auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
+    int currentDifficulty = EnvironmentSetup::GetInt("Difficulty");
+
+    // create child window
+    if (ImGui::BeginChild("#Container1", MathUtil::ScaleVec2(ImVec2(200, 500)))) {
+        if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(ImVec2(200, 200)), true)) {
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+
+            DB_MusicItem item = {};
+            if (index != -1) {
+                auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& item) {
+                    return item.Id == index;
+                });
+
+                if (it != m_musicList.end()) {
+                    item = *it;
+                }
+            }
+
+            ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+
+            ImGui::Text("Title\r");
+            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
+
+            ImGui::Text("Artist\r");
+            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
+
+            ImGui::Text("Notecharter\r");
+            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
+
+            ImGui::Text("Note count\r");
+
+            int difficulty = EnvironmentSetup::GetInt("Difficulty");
+            int count = item.Id == -1 ? 0 : item.MaxNotes[difficulty];
+            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%d", count);
+
+            ImGui::Text("BPM\r");
+            float bpm = item.Id == -1 ? 0.0f : item.BPM;
+            IMGUI_TextBackground(color, MathUtil::ScaleVec2(340, 0), "%.2f", bpm);
+
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
+
+            ImGui::EndChild();
+        }
+
+        if (ImGui::BeginChild("#test2", MathUtil::ScaleVec2(ImVec2(200, 290)), true)) {
+            std::vector<std::string> difficulty = { "EX", "NX", "HX" };
+
+            ImGui::Text("Note difficulty");
+            for (int i = 0; i < difficulty.size(); i++) {
+                int index = currentDifficulty;
+
+                if (index == i) {
+                    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                }
+
+                if (ImGui::Button(difficulty[i].c_str(), MathUtil::ScaleVec2(ImVec2(30, 30)))) {
+                    EnvironmentSetup::SetInt("Difficulty", i);
+                }
+
+                if (index == i) {
+                    ImGui::PopItemFlag();
+                    ImGui::PopStyleVar();
+                }
+
+                if (i != difficulty.size() - 1) {
+                    ImGui::SameLine();
+                }
+            }
+
+            ImGui::Spacing();
+            ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
+
+            ImGui::Text("Notespeed");
+            {
+                ImGui::InputFloat("###NoteSpeed", &currentSpeed, 0.05f, 0.1f, "%.2f");
+                currentSpeed = std::clamp(currentSpeed, 0.1f, 4.0f);
+            }
+
+            ImGui::Text("Rate");
+            {
+                ImGui::InputFloat("###Rate", &currentRate, 0.05f, 0.1f, "%.2f");
+                currentRate = std::clamp(currentRate, 0.5f, 2.0f);
+            }
+
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Mods");
+
+            for (int i = 0; i < Mods.size(); i++) {
+                auto& mod = Mods[i];
+                
+                int value = EnvironmentSetup::GetInt(mod);
+                if (value == 1) {
+                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
+                    ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x * 1.2f, color.y * 1.2f, color.z * 1.2f, 1.0f));
+                }
+
+                if (ImGui::Button(mod.c_str(), MathUtil::ScaleVec2(ImVec2(80, 0)))) {
+                    EnvironmentSetup::SetInt(mod, value == 1 ? 0 : 1);
+
+                    switch (i) {
+                        case 0: {
+                            EnvironmentSetup::SetInt(Mods[1], 0);
+                            EnvironmentSetup::SetInt(Mods[2], 0);
+                            break;
+                        }
+
+                        case 1: {
+                            EnvironmentSetup::SetInt(Mods[0], 0);
+                            EnvironmentSetup::SetInt(Mods[2], 0);
+                            break;
+                        }
+
+                        case 2: {
+                            bOpenRearrange = EnvironmentSetup::GetInt(Mods[2]) == 1;
+
+                            EnvironmentSetup::SetInt(Mods[0], 0);
+                            EnvironmentSetup::SetInt(Mods[1], 0);
+                            break;
+                        }
+
+                        case 4: { 
+                            EnvironmentSetup::SetInt(Mods[5], 0);
+                            break;
+                        }
+
+                        case 5: {
+                            EnvironmentSetup::SetInt(Mods[4], 0);
+                            break;
+                        }
+                    }
+                }
+
+                if (value == 1) {
+                    ImGui::PopStyleVar();
+                    ImGui::PopStyleColor();
+                }
+
+                // NewLine after 2 button on SameLine
+                if ((i + 1) % 2 == 1) {
+                    ImGui::SameLine();
+                }
+            }
+            
+
+            ImGui::NewLine();
+
+            ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
+            ImGui::Text("Arena");
+
+            // select
+            int value = EnvironmentSetup::GetInt("Arena");
+            if (ImGui::BeginCombo("###ComboBox1Arena", Arena[value].c_str(), 0)) {
+                for (int i = 0; i < Arena.size(); i++) {
+                    bool is_selected = i == value;
+                    if (ImGui::Selectable(Arena[i].c_str(), is_selected)) {
+                        EnvironmentSetup::SetInt("Arena", i);
+                    }
+                }
+
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+
+            ImGui::EndChild();
+        }
+
+        ImGui::EndChild();
+    }
+
+    // get current cursor pos
+    ImVec2 cursorPos = ImGui::GetCursorPos();
+
+    ImGui::SameLine();
+    auto size = ImVec2(250, 575);
+    auto xPos = MathUtil::ScaleVec2(windowNextSz.x - size.x - 5, 0);
+
+    ImGui::SetCursorPosX(xPos.x);
+
+    const int MAX_ROWS = 18;
+
+    if (ImGui::BeginChild("#SongSelectChild", MathUtil::ScaleVec2(size), true)) {
+        static char search[256] = {};
+        static char previous[256] = {};
+
+        if (ImGui::BeginChild("#SongSelectChild2", MathUtil::ScaleVec2(245, 500), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+
+            if (m_musicList.empty() || strcmp(search, previous) != 0) {
+                memset(previous, 0, sizeof(previous));
+
+                auto lists = music->FindQuery(search);
+                m_musicList = lists;
+
+                strcpy(previous, search);
+            }
+
+            for (int i = 0; i < m_musicList.size(); i++) {
+                DB_MusicItem& item = m_musicList[i];
+
+                std::string Id = "###Button" + std::to_string(i);
+                bool isSelected = item.Id == index;
+
+                ImVec4 previousColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+
+                if (isSelected) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                }
+
+                char buffer[256];
+                sprintf(buffer, "Lv.%03d | %s", item.Difficulty[currentDifficulty], (char*)item.Title);
+
+                std::string content = buffer + Id;
+                auto cursorPos = ImGui::GetCursorPos();
+
+                if (ImGui::ButtonEx(
+                    content.c_str(), 
+                    MathUtil::ScaleVec2(245, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
+                    
+                    if (item.Id != index) {
+                        index = item.Id;
+
+                        bSelectNewSong = true;
+                    }
+                }
+
+                /*
+                    FIXME: Goddamit!, this is hack because for some reason
+                    ImGui::IsMouseClicked won't work if ImGui::ButtonEx handled it.
+                */
+                content += "_Context";
+                if (ImGui::BeginPopupContextWindow((const char*)content.c_str())) {
+                    ImGui::CloseCurrentPopup();
+                    ImGui::EndPopup();
+
+                    bOpenSongContext = true;
+                }
+
+                if (isSelected) {
+                    ImGui::PopStyleColor();
+                }
+            }
+            ImGui::PopStyleVar();
+            ImGui::EndChild();
+        }
+
+        // set cursor pos Y at bottom of window
+        ImGui::SetCursorPosY(cursorPos.y - 20);
+        ImGui::Separator();
+
+        if (ImGui::BeginChild("###CHILD", ImVec2(0,0), false, 0)) {
+            ImGui::PushItemWidth(ImGui::GetWindowSize().x);
+            ImGui::Text("Search:");
+            ImGui::InputTextEx("###Search", "Search by Title, Artist, Noter or Id....", search, sizeof(search), ImVec2(0, 0), ImGuiInputTextFlags_AutoSelectAll);
+
+            // if press Enter
+            if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+                // set focus to InputText
+                ImGui::SetKeyboardFocusHere();
+            }
+
+            ImGui::PopItemWidth();
+            ImGui::EndChild();
+        }
+
+        ImGui::EndChild();
+    }
+
+    ImGui::SetCursorPos(cursorPos);
+    //float oldScale = FontResources::GetButtonFont()->Scale;
+
+    //FontResources::GetButtonFont()->Scale = 1.5f;
+    ImGui::PushFont(FontResources::GetButtonFont());
+
+    if (ImGui::Button("Play", MathUtil::ScaleVec2(ImVec2(200, 60)))) {
+        bPlay = true;
+    }
+    
+    // FontResources::GetButtonFont()->Scale = oldScale;
+    ImGui::PopFont();
 }
 
 void SongSelectScene::Update(double delta) {
@@ -668,7 +743,14 @@ void SongSelectScene::Update(double delta) {
         auto db = GameDatabase::GetInstance();
         db->Reset();
 
-        MusicListMaker::MakeMusicList(db->GetPath());
+        auto path = db->GetPath();
+        if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
+			m_tempMusicLists = MusicListMaker::Prepare(path);
+
+            db->Reset();
+            scene_index = 1;
+            m_tempMusicIndex = 0;
+		}
     }
 }
 
@@ -685,12 +767,29 @@ bool SongSelectScene::Attach() {
 
     currentAlpha = 100;
     nextAlpha = 100;
-    index = -1;
+    m_lastTime = 0;
 
-    auto SkinName = Configuration::Load("Game", "Skin");
-    auto path = Configuration::Skin_GetPath(SkinName);
+    auto db = GameDatabase::GetInstance();
+	bool music_reload_required = db->FindAll().size() == 0;
 
-    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU2) {
+    if (music_reload_required) {
+        scene_index = 1;
+
+        auto path = db->GetPath();
+        if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
+			m_tempMusicLists = MusicListMaker::Prepare(path);
+            m_tempMusicIndex = 0;
+		}
+    } else {
+        if (index == -1) {
+            bSelectNewSong = true;
+            index = db->Random().Id;
+        }
+    }
+
+    auto path = Configuration::Skin_GetPath();
+
+    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
         Audio* bgm = AudioManager::GetInstance()->Get("BGM");
         if (!bgm) {
             auto BGMPath = path / "Audio";
@@ -764,6 +863,8 @@ bool SongSelectScene::Attach() {
         });
     }
 
+    EnvironmentSetup::SetInt("FontIndex", ResolutionWindowScene::GAMEPLAY);
+
     is_departing = false;
     return true;
 }
@@ -773,7 +874,7 @@ bool SongSelectScene::Detach() {
         m_bgm->Stop();
     }
 
-    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU2) {
+    if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
         Audio* bgm = AudioManager::GetInstance()->Get("BGM");
         if (bgm) {
             bgm->Stop();

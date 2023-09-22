@@ -1,7 +1,9 @@
 #include "MyGame.h"
 #include "GameScenes.h"
 #include <fstream>
+#include <array>
 #include "MsgBox.h"
+#include "Version.h"
 
 #include "Fonts/FontResources.h"
 #include "Configuration.h"
@@ -14,12 +16,13 @@
 
 /* Scenes */
 #include "./Scenes/GameplayScene.h"
+#include "./Scenes/IntroScene.h"
 #include "./Scenes/MainMenu.h"
 #include "./Scenes/LoadingScene.h"
 #include "./Scenes/SongSelectScene.h"
-#include "./Scenes/IntroScene.hpp"
-#include "./Scenes/ResultScene.hpp"
-#include "./Scenes/EditorScene.hpp"
+#include "./Scenes/ResultScene.h"
+#include "./Scenes/EditorScene.h"
+#include "./Scenes/ReloadScene.h"
 
 /* Overlays */
 #include "./Scenes/Overlays/Settings.h"
@@ -36,6 +39,61 @@ bool MyGame::Init() {
 	SetWindowSize(1280, 720);
 	SetFullscreen(false);
 	
+	bool result = LoadConfiguration();
+	if (!result) {
+		return result;
+	}
+
+	result = Game::Init();
+	if (result) {
+		m_window->SetScaleOutput(true);
+
+		EnvironmentSetup::SetInt("Key", -1);
+
+		/* Screen */
+		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
+		SceneManager::AddScene(GameScene::MAINMENU, new MainMenu());
+		SceneManager::AddScene(GameScene::SONGSELECT, new SongSelectScene());
+		SceneManager::AddScene(GameScene::LOADING, new LoadingScene());
+		SceneManager::AddScene(GameScene::GAMEPLAY, new GameplayScene());
+		SceneManager::AddScene(GameScene::RESULT, new ResultScene());
+
+		SceneManager::AddScene(GameScene::EDITOR, new EditorScene());
+		//SceneManager::AddScene(GameScene::MULTIPLAYER, new MultiplayerScene());
+		//SceneManager::AddScene(GameScene::MULTIROOM, new MultiroomScene());
+		SceneManager::AddScene(GameScene::RELOAD, new ReloadScene());
+
+		/* Overlays */
+		SceneManager::AddOverlay(GameOverlay::SETTINGS, new SettingsOverlay());
+
+		std::string title = std::string(O2GAME_TITLE) + " " + std::string(O2GAME_VERSION);
+		m_window->SetWindowTitle(title);
+
+		if (EnvironmentSetup::GetPath("FILE").empty()) {
+			std::filesystem::path path = Configuration::Load("Music", "Folder");
+			if (!path.empty() && std::filesystem::exists(path)) {
+				Configuration::Set("Music", "Folder", path.string());
+			}
+
+			SceneManager::ChangeScene(GameScene::INTRO);
+		}
+		else {
+			SceneManager::ChangeScene(GameScene::LOADING);
+		}
+	}
+
+	return result;
+}
+
+void MyGame::Run() {
+	Game::Run();
+}
+
+void MyGame::SelectSkin(std::string name) {
+
+}
+
+bool MyGame::LoadConfiguration() {
 	{
 		auto value = Configuration::Load("Game", "Renderer");
 		if (value.size()) {
@@ -78,21 +136,33 @@ bool MyGame::Init() {
 	}
 
 	{
-		auto value = Configuration::Load("Game", "Skin");
-		if (!Configuration::Skin_Exist(value)) {
-			MsgBox::ShowOut("EstGame Error", ("Skin: " + value + " is not found!").c_str(), MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
-			return false;
+		auto SkinName = Configuration::Load("Game", "Skin");
+		if (!std::filesystem::exists(std::filesystem::current_path() / "Skins" / SkinName)) {
+			SkinName = "default";
 		}
 
-		auto resolution = Configuration::Skin_LoadValue(value, "Window", "NativeSize");
-		auto split = splitString(resolution, 'x');
+		Configuration::Skin_Load(SkinName);
+		std::array<std::string, 3> screens = {
+			"NativeSize"
+		};
 
-		if (split.size() == 2) {
-			SetBufferSize(std::stoi(split[0]), std::stoi(split[1]));
+		for (int i = 0; i < 1; i++) {
+			auto value = Configuration::Skin_LoadValue("Window", screens[i]);
+			auto split = splitString(value, 'x');
+
+			if (split.size() == 2) {
+				FontResources::RegisterFontIndex(i, std::stoi(split[0]), std::stoi(split[1]));
+			}
+			else {
+				std::string errmsg = "Invalid Skin::Window::" + screens[i] + " configuration value!";
+				
+				MsgBox::ShowOut("EstGame Error", errmsg, MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+				return false;
+			}
 		}
-		else {
-			MsgBox::ShowOut("EstGame Error", "Invalid Skin::Window::NativeSize configuration value!", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
-			return false;
+
+		{ 	// Editor (hardcoded rn)
+			FontResources::RegisterFontIndex(3, 1280, 720);
 		}
 	}
 
@@ -109,55 +179,11 @@ bool MyGame::Init() {
 		}
 	}
 
-	bool result = Game::Init();
-	if (result) {
-		m_window->SetScaleOutput(true);
-		
-		auto db = GameDatabase::GetInstance();
-		auto path = db->GetPath();
-		if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
-			MusicListMaker::MakeMusicList(path);
-		}
-
-		EnvironmentSetup::SetInt("Key", -1);
-
-		/* Screen */
-		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
-		SceneManager::AddScene(GameScene::MAINMENU, new SongSelectScene());
-		SceneManager::AddScene(GameScene::LOADING, new LoadingScene());
-		SceneManager::AddScene(GameScene::RESULT, new ResultScene());
-		SceneManager::AddScene(GameScene::GAME, new GameplayScene());
-		SceneManager::AddScene(GameScene::EDITOR, new EditorScene());
-		SceneManager::AddScene(GameScene::MAINMENU2, new MainMenu());
-
-		/* Overlays */
-		SceneManager::AddOverlay(GameOverlay::SETTINGS, new SettingsOverlay());
-
-		std::string title = "Unnamed O2 Clone (Beta 17)";
-		m_window->SetWindowTitle(title);
-
-		if (EnvironmentSetup::GetPath("FILE").empty()) {
-			std::filesystem::path path = Configuration::Load("Music", "Folder");
-			if (!path.empty() && std::filesystem::exists(path)) {
-				Configuration::Set("Music", "Folder", path.string());
-			}
-
-			SceneManager::ChangeScene(GameScene::MAINMENU2);
-		}
-		else {
-			SceneManager::ChangeScene(GameScene::LOADING);
-		}
+	{
+		FontResources::LoadFontRegion(TextRegion::Japanese);
+		FontResources::LoadFontRegion(TextRegion::Chinese);
+		FontResources::LoadFontRegion(TextRegion::Korean);
 	}
-
-	return result;
-}
-
-void MyGame::Run() {
-	Game::Run();
-}
-
-void MyGame::SelectSkin(std::string name) {
-
 }
 
 void MyGame::Update(double delta) {
@@ -165,6 +191,7 @@ void MyGame::Update(double delta) {
 }
 
 void MyGame::Render(double delta) {
+	FontResources::SetFontIndex(0);
 	m_sceneManager->Render(delta);
 }
 

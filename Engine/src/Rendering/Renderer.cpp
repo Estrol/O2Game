@@ -24,6 +24,8 @@ Renderer::~Renderer() {
 Renderer* Renderer::s_instance = nullptr;
 
 bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
+    m_window = window;
+
     try {
         std::string rendererName = "";
         bool bUsedSDLRenderer = true;
@@ -135,8 +137,16 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
             return true;
         }
         else {
-            m_vulkan = VulkanEngine::GetInstance();
-			m_vulkan->init(window->GetWindow(), window->GetWidth(), window->GetHeight());
+            try {
+                m_vulkan = VulkanEngine::GetInstance();
+			    m_vulkan->init(window->GetWindow(), window->GetWidth(), window->GetHeight());
+            } catch (std::runtime_error &e) {
+                m_vulkan = nullptr;
+                std::cout << e.what() << std::endl;
+
+                MsgBox::ShowOut("EstEngine Error", "Failed to load vulkan functions, fallback to OpenGL", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
+                return Create(RendererMode::OPENGL, window);
+            }
 
             ImGuiIO& io = ImGui::GetIO(); (void)io;
             ImguiUtil::SetVulkan(true);
@@ -188,10 +198,14 @@ bool Renderer::Resize() {
 }
 
 bool Renderer::BeginRender() {
-	// sdl clear color
     if (IsVulkan()) {
         if (m_vulkan->_swapChainOutdated) {
-            return false;
+            int new_width = m_window->GetWidth();
+			int new_height = m_window->GetHeight();
+
+			if (new_width > 0 && new_height > 0) {
+				m_vulkan->re_init_swapchains(new_width, new_height);
+			}
         }
 
         m_vulkan->begin();

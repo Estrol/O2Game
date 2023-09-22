@@ -1,6 +1,8 @@
 #pragma once
 #include <filesystem>
+#include <vector>
 
 namespace MusicListMaker {
-    void MakeMusicList(std::filesystem::path path);
+    std::vector<std::filesystem::path> Prepare(std::filesystem::path path);
+    void Insert(std::filesystem::path song_file);
 }

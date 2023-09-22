@@ -380,8 +380,7 @@ namespace GameNoteResource {
 
 		bool IsVulkan = Renderer::GetInstance()->IsVulkan();
 		
-		auto skinName = Configuration::Load("Game", "Skin");
-		auto skinPath = Configuration::Skin_GetPath(skinName);
+		auto skinPath = Configuration::Skin_GetPath();
 		auto skinNotePath = skinPath / "Notes";
 		SkinConfig conf(skinNotePath / "Notes.ini", 7);
 

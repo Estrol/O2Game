@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SDL2/SDL.h>
-#include <vulkan/vulkan.h>
+#include <Rendering/Vulkan/volk/volk.h>
 #include <vector>
 #include <functional>
 #include <deque>
@@ -19,9 +19,8 @@ struct DeletionQueue
 	}
 
 	void flush() {
-		// reverse iterate the deletion queue to execute all the functions
 		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
-			(*it)(); //call functors
+			(*it)();
 		}
 
 		deletors.clear();
@@ -59,11 +58,8 @@ struct FrameData {
 	VkCommandPool _commandPool;
 	VkCommandBuffer _mainCommandBuffer;
 
-	AllocatedBuffer cameraBuffer;
-	VkDescriptorSet globalDescriptor;
-
-	AllocatedBuffer objectBuffer;
-	VkDescriptorSet objectDescriptor;
+	VkDeviceMemory _verticesBuffer;
+	VkDeviceMemory _indiciesBuffer;
 
 	bool IsValid;
 };
@@ -183,8 +179,8 @@ public:
 
 	std::vector<SubmitQueueInfo> _queueInfos;
 
-	int _vertexBufferSize = 0;
-	int _indexBufferSize = 0;
+	uint64_t _maxVertexBufferSize = 0;
+	uint64_t _maxIndexBufferSize = 0;
 	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
 	VkBuffer _indexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;

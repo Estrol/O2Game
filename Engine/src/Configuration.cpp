@@ -74,22 +74,20 @@ void Configuration::Set(std::string key, std::string prop, std::string value) {
 	}
 }
 
-std::filesystem::path Configuration::Skin_GetPath(std::string name) {
-	return std::filesystem::current_path() / "Skins" / name;
+void Configuration::Skin_Load(std::string name) {
+	CurrentSkin = name;
 }
 
-std::string Configuration::Skin_LoadValue(std::string name, std::string key, std::string prop) {
-	if (CurrentSkin != name) {
-		CurrentSkin = name;
+std::filesystem::path Configuration::Skin_GetPath() {
+	return std::filesystem::current_path() / "Skins" / CurrentSkin;
+}
 
-		std::filesystem::path path = std::filesystem::current_path() / "Skins" / name / "GameSkin.ini";
+std::string Configuration::Skin_LoadValue(std::string key, std::string prop) {
+	mINI::INIStructure skinConfig;
+	mINI::INIFile file(Skin_GetPath() / "GameSkin.ini");
+	file.read(skinConfig);
 
-		mINI::INIFile f(path);
-		SkinConfig.clear();
-		f.read(SkinConfig);
-	}
-
-	return SkinConfig[key][prop];
+	return skinConfig[key][prop];
 }
 
 bool Configuration::Skin_Exist(std::string name) {

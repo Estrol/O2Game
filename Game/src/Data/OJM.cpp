@@ -291,18 +291,18 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 		ss.write((char*)&SampleHeader.chunkSize, 4);
 		ss.write((char*)buffer, SampleHeader.chunkSize);
 
-		delete[] buffer;
-		ss.str("");
-		ss.clear();
-
 		O2Sample sample = {};
 		sample.RefValue = ValueRef++;
 		sample.AudioData.resize(ss.str().size());
 		memcpy(sample.AudioData.data(), ss.str().data(), ss.str().size());
 
-		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), 949);
+		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), "euc-kr");
 		memcpy(sample.FileName, utf8_name.c_str(), sizeof(sample.FileName));
 
+		delete[] buffer;
+		ss.str("");
+		ss.clear();
+		
 		Samples.push_back(sample);
 	}
 
@@ -330,7 +330,7 @@ void OJM::LoadOJMData(std::fstream& fs, bool encrypted) {
 		sample.AudioData.resize(SampleHeader.sampleSize);
 		memcpy(sample.AudioData.data(), buffer, SampleHeader.sampleSize);
 
-		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), 949);
+		auto utf8_name = CodepageToUtf8(SampleHeader.sampleName, sizeof(SampleHeader.sampleName), "euc-kr");
 		memcpy(sample.FileName, utf8_name.c_str(), sizeof(sample.FileName));
 
 		Samples.push_back(sample);

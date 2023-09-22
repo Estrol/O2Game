@@ -50,7 +50,7 @@ void GameplayScene::Update(double delta) {
 		if (!m_ended) {
 			if (EnvironmentSetup::GetInt("Key") >= 0) {
 				m_ended = true;
-				SceneManager::ChangeScene(GameScene::MAINMENU);
+				SceneManager::ChangeScene(GameScene::SONGSELECT);
 			}
 			else {
 				if (MsgBox::GetResult("GameplayError") == 4) {
@@ -96,7 +96,7 @@ void GameplayScene::Update(double delta) {
 		}
 		else {
 			SceneManager::DisplayFade(100, [] {
-				SceneManager::ChangeScene(GameScene::MAINMENU);
+				SceneManager::ChangeScene(GameScene::SONGSELECT);
 			});
 		}
 	}
@@ -379,37 +379,16 @@ bool GameplayScene::Attach() {
 	m_autoPlay = EnvironmentSetup::GetInt("Autoplay") == 1;
 
 	try {
-		auto SkinName = Configuration::Load("Game", "Skin");
 		int LaneOffset = 5;
 		int HitPos = 480;
 
 		try {
-			LaneOffset = std::atoi(Configuration::Skin_LoadValue(SkinName, "Game", "LaneOffset").c_str());
-			HitPos = std::atoi(Configuration::Skin_LoadValue(SkinName, "Game", "HitPos").c_str());
+			LaneOffset = std::atoi(Configuration::Skin_LoadValue("Game", "LaneOffset").c_str());
+			HitPos = std::atoi(Configuration::Skin_LoadValue("Game", "HitPos").c_str());
 		}
 		catch (std::invalid_argument) {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
 		}
-
-		auto skinPath = Configuration::Skin_GetPath(SkinName);
-		auto playingPath = skinPath / "Playing";
-		SkinConfig conf(playingPath / "Playing.ini", 7);
-
-		for (int i = 0; i < 7; i++) {
-			m_keyState[i] = false;
-			m_drawHit[i] = false;
-			m_drawHold[i] = false;
-		}
-
-		m_title = std::make_unique<Text>(13);
-		auto TitlePos = conf.GetPosition("Title");
-		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
-		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
-
-		m_autoText = std::make_unique<Text>(13);
-		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
-
-		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 
 		int arena = EnvironmentSetup::GetInt("Arena");
 		if (arena == 0) {
@@ -421,8 +400,31 @@ bool GameplayScene::Attach() {
 			arena = dist(rng);
 		}
 
-		m_PlayBG = std::make_unique<Texture2D>(playingPath / ("PlayingBG_" + std::to_string(arena) + ".png"));
-		auto PlayBGPos = conf.GetPosition("PlayingBG");
+		auto skinPath = Configuration::Skin_GetPath();
+		auto playingPath = skinPath / "Playing";
+		SkinConfig conf(playingPath / "Playing.ini", 7);
+		SkinConfig arena_conf(playingPath / "Arena" / std::to_string(arena) / "Arena.ini", 7);
+
+		for (int i = 0; i < 7; i++) {
+			m_keyState[i] = false;
+			m_drawHit[i] = false;
+			m_drawHold[i] = false;
+		}
+
+		m_title = std::make_unique<Text>(13);
+		auto TitlePos = conf.GetPosition("Title");
+		auto RectPos = conf.GetRect("Title");
+		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
+		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
+		m_title->Clip = { RectPos[0].X, RectPos[0].Y, RectPos[0].Width, RectPos[0].Height };
+
+		m_autoText = std::make_unique<Text>(13);
+		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
+
+		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
+
+		m_PlayBG = std::make_unique<Texture2D>(playingPath / "Arena" / std::to_string(arena) / ("PlayingBG.png"));
+		auto PlayBGPos = arena_conf.GetPosition("PlayingBG");
 		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
 		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
 
@@ -452,7 +454,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_comboNum = std::make_unique<NumericTexture>(numComboPaths);
-		auto numPos = conf.GetNumeric("Combo").front();
+		auto numPos = arena_conf.GetNumeric("Combo").front();
 
 		m_comboNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 		m_comboNum->NumberPosition = IntToPos(numPos.Direction);
@@ -631,7 +633,7 @@ bool GameplayScene::Attach() {
 		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
 		m_lnLogo->AlphaBlend = true;
 
-		auto comboLogoPos = conf.GetSprite("ComboLogo");
+		auto comboLogoPos = arena_conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
 		for (int i = 0; i < comboLogoPos.numOfFrames; i++) {
 			auto file = playingPath / ("ComboLogo" + std::to_string(i) + ".png");

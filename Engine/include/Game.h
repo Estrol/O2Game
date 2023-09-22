@@ -57,7 +57,10 @@ protected:
 	SceneManager* m_sceneManager;
 
 private:
-	void DrawFPS(double delta);
+	void UpdateFade(double delta);
+	void DrawFade(double delta);
+	void CheckFont();
+
 	double m_frameInterval;
 	double m_imguiInterval;
 	int m_frameCount;

@@ -20,13 +20,6 @@ void EnvironmentSetup::OnExitCheck() {
 	for (auto& [key, value] : m_ints) {
 		value = 0;
 	}
-
-	// can't gurranted if this is nullptr
-	// for (auto& [key, value] : m_storesPtr) {
-	// 	if (value != nullptr) {
-	// 		throw std::runtime_error("EnvironmentSetup::OnExitCheck() - m_storesPtr is not nullptr");
-	// 	}
-	// }
 }
 
 void EnvironmentSetup::Set(std::string key, std::string value) {

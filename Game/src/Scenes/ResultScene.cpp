@@ -1,5 +1,6 @@
-#include "ResultScene.hpp"
-
+#include "ResultScene.h"
+#include <string>
+#include <array>
 
 #include "SceneManager.h"
 #include "Configuration.h"
@@ -16,6 +17,8 @@
 #include "../GameScenes.h"
 #include "../Data/Chart.hpp"
 #include "../EnvironmentSetup.hpp"
+
+static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 
 ResultScene::ResultScene() {
     
@@ -94,6 +97,7 @@ void ResultScene::Render(double delta) {
                     ImGui::EndChild();
                 }
 
+                auto nextPos = ImGui::GetCursorPos();
                 ImGui::SameLine();
 
                 if (ImGui::BeginChild("#Window3", MathUtil::ScaleVec2(ImVec2(95, 0)))) {
@@ -115,6 +119,34 @@ void ResultScene::Render(double delta) {
                     ImGui::EndChild();
                 }
 
+                ImGui::SetNextWindowPos(nextPos);
+                if (ImGui::BeginChild("#Mods", MathUtil::ScaleVec2(185, 0))) {
+                    ImGui::SeparatorText("Mods");
+                    int count = 0;
+                    for (int i = 0; i < Mods.size(); i++) {
+                        auto& key = Mods[i];
+                        int value = EnvironmentSetup::GetInt(key);
+                        if (value == 1) {
+                            ImguiUtil::Text::ColoredBackground(
+                                ImGui::GetStyleColorVec4(ImGuiCol_Button), 
+                                MathUtil::ScaleVec2(80, 0), 
+                                "%s", Mods[i].c_str()
+                            );
+
+                            // sameline until 3 mods
+                            if (count < 2) {
+                                ImGui::SameLine();
+                                count++;
+                            }
+                            else {
+                                count = 0;
+                            }
+                        }
+                    }
+
+                    ImGui::EndChild();
+                }
+
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
 
@@ -130,7 +162,7 @@ void ResultScene::Render(double delta) {
     if (m_backButton) {
         if (EnvironmentSetup::GetPath("FILE").empty()) {
             SceneManager::DisplayFade(100, [] {
-                SceneManager::ChangeScene(GameScene::MAINMENU); 
+                SceneManager::ChangeScene(GameScene::SONGSELECT); 
             });
         }
         else {
@@ -145,8 +177,7 @@ bool ResultScene::Attach() {
 
 	Audio* audio = AudioManager::GetInstance()->Get("FINISH");
     if (!audio) {
-        auto SkinName = Configuration::Load("Game", "Skin");
-        auto BGMPath = Configuration::Skin_GetPath(SkinName) / "Audio";
+        auto BGMPath = Configuration::Skin_GetPath() / "Audio";
         BGMPath /= "FINISH.ogg";
 
         if (std::filesystem::exists(BGMPath)) {

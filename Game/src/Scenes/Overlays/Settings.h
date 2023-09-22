@@ -1,5 +1,6 @@
 #pragma once
 #include "Overlay.h"
+#include <vector>
 
 class SettingsOverlay : public Overlay {
 public:
@@ -13,6 +14,7 @@ public:
 private:
 	void LoadConfiguration();
 	void SaveConfiguration();
+	void PreloadSkin();
     bool bSave = false;
 
     int startOffset = 0;
@@ -24,4 +26,7 @@ private:
 	bool LongNoteLighting = false;
 	bool LongNoteOnHitPos = false;
 	bool convertAutoSound = false;
+
+	std::string currentSkin = "";
+	std::vector<std::string> skins = {};
 };

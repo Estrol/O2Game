@@ -7,6 +7,7 @@
 
 #include "../Engine/Button.hpp"
 #include "../Engine/BGMPreview.hpp"
+#include "../Resources/SkinConfig.hpp"
 
 struct MouseState;
 struct DB_MusicItem;
@@ -24,10 +25,15 @@ public:
 	bool Attach() override;
 	bool Detach() override;
 
+protected:
+	void OnGameLoadMusic(double delta);
+	void OnGameSelectMusic(double delta);
+
 private:
 	void SaveConfiguration();
 	void LoadChartImage();
 
+	int scene_index = 0;
 	int index = -1;
 	int page = 0;
 
@@ -45,6 +51,15 @@ private:
 	bool is_update_bgm = false;
 	bool imgui_modal_quit_confirm = false;
 
+	bool bPlay = false;
+    bool bExitPopup = false;
+    bool bOptionPopup = false;
+    bool bSelectNewSong = false;
+    bool bOpenSongContext = false;
+    bool bOpenEditor = false;
+    bool bOpenRearrange = false;
+    bool bScaleOutput = true;
+
 	char lanePos[8] = {};
 
 	std::unique_ptr<Texture2D> m_background;
@@ -59,4 +74,10 @@ private:
 	std::vector<UDim2> m_songListRect;
 	std::vector<Button> m_buttons;
 	std::vector<DB_MusicItem> m_musicList;
+
+	SkinConfig m_config;
+	std::vector<std::filesystem::path> m_tempMusicLists;
+	std::filesystem::path file;
+	int m_tempMusicIndex;
+	float m_lastTime;
 };

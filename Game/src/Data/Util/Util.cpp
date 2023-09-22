@@ -9,6 +9,7 @@
 #include <string>
 #include <codecvt>
 #include <cmath>
+#include <iconv.h>
 
 std::vector<std::string> splitString(std::string& input, char delimeter) {
 	std::stringstream ss(input);
@@ -117,22 +118,27 @@ void flipArray(uint8_t* arr, size_t size) {
 	}
 }
 
-std::u8string CodepageToUtf8(const char* string, size_t str_len, int codepage) {
-#if _WIN32
-	int size_needed = MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, NULL, 0);
-	std::vector<wchar_t> temp_string(size_needed);
+std::u8string CodepageToUtf8(const char* string, size_t str_len, const char* encoding) {
+	std::u8string result;
+	iconv_t conv = iconv_open("UTF-8", encoding);
+	if (conv == (iconv_t)-1) {
+		return result;
+	}
 
-	MultiByteToWideChar(codepage, 0, &string[0], (int)str_len, temp_string.data(), size_needed);
+	size_t inbytesleft = str_len;
+	size_t outbytesleft = str_len * 4;
+	char* inbuf = (char*)string;
+	char* outbuf = (char*)malloc(outbytesleft);
+	char* outbufptr = outbuf;
 
-	int utf8_size_needed = WideCharToMultiByte(CP_UTF8, 0, temp_string.data(), size_needed, NULL, 0, NULL, NULL);
-	std::vector<char8_t> result(utf8_size_needed);
+	if (iconv(conv, &inbuf, &inbytesleft, &outbufptr, &outbytesleft) == (size_t)-1) {
+		free(outbuf);
+		iconv_close(conv);
+		return result;
+	}
 
-	WideCharToMultiByte(CP_UTF8, 0, temp_string.data(), size_needed, (LPSTR)&result[0], utf8_size_needed, NULL, NULL);
-
-	std::u8string str_result = result.data();
-
-	return str_result;
-#else
-	return std::u8string((const char8_t*)string, str_len);
-#endif
+	result = std::u8string((char8_t*)outbuf, str_len * 4 - outbytesleft);
+	free(outbuf);
+	iconv_close(conv);
+	return result;
 }
