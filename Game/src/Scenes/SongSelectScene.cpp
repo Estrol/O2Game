@@ -839,7 +839,7 @@ bool SongSelectScene::Detach() {
 
 void SongSelectScene::SaveConfiguration() {
     EnvironmentSetup::Set("SongRate", std::to_string(currentRate));
-    Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(currentSpeed * 100.0)));
+    Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(::round(currentSpeed * 100.0))));
 }
 
 void SongSelectScene::LoadChartImage() {
