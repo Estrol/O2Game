@@ -4,12 +4,17 @@
     {
       "name": "windows-base",
       "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "installDir": "${sourceDir}/out/install/${presetName}",
+      "binaryDir": "${sourceDir}/build",
+      "installDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
-        "CMAKE_CXX_COMPILER": "cl.exe"
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      },
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "toolset": {
+        "value": "host=x64,version=14.29",
+        "strategy": "external"
       },
       "condition": {
         "type": "equals",
@@ -38,47 +43,39 @@
       }
     },
     {
-      "name": "linux-debug",
-      "displayName": "Linux Debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "installDir": "${sourceDir}/out/install/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      },
+      "name": "linux-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build",
+      "installDir": "${sourceDir}/build",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}",
-          "copySourcesOptions": {
-            "outputVerbosity": "Diagnostic"
-          },
-          "rsyncCommandArgs": [ "-t", "--delete", "--delete-excluded", "-r" ]
-        }
       }
     },
     {
-      "name": "macos-debug",
-      "displayName": "macOS Debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "installDir": "${sourceDir}/out/install/${presetName}",
+      "name": "x64-linux-debug",
+      "displayName": "x64 Linux Debug",
+      "inherits": "linux-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x64-linux",
+      "displayName": "x64 Linux Release",
+      "inherits": "x64-linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
       },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Darwin"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
-        }
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
       }
     }
   ]
