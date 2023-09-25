@@ -341,7 +341,7 @@ void SongSelectScene::OnGameLoadMusic(double delta) {
 	
     bool bExit = false;
     if (m_tempMusicIndex < m_tempMusicLists.size()) {
-        if (m_lastTime >= 0.5) {
+        if (m_lastTime >= 0.0025) {
             m_lastTime = 0;
 
             file = m_tempMusicLists[m_tempMusicIndex];
