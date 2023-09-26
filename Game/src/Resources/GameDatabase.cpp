@@ -75,7 +75,7 @@ GameDatabase::GameDatabase() {
             sqlite3_finalize(stmt);
 
             // check version
-            int version = atoi(value);
+            int version = std::atoi(value);
             if (version < TABLE_VERSION) {
                 result = sqlite3_prepare_v2(m_database, "UPDATE CONFIG SET Value = ? WHERE Key = ?", -1, &stmt, nullptr);
                 if (result != SQLITE_OK) {
@@ -397,6 +397,8 @@ DB_MusicItem GameDatabase::Random() {
         }
     }
 
+    sqlite3_finalize(stmt);
+
     return item;
 }
 
@@ -463,14 +465,12 @@ std::vector<DB_MusicItem> GameDatabase::FindQuery(std::string query) {
         items.push_back(item);
     }
 
-    if (result != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
+    sqlite3_finalize(stmt);
 
+    if (result != SQLITE_DONE) {
         std::string message = "Failed to step statement: " + std::string(sqlite3_errmsg(m_database));
         throw std::runtime_error(message);
     }
-
-    sqlite3_finalize(stmt);
 
     return items;
 }

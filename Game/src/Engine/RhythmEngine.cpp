@@ -164,9 +164,9 @@ bool RhythmEngine::Load(Chart* chart) {
 	auto audioVolume = Configuration::Load("Game", "AudioVolume");
 	if (audioVolume.size() > 0) {
 		try {
-			m_audioVolume = std::atoi(audioVolume.c_str());
+			m_audioVolume = std::stoi(audioVolume);
 		}
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AudioVolume invalid volume: " << audioVolume << " reverting to 100 value" << std::endl;
 			m_audioVolume = 100;
 		}
@@ -175,10 +175,10 @@ bool RhythmEngine::Load(Chart* chart) {
 	auto audioOffset = Configuration::Load("Game", "AudioOffset");
 	if (audioOffset.size() > 0) {
 		try {
-			m_audioOffset = std::atoi(audioOffset.c_str());
+			m_audioOffset = std::stoi(audioOffset);
 		}
 
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AudioOffset invalid offset: " << audioOffset << " reverting to 0 value" << std::endl;
 			m_audioOffset = 0;
 		}
@@ -188,17 +188,22 @@ bool RhythmEngine::Load(Chart* chart) {
 	bool IsAutoSound = false;
 	if (autoSound.size() > 0) {
 		try {
-			IsAutoSound = std::atoi(autoSound.c_str()) == 1;
+			IsAutoSound = std::stoi(autoSound) == 1;
 		}
 
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AutoSound invalid value: " << autoSound << " reverting to 0 value" << std::endl;
 			IsAutoSound = false;
 		}
 	}
 
-	if (Configuration::Load("Gameplay", "Notespeed").size() > 0) {
-		m_scrollSpeed = std::atoi(Configuration::Load("Gameplay", "Notespeed").c_str());
+	auto noteSpeed = Configuration::Load("Gameplay", "Notespeed");
+	if (noteSpeed.size() > 0) {
+		try {
+			m_scrollSpeed = std::stoi(noteSpeed);
+		} catch (std::invalid_argument) {
+			std::cout << "Game.ini::NoteSpeed invalid value: " << noteSpeed << " reverting to 210 value" << std::endl;
+		}
 	}
 
 	if (EnvironmentSetup::Get("SongRate").size() > 0) {
@@ -322,7 +327,7 @@ void RhythmEngine::Update(double delta) {
 	// I decided to use this method again from Roblox project I did in past.
 	m_currentAudioPosition += (delta * m_rate) * 1000;
 
-	if (m_currentAudioPosition > m_audioLength + 6000) { // Avoid game ended too early
+	if (m_currentAudioPosition > m_audioLength + 2500) { // Avoid game ended too early
 		m_state = GameState::PosGame;
 		::printf("Audio stopped!\n");
 	}
@@ -398,14 +403,14 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 		m_scrollSpeed += 10;
 	}
 
-	if (m_is_autoplay) return;
+	if (!m_is_autoplay) {
+		for (auto& key : KeyMapping) {
+			if (key.second.key == state.key) {
+				key.second.isPressed = true;
 
-	for (auto& key : KeyMapping) {
-		if (key.second.key == state.key) {
-			key.second.isPressed = true;
-
-			if (key.first < m_tracks.size()) {
-				m_tracks[key.first]->OnKeyDown();
+				if (key.first < m_tracks.size()) {
+					m_tracks[key.first]->OnKeyDown();
+				}
 			}
 		}
 	}

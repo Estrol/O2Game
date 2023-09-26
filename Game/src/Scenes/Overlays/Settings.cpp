@@ -181,7 +181,7 @@ void SettingsOverlay::Render(double delta) {
                         int GraphicsIndex = 0;
                         int nextGraphicsIndex = -1;
                         try {
-                            GraphicsIndex = std::atoi(Configuration::Load("Game", "Renderer").c_str());
+                            GraphicsIndex = std::stoi(Configuration::Load("Game", "Renderer").c_str());
                         }
                         catch (std::invalid_argument) {
                             
@@ -360,7 +360,18 @@ void SettingsOverlay::Render(double delta) {
 
     if (changeResolution) {
         std::vector<std::string> resolution = splitString(m_resolutions[currentResolutionIndex], 'x');
-        GameWindow::GetInstance()->ResizeWindow(std::atoi(resolution[0].c_str()), std::atoi(resolution[1].c_str()));
+        int x = 800, y = 600;
+
+        try {
+            x = std::stoi(resolution[0]);
+            y = std::stoi(resolution[1]);
+        } catch (std::invalid_argument) {
+
+        }
+
+        GameWindow::GetInstance()->ResizeBuffer(
+            x, y
+        );
     }
 }
 
@@ -399,21 +410,21 @@ void SettingsOverlay::LoadConfiguration() {
     }
 
     try {
-        currentOffset = std::atoi(Configuration::Load("Game", "AudioOffset").c_str());
+        currentOffset = std::stoi(Configuration::Load("Game", "AudioOffset").c_str());
     }
     catch (std::invalid_argument) {
         currentOffset = 0;
     }
 
     try {
-        currentVolume = std::atoi(Configuration::Load("Game", "AudioVolume").c_str());
+        currentVolume = std::stoi(Configuration::Load("Game", "AudioVolume").c_str());
     }
     catch (std::invalid_argument) {
         currentVolume = 0;
     }
 
     try {
-		convertAutoSound = std::atoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
+		convertAutoSound = std::stoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
     }
 	catch (std::invalid_argument) {
 		convertAutoSound = true;
@@ -434,7 +445,7 @@ void SettingsOverlay::LoadConfiguration() {
     }
 
     try {
-        currentGuideLineIndex = std::atoi(Configuration::Load("Game", "GuideLine").c_str());
+        currentGuideLineIndex = std::stoi(Configuration::Load("Game", "GuideLine").c_str());
     }
     catch (std::invalid_argument) {
         currentGuideLineIndex = 2;
@@ -481,8 +492,16 @@ void SettingsOverlay::PreloadSkin() {
     }
 
     std::vector<std::string> resolutionVec = splitString(resolution, 'x');
+    int x = 800, y = 600;
+
+    try {
+        x = std::stoi(resolutionVec[0]);
+        y = std::stoi(resolutionVec[1]);
+    } catch (std::invalid_argument) {
+
+    }
+
     GameWindow::GetInstance()->ResizeBuffer(
-        std::atoi(resolutionVec[0].c_str()), 
-        std::atoi(resolutionVec[1].c_str())
+        x, y
     );
 }
