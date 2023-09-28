@@ -24,6 +24,8 @@
 #include "../Resources/SkinConfig.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
+#define AUTOPLAY_TEXT u8"Game currently on autoplay!"
+
 struct MissInfo {
 	int type;
 	float beat;
@@ -336,7 +338,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_autoPlay) {
 		m_autoText->Position = m_autoTextPos;
-		m_autoText->Draw(u8"Game currently on Autoplay!");
+		m_autoText->Draw(AUTOPLAY_TEXT);
 
 		m_autoTextPos.X.Offset -= delta * 30.0;
 		if (m_autoTextPos.X.Offset < (-m_autoTextSize + 20)) {
@@ -364,9 +366,7 @@ void GameplayScene::OnKeyUp(const KeyState& state) {
 }
 
 void GameplayScene::OnMouseDown(const MouseState& state) {
-	if (m_resourceFucked) return;
 
-	m_exitButtonFunc->OnKeyDown();
 }
 
 bool GameplayScene::Attach() {
@@ -383,8 +383,8 @@ bool GameplayScene::Attach() {
 		int HitPos = 480;
 
 		try {
-			LaneOffset = std::atoi(Configuration::Skin_LoadValue("Game", "LaneOffset").c_str());
-			HitPos = std::atoi(Configuration::Skin_LoadValue("Game", "HitPos").c_str());
+			LaneOffset = std::stoi(Configuration::Skin_LoadValue("Game", "LaneOffset"));
+			HitPos = std::stoi(Configuration::Skin_LoadValue("Game", "HitPos"));
 		}
 		catch (std::invalid_argument) {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
@@ -402,8 +402,14 @@ bool GameplayScene::Attach() {
 
 		auto skinPath = Configuration::Skin_GetPath();
 		auto playingPath = skinPath / "Playing";
+		auto arenaPath = playingPath / "Arena" / std::to_string(arena);
+
+		if (!std::filesystem::exists(arenaPath)) {
+			throw std::runtime_error("Arena " + std::to_string(arena) + " is missing from folder: " + (playingPath / "Arena").string());
+		}
+
 		SkinConfig conf(playingPath / "Playing.ini", 7);
-		SkinConfig arena_conf(playingPath / "Arena" / std::to_string(arena) / "Arena.ini", 7);
+		SkinConfig arena_conf(arenaPath / "Arena.ini", 7);
 
 		for (int i = 0; i < 7; i++) {
 			m_keyState[i] = false;
@@ -419,11 +425,11 @@ bool GameplayScene::Attach() {
 		m_title->Clip = { RectPos[0].X, RectPos[0].Y, RectPos[0].Width, RectPos[0].Height };
 
 		m_autoText = std::make_unique<Text>(13);
-		m_autoTextSize = m_autoText->CalculateSize(u8"Game currently on autoplay!");
+		m_autoTextSize = m_autoText->CalculateSize(AUTOPLAY_TEXT);
 
 		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 
-		m_PlayBG = std::make_unique<Texture2D>(playingPath / "Arena" / std::to_string(arena) / ("PlayingBG.png"));
+		m_PlayBG = std::make_unique<Texture2D>(arenaPath  / ("PlayingBG.png"));
 		auto PlayBGPos = arena_conf.GetPosition("PlayingBG");
 		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
 		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
@@ -446,11 +452,15 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numComboPaths = {};
 		for (int i = 0; i < 10; i++) {
-			numComboPaths.emplace_back(playingPath / ("ComboNum" + std::to_string(i) + ".png"));
+			auto filePath = arenaPath  / ("ComboNum" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(numComboPaths.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
+
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
 			}
+
+			numComboPaths.emplace_back(filePath);
 		}
 
 		m_comboNum = std::make_unique<NumericTexture>(numComboPaths);
@@ -464,11 +474,15 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numJamPaths = {};
 		for (int i = 0; i < 10; i++) {
-			numJamPaths.emplace_back(playingPath / ("JamNum" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("JamNum" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(numJamPaths.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
+
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
 			}
+
+			numJamPaths.emplace_back(filePath);
 		}
 
 		m_jamNum = std::make_unique<NumericTexture>(numJamPaths);
@@ -481,11 +495,15 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numScorePaths = {};
 		for (int i = 0; i < 10; i++) {
-			numScorePaths.emplace_back(playingPath / ("ScoreNum" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("ScoreNum" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(numScorePaths.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
+				
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
 			}
+
+			numScorePaths.emplace_back(filePath);
 		}
 
 		m_scoreNum = std::make_unique<NumericTexture>(numScorePaths);
@@ -497,18 +515,19 @@ bool GameplayScene::Attach() {
 		m_scoreNum->FillWithZeros = numPos.FillWithZero;
 
 		std::vector<std::string> judgeFileName = { "Miss", "Bad", "Good", "Cool" };
-		auto judgePos = conf.GetPosition("Judge");
+		auto judgePos = arena_conf.GetPosition("Judge");
 		if (judgePos.size() < 4) {
 			throw std::runtime_error("Playing.ini : Positions : Judge : Not enough positions! (count < 4)");
 		}
 
 		for (int i = 0; i < 4; i++) {
-			m_judgement[i] = std::move(std::make_unique<Texture2D>(playingPath / ("Judge" + judgeFileName[i] + ".png")));
+			auto filePath = arenaPath  / ("Judge" + judgeFileName[i] + ".png");
 
-			if (!CheckSkinComponent(numScorePaths.back())) {
+			if (!CheckSkinComponent(filePath)) {
 				throw std::runtime_error("Failed to load Judge image!");
 			}
 
+			m_judgement[i] = std::move(std::make_unique<Texture2D>(filePath));
 			m_judgement[i]->Position = UDim2::fromOffset(judgePos[i].X, judgePos[i].Y);
 			m_judgement[i]->AlphaBlend = true;
 		}
@@ -525,47 +544,62 @@ bool GameplayScene::Attach() {
 		auto jamLogoPos = conf.GetSprite("JamLogo");
 		std::vector<std::filesystem::path> jamLogoFileName = {};
 		for (int i = 0; i < jamLogoPos.numOfFrames; i++) {
-			jamLogoFileName.emplace_back(playingPath / ("JamLogo" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("JamLogo" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(jamLogoFileName.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
+				
 				throw std::runtime_error("Failed to load Jam Logo image!");
 			}
+
+			jamLogoFileName.emplace_back(filePath);
 		}
 
 		m_jamLogo = std::make_unique<Sprite2D>(jamLogoFileName, 0.25f);
 		m_jamLogo->Position = UDim2::fromOffset(jamLogoPos.X, jamLogoPos.Y);
 		m_jamLogo->AnchorPoint = { (double)jamLogoPos.AnchorPointX, (double)jamLogoPos.AnchorPointY };
+		m_jamLogo->SetFPS(jamLogoPos.FrameTime);
 
 		auto lifeBarPos = conf.GetSprite("LifeBar");
 		std::vector<std::filesystem::path> lifeBarFileName = {};
 		for (int i = 0; i < lifeBarPos.numOfFrames; i++) {
-			lifeBarFileName.emplace_back(playingPath / ("LifeBar" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("LifeBar" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(lifeBarFileName.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
 				throw std::runtime_error("Failed to load Life Bar image!");
 			}
+
+			lifeBarFileName.emplace_back(filePath);
 		}
 
 		m_lifeBar = std::make_unique<Sprite2D>(lifeBarFileName, 0.15f);
 		m_lifeBar->Position = UDim2::fromOffset(lifeBarPos.X, lifeBarPos.Y);
 		m_lifeBar->AnchorPoint = { lifeBarPos.AnchorPointX, lifeBarPos.AnchorPointY };
+		m_lifeBar->SetFPS(lifeBarPos.FrameTime);
 
 		std::vector<std::filesystem::path> lnComboFileName = {};
 		for (int i = 0; i < 10; i++) {
-			lnComboFileName.emplace_back(playingPath / ("LongNoteNum" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("LongNoteNum" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(lnComboFileName.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
 				throw std::runtime_error("Failed to load Long Note Combo image!");
 			}
+
+			lnComboFileName.emplace_back(filePath);
 		}
 
 		std::vector<std::filesystem::path> statsNumFileName = {};
 		for (int i = 0; i < 10; i++) {
-			statsNumFileName.emplace_back(playingPath / ("StatsNum" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("StatsNum" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(statsNumFileName.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
 				throw std::runtime_error("Failed to load Stats Number image!");
 			}
+
+			statsNumFileName.emplace_back(filePath);
 		}
 
 		m_statsNum = std::make_unique<NumericTexture>(statsNumFileName);
@@ -580,11 +614,10 @@ bool GameplayScene::Attach() {
 		m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
 		m_statsNum->AnchorPoint = { 0, .5 };
 
-		m_statsPos[0] = UDim2::fromOffset(statsNumPos[0].X, statsNumPos[0].Y); // COOL
-		m_statsPos[1] = UDim2::fromOffset(statsNumPos[1].X, statsNumPos[1].Y); // GOOD
-		m_statsPos[2] = UDim2::fromOffset(statsNumPos[2].X, statsNumPos[2].Y); // BAD
-		m_statsPos[3] = UDim2::fromOffset(statsNumPos[3].X, statsNumPos[3].Y); // MISS
-		m_statsPos[4] = UDim2::fromOffset(statsNumPos[4].X, statsNumPos[4].Y); // MAXCOMBO
+		// COOL: 0 -> MAXCOMBO: 4
+		for (int i = 0; i < 5; i++) {
+			m_statsPos[i] = UDim2::fromOffset(statsNumPos[i].X, statsNumPos[i].Y);
+		}
 
 		m_lnComboNum = std::make_unique<NumericTexture>(lnComboFileName);
 		auto lnComboPos = conf.GetNumeric("LongNoteCombo");
@@ -603,14 +636,17 @@ bool GameplayScene::Attach() {
 		m_exitBtn->Position = UDim2::fromOffset(btnExitRect[0].X, btnExitRect[0].Y); // Fix Exit not functional with Playing.ini
 		m_exitBtn->AnchorPoint = { btnExitPos[0].AnchorPointX, btnExitPos[0].AnchorPointY };
 
-		m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height,
-			[&](int state) {
-				m_drawExitButton = state;
-			},
-			[&]() {
-				m_doExit = true;
-			}
-		);
+		auto OnButtonHover = [&](int state) {
+			m_drawExitButton = state;
+		};
+
+		auto OnButtonClick = [&]() {
+			m_doExit = true;
+		};
+
+		m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
+		m_exitButtonFunc->OnMouseClick = OnButtonClick;
+		m_exitButtonFunc->OnMouseHover = OnButtonHover;
 
 		m_lnComboNum->Position = UDim2::fromOffset(lnComboPos[0].X, lnComboPos[0].Y);
 		m_lnComboNum->NumberPosition = IntToPos(lnComboPos[0].Direction);
@@ -621,22 +657,26 @@ bool GameplayScene::Attach() {
 		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
 		std::vector<std::filesystem::path> lnLogoFileName = {};
 		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
-			lnLogoFileName.emplace_back(playingPath / ("LongNoteLogo" + std::to_string(i) + ".png"));
+			auto filePath = playingPath / ("LongNoteLogo" + std::to_string(i) + ".png");
 
-			if (!CheckSkinComponent(lnLogoFileName.back())) {
+			if (!CheckSkinComponent(filePath)) {
+				std::cout << "Missing: " << filePath.filename() << std::endl;
 				throw std::runtime_error("Failed to load Long Note Logo image!");
 			}
+
+			lnLogoFileName.emplace_back(filePath);
 		}
 
 		m_lnLogo = std::make_unique<Sprite2D>(lnLogoFileName, 0.25f);
 		m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
 		m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
+		m_lnLogo->SetFPS(lnLogoPos.FrameTime);
 		m_lnLogo->AlphaBlend = true;
 
 		auto comboLogoPos = arena_conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
 		for (int i = 0; i < comboLogoPos.numOfFrames; i++) {
-			auto file = playingPath / ("ComboLogo" + std::to_string(i) + ".png");
+			auto file = arenaPath  / ("ComboLogo" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(file)) {
 				break;
@@ -648,6 +688,7 @@ bool GameplayScene::Attach() {
 		m_comboLogo = std::make_unique<Sprite2D>(comboFileName, 0.25f);
 		m_comboLogo->Position = UDim2::fromOffset(comboLogoPos.X, comboLogoPos.Y);
 		m_comboLogo->AnchorPoint = { comboLogoPos.AnchorPointX, comboLogoPos.AnchorPointY };
+		m_comboLogo->SetFPS(comboLogoPos.FrameTime);
 		m_comboLogo->AlphaBlend = true;
 
 		m_waveGage = std::make_unique<Texture2D>(playingPath / "WaveGage.png");
@@ -667,17 +708,19 @@ bool GameplayScene::Attach() {
 		auto targetPos = conf.GetSprite("TargetBar");
 		std::vector<std::filesystem::path> targetBarPaths = {};
 		for (int i = 0; i < targetPos.numOfFrames; i++) {
-			targetBarPaths.emplace_back(playingPath / ("TargetBar" + std::to_string(i) + ".png"));
-
-			if (!CheckSkinComponent(targetBarPaths.back())) {
+			auto filePath = playingPath / ("TargetBar" + std::to_string(i) + ".png");
+			
+			if (!CheckSkinComponent(filePath)) {
 				throw std::runtime_error("Failed to load TargetBar Images, please check your skin folder.");
 			}
+
+			targetBarPaths.emplace_back(filePath);
 		}
 
 		m_targetBar = std::make_unique<Sprite2D>(targetBarPaths);
 		m_targetBar->Position = UDim2::fromOffset(targetPos.X, targetPos.Y);
 		m_targetBar->AnchorPoint = { targetPos.AnchorPointX, targetPos.AnchorPointY };
-		m_targetBar->SetFPS(5);
+		m_targetBar->SetFPS(targetPos.FrameTime);
 
 		m_minuteNum = std::make_unique<NumericTexture>(numTimerPaths);
 		auto minutePos = conf.GetNumeric("Minute");
@@ -723,7 +766,7 @@ bool GameplayScene::Attach() {
 
 		int idx = 2;
 		try {
-			idx = std::atoi(Configuration::Load("Game", "GuideLine").c_str());
+			idx = std::stoi(Configuration::Load("Game", "GuideLine"));
 		}
 		catch (std::invalid_argument) {
 			idx = 2;
@@ -731,7 +774,7 @@ bool GameplayScene::Attach() {
 
 		m_game->SetGuideLineIndex(idx);
 
-		m_game->ListenKeyEvent([&](GameTrackEvent e) {
+		auto OnTrackEvent = [&](GameTrackEvent e) {
 			if (e.IsKeyEvent) {
 				m_keyState[e.Lane] = e.State;
 			}
@@ -754,7 +797,9 @@ bool GameplayScene::Attach() {
 					}
 				}
 			}
-			});
+		};
+
+		m_game->ListenKeyEvent(OnTrackEvent);
 
 		m_game->Load(chart);
 
@@ -787,9 +832,12 @@ bool GameplayScene::Attach() {
 
 		m_game->SetKeys(keys);
 
+		auto hitEffectPos = arena_conf.GetSprite("HitEffect");
+		auto holdEffectPos = arena_conf.GetSprite("HoldEffect");
+
 		std::vector<std::filesystem::path> HitEffect = {};
-		for (int i = 0; i < 9; i++) {
-			auto path = playingPath / ("HitEffect" + std::to_string(i) + ".png");
+		for (int i = 0; i < hitEffectPos.numOfFrames; i++) {
+			auto path = arenaPath  / ("HitEffect" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(path)) {
 				break;
@@ -799,8 +847,8 @@ bool GameplayScene::Attach() {
 		}
 
 		std::vector<std::filesystem::path> holdEffect = {};
-		for (int i = 0; i < 9; i++) {
-			auto path = playingPath / ("HoldEffect" + std::to_string(i) + ".png");
+		for (int i = 0; i < holdEffectPos.numOfFrames; i++) {
+			auto path = arenaPath  / ("HoldEffect" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(path)) {
 				break;
@@ -815,20 +863,21 @@ bool GameplayScene::Attach() {
 			m_hitEffect[i] = std::move(std::make_unique<FrameTimer>(HitEffect));
 			m_holdEffect[i] = std::move(std::make_unique<FrameTimer>(holdEffect));
 
-			m_hitEffect[i]->SetFPS(30.0);
-			m_holdEffect[i]->SetFPS(30.0);
+			m_hitEffect[i]->SetFPS(hitEffectPos.FrameTime);
+			m_holdEffect[i]->SetFPS(holdEffectPos.FrameTime);
 			m_hitEffect[i]->LastIndex();
 			m_holdEffect[i]->Repeat = true;
 			m_hitEffect[i]->AlphaBlend = true;
 			m_holdEffect[i]->AlphaBlend = true;
 
 			int pos = (int)std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
-			m_hitEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
-			m_holdEffect[i]->Position = UDim2::fromOffset(pos, HitPos - 15); // -15 or it will too Deep
-			m_hitEffect[i]->AnchorPoint = { .5, .45 };
-			m_holdEffect[i]->AnchorPoint = { .5, .45 };
+			auto hitPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(hitEffectPos.X, hitEffectPos.Y);
+			auto holdPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(holdEffectPos.X, holdEffectPos.Y);
 
-			m_lifeBar->SetFPS(15);
+			m_hitEffect[i]->Position = hitPos; // -15 or it will too Deep
+			m_holdEffect[i]->Position = holdPos; // -15 or it will too Deep
+			m_hitEffect[i]->AnchorPoint = { hitEffectPos.AnchorPointX, hitEffectPos.AnchorPointY };
+			m_holdEffect[i]->AnchorPoint = { holdEffectPos.AnchorPointX, holdEffectPos.AnchorPointY };
 		}
 
 		bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
@@ -865,7 +914,7 @@ bool GameplayScene::Attach() {
 			m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight );
 		}
 
-		m_game->GetScoreManager()->ListenHit([&](NoteHitInfo info) {
+		auto OnHitEvent = [&](NoteHitInfo info) {
 			m_scoreTimer = 0;
 			m_judgeTimer = 0;
 			m_comboTimer = 0;
@@ -874,24 +923,27 @@ bool GameplayScene::Attach() {
 			m_drawCombo = true;
 			m_drawJudge = true;
 
-			m_comboLogo->SetFPS(18);
-			m_comboTimer = 0; // Fix crash :troll:
+			m_comboTimer = 0;
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
-		});
+		};
 
-		m_game->GetScoreManager()->ListenJam([&](int combo) {
-			m_jamLogo->SetFPS(13.33f);
+		m_game->GetScoreManager()->ListenHit(OnHitEvent);
+
+		auto OnJamEvent = [&](int combo) {
 			m_drawJam = true;
 			m_jamTimer = 0;
 			m_jamLogo->Reset();
-		});
+		};
 
-		m_game->GetScoreManager()->ListenLongNote([&] {
-			m_lnLogo->SetFPS(60);
+		m_game->GetScoreManager()->ListenJam(OnJamEvent);
+
+		auto OnLongComboEvent = [&] {
 			m_lnTimer = 0;
 			m_drawLN = true;
-		});
+		};
+
+		m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
 	}
 	catch (SDLException& e) {
 		MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
@@ -906,6 +958,7 @@ bool GameplayScene::Attach() {
 
 	SceneManager::GetInstance()->SetFrameLimitMode(FrameLimitMode::GAME);
 	m_starting = false;
+
 	return true;
 }
 
@@ -918,7 +971,6 @@ bool GameplayScene::Detach() {
 	}
 
 	for (int i = 0; i < 5; i++) {
-		//SAFE_DELETE(m_pills[i]);
 		m_pills[i].reset();
 	}
 

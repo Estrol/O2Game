@@ -793,7 +793,9 @@ bool EditorScene::Attach() {
 	m_measureGridSize = 16, m_measureGridSeparator = 4;
 
 	m_ready = true;
-	SceneManager::DisplayFade(0, [] {});
+	SceneManager::DisplayFade(0, [] {
+		MsgBox::Show("editor_scene_warn", "Warning", "Editor scene is on read-only mode");
+	});
 	return true;
 }
 

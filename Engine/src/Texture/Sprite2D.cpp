@@ -30,6 +30,8 @@ Sprite2D::Sprite2D(std::vector<std::filesystem::path> textures, float delay) : S
 	Position = UDim2::fromOffset(0, 0);
 	AnchorPoint = { 0, 0 };
 
+	assert(textures.size() > 0);
+
 	for (auto& it : textures) {
 		m_textures.emplace_back(new Texture2D(it));
 	}

@@ -8,7 +8,6 @@ add_executable(Game
     "src/EnvironmentSetup.cpp"
 
 	# Data
-    "src/Data/AutoReplay.cpp"
     "src/Data/bms.cpp"
     "src/Data/Chart.cpp"
     "src/Data/OJM.cpp"
@@ -19,6 +18,7 @@ add_executable(Game
     # Engine
 	"src/Engine/BGMPreview.cpp"
     "src/Engine/Button.cpp"
+    "src/Engine/Autoplay.cpp" 
     "src/Engine/DrawableNote.cpp"
     "src/Engine/DrawableTile.cpp"
     "src/Engine/FrameTimer.cpp"
