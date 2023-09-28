@@ -162,7 +162,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			try {
 				ev.StartTime = std::stof(event[1]);
 			}
-			catch (std::invalid_argument) {
+			catch (const std::invalid_argument&) {
 				ev.StartTime = 0; // WHY TF people set invalid things on invalid row
 			}
 
@@ -225,7 +225,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 				tp.Inherited = std::stoi(timingPoint[6]) == 1;
 				tp.KiaiMode = std::stoi(timingPoint[7]);
 			}
-			catch (std::invalid_argument) {
+			catch (const std::invalid_argument&) {
 				std::cout << "[osu::TimingPoints] Syntax error: " << line << std::endl;
 				continue;
 			}

@@ -128,7 +128,7 @@ bool MyGame::LoadConfiguration() {
 					}
 				}
 			}
-			catch (std::invalid_argument) {
+			catch (const std::invalid_argument&) {
 				std::cout << "Failed to parse Game.ini::Game::Renderer" << std::endl;
 				SetRenderMode(RendererMode::OPENGL);
 			}
