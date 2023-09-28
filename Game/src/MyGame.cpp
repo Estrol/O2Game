@@ -184,6 +184,8 @@ bool MyGame::LoadConfiguration() {
 		FontResources::LoadFontRegion(TextRegion::Chinese);
 		FontResources::LoadFontRegion(TextRegion::Korean);
 	}
+
+	return true;
 }
 
 void MyGame::Update(double delta) {
