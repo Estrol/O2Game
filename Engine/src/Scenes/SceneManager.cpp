@@ -5,6 +5,7 @@
 #include "Overlay.h"
 #include "Imgui/ImguiUtil.h"
 
+#include <condition_variable>
 #include <string>
 #include <mutex>
 #include <iostream>

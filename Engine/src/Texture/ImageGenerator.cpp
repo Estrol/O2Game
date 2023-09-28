@@ -2,6 +2,7 @@
 #include "Misc/Lodepng.h"
 
 #include <iostream>
+#include <stdint.h>
 
 Color interpolate(const Color& start, const Color& end, float t) {
     return {
