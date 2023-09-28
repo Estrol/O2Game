@@ -51,6 +51,10 @@ void ResultScene::Render(double delta) {
                 m_backButton = true;
             }
 
+            if (ImGui::Button("Retry", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
+                m_retryButton = true;
+            }
+
             ImGui::Text("Performance result");
             ImGui::EndMenuBar();
         }
@@ -141,11 +145,17 @@ void ResultScene::Render(double delta) {
             SceneManager::GetInstance()->StopGame();
         }
     }
+
+    if (m_retryButton) {
+        SceneManager::DisplayFade(100, [] {
+            SceneManager::ChangeScene(GameScene::LOADING); 
+        });
+    }
 }
 
 bool ResultScene::Attach() {
     SceneManager::DisplayFade(0, [] {});
-    m_backButton = false;
+    m_backButton = m_retryButton = false;
 
 	Audio* audio = AudioManager::GetInstance()->Get("FINISH");
     if (!audio) {

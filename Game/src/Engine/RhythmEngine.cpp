@@ -223,7 +223,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	m_title = std::u8string(buffer, buffer + strlen(buffer));
 	if (m_rate != 1.0) {
 		memset(buffer, 0, MAX_BUFFER_TXT_SIZE);
-		sprintf(buffer, "[%.2f] %s", m_rate, (const char*)chart->m_title.c_str());
+		sprintf(buffer, "[%.2fx] %s", m_rate, (const char*)m_title.c_str());
 
 		m_title = std::u8string(buffer, buffer + strlen(buffer));
 	}
