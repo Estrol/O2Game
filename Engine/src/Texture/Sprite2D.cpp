@@ -57,7 +57,8 @@ void Sprite2D::Draw(double delta, bool manual) {
 }
 
 void Sprite2D::Draw(double delta, Rect* rect, bool manual) {
-	auto tex = m_textures[m_currentIndex];
+	m_currentIndex = m_currentIndex % m_textures.size(); // Fix Crash if image didn't exist
+	auto tex = m_textures[m_currentIndex]; // TODO: Fix Image didn't load on Arena Folder
 	GameWindow* window = GameWindow::GetInstance();
 
 	double xPos = (window->GetBufferWidth() * Position.X.Scale) + (Position.X.Offset);
@@ -73,7 +74,7 @@ void Sprite2D::Draw(double delta, Rect* rect, bool manual) {
 	tex->AlphaBlend = AlphaBlend;
 	tex->Size = Size;
 	tex->AnchorPoint = AnchorPoint;
-	tex->Draw(rect, manual ? false : true);
+	tex->Draw(rect, !manual);
 
 	if (m_delay > 0.0f) {
 		m_currentTime += static_cast<float>(delta);
