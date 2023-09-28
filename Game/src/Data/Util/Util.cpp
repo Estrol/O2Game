@@ -9,6 +9,7 @@
 #include <string>
 #include <codecvt>
 #include <cmath>
+#include <cerrno>
 #include <iconv.h>
 
 std::vector<std::string> splitString(std::string& input, char delimeter) {
@@ -122,23 +123,46 @@ std::u8string CodepageToUtf8(const char* string, size_t str_len, const char* enc
 	std::u8string result;
 	iconv_t conv = iconv_open("UTF-8", encoding);
 	if (conv == (iconv_t)-1) {
-		return result;
+		return u8"<encoding error>";
 	}
+
+	// size_t inbytesleft = str_len;
+	// size_t outbytesleft = str_len * 4;
+	// char* inbuf = (char*)string;
+	// char* outbuf = (char*)malloc(outbytesleft);
+	// char* outbufptr = outbuf;
+
+	// if (iconv(conv, &inbuf, &inbytesleft, &outbufptr, &outbytesleft) == (size_t)-1) {
+	// 	free(outbuf);
+	// 	iconv_close(conv);
+	// 	return std::u8string((const char8_t*)strerror(errno));
+	// }
+
+	// result = std::u8string((char8_t*)outbuf, str_len * 4 - outbytesleft);
+	// free(outbuf);
+	// iconv_close(conv);
+	// return result;
 
 	size_t inbytesleft = str_len;
 	size_t outbytesleft = str_len * 4;
 	char* inbuf = (char*)string;
-	char* outbuf = (char*)malloc(outbytesleft);
-	char* outbufptr = outbuf;
+	std::vector<char> outbuf;
+	outbuf.resize(outbytesleft, 0);
+
+	char* outbufptr = outbuf.data();
 
 	if (iconv(conv, &inbuf, &inbytesleft, &outbufptr, &outbytesleft) == (size_t)-1) {
-		free(outbuf);
 		iconv_close(conv);
-		return result;
+
+		// return whatever we have left, even if it's not valid
+		size_t len = strlen(outbuf.data());
+		std::u8string remaining = std::u8string((const char8_t*)outbuf.data(), len);
+
+		return remaining;
 	}
 
-	result = std::u8string((char8_t*)outbuf, str_len * 4 - outbytesleft);
-	free(outbuf);
+	result = std::u8string((char8_t*)outbuf.data(), str_len * 4 - outbytesleft);
 	iconv_close(conv);
+
 	return result;
 }

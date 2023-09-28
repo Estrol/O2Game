@@ -87,7 +87,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
                 }
 
                 SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0"); // STOP CHANGING THIS, LEAVE IT "as is"
             }
 
             m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);
@@ -200,12 +200,7 @@ bool Renderer::Resize() {
 bool Renderer::BeginRender() {
     if (IsVulkan()) {
         if (m_vulkan->_swapChainOutdated) {
-            int new_width = m_window->GetWidth();
-			int new_height = m_window->GetHeight();
-
-			if (new_width > 0 && new_height > 0) {
-				m_vulkan->re_init_swapchains(new_width, new_height);
-			}
+            return false;
         }
 
         m_vulkan->begin();
@@ -255,6 +250,15 @@ SDL_BlendMode Renderer::GetSDLBlendMode() {
 
 VulkanEngine* Renderer::GetVulkanEngine() {
     return m_vulkan;
+}
+
+bool Renderer::ReInitVulkan() {
+    int new_width = m_window->GetWidth();
+    int new_height = m_window->GetHeight();
+
+    m_vulkan->re_init_swapchains(new_width, new_height);
+
+    return m_vulkan->_swapChainOutdated == false;
 }
 
 bool Renderer::IsVulkan() {

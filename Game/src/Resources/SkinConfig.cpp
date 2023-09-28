@@ -142,6 +142,10 @@ void SkinConfig::Load(std::filesystem::path path, int keyCount) {
 			e.AnchorPointY = std::stof(split[4]);
 		}
 
+		if (split.size() > 5) {
+			e.FrameTime = std::stof(split[5]);
+		}
+
 		m_spriteValues[key] = std::move(e);
 	}
 

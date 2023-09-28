@@ -3,6 +3,7 @@
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
 #include "Texture/Bitmap.h"
+#include <Texture/MathUtils.h>
 
 #if __LINUX__
 #define TRUE 1
@@ -33,35 +34,48 @@ bool IsRectInsideRect(const Vector2& innerRect, const Rect& outerRect) {
 	return true;
 }
 
-Button::Button(int x, int y, int width, int height, std::function<void(int)> mouse_hover, std::function<void()> mouse_click) {
+Button::Button(int x, int y, int width, int height) {
 	m_x = x;
 	m_y = y;
 	m_width = width;
 	m_height = height;
+}
 
-	m_mouseClick = mouse_click;
-	m_mouseHover = mouse_hover;
+Button::Button(int x, int y, int width, int height, std::function<void(int)> mouse_hover, std::function<void()> mouse_click) 
+	: Button(x, y, width, height) {
+
+	OnMouseClick = mouse_click;
+	OnMouseHover = mouse_hover;
 
 	m_lastState = {};
 }
 
 Button::~Button() {
-	m_mouseClick = nullptr;
-	m_mouseHover = nullptr;
+	OnMouseClick = nullptr;
+	OnMouseHover = nullptr;
+}
+
+bool Button::IsHovered() {
+    return m_isHovered;
 }
 
 void Button::Render(double delta) {
-	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+    Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
 	Vector2 pos = { m_lastState.left, m_lastState.top };
 
 	if (IsRectInsideRect(pos, targetRect)) {
-		// ImguiUtil::BeginText();
+		ImguiUtil::BeginText(ImVec2(m_x, m_y), ImVec2(m_width, m_height));
 
-		// auto draw_list = ImGui::GetWindowDrawList();
+		auto draw_list = ImGui::GetWindowDrawList();
 
-		// draw_list->AddRect(ImVec2((float)targetRect.left, (float)targetRect.top), ImVec2((float)targetRect.right, (float)targetRect.bottom), ImColor(255, 255, 255, 255));
+		ImColor col = { 255, 255, 255, 255 };
+		if (!m_isHovered) {
+			col = { 255, 0, 0, 255 };
+		}
 
-		// ImguiUtil::EndText();
+		draw_list->AddRectFilled(ImVec2(m_x, m_y), ImVec2(m_width, m_height), ImColor(255, 255, 255, 255));
+
+		ImguiUtil::EndText();
 	}
 }
 
@@ -73,31 +87,32 @@ void Button::Input(double delta) {
 	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
 	Vector2 pos = { m_lastState.left, m_lastState.top };
 
-	if (IsRectInsideRect(pos, targetRect) && !IsOutside) {
-		IsOutside = true;
-		m_mouseHover(TRUE);
-	}
-	else {
-		if (IsOutside && !IsRectInsideRect(pos, targetRect)) {
-			IsOutside = false;
-
-			m_mouseHover(FALSE);
-		}
-	}
-}
-
-bool Button::OnKeyDown() {
-	InputManager* inputs = InputManager::GetInstance();
-
-	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
-	Vector2 pos = { m_lastState.left, m_lastState.top };
-
 	if (IsRectInsideRect(pos, targetRect)) {
-		if (inputs->IsMouseButton(MouseButton::LEFT)) {
-			m_mouseClick();
-			return true;
-		}
-	}
+		bool previousClick = m_isClicked;
+		m_isClicked = inputs->IsMouseButton(MouseButton::LEFT);
 
-	return false;
+		if (!previousClick && m_isClicked) {
+			if (OnMouseClick) {
+				OnMouseClick();
+			}
+		} else if (previousClick && !m_isClicked) {
+			m_isClicked = false;
+		}
+
+		if (!m_isHovered) {
+			m_isHovered = true;
+
+			if (OnMouseHover) {
+				OnMouseHover(TRUE);
+			}
+		}
+	} else {
+		if (m_isHovered) {
+			m_isHovered = false;
+
+			if (OnMouseHover) {
+				OnMouseHover(FALSE);
+			}
+		}	
+	}
 }

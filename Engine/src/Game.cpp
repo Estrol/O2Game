@@ -251,6 +251,10 @@ void Game::Run() {
 			Stop();
 		}
 
+		if (m_renderer->IsVulkan()) {
+			m_renderer->ReInitVulkan();
+		}
+
 		if (m_threadMode == ThreadMode::MULTI_THREAD) {
 			Input(delta);
 		}

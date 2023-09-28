@@ -16,6 +16,7 @@
 #include "Judgements/BeatBasedJudge.h"
 #include "Judgements/MsBasedJudge.h"
 
+
 #include <chrono>
 #include <codecvt>
 
@@ -148,8 +149,12 @@ bool RhythmEngine::Load(Chart* chart) {
 
 	if (EnvironmentSetup::GetInt("Autoplay") == 1) {
 		std::cout << "AutoPlay enabled!" << std::endl;
-		auto replay = AutoReplay::CreateReplay(chart);
-		std::sort(replay.begin(), replay.end(), [](const ReplayHitInfo& a, const ReplayHitInfo& b) {
+		auto replay = Autoplay::CreateReplay(chart);
+		std::sort(replay.begin(), replay.end(), [](const Autoplay::ReplayHitInfo& a, const Autoplay::ReplayHitInfo& b) {
+			if (a.Time == b.Time) {
+				return a.Type < b.Type;
+			}
+			
 			return a.Time < b.Time;
 		});
 
@@ -164,9 +169,9 @@ bool RhythmEngine::Load(Chart* chart) {
 	auto audioVolume = Configuration::Load("Game", "AudioVolume");
 	if (audioVolume.size() > 0) {
 		try {
-			m_audioVolume = std::atoi(audioVolume.c_str());
+			m_audioVolume = std::stoi(audioVolume);
 		}
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AudioVolume invalid volume: " << audioVolume << " reverting to 100 value" << std::endl;
 			m_audioVolume = 100;
 		}
@@ -175,10 +180,10 @@ bool RhythmEngine::Load(Chart* chart) {
 	auto audioOffset = Configuration::Load("Game", "AudioOffset");
 	if (audioOffset.size() > 0) {
 		try {
-			m_audioOffset = std::atoi(audioOffset.c_str());
+			m_audioOffset = std::stoi(audioOffset);
 		}
 
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AudioOffset invalid offset: " << audioOffset << " reverting to 0 value" << std::endl;
 			m_audioOffset = 0;
 		}
@@ -188,17 +193,22 @@ bool RhythmEngine::Load(Chart* chart) {
 	bool IsAutoSound = false;
 	if (autoSound.size() > 0) {
 		try {
-			IsAutoSound = std::atoi(autoSound.c_str()) == 1;
+			IsAutoSound = std::stoi(autoSound) == 1;
 		}
 
-		catch (std::invalid_argument e) {
+		catch (std::invalid_argument) {
 			std::cout << "Game.ini::AutoSound invalid value: " << autoSound << " reverting to 0 value" << std::endl;
 			IsAutoSound = false;
 		}
 	}
 
-	if (Configuration::Load("Gameplay", "Notespeed").size() > 0) {
-		m_scrollSpeed = std::atoi(Configuration::Load("Gameplay", "Notespeed").c_str());
+	auto noteSpeed = Configuration::Load("Gameplay", "Notespeed");
+	if (noteSpeed.size() > 0) {
+		try {
+			m_scrollSpeed = std::stoi(noteSpeed);
+		} catch (std::invalid_argument) {
+			std::cout << "Game.ini::NoteSpeed invalid value: " << noteSpeed << " reverting to 210 value" << std::endl;
+		}
 	}
 
 	if (EnvironmentSetup::Get("SongRate").size() > 0) {
@@ -320,9 +330,17 @@ void RhythmEngine::Update(double delta) {
 
 	// Since I'm coming from Roblox, and I had no idea how to Real-Time sync the audio
 	// I decided to use this method again from Roblox project I did in past.
+	double last = m_currentAudioPosition;
 	m_currentAudioPosition += (delta * m_rate) * 1000;
 
-	if (m_currentAudioPosition > m_audioLength + 6000) { // Avoid game ended too early
+	// check difference between last and current audio position
+	// if it's too big, then it means the game is lagging
+
+	if (m_currentAudioPosition - last > 1000 * 5) {
+		assert(false); // TODO: Handle this
+	}
+
+	if (m_currentAudioPosition > m_audioLength + 2500) { // Avoid game ended too early
 		m_state = GameState::PosGame;
 		::printf("Audio stopped!\n");
 	}
@@ -361,15 +379,14 @@ void RhythmEngine::Update(double delta) {
 	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
 
 	if (m_is_autoplay) {
-		auto frames = GetAutoplayAtThisFrame(m_currentAudioPosition);
+		auto frame = GetAutoplayAtThisFrame(m_currentAudioPosition);
 
-		for (auto& frame : frames) {
-			if (frame.Type == ReplayHitType::KEY_DOWN) {
-				m_tracks[frame.Lane]->OnKeyDown();
-			}
-			else {
-				m_tracks[frame.Lane]->OnKeyUp();
-			}
+		for (auto& frame : frame.KeyDowns) {
+			m_tracks[frame.Lane]->OnKeyDown();
+		}
+
+		for (auto& frame : frame.KeyUps) {
+			m_tracks[frame.Lane]->OnKeyUp();
 		}
 	}
 }
@@ -398,14 +415,14 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 		m_scrollSpeed += 10;
 	}
 
-	if (m_is_autoplay) return;
+	if (!m_is_autoplay) {
+		for (auto& key : KeyMapping) {
+			if (key.second.key == state.key) {
+				key.second.isPressed = true;
 
-	for (auto& key : KeyMapping) {
-		if (key.second.key == state.key) {
-			key.second.isPressed = true;
-
-			if (key.first < m_tracks.size()) {
-				m_tracks[key.first]->OnKeyDown();
+				if (key.first < m_tracks.size()) {
+					m_tracks[key.first]->OnKeyDown();
+				}
 			}
 		}
 	}
@@ -414,14 +431,14 @@ void RhythmEngine::OnKeyDown(const KeyState& state) {
 void RhythmEngine::OnKeyUp(const KeyState& state) {
 	if (m_state == GameState::NotGame || m_state == GameState::PosGame) return;
 
-	if (m_is_autoplay) return;
+	if (!m_is_autoplay) {
+		for (auto& key : KeyMapping) {
+			if (key.second.key == state.key) {
+				key.second.isPressed = false;
 
-	for (auto& key : KeyMapping) {
-		if (key.second.key == state.key) {
-			key.second.isPressed = false;
-
-			if (key.first < m_tracks.size()) {
-				m_tracks[key.first]->OnKeyUp();
+				if (key.first < m_tracks.size()) {
+					m_tracks[key.first]->OnKeyUp();
+				}
 			}
 		}
 	}
@@ -612,20 +629,26 @@ void RhythmEngine::CreateTimingMarkers() {
 	}
 }
 
-std::vector<ReplayHitInfo> RhythmEngine::GetAutoplayAtThisFrame(double offset) {
-    std::vector<ReplayHitInfo> actions;
+ReplayFrameData RhythmEngine::GetAutoplayAtThisFrame(double offset) {
+    ReplayFrameData data;
 
 	for (int i = m_autoMinIndex; i < m_autoFrames.size(); i++) {
 		auto& hit = m_autoFrames[i];
 
 		if (offset >= hit.Time) {
-			actions.push_back(hit);
+			if (hit.Type == Autoplay::ReplayHitType::KEY_UP) {
+				data.KeyUps.push_back(hit);
+			} else {
+				data.KeyDowns.push_back(hit);
+			}
 
 			m_autoMinIndex++;
+		} else {
+			break;
 		}
 	}
 
-	return actions;
+	return std::move(data);
 }
 
 int* RhythmEngine::GetLaneSizes() const {

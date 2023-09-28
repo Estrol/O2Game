@@ -15,7 +15,7 @@
 #include "Rendering/Vulkan/Texture2DVulkan.h"
 
 #if _DEBUG
-constexpr bool bUseValidationLayers = false;
+constexpr bool bUseValidationLayers = true;
 #else
 constexpr bool bUseValidationLayers = false;
 #endif
@@ -99,7 +99,8 @@ void VulkanEngine::cleanup() {
 			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
 		}
 
-		vkb::destroy_swapchain(_swapchainData);
+		//vkb::destroy_swapchain(_swapchainData);
+		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 		vkDestroySurfaceKHR(_instance, _surface, nullptr);
 		
 		vkDestroyDevice(_device, nullptr);
@@ -412,18 +413,16 @@ bool VulkanEngine::init_swapchain() {
 
 	vkb::Result vkbSwapchainResult = swapchainBuilder.build();
 
-	vkb::destroy_swapchain(_swapchainData);
-
-	_swapchainData = vkbSwapchainResult.value();
-
-	/*if (_swapchain != VK_NULL_HANDLE) {
-		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-	}*/
-
 	if (!vkbSwapchainResult) {
 		_swapchain = VK_NULL_HANDLE;
+		_swapchainData.swapchain = VK_NULL_HANDLE;
+		vkb::destroy_swapchain(_swapchainData);
+	
 		return false;
 	}
+
+	vkb::destroy_swapchain(_swapchainData);
+	_swapchainData = vkbSwapchainResult.value();
 
 	vkb::Swapchain vkbSwapchain = vkbSwapchainResult.value();
 	
@@ -1229,6 +1228,10 @@ void VulkanEngine::init_pipeline() {
 }
 
 void VulkanEngine::re_init_swapchains(int width, int height) {
+	if (!_swapChainOutdated) {
+		return;
+	}
+
 	vkDeviceWaitIdle(_device);
 	_swapChainQueue.flush();
 

@@ -776,7 +776,7 @@ bool SongSelectScene::Attach() {
     }
 
     try {
-        int value = std::atoi(noteValue.c_str());
+        int value = std::stoi(noteValue.c_str());
 
 		currentSpeed = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
 	} 

@@ -35,6 +35,7 @@ public:
 	SDL_BlendMode GetSDLBlendMode();
 
 	VulkanEngine* GetVulkanEngine();
+	bool ReInitVulkan();
 	bool IsVulkan();
 
 	static Renderer* GetInstance();
