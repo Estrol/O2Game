@@ -101,7 +101,7 @@ void SettingsOverlay::Render(double delta) {
             }
 
             if (done) {
-                EnvironmentSetup::Set("bWaiting", "0");
+                EnvironmentSetup::SetInt("Setting_SceneIndex", 0);
             }
             break;
         }

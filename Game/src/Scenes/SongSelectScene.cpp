@@ -341,7 +341,7 @@ void SongSelectScene::OnGameLoadMusic(double delta) {
 	
     bool bExit = false;
     if (m_tempMusicIndex < m_tempMusicLists.size()) {
-        if (m_lastTime >= 0.5) {
+        if (m_lastTime >= 0.0025) {
             m_lastTime = 0;
 
             file = m_tempMusicLists[m_tempMusicIndex];
@@ -839,7 +839,7 @@ bool SongSelectScene::Detach() {
 
 void SongSelectScene::SaveConfiguration() {
     EnvironmentSetup::Set("SongRate", std::to_string(currentRate));
-    Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(currentSpeed * 100.0)));
+    Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(::round(currentSpeed * 100.0))));
 }
 
 void SongSelectScene::LoadChartImage() {
