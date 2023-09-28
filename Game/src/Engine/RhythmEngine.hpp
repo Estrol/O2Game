@@ -3,12 +3,13 @@
 #include "Rendering/WindowsTypes.h"
 #include "Texture/Vector2.h"
 #include "../Data/Chart.hpp"
-#include "../Data/AutoReplay.hpp"
+//#include "../Data/AutoReplay.hpp"
 #include "GameTrack.hpp"
 #include "TimingLineManager.hpp"
 #include "ScoreManager.hpp"
 #include "Timing/TimingBase.h"
 #include "Judgements/JudgeBase.h"
+#include "Autoplay.h"
 
 enum class GameState {
 	PreParing,
@@ -16,6 +17,11 @@ enum class GameState {
 	PreGame,
 	Playing,
 	PosGame
+};
+
+struct ReplayFrameData {
+	std::vector<Autoplay::ReplayHitInfo> KeyDowns;
+	std::vector<Autoplay::ReplayHitInfo> KeyUps;
 };
 
 class RhythmEngine {
@@ -80,7 +86,7 @@ private:
 	void UpdateGamePosition();
 	void UpdateVirtualResolution();
 	void CreateTimingMarkers();
-	std::vector<ReplayHitInfo> GetAutoplayAtThisFrame(double offset);
+	ReplayFrameData GetAutoplayAtThisFrame(double offset);
 
 	void Release();
 
@@ -128,8 +134,8 @@ private:
 	std::vector<NoteInfoDesc> m_noteDescs;
 	std::vector<AutoSample> m_autoSamples;
 	std::unordered_map<int, int> m_autoHitIndex;
-	std::unordered_map<int, std::vector<ReplayHitInfo>> m_autoHitInfos;
-	std::vector<ReplayHitInfo> m_autoFrames;
+	std::unordered_map<int, std::vector<Autoplay::ReplayHitInfo>> m_autoHitInfos;
+	std::vector<Autoplay::ReplayHitInfo> m_autoFrames;
 
 	/* clock system */
 	int m_PlayTime = 0;
