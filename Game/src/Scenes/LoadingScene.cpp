@@ -172,6 +172,8 @@ void LoadingScene::Render(double delta) {
 }
 
 bool LoadingScene::Attach() {
+	SceneManager::DisplayFade(0, [] {});
+
 	fucked = false;
 	is_shown = false;
 	is_ready = true;

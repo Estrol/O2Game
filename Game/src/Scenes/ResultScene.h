@@ -14,6 +14,7 @@ public:
 
 private:
 	bool m_backButton;
+	bool m_retryButton;
 
 	std::unique_ptr<Texture2D> m_background;
 };
