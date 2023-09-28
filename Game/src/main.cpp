@@ -160,8 +160,6 @@ int main(int argc, char* argv[]) {
 	ret = Run(argc, wargv);
 #endif
 
-	ret = Run(argc, wargv);
-
     for (int i = 0; i < argc; i++) {
         delete[] wargv[i];
     }
