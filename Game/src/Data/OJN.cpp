@@ -45,46 +45,34 @@ void OJN::Load(std::filesystem::path& file) {
 
 	std::map<int, std::vector<Package>> difficulty;
 	for (int i = 0; i < 3; i++) {
-		int startOffset = Header.data_offset[i];
-		int endOffset = Header.data_offset[i + 1];
+		fs.seekg(Header.data_offset[i], std::ios::beg);
 
-		int size = endOffset - startOffset;
-		fs.seekg(startOffset, std::ios::beg);
+		for (int j = 0; j < Header.package_count[i]; j++) {
+			Package pkg = {};
+			fs.read((char*)&pkg.Measure, 4);
+			fs.read((char*)&pkg.Channel, 2);
+			fs.read((char*)&pkg.EventCount, 2);
 
-		difficulty[i] = {};
+			if (pkg.EventCount > 192) {
+				throw std::runtime_error("Event count at measure: " + std::to_string(pkg.Measure) + " exceed the limit! (limit: 192)");
+			}
 
-		if (size > 0) {
-			for (int j = 0; j < Header.package_count[i]; j++) {
-				if (fs.tellg() > endOffset) {
-					throw std::runtime_error("Block data size overflow! at file: " + file.string());
+			for (int i = 0; i < pkg.EventCount; i++) {
+				Event ev = {};
+				if (pkg.Channel == 0 || pkg.Channel == 1) {
+					fs.read((char*)&ev.BPM, sizeof(float));
+				}
+				else {
+					fs.read((char*)&ev.Value, sizeof(short));
+					fs.read((char*)&ev.VolPan, sizeof(char));
+					fs.read((char*)&ev.Type, sizeof(char));
 				}
 
-				Package pkg = {};
-				fs.read((char*)&pkg.Measure, 4);
-				fs.read((char*)&pkg.Channel, 2);
-				fs.read((char*)&pkg.EventCount, 2);
+				pkg.Events.push_back(ev);
+			}
 
-				if (pkg.EventCount > 192) {
-					throw std::runtime_error("Event count at measure: " + std::to_string(pkg.Measure) + " exceed the limit! (limit: 192)");
-				}
-
-				for (int i = 0; i < pkg.EventCount; i++) {
-					Event ev = {};
-					if (pkg.Channel == 0 || pkg.Channel == 1) {
-						fs.read((char*)&ev.BPM, sizeof(float));
-					}
-					else {
-						fs.read((char*)&ev.Value, sizeof(short));
-						fs.read((char*)&ev.VolPan, sizeof(char));
-						fs.read((char*)&ev.Type, sizeof(char));
-					}
-
-					pkg.Events.push_back(ev);
-				}
-
-				if (pkg.EventCount > 0) {
-					difficulty[i].push_back(pkg);
-				}
+			if (pkg.EventCount > 0) {
+				difficulty[i].push_back(pkg);
 			}
 		}
 

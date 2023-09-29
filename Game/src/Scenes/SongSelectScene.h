@@ -38,6 +38,7 @@ private:
 	int page = 0;
 
 	bool isWait = false;
+	bool isScrolled = false;
 	float waitTime = 0;
 
 	float currentSpeed = 2.25;
