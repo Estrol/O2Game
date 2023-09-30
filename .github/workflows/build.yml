@@ -35,6 +35,9 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
 
+    env:
+      VULKAN_SDK: ""
+
     steps:
       - uses: actions/checkout@v3
 
@@ -67,20 +70,17 @@ jobs:
         if: matrix.triplets == 'x64-windows'
         run: |
           choco install vulkan-sdk
-        with:
-          VULKAN_SDK: C:/Program Files/LunarG/VulkanSDK/
+
+      # setup VULKAN_SDK env var for windows
+      - name: Set VULKAN_SDK - If Windows
+        if: matrix.triplets == 'x64-windows'
+        run: echo "::set-env name=VULKAN_SDK::C:/Program Files/LunarG/VulkanSDK/"
 
       # add libsdl2 libsdl2-image 
       - name: Install Vulkan SDK - If Linux
         if: matrix.triplets == 'x64-linux'
         run: |
           sudo apt-get install libsdl2-dev libsdl2-image-dev vulkan-sdk
-
-      # if windows set VULKAN_SDK to vulkan sdk path
-      - name: Set VULKAN_SDK
-        if: matrix.triplets == 'x64-windows'
-        run: |
-          echo "VULKAN_SDK=C:/Program Files/LunarG/VulkanSDK/
 
       - name: Configure CMake
         run: >
