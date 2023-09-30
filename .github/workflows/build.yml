@@ -1,0 +1,83 @@
+# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+        c_compiler: [gcc, cl]
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+            triplets: x64-windows
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            triplets: x64-linux
+        exclude:
+          - os: windows-latest
+            c_compiler: gcc
+          - os: windows-latest
+            c_compiler: clang
+          - os: ubuntu-latest
+            c_compiler: cl
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      # configure vcpkg and set vcpkg dir to VCPKG_ROOT
+      - name: Setup vcpkg
+        uses: microsoft/vcpkg@master
+        with:
+          vcpkg-branch: master
+          vcpkg-directory: ${{ github.workspace }}/vcpkg
+          vcpkg-keep: true
+          vcpkg-commit: true
+          vcpkg-allow-outdated: true
+          vcpkg-triplets: ${{ matrix.triplets }}
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+      # install vulkan sdk whatever on windows or linux
+      - name: Install Vulkan SDK
+        if: matrix.triplets == 'x64-windows' || matrix.triplets == 'x64-linux'
+        run: |
+          if [ ${{ matrix.triplets }} == 'x64-windows' ]; then
+            choco install vulkan-sdk
+          else
+            sudo apt-get install libvulkan-dev
+          fi
+
+      # if windows set VULKAN_SDK to vulkan sdk path
+      - name: Set VULKAN_SDK
+        if: matrix.triplets == 'x64-windows'
+        run: |
+          echo "VULKAN_SDK=C:/Program Files/LunarG/VulkanSDK/
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+            --preset=${{ matrix.triplets }}
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+            -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}

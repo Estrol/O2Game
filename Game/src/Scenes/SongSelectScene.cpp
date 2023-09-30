@@ -626,8 +626,15 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
 
                 if (isSelected) {
                     ImGui::PopStyleColor();
+
+                    if (isScrolled) {
+                        isScrolled = false;
+
+                        ImGui::SetScrollHereY(0.5f);
+                    }
                 }
             }
+
             ImGui::PopStyleVar();
             ImGui::EndChild();
         }
@@ -655,17 +662,44 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
     }
 
     ImGui::SetCursorPos(cursorPos);
-    //float oldScale = FontResources::GetButtonFont()->Scale;
-
-    //FontResources::GetButtonFont()->Scale = 1.5f;
     ImGui::PushFont(FontResources::GetButtonFont());
 
     if (ImGui::Button("Play", MathUtil::ScaleVec2(ImVec2(200, 60)))) {
         bPlay = true;
     }
     
-    // FontResources::GetButtonFont()->Scale = oldScale;
     ImGui::PopFont();
+
+    waitTime += delta;
+    const double waitTimeDelay = 0.1;
+
+    if (ImGui::IsKeyDown(ImGuiKey_UpArrow) && waitTime >= waitTimeDelay) {
+        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& a) {
+            return a.Id == index;
+        });
+
+        if (--it >= m_musicList.begin()) {
+            index = it->Id;
+            bSelectNewSong = true;
+            isScrolled = true;
+        }
+
+        waitTime = 0;
+    }
+
+    if (ImGui::IsKeyDown(ImGuiKey_DownArrow)  && waitTime >= waitTimeDelay) {
+        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& a) {
+            return a.Id == index;
+        });
+
+        if (++it < m_musicList.end()) {
+            index = it->Id;
+            bSelectNewSong = true;
+            isScrolled = true;
+        }
+
+        waitTime = 0;
+    }
 }
 
 void SongSelectScene::Update(double delta) {

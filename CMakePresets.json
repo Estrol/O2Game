@@ -23,7 +23,7 @@
       }
     },
     {
-      "name": "x64-debug",
+      "name": "x64-windows-debug",
       "displayName": "x64 Debug",
       "inherits": "windows-base",
       "cacheVariables": {
@@ -35,7 +35,7 @@
       }
     },
     {
-      "name": "x64-release",
+      "name": "x64-windows",
       "displayName": "x64 Release",
       "inherits": "x64-debug",
       "cacheVariables": {

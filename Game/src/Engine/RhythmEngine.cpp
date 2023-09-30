@@ -374,10 +374,6 @@ void RhythmEngine::Update(double delta) {
 		}
 	}
 
-	auto currentTime = std::chrono::system_clock::now();
-	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startClock);
-	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
-
 	if (m_is_autoplay) {
 		auto frame = GetAutoplayAtThisFrame(m_currentAudioPosition);
 
@@ -389,6 +385,10 @@ void RhythmEngine::Update(double delta) {
 			m_tracks[frame.Lane]->OnKeyUp();
 		}
 	}
+
+	auto currentTime = std::chrono::system_clock::now();
+	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startClock);
+	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
 }
 
 void RhythmEngine::Render(double delta) {
