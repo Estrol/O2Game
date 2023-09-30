@@ -6,9 +6,9 @@ if "%VCPKG_ROOT%" == "" (
 )
 
 if "%1" == "Debug" (
-    set PRESET=x64-debug
+    set PRESET=x64-windows-debug
 ) else (
-    set PRESET=x64-release
+    set PRESET=x64-windows
 )
 
 cmake . --preset=%PRESET%
