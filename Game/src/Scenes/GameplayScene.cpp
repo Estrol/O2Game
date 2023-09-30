@@ -386,7 +386,7 @@ bool GameplayScene::Attach() {
 			LaneOffset = std::stoi(Configuration::Skin_LoadValue("Game", "LaneOffset"));
 			HitPos = std::stoi(Configuration::Skin_LoadValue("Game", "HitPos"));
 		}
-		catch (std::invalid_argument) {
+		catch (const std::invalid_argument&) {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
 		}
 
@@ -768,7 +768,7 @@ bool GameplayScene::Attach() {
 		try {
 			idx = std::stoi(Configuration::Load("Game", "GuideLine"));
 		}
-		catch (std::invalid_argument) {
+		catch (const std::invalid_argument&) {
 			idx = 2;
 		}
 

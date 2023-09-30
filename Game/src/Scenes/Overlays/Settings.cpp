@@ -183,7 +183,7 @@ void SettingsOverlay::Render(double delta) {
                         try {
                             GraphicsIndex = std::stoi(Configuration::Load("Game", "Renderer").c_str());
                         }
-                        catch (std::invalid_argument) {
+                        catch (const std::invalid_argument&) {
                             
                         }
                         
@@ -365,7 +365,7 @@ void SettingsOverlay::Render(double delta) {
         try {
             x = std::stoi(resolution[0]);
             y = std::stoi(resolution[1]);
-        } catch (std::invalid_argument) {
+        } catch (const std::invalid_argument&) {
 
         }
 
@@ -412,21 +412,21 @@ void SettingsOverlay::LoadConfiguration() {
     try {
         currentOffset = std::stoi(Configuration::Load("Game", "AudioOffset").c_str());
     }
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentOffset = 0;
     }
 
     try {
         currentVolume = std::stoi(Configuration::Load("Game", "AudioVolume").c_str());
     }
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentVolume = 0;
     }
 
     try {
 		convertAutoSound = std::stoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
     }
-	catch (std::invalid_argument) {
+	catch (const std::invalid_argument&) {
 		convertAutoSound = true;
 	}
 
@@ -440,14 +440,14 @@ void SettingsOverlay::LoadConfiguration() {
             currentFPSIndex = (int)(it - m_fps.begin());
         }
     }
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentFPSIndex = 4;
     }
 
     try {
         currentGuideLineIndex = std::stoi(Configuration::Load("Game", "GuideLine").c_str());
     }
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentGuideLineIndex = 2;
     }
 
@@ -497,7 +497,7 @@ void SettingsOverlay::PreloadSkin() {
     try {
         x = std::stoi(resolutionVec[0]);
         y = std::stoi(resolutionVec[1]);
-    } catch (std::invalid_argument) {
+    } catch (const std::invalid_argument&) {
 
     }
 

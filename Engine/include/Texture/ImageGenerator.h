@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 struct Color {
     unsigned char r, g, b, a;

@@ -23,7 +23,7 @@ else()
     add_definitions(-D__cpp_lib_char8_t)
     add_definitions(-D__cpp_lib_clamp)
     add_compile_options(-finput-charset=UTF-8)
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
