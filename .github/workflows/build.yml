@@ -51,13 +51,6 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      # configure vcpkg and set vcpkg dir to VCPKG_ROOT
-      # - name: Setup vcpkg
-      #   run: |
-      #     git clone https://github.com/Microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
-      #     cd ${{ github.workspace }}/vcpkg
-      #     ./bootstrap-vcpkg.sh
-
       - name: Preparing vcpkg
         uses: actions/checkout@v2
         with:
@@ -103,7 +96,7 @@ jobs:
       - name: Zip build output
         uses: montudor/action-zip@v0.1.0
         with:
-          args: zip -r build.zip ${{ steps.strings.outputs.build-output-dir }}
+          args: zip -r build.zip . -i ${{ steps.strings.outputs.build-output-dir }}
 
       # copy zip to artifacts
       - name: Copy build output to artifacts
