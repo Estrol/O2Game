@@ -101,8 +101,8 @@ if (WIN32)
 
 elseif (UNIX AND NOT APPLE)
     set(THIRD_PARTY_LIBS 
-        "${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass.so"
-        "${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass_fx.so"
+        "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass.so"
+        "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass_fx.so"
         dl 
         pthread 
         m 

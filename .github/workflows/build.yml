@@ -96,3 +96,16 @@ jobs:
 
       - name: Build
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+      # zip the build output
+      - name: Zip build output
+        uses: montudor/action-zip@v0.1.0
+        with:
+          args: zip -r build.zip ${{ steps.strings.outputs.build-output-dir }}
+
+      # copy zip to artifacts
+      - name: Copy build output to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: build.zip
