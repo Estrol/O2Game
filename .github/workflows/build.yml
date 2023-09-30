@@ -61,6 +61,7 @@ jobs:
         with:
           repository: microsoft/vcpkg
           path: ${{ github.workspace }}/vcpkg
+          ref: 8b04a7bd93bef991818fc372bb83ce00ec1c1c16
 
       - name: Configure vcpkg
         run: |
