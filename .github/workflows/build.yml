@@ -45,16 +45,22 @@ jobs:
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       # configure vcpkg and set vcpkg dir to VCPKG_ROOT
-      - name: Setup vcpkg
-        uses: microsoft/vcpkg@master
+      # - name: Setup vcpkg
+      #   run: |
+      #     git clone https://github.com/Microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+      #     cd ${{ github.workspace }}/vcpkg
+      #     ./bootstrap-vcpkg.sh
+
+      - name: Preparing vcpkg
+        uses: actions/checkout@v2
         with:
-          vcpkg-branch: master
-          vcpkg-directory: ${{ github.workspace }}/vcpkg
-          vcpkg-keep: true
-          vcpkg-commit: true
-          vcpkg-allow-outdated: true
-          vcpkg-triplets: ${{ matrix.triplets }}
-          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          repository: microsoft/vcpkg
+          path: ${{ github.workspace }}/vcpkg
+
+      - name: Configure vcpkg
+        run: |
+          cd ${{ github.workspace }}/vcpkg
+          ./bootstrap-vcpkg.sh
 
       # install vulkan sdk whatever on windows or linux
       - name: Install Vulkan SDK
