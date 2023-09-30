@@ -63,22 +63,18 @@ jobs:
           cd ${{ github.workspace }}/vcpkg
           ./bootstrap-vcpkg.sh
 
-      # install vulkan sdk whatever on windows or linux
-      # - name: Install Vulkan SDK - If Windows
-      #   if: matrix.triplets == 'x64-windows'
-      #   run: |
-      #     choco install vulkan-sdk
-
-      # setup VULKAN_SDK env var for windows
-      # - name: Set VULKAN_SDK - If Windows
-      #   if: matrix.triplets == 'x64-windows'
-      #   run: echo "::set-env name=VULKAN_SDK::C:/Program Files/LunarG/VulkanSDK/"
+      -name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
       # add libsdl2 libsdl2-image 
-      - name: Install Vulkan SDK - If Linux
+      - name: Install dependencies (Linux)
         if: matrix.triplets == 'x64-linux'
         run: |
-          sudo apt-get install libsdl2-dev libsdl2-image-dev libvulkan-dev
+          sudo apt-get install libsdl2-dev libsdl2-image-dev
 
       - name: Configure CMake
         run: >
@@ -89,19 +85,10 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
             -S ${{ github.workspace }} \
 
-      - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      - name: Build (Linux)
+        if: matrix.triplets == 'x64-linux' 
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j 16
 
-      # zip the build output
-      - name: Zip build output
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r build.zip ${{ steps.strings.outputs.build-output-dir }}
-
-      # copy zip to artifacts
-      - name: Upload build output as release asset
-        uses: actions/upload-release-asset@v1
-        with:
-          asset_path: ${{ steps.strings.outputs.build-output-dir }}/build.zip
-          asset_name: build.zip
-          asset_content_type: application/zip
+      - name: Build (Windows)
+        if: matrix.triplets == 'x64-windows'
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- /maxcpucount:16
