@@ -94,19 +94,29 @@ endif()
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE} ${LIB_INDEX}")
 
 if (WIN32)
+    set(BASS "${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass.lib")
+    set(BASS_FX "${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass_fx.lib")
+
 	set(THIRD_PARTY_LIBS
-		"${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass.lib" 
-		"${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass_fx.lib" 
+        ${BASS} 
+        ${BASS_FX} 
 	)
 
 elseif (UNIX AND NOT APPLE)
+    set(BASS "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass.so")
+    set(BASS_FX "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass_fx.so")
+
     set(THIRD_PARTY_LIBS 
-        "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass.so"
-        "${PROJECT_SOURCE_DIR}/third-party/bin/${O2GAME_PLATFORM}-linux/${CMAKE_BUILD_TYPE}/libbass_fx.so"
+        ${BASS} 
+        ${BASS_FX} 
         dl 
         pthread 
         m 
     )
+endif()
+
+if (NOT EXISTS ${BASS} OR NOT EXISTS ${BASS_FX})
+    message(FATAL_ERROR "BASS or BASS_FX not found")
 endif()
 
 # check if FREETYPE_LIBRAIES is a list then check first index if optimized
