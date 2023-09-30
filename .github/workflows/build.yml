@@ -38,6 +38,7 @@ jobs:
 
     env:
       VULKAN_SDK: ""
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
     steps:
       - uses: actions/checkout@v3
