@@ -15,14 +15,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         build_type: [Release]
         c_compiler: [gcc, cl]
         include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-            triplets: x64-windows
+          # - os: windows-latest
+          #   c_compiler: cl
+          #   cpp_compiler: cl
+          #   triplets: x64-windows
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
@@ -66,21 +67,21 @@ jobs:
           ./bootstrap-vcpkg.sh
 
       # install vulkan sdk whatever on windows or linux
-      - name: Install Vulkan SDK - If Windows
-        if: matrix.triplets == 'x64-windows'
-        run: |
-          choco install vulkan-sdk
+      # - name: Install Vulkan SDK - If Windows
+      #   if: matrix.triplets == 'x64-windows'
+      #   run: |
+      #     choco install vulkan-sdk
 
       # setup VULKAN_SDK env var for windows
-      - name: Set VULKAN_SDK - If Windows
-        if: matrix.triplets == 'x64-windows'
-        run: echo "::set-env name=VULKAN_SDK::C:/Program Files/LunarG/VulkanSDK/"
+      # - name: Set VULKAN_SDK - If Windows
+      #   if: matrix.triplets == 'x64-windows'
+      #   run: echo "::set-env name=VULKAN_SDK::C:/Program Files/LunarG/VulkanSDK/"
 
       # add libsdl2 libsdl2-image 
       - name: Install Vulkan SDK - If Linux
         if: matrix.triplets == 'x64-linux'
         run: |
-          sudo apt-get install libsdl2-dev libsdl2-image-dev vulkan-sdk
+          sudo apt-get install libsdl2-dev libsdl2-image-dev libvulkan-dev
 
       - name: Configure CMake
         run: >
