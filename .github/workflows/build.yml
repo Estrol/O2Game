@@ -96,11 +96,12 @@ jobs:
       - name: Zip build output
         uses: montudor/action-zip@v0.1.0
         with:
-          args: zip -r build.zip . -i ${{ steps.strings.outputs.build-output-dir }}
+          args: zip -qq -r build.zip ${{ steps.strings.outputs.build-output-dir }}
 
       # copy zip to artifacts
-      - name: Copy build output to artifacts
-        uses: actions/upload-artifact@v2
+      - name: Upload build output as release asset
+        uses: actions/upload-release-asset@v1
         with:
-          name: build
-          path: build.zip
+          asset_path: ${{ steps.strings.outputs.build-output-dir }}/build.zip
+          asset_name: build.zip
+          asset_content_type: application/zip
