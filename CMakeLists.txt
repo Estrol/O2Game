@@ -3,7 +3,7 @@ message("Unnamed O2 Game Clone Project - CMake Build System")
 
 # check CMAKE_TOOLCHAIN_FILE
 if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not defined")
+    SET(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "cmake_tool_chain_file")
 endif()
 
 project(O2Game)
