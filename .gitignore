@@ -16,9 +16,9 @@ GameResources
 vcpkg_installed
 .idea
 
-third-party/**/*.lib
-third-party/**/*.so
-third-party/**/*.bin
+!third-party/**/*.lib
+!third-party/**/*.bin
+!third-party/**/*.so
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
