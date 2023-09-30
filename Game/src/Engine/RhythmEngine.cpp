@@ -171,7 +171,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		try {
 			m_audioVolume = std::stoi(audioVolume);
 		}
-		catch (std::invalid_argument) {
+		catch (const std::invalid_argument&) {
 			std::cout << "Game.ini::AudioVolume invalid volume: " << audioVolume << " reverting to 100 value" << std::endl;
 			m_audioVolume = 100;
 		}
@@ -183,7 +183,7 @@ bool RhythmEngine::Load(Chart* chart) {
 			m_audioOffset = std::stoi(audioOffset);
 		}
 
-		catch (std::invalid_argument) {
+		catch (const std::invalid_argument&) {
 			std::cout << "Game.ini::AudioOffset invalid offset: " << audioOffset << " reverting to 0 value" << std::endl;
 			m_audioOffset = 0;
 		}
@@ -196,7 +196,7 @@ bool RhythmEngine::Load(Chart* chart) {
 			IsAutoSound = std::stoi(autoSound) == 1;
 		}
 
-		catch (std::invalid_argument) {
+		catch (const std::invalid_argument&) {
 			std::cout << "Game.ini::AutoSound invalid value: " << autoSound << " reverting to 0 value" << std::endl;
 			IsAutoSound = false;
 		}
@@ -206,7 +206,7 @@ bool RhythmEngine::Load(Chart* chart) {
 	if (noteSpeed.size() > 0) {
 		try {
 			m_scrollSpeed = std::stoi(noteSpeed);
-		} catch (std::invalid_argument) {
+		} catch (const std::invalid_argument&) {
 			std::cout << "Game.ini::NoteSpeed invalid value: " << noteSpeed << " reverting to 210 value" << std::endl;
 		}
 	}

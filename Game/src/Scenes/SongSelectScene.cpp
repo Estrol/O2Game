@@ -805,7 +805,7 @@ bool SongSelectScene::Attach() {
     try {
         currentRate = std::stof(rateValue.c_str());
     }
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentRate = 1.0f;
     }
 
@@ -814,7 +814,7 @@ bool SongSelectScene::Attach() {
 
 		currentSpeed = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
 	} 
-    catch (std::invalid_argument) {
+    catch (const std::invalid_argument&) {
         currentSpeed = 2.2f;
     }
 

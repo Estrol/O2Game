@@ -69,7 +69,7 @@ namespace BMS {
 							}
 						}
 					}
-					catch (std::invalid_argument) {
+					catch (const std::invalid_argument&) {
 						::printf("[BMS] [ERROR] Failed to parse #PLAYER, the notes might not able correctly load\n");
 					}
 
@@ -169,7 +169,7 @@ namespace BMS {
 								try {
 									ev.Value = std::stoi(value, nullptr, 16);
 								}
-								catch (std::invalid_argument&) {
+								catch (const std::invalid_argument&) {
 									::printf("[BMS] [ERROR] Failed to parse BPM, undefined behavior may occured!");
 									continue;
 								}
