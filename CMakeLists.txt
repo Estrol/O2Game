@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 message("Unnamed O2 Game Clone Project - CMake Build System")
 
-# check if CXX_COMPILER is not cl.exe then set 
+# check CMAKE_TOOLCHAIN_FILE
+if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not defined")
+endif()
 
 project(O2Game)
 

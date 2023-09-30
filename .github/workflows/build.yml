@@ -63,14 +63,15 @@ jobs:
           ./bootstrap-vcpkg.sh
 
       # install vulkan sdk whatever on windows or linux
-      - name: Install Vulkan SDK
-        if: matrix.triplets == 'x64-windows' || matrix.triplets == 'x64-linux'
+      - name: Install Vulkan SDK - If Windows
+        if: matrix.triplets == 'x64-windows'
         run: |
-          if [ ${{ matrix.triplets }} == 'x64-windows' ]; then
-            choco install vulkan-sdk
-          else
-            sudo apt-get install libvulkan-dev
-          fi
+          choco install vulkan-sdk
+          
+      - name: Install Vulkan SDK - If Linux
+        if: matrix.triplets == 'x64-linux'
+        run: |
+          sudo apt-get install vulkan-sdk
 
       # if windows set VULKAN_SDK to vulkan sdk path
       - name: Set VULKAN_SDK
