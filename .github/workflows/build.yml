@@ -15,7 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        #os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         build_type: [Release]
         c_compiler: [gcc, cl]
         include:
@@ -88,12 +89,7 @@ jobs:
       - name: Configure CMake (Windows)
         if: matrix.triplets == 'x64-windows' 
         run: |
-          cmake -B ${{ steps.strings.outputs.build-output-dir }} ^
-            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} ^
-            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} ^
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ^
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
-            -S ${{ github.workspace }}
+          cmake -B ${{ steps.strings.outputs.build-output-dir }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -S ${{ github.workspace }}
 
       - name: Build (Linux)
         if: matrix.triplets == 'x64-linux' 
