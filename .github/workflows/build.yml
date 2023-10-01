@@ -15,7 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        #os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         build_type: [Release]
         c_compiler: [gcc, cl]
         include:
@@ -35,8 +36,14 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
 
+    env:
+      VULKAN_SDK: ""
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Set reusable strings
         id: strings
@@ -44,40 +51,50 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      # configure vcpkg and set vcpkg dir to VCPKG_ROOT
-      - name: Setup vcpkg
-        uses: microsoft/vcpkg@master
+      - name: Preparing vcpkg
+        uses: actions/checkout@v2
         with:
-          vcpkg-branch: master
-          vcpkg-directory: ${{ github.workspace }}/vcpkg
-          vcpkg-keep: true
-          vcpkg-commit: true
-          vcpkg-allow-outdated: true
-          vcpkg-triplets: ${{ matrix.triplets }}
-          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          repository: microsoft/vcpkg
+          path: ${{ github.workspace }}/vcpkg
+          ref: 8b04a7bd93bef991818fc372bb83ce00ec1c1c16
 
-      # install vulkan sdk whatever on windows or linux
-      - name: Install Vulkan SDK
-        if: matrix.triplets == 'x64-windows' || matrix.triplets == 'x64-linux'
+      - name: Configure vcpkg
         run: |
-          if [ ${{ matrix.triplets }} == 'x64-windows' ]; then
-            choco install vulkan-sdk
-          else
-            sudo apt-get install libvulkan-dev
-          fi
+          cd ${{ github.workspace }}/vcpkg
+          ./bootstrap-vcpkg.sh
 
-      # if windows set VULKAN_SDK to vulkan sdk path
-      - name: Set VULKAN_SDK
-        if: matrix.triplets == 'x64-windows'
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      # add libsdl2 libsdl2-image 
+      - name: Install dependencies (Linux)
+        if: matrix.triplets == 'x64-linux'
         run: |
-          echo "VULKAN_SDK=C:/Program Files/LunarG/VulkanSDK/
+          sudo apt-get install libsdl2-dev libsdl2-image-dev
 
-      - name: Configure CMake
+      - name: Configure CMake (Linux)
+        if: matrix.triplets == 'x64-linux' 
         run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-            --preset=${{ matrix.triplets }}
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-            -S ${{ github.workspace }}
+          cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -S ${{ github.workspace }} \
 
-      - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      - name: Configure CMake (Windows)
+        if: matrix.triplets == 'x64-windows' 
+        run: |
+          cmake -B ${{ steps.strings.outputs.build-output-dir }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -S ${{ github.workspace }}
+
+      - name: Build (Linux)
+        if: matrix.triplets == 'x64-linux' 
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j 16
+
+      - name: Build (Windows)
+        if: matrix.triplets == 'x64-windows'
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- /maxcpucount:16
