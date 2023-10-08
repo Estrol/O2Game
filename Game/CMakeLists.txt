@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(Game VERSION 0.1.0 LANGUAGES C CXX)
 
+file(GLOB_RECURSE HEADERS "./src/*.h")
+
 add_executable(Game 
+    ${HEADERS} 
+
     # MAIN
 	"src/main.cpp"
     "src/MyGame.cpp"
@@ -30,6 +34,9 @@ add_executable(Game
     "src/Engine/O2Texture.cpp"
     "src/Engine/RhythmEngine.cpp"
     "src/Engine/ScoreManager.cpp"
+    "src/Engine/SkinConfig.cpp" 
+    "src/Engine/LuaScripting.cpp" 
+    "src/Engine/SkinManager.cpp" 
     "src/Engine/TimingLine.cpp"
     "src/Engine/TimingLineManager.cpp"
 	"src/Engine/Timing/StaticTiming.cpp"
@@ -41,7 +48,6 @@ add_executable(Game
 
 	# Resources
 	"src/Resources/GameResources.cpp"
-    "src/Resources/SkinConfig.cpp"
     "src/Resources/GameDatabase.cpp"
     "src/Resources/MusicListMaker.cpp"
 

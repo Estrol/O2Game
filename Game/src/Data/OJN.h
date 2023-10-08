@@ -120,7 +120,7 @@ namespace O2 {
 		~OJN();
 
 		static std::stringstream LoadOJNFile(std::filesystem::path filePath);
-		void Load(std::filesystem::path& filePath);
+		void Load(std::filesystem::path& filePath, bool loadOJM = true);
 
 		std::filesystem::path CurrrentDir;
 		OJNHeader Header;
@@ -135,5 +135,6 @@ namespace O2 {
 		void ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg);
 
 		bool m_valid = false;
+		bool m_loadOJM = false;
 	};
 }

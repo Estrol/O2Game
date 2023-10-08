@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(EstEngine VERSION 0.1.0 LANGUAGES C CXX)
 
 # recursive search file in ./src
-file(GLOB_RECURSE MAIN "./include/*.h" "./src/*.cpp")
+file(GLOB_RECURSE HEADERS "./include/*.h")
 
 # CXX20
 set(CMAKE_CXX_STANDARD 20)
@@ -11,7 +11,9 @@ set(CMAKE_CXX_STANDARD 20)
 # _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 
-add_library(EstEngine 
+add_library(EstEngine
+	${HEADERS} 
+
 	# Audio
 	"src/Audio/Audio.cpp"
 	"src/Audio/AudioManager.cpp"
@@ -51,6 +53,10 @@ add_library(EstEngine
 	"src/Misc/Lodepng.cpp"
 	"src/Misc/md5.cpp"
 
+	#Logs
+	"src/Logs/Console.cpp" 
+	"src/Logs/Logs.cpp" 
+
 	#Rendering
 	"src/Rendering/Renderer.cpp"
 	"src/Rendering/GameWindow.cpp"
@@ -80,12 +86,34 @@ add_library(EstEngine
 	"src/Texture/Vector2.cpp"
 	"src/Texture/ImageGenerator.cpp"
 
+	#UI
+	"src/UI/UIBase.cpp" 
+	"src/UI/Quad.cpp" 
+	"src/UI/Circle.cpp" 
+
 	#Threading
 	"src/Threading/GameThread.cpp"
 
 	#Main
 	"src/Configuration.cpp"
 	"src/Game.cpp"
+)
+
+if (WIN32)
+	set(glslangValidator "$ENV{VULKAN_SDK}/Bin/glslangValidator.exe")
+elseif (UNIX AND NOT APPLE)
+	set(glslangValidator "$ENV{VULKAN_SDK}/Bin/glslangValidator")
+else()
+	message(FATAL_ERROR "Unsupported platform")
+endif()
+
+execute_process(
+	COMMAND "${glslangValidator}" -gVS
+		-V -o "${CMAKE_CURRENT_SOURCE_DIR}/src/Rendering/Vulkan/Shaders/position.spv.h" 
+		--vn __glsl_vert "${CMAKE_CURRENT_SOURCE_DIR}/src/Rendering/Vulkan/Shaders/position.vert"
+	COMMAND "${glslangValidator}" -gVS
+		-V -o "${CMAKE_CURRENT_SOURCE_DIR}/src/Rendering/Vulkan/Shaders/color.spv.h" 
+		--vn __glsl_frag "${CMAKE_CURRENT_SOURCE_DIR}/src/Rendering/Vulkan/Shaders/color.frag"
 )
 
 if (MSVC)

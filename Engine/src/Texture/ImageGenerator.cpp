@@ -51,3 +51,25 @@ std::vector<uint8_t> ImageGenerator::GenerateGradientImage(int width, int height
 
     return result;
 }
+
+std::vector<uint8_t> ImageGenerator::GenerateImage(int width, int height, Color color) {
+    std::vector<uint8_t> tempData(width * height * 4);
+
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			size_t index = (size_t)4 * width * y + (size_t)4 * x;
+			tempData[index] = color.r;
+            tempData[(size_t)(index + 1)] = color.g;
+            tempData[(size_t)(index + 2)] = color.b;
+            tempData[(size_t)(index + 3)] = color.a;
+		}
+	}
+
+	std::vector<uint8_t> result;
+	int error = lodepng::encode(result, tempData, width, height, LCT_RGBA, 8);
+	if (error != 0) {
+		throw std::runtime_error("ImageGenerator::GenerateImage: Failed to encode image");
+	}
+
+	return result;
+}

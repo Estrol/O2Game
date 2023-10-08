@@ -16,7 +16,7 @@ AudioSampleChannel::AudioSampleChannel() {
 }
 
 AudioSampleChannel::AudioSampleChannel(uint32_t sampleHandle, float rate, float vol, bool pitch) {
-	m_hCurrentSample = BASS_SampleGetChannel(sampleHandle, 0);
+	m_hCurrentSample = BASS_SampleGetChannel(sampleHandle, BASS_SAMCHAN_STREAM);
 	if (!m_hCurrentSample) {
 		::printf("[BASS] Error: %d\n", BASS_ErrorGetCode());
 	}
@@ -109,6 +109,9 @@ bool AudioSampleChannel::Pause() {
 	return true;
 }
 
+uint32_t AudioSampleChannel::GetHandle() const {
+    return m_hCurrentSample;
+}
 bool AudioSampleChannel::IsPlaying() {
 	return BASS_ChannelIsActive((HSTREAM)m_hCurrentSample) == BASS_ACTIVE_PLAYING;
 }

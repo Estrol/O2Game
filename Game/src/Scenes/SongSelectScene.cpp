@@ -20,7 +20,8 @@
 
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
-#include "../Resources/SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
+#include "../Engine/SkinManager.hpp"
 #include "../Resources/GameDatabase.h"
 #include "../Resources/MusicListMaker.h"
 
@@ -83,7 +84,8 @@ void SongSelectScene::Render(double delta) {
         | ImGuiWindowFlags_NoMove
         | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse
-        | ImGuiWindowFlags_MenuBar;
+        | ImGuiWindowFlags_MenuBar
+        | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     ImGui::BeginDisabled(is_departing);
 
@@ -355,7 +357,7 @@ void SongSelectScene::OnGameLoadMusic(double delta) {
         m_musicList = db->FindAll();
     }
 
-    if (!file.empty()) {
+    if (!file.empty() && !MsgBox::Any()) {
         ImGui::OpenPopup("###imgui_ui_load_music");
     }
 
@@ -580,6 +582,7 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                 auto lists = music->FindQuery(search);
                 m_musicList = lists;
 
+                isScrolled = true;
                 strcpy(previous, search);
             }
 
@@ -748,8 +751,10 @@ void SongSelectScene::OnMouseDown(const MouseState& state) {
 }
 
 bool SongSelectScene::Attach() {
+    SkinManager::GetInstance()->ReloadSkin();
     SceneManager::DisplayFade(0, [] {});
 
+    isScrolled = true;
     currentAlpha = 100;
     nextAlpha = 100;
     m_lastTime = 0;
@@ -772,7 +777,7 @@ bool SongSelectScene::Attach() {
         }
     }
 
-    auto path = Configuration::Skin_GetPath();
+    auto path = SkinManager::GetInstance()->GetPath();
 
     if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
         Audio* bgm = AudioManager::GetInstance()->Get("BGM");

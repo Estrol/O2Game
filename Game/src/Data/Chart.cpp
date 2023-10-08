@@ -5,6 +5,7 @@
 #include <Misc/md5.h>
 #include <random>
 #include "Util/Util.hpp"
+#include <Logs.h>
 #include <cmath>
 
 float float_floor(float value) {
@@ -215,7 +216,7 @@ Chart::Chart(BMS::BMSFile& file) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			::printf("[Warning] overlapped note found at %.2f ms and conflict with %.2f ms\n", info.StartTime, lastTime[info.LaneIndex]);
+			Logs::Puts("[Chart] overlapped note found at %.2f ms and conflict with %.2f ms", info.StartTime, lastTime[info.LaneIndex]);
 
 			if (note.SampleIndex != -1) {
 				AutoSample sm = {};
@@ -334,7 +335,7 @@ Chart::Chart(O2::OJN& file, int diffIndex) {
 
 		// check if overlap lastTime
 		if (info.StartTime < lastTime[info.LaneIndex]) {
-			::printf("[Warning] overlapped note found at %.2f ms and conflict with %.2f ms\n", info.StartTime, lastTime[info.LaneIndex]);
+			Logs::Puts("[Chart] overlapped note found at %.2f ms and conflict with %.2f ms", info.StartTime, lastTime[info.LaneIndex]);
 
 			if (note.SampleRefId != -1) {
 				AutoSample sm = {};
@@ -667,7 +668,7 @@ void Chart::ComputeKeyCount() {
 	}
 	// Otherwise, the pattern does not match any of the known K values
 	else {
-		std::cout << "Unknown lane pattern, fallback to 7K" << std::endl;
+		Logs::Puts("[Chart] Unknown lane pattern, fallback to 7K");
 		m_keyCount = 7;
 	}
 }

@@ -3,6 +3,7 @@
 #include "Configuration.h"
 #include "Rendering/Renderer.h"
 #include "Exception/SDLException.h"
+#include "../Engine/SkinManager.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -21,7 +22,7 @@
 #define STRCPY_F strcpy
 #endif
 
-#include "SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
 
 #pragma warning(disable:26451)
 
@@ -380,13 +381,14 @@ namespace GameNoteResource {
 
 		bool IsVulkan = Renderer::GetInstance()->IsVulkan();
 		
-		auto skinPath = Configuration::Skin_GetPath();
+		auto skinPath = SkinManager::GetInstance()->GetPath();
 		auto skinNotePath = skinPath / "Notes";
-		SkinConfig conf(skinNotePath / "Notes.ini", 7);
+
+		auto manager = SkinManager::GetInstance();
 
 		for (int i = 0; i < 7; i++) {
-			NoteValue& note = conf.GetNote("LaneHit" + std::to_string(i));
-			NoteValue& hold = conf.GetNote("LaneHold" + std::to_string(i));
+			NoteValue note = manager->GetNote(SkinGroup::Notes, "LaneHit" + std::to_string(i));
+			NoteValue hold = manager->GetNote(SkinGroup::Notes, "LaneHold" + std::to_string(i));
 
 			NoteImage* noteImage = new NoteImage();
 			NoteImage* holdImage = new NoteImage();
@@ -495,8 +497,8 @@ namespace GameNoteResource {
 			noteTextures[(NoteImageType)(i + 7)] = holdImage;
 		}
 
-		NoteValue& trailUp = conf.GetNote("NoteTrailUp");
-		NoteValue& trailDown = conf.GetNote("NoteTrailDown");
+		NoteValue trailUp = manager->GetNote(SkinGroup::Notes, "NoteTrailUp");
+		NoteValue trailDown = manager->GetNote(SkinGroup::Notes, "NoteTrailDown");
 		
 		NoteImage* trailUpImg = new NoteImage();
 		trailUpImg->Texture.resize(trailUp.numOfFiles);

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <Logs.h>
 
 Osu::Beatmap::Beatmap(std::filesystem::path& file) {
 	std::fstream fs(file, std::ios::in);
@@ -210,7 +211,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			}
 
 			if (timingPoint.size() < 8) {
-				std::cout << "[osu::TimingPoints] Syntax error: " << line << std::endl;
+				Logs::Puts("[osu::TimingPoints] Syntax error: %s", line.c_str());
 				continue;
 			}
 
@@ -226,7 +227,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 				tp.KiaiMode = std::stoi(timingPoint[7]);
 			}
 			catch (const std::invalid_argument&) {
-				std::cout << "[osu::TimingPoints] Syntax error: " << line << std::endl;
+				Logs::Puts("[osu::TimingPoints] Syntax error: %s", line.c_str());
 				continue;
 			}
 
@@ -246,7 +247,7 @@ void Osu::Beatmap::ParseString(std::stringstream& ss) {
 			}
 
 			if (hitObject.size() < 4) {
-				std::cout << "[osu::HitObjects] Syntax error: " << line << std::endl;
+				Logs::Puts("[osu::HitObjects] Syntax error: %s", line.c_str());
 				continue;
 			}
 

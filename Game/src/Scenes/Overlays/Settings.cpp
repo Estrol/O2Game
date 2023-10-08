@@ -7,6 +7,7 @@
 #include <Rendering/Window.h>
 #include <SceneManager.h>
 
+#include "../../Engine/SkinManager.hpp"
 #include "../../Data/Util/Util.hpp"
 #include "../../EnvironmentSetup.hpp"
 #include <map>
@@ -369,7 +370,7 @@ void SettingsOverlay::Render(double delta) {
 
         }
 
-        GameWindow::GetInstance()->ResizeBuffer(
+        GameWindow::GetInstance()->ResizeWindow(
             x, y
         );
     }
@@ -484,9 +485,10 @@ void SettingsOverlay::SaveConfiguration() {
 }
 
 void SettingsOverlay::PreloadSkin() {
-    Configuration::Skin_Load(currentSkin);
+    auto manager = SkinManager::GetInstance();
+    manager->LoadSkin(currentSkin);
 
-    std::string resolution = Configuration::Skin_LoadValue("Window", "NativeSize");
+    std::string resolution = manager->GetSkinProp("Window", "NativeSize", "800x600");
     if (resolution.empty()) {
         resolution = "800x600";
     }

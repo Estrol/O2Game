@@ -28,6 +28,7 @@
 #include "FallbackFonts/jp.ttf.h"
 #include "FallbackFonts/kr.ttf.h"
 #include "FallbackFonts/ch.ttf.h"
+#include <Logs.h>
 
 // END FONT FALLBACK
 
@@ -68,7 +69,7 @@ void FontResources::ClearFontIndex() {
 }
 
 void FontResources::PreloadFontCaches() {
-    std::cout << "[Font] Preload font on progress!" << std::endl;
+    Logs::Puts("[FontResources] Preparing font to load");
     std::lock_guard<std::mutex> lock(mutex);
 
     if (!gImFontRebuild) {
@@ -86,7 +87,7 @@ void FontResources::PreloadFontCaches() {
 
     GameWindow* wnd = GameWindow::GetInstance();
 
-    auto skinPath = Configuration::Skin_GetPath();
+    auto skinPath = Configuration::Font_GetPath();
     auto fontPath = skinPath / "Fonts";
 
     auto normalfont = fontPath / "normal.ttf";
@@ -129,9 +130,6 @@ void FontResources::PreloadFontCaches() {
                             if (std::filesystem::exists(jpFont)) {
                                 io.Fonts->AddFontFromFileTTF((const char*)jpFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesJapanese());
                             }
-                            else {
-                                io.Fonts->AddFontFromMemoryTTF((void*)get_jp_font_data(), get_jp_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesJapanese());
-                            }
 
                             break;
                         }
@@ -140,19 +138,13 @@ void FontResources::PreloadFontCaches() {
                             if (std::filesystem::exists(krFont)) {
                                 io.Fonts->AddFontFromFileTTF((const char*)krFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
                             }
-                            else {
-                                io.Fonts->AddFontFromMemoryTTF((void*)get_kr_font_data(), get_kr_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesKorean());
-                            }
                             
                             break;
                         }
 
                         case TextRegion::Chinese: {
-                            if (std::filesystem::exists(krFont)) {
-                                io.Fonts->AddFontFromFileTTF((const char*)krFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-                            }
-                            else {
-                                io.Fonts->AddFontFromMemoryTTF((void*)get_ch_font_data(), get_ch_font_size(), fontSize, &conf, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+                            if (std::filesystem::exists(chFont)) {
+                                io.Fonts->AddFontFromFileTTF((const char*)chFont.u8string().c_str(), fontSize, &conf, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
                             }
 
                             break;
@@ -161,7 +153,10 @@ void FontResources::PreloadFontCaches() {
                 }
             }
 
-            io.Fonts->Build();
+            bool result = io.Fonts->Build();
+            if (!result) {
+				throw std::runtime_error("Failed to build font atlas");
+            }
         }
 
         {
@@ -192,7 +187,10 @@ void FontResources::PreloadFontCaches() {
 
         //execute a gpu command to upload imgui font textures
         vulkan->immediate_submit([&](VkCommandBuffer cmd) {
-            ImGui_ImplVulkan_CreateFontsTexture(cmd);
+            bool success = ImGui_ImplVulkan_CreateFontsTexture(cmd);
+            if (!success) {
+				throw std::runtime_error("[Vulkan] Failed to create fonts texture!");
+            }
         });
 
         //clear font textures from cpu data
@@ -205,7 +203,7 @@ void FontResources::PreloadFontCaches() {
 	
     gImFontRebuild = false;
 
-    std::cout << "[Font] Preload font completed!" << std::endl;
+    Logs::Puts("[FontResources] Preload font completed!");
 }
 
 bool FontResources::ShouldRebuild() {

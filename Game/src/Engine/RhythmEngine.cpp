@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <filesystem>
 #include <numeric>
+#include <Logs.h>
 
 #include "../EnvironmentSetup.hpp"
 #include "Configuration.h"
@@ -15,7 +16,6 @@
 
 #include "Judgements/BeatBasedJudge.h"
 #include "Judgements/MsBasedJudge.h"
-
 
 #include <chrono>
 #include <codecvt>
@@ -148,7 +148,8 @@ bool RhythmEngine::Load(Chart* chart) {
 	}
 
 	if (EnvironmentSetup::GetInt("Autoplay") == 1) {
-		std::cout << "AutoPlay enabled!" << std::endl;
+		Logs::Puts("[Gameplay] Autoplay enabled");
+
 		auto replay = Autoplay::CreateReplay(chart);
 		std::sort(replay.begin(), replay.end(), [](const Autoplay::ReplayHitInfo& a, const Autoplay::ReplayHitInfo& b) {
 			if (a.Time == b.Time) {
@@ -172,7 +173,7 @@ bool RhythmEngine::Load(Chart* chart) {
 			m_audioVolume = std::stoi(audioVolume);
 		}
 		catch (const std::invalid_argument&) {
-			std::cout << "Game.ini::AudioVolume invalid volume: " << audioVolume << " reverting to 100 value" << std::endl;
+			Logs::Puts("[Gameplay] Invalid volume: %s reverting to 100 value", audioVolume.c_str());
 			m_audioVolume = 100;
 		}
 	}
@@ -184,7 +185,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		}
 
 		catch (const std::invalid_argument&) {
-			std::cout << "Game.ini::AudioOffset invalid offset: " << audioOffset << " reverting to 0 value" << std::endl;
+			Logs::Puts("[Gameplay] Invalid offset: %s reverting to 0 value", audioOffset.c_str());
 			m_audioOffset = 0;
 		}
 	}
@@ -197,7 +198,7 @@ bool RhythmEngine::Load(Chart* chart) {
 		}
 
 		catch (const std::invalid_argument&) {
-			std::cout << "Game.ini::AutoSound invalid value: " << autoSound << " reverting to 0 value" << std::endl;
+			Logs::Puts("[Gameplay] Invalid auto sound: %s reverting to 0 value", autoSound.c_str());
 			IsAutoSound = false;
 		}
 	}
@@ -207,7 +208,8 @@ bool RhythmEngine::Load(Chart* chart) {
 		try {
 			m_scrollSpeed = std::stoi(noteSpeed);
 		} catch (const std::invalid_argument&) {
-			std::cout << "Game.ini::NoteSpeed invalid value: " << noteSpeed << " reverting to 210 value" << std::endl;
+			Logs::Puts("[Gameplay] Invalid notespeed: %s reverting to 210 value", noteSpeed.c_str());
+			m_scrollSpeed = 210;
 		}
 	}
 
@@ -337,7 +339,7 @@ void RhythmEngine::Update(double delta) {
 	// if it's too big, then it means the game is lagging
 
 	if (m_currentAudioPosition - last > 1000 * 5) {
-		assert(false); // TODO: Handle this
+		//assert(false); // TODO: Handle this
 	}
 
 	if (m_currentAudioPosition > m_audioLength + 2500) { // Avoid game ended too early

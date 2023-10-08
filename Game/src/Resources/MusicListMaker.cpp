@@ -10,6 +10,8 @@
 std::vector<std::filesystem::path> MusicListMaker::Prepare(std::filesystem::path path) {
     std::vector<std::filesystem::path> song_files;
 
+    path = std::filesystem::is_symlink(path) ? std::filesystem::read_symlink(path) : path;
+
     for (const auto& dir_entry : std::filesystem::directory_iterator(path)) {
         if (dir_entry.is_regular_file()) {
             std::string fileName = dir_entry.path().filename().string();
@@ -41,7 +43,7 @@ void MusicListMaker::Insert(std::filesystem::path song_file) {
     auto db = GameDatabase::GetInstance();
 
     O2::OJN ojn;
-    ojn.Load(song_file);
+    ojn.Load(song_file, false);
 
     if (ojn.IsValid()) {
         DB_MusicItem item = {};
@@ -61,7 +63,7 @@ void MusicListMaker::Insert(std::filesystem::path song_file) {
         memcpy(item.Artist, artist.c_str(), std::clamp((int)artist.size(), 0, (int)(sizeof(item.Artist) - 1)));
 
         for (int i = 0; i < ojn.Difficulties.size(); i++) {
-            Chart chart(ojn);
+            Chart chart(ojn, i);
 
             memset(item.Hash[i], 0, 128);
             memcpy(item.Hash[i], chart.MD5Hash.c_str(), 128);

@@ -20,6 +20,8 @@ public:
 	bool Stop();
 	bool Pause();
 
+	uint32_t GetHandle() const;
+
 	bool IsPlaying();
 	bool IsStopped();
 

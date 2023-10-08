@@ -442,18 +442,6 @@ void Note::OnHit(NoteResult result) {
 			m_state = NoteState::HOLD_ON_HOLDING;
 			m_lastScoreTime = m_engine->GetGameAudioPosition();
 
-			if (result == NoteResult::GOOD) {
-				const double kBaseBPM = 240.0;
-				const double kMaxTicks = 192.0;
-
-				double beat = kBaseBPM / kMaxTicks / GetBPMTime() * 1000.0;
-				double cool = beat * 6.0;
-
-				double time = m_engine->GetGameAudioPosition() - m_startTime;
-
-				std::cout << "[Debug] Time: " << time << ", time_cool: " << cool << std::endl;
-			}
-
 			m_hitResult = result;
 			m_track->HandleHoldScore(HoldResult::HoldAdd);
 			m_track->HandleScore({
@@ -509,18 +497,6 @@ void Note::OnRelease(NoteResult result) {
 				});
 			}
 			else {
-				if (result == NoteResult::GOOD) {
-					const double kBaseBPM = 240.0;
-					const double kMaxTicks = 192.0;
-
-					double beat = kBaseBPM / kMaxTicks / GetBPMTime() * 1000.0;
-            		double cool = beat * 6.0;
-
-					double time = m_engine->GetGameAudioPosition() - m_endTime;
-
-					std::cout << "[Debug] Time: " << time << ", time_cool: " << cool << std::endl;
-				}
-
  				m_state = NoteState::HOLD_PASSED;
 				m_didHitTail = true;
 				m_track->HandleScore({

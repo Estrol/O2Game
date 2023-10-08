@@ -1,7 +1,7 @@
 #pragma once
 #include "Scene.h"
 #include "Texture/Texture2D.h"
-#include "../Resources/SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
 
 class MainMenu : public Scene {
 public:

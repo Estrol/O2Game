@@ -21,7 +21,8 @@
 
 #include "../GameScenes.h"
 #include "../EnvironmentSetup.hpp"
-#include "../Resources/SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
+#include "../Engine/SkinManager.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
 #define AUTOPLAY_TEXT u8"Game currently on autoplay!"
@@ -117,6 +118,7 @@ void GameplayScene::Render(double delta) {
 	bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
 
 	m_PlayBG->Draw();
+	m_Playfooter->Draw();
 	m_Playfield->Draw();
 	if (!is_flhd_enabled) {
 		m_targetBar->Draw(delta);
@@ -267,7 +269,7 @@ void GameplayScene::Render(double delta) {
 
 	float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
 	if (gaugeVal > 0) {
-		m_jamGauge->CalculateSize();// Thanks estrol for make this easier to fix than before :pog: because moving RECT rc to GameplayScene :D
+		m_jamGauge->CalculateSize();
 
 		int lerp;
 		if (m_jamGauge->AbsoluteSize.Y > m_jamGauge->AbsoluteSize.X) {
@@ -345,6 +347,16 @@ void GameplayScene::Render(double delta) {
 			m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 		}
 	}
+
+	int idx = 2;
+	try {
+		idx = std::stoi(Configuration::Load("Game", "GuideLine"));
+	}
+	catch (const std::invalid_argument&) {
+		idx = 2;
+	}
+
+	m_game->SetGuideLineIndex(idx);
 }
 
 void GameplayScene::Input(double delta) {
@@ -370,6 +382,8 @@ void GameplayScene::OnMouseDown(const MouseState& state) {
 }
 
 bool GameplayScene::Attach() {
+	SkinManager::GetInstance()->ReloadSkin();
+
 	m_ended = false;
 	m_starting = false;
 	m_doExit = false;
@@ -379,12 +393,14 @@ bool GameplayScene::Attach() {
 	m_autoPlay = EnvironmentSetup::GetInt("Autoplay") == 1;
 
 	try {
+		auto manager = SkinManager::GetInstance();
+
 		int LaneOffset = 5;
 		int HitPos = 480;
 
 		try {
-			LaneOffset = std::stoi(Configuration::Skin_LoadValue("Game", "LaneOffset"));
-			HitPos = std::stoi(Configuration::Skin_LoadValue("Game", "HitPos"));
+			LaneOffset = std::stoi(manager->GetSkinProp("Game", "LaneOffset", "5"));
+			HitPos = std::stoi(manager->GetSkinProp("Game", "HitPos", "480"));
 		}
 		catch (const std::invalid_argument&) {
 			throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
@@ -400,7 +416,9 @@ bool GameplayScene::Attach() {
 			arena = dist(rng);
 		}
 
-		auto skinPath = Configuration::Skin_GetPath();
+		EnvironmentSetup::SetInt("CurrentArena", arena);
+
+		auto skinPath = manager->GetPath();
 		auto playingPath = skinPath / "Playing";
 		auto arenaPath = playingPath / "Arena" / std::to_string(arena);
 
@@ -408,8 +426,11 @@ bool GameplayScene::Attach() {
 			throw std::runtime_error("Arena " + std::to_string(arena) + " is missing from folder: " + (playingPath / "Arena").string());
 		}
 
-		SkinConfig conf(playingPath / "Playing.ini", 7);
-		SkinConfig arena_conf(arenaPath / "Arena.ini", 7);
+		manager->SetKeyCount(7);
+		manager->Arena_SetIndex(arena);
+
+		// SkinConfig conf(playingPath / "Playing.ini", 7);
+		// SkinConfig arena_conf(arenaPath / "Arena.ini", 7);
 
 		for (int i = 0; i < 7; i++) {
 			m_keyState[i] = false;
@@ -418,8 +439,8 @@ bool GameplayScene::Attach() {
 		}
 
 		m_title = std::make_unique<Text>(13);
-		auto TitlePos = conf.GetPosition("Title");
-		auto RectPos = conf.GetRect("Title");
+		auto TitlePos = manager->GetPosition(SkinGroup::Playing, "Title"); //conf.GetPosition("Title");
+		auto RectPos = manager->GetRect(SkinGroup::Playing, "Title"); //conf.GetRect("Title");
 		m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
 		m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
 		m_title->Clip = { RectPos[0].X, RectPos[0].Y, RectPos[0].Width, RectPos[0].Height };
@@ -430,18 +451,22 @@ bool GameplayScene::Attach() {
 		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 
 		m_PlayBG = std::make_unique<Texture2D>(arenaPath  / ("PlayingBG.png"));
-		auto PlayBGPos = arena_conf.GetPosition("PlayingBG");
+		auto PlayBGPos = manager->Arena_GetPosition("PlayingBG"); //arena_conf.GetPosition("PlayingBG");
 		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
 		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
 
-		auto conKeyLight = conf.GetPosition("KeyLighting");
-		auto conKeyButton = conf.GetPosition("KeyButton");
+		auto conKeyLight = manager->GetPosition(SkinGroup::Playing, "KeyLighting"); //conf.GetPosition("KeyLighting");
+		auto conKeyButton = manager->GetPosition(SkinGroup::Playing, "KeyButton"); //conf.GetPosition("KeyButton");
 
 		if (conKeyLight.size() < 7 || conKeyButton.size() < 7) {
 			throw std::runtime_error("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
 		}
 
+		auto playfieldPos = manager->GetPosition(SkinGroup::Playing, "Playfield"); //conf.GetPosition("Playfield");
 		m_Playfield = std::make_unique<Texture2D>(playingPath / "Playfield.png");
+		m_Playfield->Position = UDim2::fromOffset(playfieldPos[0].X, playfieldPos[0].Y);
+		m_Playfield->AnchorPoint = { playfieldPos[0].AnchorPointX, playfieldPos[0].AnchorPointY };
+
 		for (int i = 0; i < 7; i++) {
 			m_keyLighting[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyLighting" + std::to_string(i) + ".png")));
 			m_keyButtons[i] = std::move(std::make_unique<Texture2D>(playingPath / ("KeyButton" + std::to_string(i) + ".png")));
@@ -464,7 +489,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_comboNum = std::make_unique<NumericTexture>(numComboPaths);
-		auto numPos = arena_conf.GetNumeric("Combo").front();
+		auto numPos = manager->Arena_GetNumeric("Combo").front(); //arena_conf.GetNumeric("Combo").front();
 
 		m_comboNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 		m_comboNum->NumberPosition = IntToPos(numPos.Direction);
@@ -486,7 +511,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_jamNum = std::make_unique<NumericTexture>(numJamPaths);
-		numPos = conf.GetNumeric("Jam").front();
+		numPos = manager->GetNumeric(SkinGroup::Playing, "Jam").front();
 
 		m_jamNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 		m_jamNum->NumberPosition = IntToPos(numPos.Direction);
@@ -507,7 +532,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_scoreNum = std::make_unique<NumericTexture>(numScorePaths);
-		numPos = conf.GetNumeric("Score").front();
+		numPos = manager->GetNumeric(SkinGroup::Playing, "Score").front(); //conf.GetNumeric("Score").front();
 
 		m_scoreNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
 		m_scoreNum->NumberPosition = IntToPos(numPos.Direction);
@@ -515,7 +540,7 @@ bool GameplayScene::Attach() {
 		m_scoreNum->FillWithZeros = numPos.FillWithZero;
 
 		std::vector<std::string> judgeFileName = { "Miss", "Bad", "Good", "Cool" };
-		auto judgePos = arena_conf.GetPosition("Judge");
+		auto judgePos = manager->Arena_GetPosition("Judge"); //arena_conf.GetPosition("Judge");
 		if (judgePos.size() < 4) {
 			throw std::runtime_error("Playing.ini : Positions : Judge : Not enough positions! (count < 4)");
 		}
@@ -533,7 +558,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_jamGauge = std::make_unique<Texture2D>(playingPath / "JamGauge.png");
-		auto gaugePos = conf.GetPosition("JamGauge");
+		auto gaugePos = manager->GetPosition(SkinGroup::Playing, "JamGauge"); //conf.GetPosition("JamGauge");
 		if (gaugePos.size() < 1) {
 			throw std::runtime_error("Playing.ini : Positions : JamGauge : Position Not defined!");
 		}
@@ -541,7 +566,7 @@ bool GameplayScene::Attach() {
 		m_jamGauge->Position = UDim2::fromOffset(gaugePos[0].X, gaugePos[0].Y);
 		m_jamGauge->AnchorPoint = { gaugePos[0].AnchorPointX, gaugePos[0].AnchorPointY };
 
-		auto jamLogoPos = conf.GetSprite("JamLogo");
+		auto jamLogoPos = manager->GetSprite(SkinGroup::Playing, "JamLogo"); //conf.GetSprite("JamLogo");
 		std::vector<std::filesystem::path> jamLogoFileName = {};
 		for (int i = 0; i < jamLogoPos.numOfFrames; i++) {
 			auto filePath = playingPath / ("JamLogo" + std::to_string(i) + ".png");
@@ -560,7 +585,7 @@ bool GameplayScene::Attach() {
 		m_jamLogo->AnchorPoint = { (double)jamLogoPos.AnchorPointX, (double)jamLogoPos.AnchorPointY };
 		m_jamLogo->SetFPS(jamLogoPos.FrameTime);
 
-		auto lifeBarPos = conf.GetSprite("LifeBar");
+		auto lifeBarPos = manager->GetSprite(SkinGroup::Playing, "LifeBar"); //conf.GetSprite("LifeBar");
 		std::vector<std::filesystem::path> lifeBarFileName = {};
 		for (int i = 0; i < lifeBarPos.numOfFrames; i++) {
 			auto filePath = playingPath / ("LifeBar" + std::to_string(i) + ".png");
@@ -603,7 +628,7 @@ bool GameplayScene::Attach() {
 		}
 
 		m_statsNum = std::make_unique<NumericTexture>(statsNumFileName);
-		auto statsNumPos = conf.GetNumeric("Stats");
+		auto statsNumPos = manager->GetNumeric(SkinGroup::Playing, "Stats"); //conf.GetNumeric("Stats");
 		if (statsNumPos.size() < 5) {
 			throw std::runtime_error("Playing.ini : Numerics : Stats : Not enough positions! (count < 5)");
 		}
@@ -620,13 +645,13 @@ bool GameplayScene::Attach() {
 		}
 
 		m_lnComboNum = std::make_unique<NumericTexture>(lnComboFileName);
-		auto lnComboPos = conf.GetNumeric("LongNoteCombo");
+		auto lnComboPos = manager->GetNumeric(SkinGroup::Playing, "LongNoteCombo"); //conf.GetNumeric("LongNoteCombo");
 		if (lnComboPos.size() < 1) {
 			throw std::runtime_error("Playing.ini : Numerics : LongNoteCombo : Position Not defined!");
 		}
 
-		auto btnExitPos = conf.GetPosition("ExitButton");
-		auto btnExitRect = conf.GetRect("Exit");
+		auto btnExitPos = manager->GetPosition(SkinGroup::Playing, "ExitButton"); //conf.GetPosition("ExitButton");
+		auto btnExitRect = manager->GetRect(SkinGroup::Playing, "Exit"); //conf.GetRect("Exit");
 
 		if (btnExitPos.size() < 1 || btnExitRect.size() < 1) {
 			throw std::runtime_error("Playing.ini : Positions|Rect : Exit : Not defined!");
@@ -654,7 +679,7 @@ bool GameplayScene::Attach() {
 		m_lnComboNum->FillWithZeros = lnComboPos[0].FillWithZero;
 		m_lnComboNum->AlphaBlend = true;
 
-		auto lnLogoPos = conf.GetSprite("LongNoteLogo");
+		auto lnLogoPos = manager->GetSprite(SkinGroup::Playing, "LongNoteLogo"); //conf.GetSprite("LongNoteLogo");
 		std::vector<std::filesystem::path> lnLogoFileName = {};
 		for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
 			auto filePath = playingPath / ("LongNoteLogo" + std::to_string(i) + ".png");
@@ -673,7 +698,7 @@ bool GameplayScene::Attach() {
 		m_lnLogo->SetFPS(lnLogoPos.FrameTime);
 		m_lnLogo->AlphaBlend = true;
 
-		auto comboLogoPos = arena_conf.GetSprite("ComboLogo");
+		auto comboLogoPos = manager->Arena_GetSprite("ComboLogo"); //arena_conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
 		for (int i = 0; i < comboLogoPos.numOfFrames; i++) {
 			auto file = arenaPath  / ("ComboLogo" + std::to_string(i) + ".png");
@@ -692,7 +717,7 @@ bool GameplayScene::Attach() {
 		m_comboLogo->AlphaBlend = true;
 
 		m_waveGage = std::make_unique<Texture2D>(playingPath / "WaveGage.png");
-		auto waveGagePos = conf.GetPosition("WaveGage").front();
+		auto waveGagePos = manager->GetPosition(SkinGroup::Playing, "WaveGage").front(); //conf.GetPosition("WaveGage").front();
 		m_waveGage->Position = UDim2::fromOffset(waveGagePos.X, waveGagePos.Y);
 		m_waveGage->AnchorPoint = { waveGagePos.AnchorPointX, waveGagePos.AnchorPointY };
 
@@ -705,7 +730,7 @@ bool GameplayScene::Attach() {
 			}
 		}
 
-		auto targetPos = conf.GetSprite("TargetBar");
+		auto targetPos = manager->GetSprite(SkinGroup::Playing, "TargetBar"); //conf.GetSprite("TargetBar");
 		std::vector<std::filesystem::path> targetBarPaths = {};
 		for (int i = 0; i < targetPos.numOfFrames; i++) {
 			auto filePath = playingPath / ("TargetBar" + std::to_string(i) + ".png");
@@ -717,26 +742,31 @@ bool GameplayScene::Attach() {
 			targetBarPaths.emplace_back(filePath);
 		}
 
+		auto playfooterPos = manager->GetPosition(SkinGroup::Playing, "Playfooter").front();
+		m_Playfooter = std::make_unique<Texture2D>(playingPath / "PlayfieldFooter.png");
+		m_Playfooter->Position = UDim2::fromOffset(playfooterPos.X, playfooterPos.Y);
+		m_Playfooter->AnchorPoint = { playfooterPos.AnchorPointX, playfooterPos.AnchorPointY };
+
 		m_targetBar = std::make_unique<Sprite2D>(targetBarPaths);
 		m_targetBar->Position = UDim2::fromOffset(targetPos.X, targetPos.Y);
 		m_targetBar->AnchorPoint = { targetPos.AnchorPointX, targetPos.AnchorPointY };
 		m_targetBar->SetFPS(targetPos.FrameTime);
 
 		m_minuteNum = std::make_unique<NumericTexture>(numTimerPaths);
-		auto minutePos = conf.GetNumeric("Minute");
+		auto minutePos = manager->GetNumeric(SkinGroup::Playing, "Minute"); //conf.GetNumeric("Minute");
 		m_minuteNum->NumberPosition = IntToPos(minutePos[0].Direction);
 		m_minuteNum->MaxDigits = minutePos[0].MaxDigit;
 		m_minuteNum->FillWithZeros = minutePos[0].FillWithZero;
 		m_minuteNum->Position = UDim2::fromOffset(minutePos[0].X, minutePos[0].Y);
 
 		m_secondNum = std::make_unique<NumericTexture>(numTimerPaths);
-		auto secondPos = conf.GetNumeric("Second");
+		auto secondPos = manager->GetNumeric(SkinGroup::Playing, "Second"); //conf.GetNumeric("Second");
 		m_secondNum->NumberPosition = IntToPos(secondPos[0].Direction);
 		m_secondNum->MaxDigits = secondPos[0].MaxDigit;
 		m_secondNum->FillWithZeros = secondPos[0].FillWithZero;
 		m_secondNum->Position = UDim2::fromOffset(secondPos[0].X, secondPos[0].Y);
 
-		auto pillsPosition = conf.GetPosition("Pill");
+		auto pillsPosition = manager->GetPosition(SkinGroup::Playing, "Pill"); //conf.GetPosition("Pill");
 		if (pillsPosition.size() < 5) {
 			throw std::runtime_error("Playing.ini : Positions : Pill : Not enough positions! (count < 5)");
 		}
@@ -832,8 +862,8 @@ bool GameplayScene::Attach() {
 
 		m_game->SetKeys(keys);
 
-		auto hitEffectPos = arena_conf.GetSprite("HitEffect");
-		auto holdEffectPos = arena_conf.GetSprite("HoldEffect");
+		auto hitEffectPos = manager->Arena_GetSprite("HitEffect"); //arena_conf.GetSprite("HitEffect");
+		auto holdEffectPos = manager->Arena_GetSprite("HoldEffect"); //arena_conf.GetSprite("HoldEffect");
 
 		std::vector<std::filesystem::path> HitEffect = {};
 		for (int i = 0; i < hitEffectPos.numOfFrames; i++) {
@@ -980,6 +1010,7 @@ bool GameplayScene::Detach() {
 
 	m_PlayBG.reset();
 	m_Playfield.reset();
+	m_Playfooter.reset();
 	m_exitBtn.reset();
 
 	m_jamGauge.reset();
@@ -999,19 +1030,22 @@ bool GameplayScene::Detach() {
 	m_secondNum.reset();
 
 	if (m_game) {
-		auto score = m_game->GetScoreManager()->GetScore();
+		auto manager = m_game->GetScoreManager();
+		if (manager) {
+			auto score = manager->GetScore();
 
-		EnvironmentSetup::SetInt("Score", std::get<0>(score));
-		EnvironmentSetup::SetInt("Cool", std::get<1>(score));
-		EnvironmentSetup::SetInt("Good", std::get<2>(score));
-		EnvironmentSetup::SetInt("Bad", std::get<3>(score));
-		EnvironmentSetup::SetInt("Miss", std::get<4>(score));
-		EnvironmentSetup::SetInt("JamCombo", std::get<5>(score));
-		EnvironmentSetup::SetInt("MaxJamCombo", std::get<6>(score));
-		EnvironmentSetup::SetInt("Combo", std::get<7>(score));
-		EnvironmentSetup::SetInt("MaxCombo", std::get<8>(score));
-		EnvironmentSetup::SetInt("LNCombo", std::get<9>(score));
-		EnvironmentSetup::SetInt("LNMaxCombo", std::get<10>(score));
+			EnvironmentSetup::SetInt("Score", std::get<0>(score));
+			EnvironmentSetup::SetInt("Cool", std::get<1>(score));
+			EnvironmentSetup::SetInt("Good", std::get<2>(score));
+			EnvironmentSetup::SetInt("Bad", std::get<3>(score));
+			EnvironmentSetup::SetInt("Miss", std::get<4>(score));
+			EnvironmentSetup::SetInt("JamCombo", std::get<5>(score));
+			EnvironmentSetup::SetInt("MaxJamCombo", std::get<6>(score));
+			EnvironmentSetup::SetInt("Combo", std::get<7>(score));
+			EnvironmentSetup::SetInt("MaxCombo", std::get<8>(score));
+			EnvironmentSetup::SetInt("LNCombo", std::get<9>(score));
+			EnvironmentSetup::SetInt("LNMaxCombo", std::get<10>(score));
+		}
 	}
 	
 	m_game.reset();

@@ -17,6 +17,7 @@
 #include "../GameScenes.h"
 #include "../Data/Chart.hpp"
 #include "../EnvironmentSetup.hpp"
+#include "../Engine/SkinManager.hpp"
 
 static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 
@@ -45,6 +46,7 @@ void ResultScene::Render(double delta) {
         | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse
         | ImGuiWindowFlags_MenuBar
+        | ImGuiWindowFlags_NoBringToFrontOnFocus
     )) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::Button("Back", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
@@ -154,12 +156,13 @@ void ResultScene::Render(double delta) {
 }
 
 bool ResultScene::Attach() {
+    SkinManager::GetInstance()->ReloadSkin();
     SceneManager::DisplayFade(0, [] {});
     m_backButton = m_retryButton = false;
 
 	Audio* audio = AudioManager::GetInstance()->Get("FINISH");
     if (!audio) {
-        auto BGMPath = Configuration::Skin_GetPath() / "Audio";
+        auto BGMPath = SkinManager::GetInstance()->GetPath() / "Audio";
         BGMPath /= "FINISH.ogg";
 
         if (std::filesystem::exists(BGMPath)) {

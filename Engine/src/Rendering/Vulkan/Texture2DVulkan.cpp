@@ -2,6 +2,8 @@
 #include "Texture2DVulkan_Internal.h"
 #include "Rendering/Vulkan/VulkanEngine.h"
 #include "../../Data/Imgui/imgui_impl_vulkan.h"
+#include "Rendering/WindowsTypes.h"
+#include "Texture/ImageGenerator.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../Data/stb_image.h"
@@ -13,6 +15,7 @@
 static std::unordered_map<int, std::unique_ptr<Texture2D_Vulkan>> m_textures;
 static int m_textureCount = 0;
 static std::mutex m_textureMutex;
+static std::unique_ptr<Texture2D_Vulkan> m_dummyTexture;
 
 Texture2D_Vulkan* CreateTexture() {
 	// find the empty slot
@@ -65,24 +68,13 @@ Texture2D_Vulkan* vkTexture::TexLoadImage(std::filesystem::path imagePath) {
     return TexLoadImage(buffer.data(), size);
 }
 
-Texture2D_Vulkan* vkTexture::TexLoadImage(void* buffer, size_t size) {
-	auto vulkan_driver = VulkanEngine::GetInstance();
-	auto tex_data = CreateTexture();
-	tex_data->Channels = 4;
-
-	unsigned char* image_data = stbi_load_from_memory(
-		(uint8_t*)buffer, 
-		(int)size, 
-		&tex_data->Width, 
-		&tex_data->Height, 
-		0, 
-		tex_data->Channels);
-
-	if (image_data == NULL)
-		throw std::runtime_error("Failed to load the image");
-
-	size_t image_size = static_cast<size_t>(tex_data->Width) 
-		* static_cast<size_t>(tex_data->Height) 
+void InternalLoad(
+	VulkanEngine* vulkan_driver, 
+	Texture2D_Vulkan* tex_data, 
+	unsigned char* image_data) {
+	
+	size_t image_size = static_cast<size_t>(tex_data->Width)
+		* static_cast<size_t>(tex_data->Height)
 		* tex_data->Channels;
 
 	VkResult err;
@@ -247,8 +239,62 @@ Texture2D_Vulkan* vkTexture::TexLoadImage(void* buffer, size_t size) {
 		use_barrier[0].subresourceRange.layerCount = 1;
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, use_barrier);
 	});
+}
+
+Texture2D_Vulkan* vkTexture::TexLoadImage(void* buffer, size_t size) {
+	auto vulkan_driver = VulkanEngine::GetInstance();
+	auto tex_data = CreateTexture();
+	tex_data->Channels = 4;
+
+	unsigned char* image_data = stbi_load_from_memory(
+		(uint8_t*)buffer, 
+		(int)size, 
+		&tex_data->Width, 
+		&tex_data->Height, 
+		0, 
+		tex_data->Channels);
+
+	if (image_data == NULL)
+		throw std::runtime_error("Failed to load the image");
+
+	InternalLoad(vulkan_driver, tex_data, image_data);
 
 	return tex_data;
+}
+
+Texture2D_Vulkan* vkTexture::GetDummyImage() {
+	if (m_dummyTexture) {
+		return m_dummyTexture.get();
+	}
+
+	m_dummyTexture = std::make_unique<Texture2D_Vulkan>();
+	m_dummyTexture->Channels = 4;
+
+	{
+		// Generate file 1 Pixel Bitmap Image, with header
+		std::vector<uint8_t> buffer = ImageGenerator::GenerateImage(40, 40, { 255, 255, 255, 255 });
+
+		unsigned char* image_data = stbi_load_from_memory(
+			(uint8_t*)buffer.data(),
+			(int)buffer.size(),
+			&m_dummyTexture->Width,
+			&m_dummyTexture->Height,
+			0,
+			m_dummyTexture->Channels);
+
+		if (image_data == NULL)
+			throw std::runtime_error("Failed to load the image");
+
+		auto vulkan_driver = VulkanEngine::GetInstance();
+
+		InternalLoad(vulkan_driver, m_dummyTexture.get(), image_data);
+	}
+
+	return m_dummyTexture.get();
+}
+
+VkDescriptorSet vkTexture::GetVkDescriptorSet(Texture2D_Vulkan* handle) {
+	return handle->DS;
 }
 
 void vkTexture::QueryTexture(Texture2D_Vulkan* handle, int& outWidth, int& outHeight) {
@@ -309,5 +355,10 @@ void vkTexture::Cleanup() {
 		tex_data.reset();
 	}
 
+	if (m_dummyTexture) {
+		ReleaseTexture(m_dummyTexture.get());
+		m_dummyTexture.reset();
+	}
+	
 	m_textures.clear();
 }

@@ -11,6 +11,7 @@
 #include "../GameScenes.h"
 #include <Audio/AudioManager.h>
 #include "../Version.h"
+#include "../Engine/SkinManager.hpp"
 
 MainMenu::MainMenu() {
 
@@ -39,7 +40,8 @@ void MainMenu::Render(double delta) {
         | ImGuiWindowFlags_NoMove
         | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse
-        | ImGuiWindowFlags_MenuBar;
+        | ImGuiWindowFlags_MenuBar
+        | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     int nextScene = -1;
     if (ImGui::Begin("###BEGIN", nullptr, flags)) {
@@ -145,11 +147,11 @@ void MainMenu::Render(double delta) {
 }
 
 bool MainMenu::Attach() {
-    m_skin = SkinConfig(Configuration::Skin_GetPath() / "MainMenu" / "MainMenu.ini", -1);
+    SkinManager::GetInstance()->ReloadSkin();
 
+    auto path = SkinManager::GetInstance()->GetPath();
     auto window = GameWindow::GetInstance();
 
-    auto path = Configuration::Skin_GetPath();
     auto background_path = path / "Menu" / "MenuBackground.png";
     auto bgm_path = path / "Audio" / "BGM.ogg";
 

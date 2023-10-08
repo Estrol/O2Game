@@ -2,7 +2,8 @@
 #include <map>
 #include "Scene.h"
 #include <memory>
-#include <Texture/Texture2D.h>
+#include <UI/Quad.h>
+#include <UI/Circle.h>
 
 class IntroScene : public Scene {
 public:
@@ -15,5 +16,6 @@ public:
 	bool Detach() override;
 
 private:
-	std::unique_ptr<Texture2D> m_background;
+	std::unique_ptr<Quad> m_quad;
+	std::unique_ptr<Circle> m_circle;
 };

@@ -88,12 +88,12 @@ int Run(int argc, wchar_t** argv) {
 	}
 }
 
-// #if _WIN32
-// int HandleStructualException(int code) {
-// 	MessageBoxA(NULL, ("Uncaught exception: " + std::to_string(code)).c_str(), "FATAL ERROR", MB_ICONERROR);
-// 	return EXCEPTION_EXECUTE_HANDLER;
-// }
-// #endif
+#if _WIN32
+int HandleStructualException(int code) {
+	MessageBoxA(NULL, ("Uncaught exception: " + std::to_string(code)).c_str(), "FATAL ERROR", MB_ICONERROR);
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 // // if not DEBUG
 // #if !defined(_DEBUG) && _WIN32
@@ -148,14 +148,14 @@ int main(int argc, char* argv[]) {
 
 	int ret = 0;
 
-#if _WIN32 & _MSC_VER
-	// __try {
-	// 	ret = Run(argc, wargv);
-	// }
+#if _WIN32 & _MSC_VER & NDEBUG
+	__try {
+		ret = Run(argc, wargv);
+	}
 
-	// __except (HandleStructualException(GetExceptionCode())) {
-	// 	ret = -1;
-	// }
+	__except (HandleStructualException(GetExceptionCode())) {
+		ret = -1;
+	}
 #else
 	ret = Run(argc, wargv);
 #endif
@@ -168,3 +168,13 @@ int main(int argc, char* argv[]) {
 
     return ret;
 }
+
+// #include "./Engine/LuaScripting.h"
+
+// int main() {
+// 	LuaScripting lua = { std::filesystem::current_path() / "Skins" / "Default" / "Scripts" };
+// 	lua.Update(0.0);
+
+// 	auto val = lua.GetSprite(SkinGroup::Playing, "JamLogo");
+// 	return 0;
+// }

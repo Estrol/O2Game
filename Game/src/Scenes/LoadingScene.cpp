@@ -12,6 +12,7 @@
 
 #include "../Data/osu.hpp"
 #include "../Data/Chart.hpp"
+#include "../Engine/SkinManager.hpp"
 
 #include "../EnvironmentSetup.hpp"
 #include "../GameScenes.h"
@@ -27,7 +28,9 @@ LoadingScene::~LoadingScene() {
 }
 
 void LoadingScene::Update(double delta) {
-	if (is_ready) m_counter += delta;
+	SkinManager::GetInstance()->ReloadSkin();
+
+	if (is_ready || fucked) m_counter += delta;
 	int songId = EnvironmentSetup::GetInt("Key");
 	int diffIndex = EnvironmentSetup::GetInt("Difficulty");
 	bool IsO2Jam = false;
@@ -112,37 +115,38 @@ void LoadingScene::Update(double delta) {
 		if (!hashFound) {
 			MsgBox::Show("FailChart", "Error", "Invalid map identifier, please refresh music list using F5 key!", MsgBoxType::OK);
 			fucked = true;
-			return;
 		}
 	}
 
-	try {
-		if (m_background == nullptr) {
-			GameWindow* window = GameWindow::GetInstance();
-			if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
-				m_background = new Texture2D(dirPath.string());
-				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-			}
-
-			if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
-				m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
-				m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-			}
-
+	if (!fucked) {
+		try {
 			if (m_background == nullptr) {
-				auto skinPath = Configuration::Skin_GetPath();
-				auto noImage = skinPath / "Playing" / "NoImage.png";
-
-				if (std::filesystem::exists(noImage)) {
-					m_background = new Texture2D(noImage);
+				GameWindow* window = GameWindow::GetInstance();
+				if (chart->m_backgroundFile.size() > 0 && std::filesystem::exists(dirPath)) {
+					m_background = new Texture2D(dirPath.string());
 					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				}
+
+				if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
+					m_background = new Texture2D((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
+					m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+				}
+
+				if (m_background == nullptr) {
+					auto skinPath = SkinManager::GetInstance()->GetPath();
+					auto noImage = skinPath / "Playing" / "NoImage.png";
+
+					if (std::filesystem::exists(noImage)) {
+						m_background = new Texture2D(noImage);
+						m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
+					}
 				}
 			}
 		}
-	}
-	catch (SDLException& e) {
-		MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
-		fucked = true;
+		catch (SDLException& e) {
+			MsgBox::Show("FailChart", "Error", "Failed to create texture: " + std::string(e.what()));
+			fucked = true;
+		}
 	}
 
 	if (m_counter > 2.5 && chart != nullptr) {

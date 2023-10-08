@@ -15,4 +15,5 @@ struct Segment {
 
 namespace ImageGenerator {
     std::vector<uint8_t> GenerateGradientImage(int width, int height, std::vector<Segment>& segments);
+    std::vector<uint8_t> GenerateImage(int width, int height, Color color);
 }

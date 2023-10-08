@@ -5,7 +5,7 @@
 #include <thread>
 #include <MsgBox.h>
 #include <SDL2/SDL.h>
-#include "../Resources/SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
 
 #include <Rendering/Vulkan/volk/volk.h>
 #include <SceneManager.h>
@@ -13,6 +13,9 @@
 #include <Configuration.h>
 #include <Inputs/Keys.h>
 #include <Rendering/Window.h>
+
+#include <Imgui/ImguiUtil.h>
+#include <Texture/MathUtils.h>
 
 IntroScene::IntroScene() {
 	
@@ -27,7 +30,6 @@ void IntroScene::OnKeyDown(const KeyState& state) {
 }
 
 bool IntroScene::Attach() {
-
 	return true;
 }
 

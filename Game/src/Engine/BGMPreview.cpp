@@ -5,6 +5,7 @@
 #include "../EnvironmentSetup.hpp"
 #include <future>
 #include <cmath>
+#include <Logs.h>
 
 #include "../Resources/GameDatabase.h"
 
@@ -62,7 +63,7 @@ void BGMPreview::Load() {
 				m_currentChart = new Chart(o2jamFile, 2);
 			}
 			catch (std::exception& e) {
-				std::cout << "[BGMPreview] Failed to load the audio chart!\n" << e.what() << std::endl;
+				Logs::Puts("[BGMPreview] Failed to load the audio chart: %s", e.what());
 				return;
 			}
 

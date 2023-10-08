@@ -7,7 +7,7 @@
 
 #include "../Engine/Button.hpp"
 #include "../Engine/BGMPreview.hpp"
-#include "../Resources/SkinConfig.hpp"
+#include "../Engine/SkinConfig.hpp"
 
 struct MouseState;
 struct DB_MusicItem;

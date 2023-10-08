@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <cmath>
+#include <Logs.h>
 
 using namespace O2;
 
@@ -22,7 +23,9 @@ OJN::~OJN() {
 	}
 }
 
-void OJN::Load(std::filesystem::path& file) {
+void OJN::Load(std::filesystem::path& file, bool loadOJM) {
+	m_loadOJM = loadOJM;
+
 	char signature[] = {'o', 'j', 'n', '\0'};
 
 	CurrrentDir = file.parent_path().string();
@@ -186,11 +189,13 @@ void OJN::ParseNoteData(OJN* ojn, std::map<int, std::vector<Package>>& pkg) {
 	}
 
 	OJM ojm = {};
-	auto path = CurrrentDir / Header.ojm_file;
-	ojm.Load(path);
+	if (m_loadOJM) {
+		auto path = CurrrentDir / Header.ojm_file;
+		ojm.Load(path);
 
-	if (!ojm.IsValid()) {
-		std::cout << "[OJM] Failed to load: " << path.string() << std::endl;
+		if (!ojm.IsValid()) {
+			Logs::Puts("[OJM] Failed to load OJM File: %s", path.string().c_str());
+		}
 	}
 
 	// default: 240 BPM

@@ -30,39 +30,41 @@ class SceneManager {
 #endif
 
 public:
-	void Update(double delta);
-	void Render(double delta);
-	void Input(double delta);
+	void 			Update(double delta);
+	void 			Render(double delta);
+	void 			Input(double delta);
 
-	void OnKeyDown(const KeyState& state);
-	void OnKeyUp(const KeyState& state);
-	void OnMouseDown(const MouseState& state);
-	void OnMouseUp(const MouseState& state);
+	void 			OnKeyDown(const KeyState& state);
+	void 			OnKeyUp(const KeyState& state);
+	void 			OnMouseDown(const MouseState& state);
+	void 			OnMouseUp(const MouseState& state);
 
-	void IAddScene(int idx, Scene* scene);
-	void IChangeScene(int idx);
+	void 			IAddScene(int idx, Scene* scene);
+	void 			IChangeScene(int idx);
 
-	void SetParent(Game* parent);
-	void SetFrameLimit(double frameLimit);
-	void SetFrameLimitMode(FrameLimitMode mode);
-	void StopGame();
+	void 			SetParent(Game* parent);
+	void 			SetFrameLimit(double frameLimit);
+	void 			SetFrameLimitMode(FrameLimitMode mode);
+	void 			StopGame();
 
-	int GetCurrentSceneIndex() const;
-	int GetLastSceneIndex() const;
+	int				GetCurrentSceneIndex() const;
+	int 			GetLastSceneIndex() const;
 
-	static void DisplayFade(int transparency, std::function<void()> callback);
-	static void ExecuteAfter(int ms_time, std::function<void()> callback);
-	static void GameExecuteAfter(ExecuteThread thread, int ms_time, std::function<void()> callback);
+	static void 	DisplayFade(int transparency, std::function<void()> callback);
+	static void 	ExecuteAfter(int ms_time, std::function<void()> callback);
+	static void 	GameExecuteAfter(ExecuteThread thread, int ms_time, std::function<void()> callback);
 
-	static void AddScene(int idx, Scene* scene);
-	static void ChangeScene(int idx);
+	static void 	AddScene(int idx, Scene* scene);
+	static void 	ChangeScene(int idx);
 
-	static void AddOverlay(int idx, Overlay* overlay);
-	static void OverlayShow(int idx);
-	static void OverlayClose();
+	static void 	AddOverlay(int idx, Overlay* overlay);
+	static void 	OverlayShow(int idx);
+	static void 	OverlayClose();
+
+	static void 	AddOnSceneChange(std::function<void(void)> callback);
 
 	static SceneManager* GetInstance();
-	static void Release();
+	static void 	Release();
 
 private:
 	SceneManager();
@@ -70,25 +72,27 @@ private:
 
 	static SceneManager* s_instance;
 	
-	std::unordered_map<int, std::shared_ptr<Scene>> m_scenes;
+	std::unordered_map<int, std::shared_ptr<Scene>> 	m_scenes;
 	std::unordered_map<int, std::shared_ptr<Overlay>> m_overlays;
 	
-	Scene* m_nextScene = nullptr;
-	Scene* m_currentScene = nullptr;
+	Scene* 			m_nextScene = nullptr;
+	Scene* 			m_currentScene = nullptr;
 
-	Overlay* m_currentOverlay = nullptr;
-	Overlay* m_nextOverlay = nullptr;
+	Overlay* 		m_currentOverlay = nullptr;
+	Overlay* 		m_nextOverlay = nullptr;
 
-	std::mutex m_mutex;
+	std::mutex 		m_mutex;
 
 	std::thread::id m_renderId;
 	std::thread::id m_inputId;
 
+	std::function<void()>	m_onSceneChange;
+
 	std::vector<QueueInfo> m_queue_render;
 	std::vector<QueueInfo> m_queue_input;
 
-	Game* m_parent = nullptr;
+	Game* 			m_parent = nullptr;
 
-	int m_currentSceneId = 0;
-	int m_lastSceneId = 0;
+	int 			m_currentSceneId = 0;
+	int 			m_lastSceneId = 0;
 };

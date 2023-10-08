@@ -13,6 +13,7 @@
 #include "./Resources/GameResources.hpp"
 #include "./Resources/GameDatabase.h"
 #include "./Resources/MusicListMaker.h"
+#include "./Engine/SkinManager.hpp"
 
 /* Scenes */
 #include "./Scenes/GameplayScene.h"
@@ -49,6 +50,10 @@ bool MyGame::Init() {
 		m_window->SetScaleOutput(true);
 
 		EnvironmentSetup::SetInt("Key", -1);
+
+		SceneManager::AddOnSceneChange([=] {
+			
+		});
 
 		/* Screen */
 		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
@@ -137,17 +142,22 @@ bool MyGame::LoadConfiguration() {
 
 	{
 		auto SkinName = Configuration::Load("Game", "Skin");
-		if (!std::filesystem::exists(std::filesystem::current_path() / "Skins" / SkinName)) {
+		auto path = std::filesystem::current_path() / "Skins" / SkinName;
+		if (!std::filesystem::exists(path)) {
 			SkinName = "default";
 		}
 
-		Configuration::Skin_Load(SkinName);
+		Configuration::Font_SetPath(path);
+
+		auto manager = SkinManager::GetInstance();
+		manager->LoadSkin(SkinName);
+		
 		std::array<std::string, 3> screens = {
 			"NativeSize"
 		};
 
 		for (int i = 0; i < 1; i++) {
-			auto value = Configuration::Skin_LoadValue("Window", screens[i]);
+			auto value = manager->GetSkinProp("Window", screens[i], "800x600");
 			auto split = splitString(value, 'x');
 
 			if (split.size() == 2) {
@@ -159,10 +169,6 @@ bool MyGame::LoadConfiguration() {
 				MsgBox::ShowOut("EstGame Error", errmsg, MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 				return false;
 			}
-		}
-
-		{ 	// Editor (hardcoded rn)
-			FontResources::RegisterFontIndex(3, 1280, 720);
 		}
 	}
 
@@ -189,6 +195,10 @@ bool MyGame::LoadConfiguration() {
 }
 
 void MyGame::Update(double delta) {
+	if (ImGui::IsKeyPressed(ImGuiKey_F10, false)) {
+		SceneManager::OverlayShow(GameOverlay::SETTINGS);
+	}
+
 	m_sceneManager->Update(delta);
 }
 

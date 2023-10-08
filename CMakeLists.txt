@@ -28,8 +28,8 @@ endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     if (MSVC)
-        set(CMAKE_C_FLAGS_DEBUG "/Od /Zi /DVK_NO_PROTOTYPES")
-        set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /DVK_NO_PROTOTYPES")
+        set(CMAKE_C_FLAGS_DEBUG "/Od /ZI /DVK_NO_PROTOTYPES")
+        set(CMAKE_CXX_FLAGS_DEBUG "/Od /ZI /DVK_NO_PROTOTYPES")
     else()
         set(CMAKE_C_FLAGS_DEBUG "-g -DVK_NO_PROTOTYPES")
         set(CMAKE_CXX_FLAGS_DEBUG "-g -DVK_NO_PROTOTYPES")
@@ -61,6 +61,12 @@ find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(Iconv REQUIRED)
+find_package(Sol2 REQUIRED)
+set(Sol2_LIBRARIES sol2)
+
+find_package(Lua REQUIRED)
+set(Lua_LIBRARIES lua)
+
 find_package(Vulkan)
 
 if (NOT DEFINED Vulkan_INCLUDE_DIRS)
@@ -94,6 +100,7 @@ if (WIN32)
 	set(THIRD_PARTY_LIBS
 		"${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass.lib" 
 		"${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bass_fx.lib" 
+        "${PROJECT_SOURCE_DIR}/third-party/lib/${O2GAME_PLATFORM}-windows/${CMAKE_BUILD_TYPE}/bassmix.lib" 
 	)
 
 elseif (UNIX AND NOT APPLE)
@@ -143,6 +150,8 @@ set(O2GAME_LIBRARIES
     ${SDL2_LIBRARIES} 
     ${SDL2_IMAGE_LIBRARIES} 
     ${SQLite3_LIBRARIES} 
+    ${Sol2_LIBRARIES} 
+    ${Lua_LIBRARIES}
     ${LIB_FREETYPE} 
     ${LIB_PNG} 
     ${LIB_JPEG} 

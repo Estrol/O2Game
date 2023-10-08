@@ -6,6 +6,7 @@
 #include <sstream>
 #include <numeric>
 #include "Util/Util.hpp"
+#include <Logs.h>
 
 constexpr double EPSILON = 0.0001;
 
@@ -407,7 +408,7 @@ namespace BMS {
 
 		for (int i = 0; i < 7; i++) {
 			if (holdNotes[i] != -1) {
-				std::cout << "[BMS] [Warning] Unreleased hold note at index: " << i << ", time: " << holdNotes[i] << std::endl;
+				Logs::Puts("[BMS] Unreleased hold note at index: %d, time: %.2f", i, holdNotes[i]);
 			}
 		}
 	}

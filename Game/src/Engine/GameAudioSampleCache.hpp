@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 class Chart;
 class AudioSampleChannel;
 
@@ -15,6 +17,8 @@ namespace GameAudioSampleCache {
 	void ResumeAll();
 	void PauseAll();
 	void StopAll();
+
+	std::vector<float> QueryMixerData();
 	
 	void Dispose();
 }

@@ -541,6 +541,10 @@ bool ImGui_ImplVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
+    if (pixels == nullptr) {
+        return false;
+    }
+
     size_t upload_size = width * height * 4 * sizeof(char);
 
     VkResult err;

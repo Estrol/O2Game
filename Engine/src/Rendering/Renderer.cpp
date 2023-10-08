@@ -8,6 +8,7 @@
 #include "Exception/SDLException.h"
 #include "../Data/SDLRenderStruct.h"
 #include "Rendering/Vulkan/VulkanEngine.h"
+#include <Logs.h>
 
 constexpr auto MAIN_SPRITE_BATCH = 0;
 
@@ -96,7 +97,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
             }
 
             if (failed) {
-                std::cout << "[Renderer] Failed to create renderer: " << rendererName << " and fallback to " << SDL_GetCurrentVideoDriver() << std::endl;
+                Logs::Puts("[Renderer] Failed to create renderer with backend: %s, and fallback to %s", rendererName.c_str(), SDL_GetCurrentVideoDriver());
             }
 
             m_blendMode = SDL_ComposeCustomBlendMode(
@@ -142,8 +143,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
 			    m_vulkan->init(window->GetWindow(), window->GetWidth(), window->GetHeight());
             } catch (std::runtime_error &e) {
                 m_vulkan = nullptr;
-                std::cout << e.what() << std::endl;
-
+				
                 MsgBox::ShowOut("EstEngine Error", "Failed to load vulkan functions, fallback to OpenGL", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
                 return Create(RendererMode::OPENGL, window);
             }

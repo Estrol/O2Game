@@ -12,6 +12,8 @@
 #include "Data/Imgui/imgui_impl_sdlrenderer2.h"
 #include "Rendering/Vulkan/VulkanEngine.h"
 #include "Texture/MathUtils.h"
+#include "Logs/Console.h"
+#include <Logs.h>
 
 constexpr auto kInputDefaultRate = 1000.0;
 constexpr auto kMenuDefaultRate = 60.0;
@@ -96,7 +98,6 @@ bool Game::Init() {
 		return false;
 	}
 
-	std::cout << "Window::Create << " << std::endl;
 	m_window = GameWindow::GetInstance();
 
 	int width = m_windowWidth;
@@ -112,7 +113,6 @@ bool Game::Init() {
 		return false;
 	}
 	
-	std::cout << "Renderer::Create << " << std::endl;
 	m_renderer = Renderer::GetInstance();
 	if (!m_renderer->Create(m_renderMode, m_window)) {
 		return false;
@@ -122,14 +122,11 @@ bool Game::Init() {
 		m_threadMode = ThreadMode::SINGLE_THREAD; // OpenGL doesnt support multithreading
 	}
 
-	std::cout << "InputManager::Create << " << std::endl;
 	m_inputManager = InputManager::GetInstance();
 
-	std::cout << "SceneManager::Create << " << std::endl;
 	m_sceneManager = SceneManager::GetInstance();
 	m_sceneManager->SetParent(this);
-
-	std::cout << "AudioManager::Create << " << std::endl;
+	
 	if (!AudioManager::GetInstance()->Init(m_window)) {
 		return false;
 	}
@@ -154,6 +151,7 @@ void Game::Run() {
 
 	std::mutex m1, m2;
 
+	int frameWithoutSwapchain = 0;
 	int frames = 0;
 	double time = 0;
 
@@ -179,18 +177,24 @@ void Game::Run() {
 
 			UpdateFade(delta);
 
-			if (!m_minimized) {
-				std::lock_guard<std::mutex> lock(m1);
-
-				if (m_renderer->BeginRender()) {
-					Render(delta);
-					MsgBox::Draw();
-					DrawFade(delta);
-
-					m_renderer->EndRender();
+			if (!m_minimized && m_renderer->BeginRender()) {
+				if (frameWithoutSwapchain > 0) {
+					Logs::Puts("[Game] Game iterate %d times without swap chain", frameWithoutSwapchain);
+					frameWithoutSwapchain = 0;
 				}
 
+				std::lock_guard<std::mutex> lock(m1);
+
+				Render(delta);
+				MsgBox::Draw();
+				DrawFade(delta);
+
+				DrawConsole();
+				m_renderer->EndRender();
+
 				frames++;
+			} else {
+				frameWithoutSwapchain++;
 			}
 		}
 		else {
@@ -267,14 +271,22 @@ void Game::Run() {
 
 			UpdateFade(delta);
 
-			if (!m_minimized) {
-				if (m_renderer->BeginRender()) {
-					Render(delta);
-					MsgBox::Draw();
-					DrawFade(delta);
-
-					m_renderer->EndRender();
+			if (!m_minimized && m_renderer->BeginRender()) {
+				if (frameWithoutSwapchain > 0) {
+					Logs::Puts("[Game] Game iterate %d times without swap chain", frameWithoutSwapchain);
+					frameWithoutSwapchain = 0;
 				}
+
+				Render(delta);
+				MsgBox::Draw();
+				DrawFade(delta);
+
+				DrawConsole();
+				m_renderer->EndRender();
+
+				frames++;
+			} else {
+				frameWithoutSwapchain++;
 			}
 		}
 
@@ -306,8 +318,12 @@ void Game::DrawFade(double delta) {
 	}
 }
 
+void Game::DrawConsole() {
+	Console::Draw();
+}
+
 void Game::UpdateFade(double delta) {
-	if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
+    if (static_cast<int>(m_currentFade) != static_cast<int>(m_targetFade)) {
 		float increment = (static_cast<float>(delta) * 5.0f) * 100.0f;
 
 		// compare it using epsilon

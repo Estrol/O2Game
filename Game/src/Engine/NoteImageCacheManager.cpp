@@ -1,5 +1,6 @@
 #include "NoteImageCacheManager.hpp"
 #include <algorithm>
+#include <Logs.h>
 
 constexpr int MAX_OBJECTS = 50;
 
@@ -138,7 +139,7 @@ NoteImageCacheManager* NoteImageCacheManager::GetInstance() {
 
 void NoteImageCacheManager::Release() {
 	if (s_instance) {
-		std::cout << "[NoteImageCacheManager] Release about: hold=" << s_instance->m_holdTextures.size() << ", note=" << s_instance->m_noteTextures.size() << ", trail=" << s_instance->m_trailTextures.size() << std::endl;
+		Logs::Puts("[NoteImageCacheManager] Release about: hold=%d, note=%d, trail=%d", s_instance->m_holdTextures.size(), s_instance->m_noteTextures.size(), s_instance->m_trailTextures.size());
 
 		delete s_instance;
 		s_instance = nullptr;

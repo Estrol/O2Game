@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string.h>
 #include <vector>
+#include <Logs.h>
 
 AudioSample::AudioSample(std::string id) {
 	m_silent = false;
@@ -31,7 +32,7 @@ bool AudioSample::Create(uint8_t* buffer, size_t size) {
 
 	m_handle = BASS_SampleLoad(TRUE, data.data(), 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS);
 	if (!m_handle) {
-		std::cout << "Failed to initialize MEM Sample: " << BASS_ErrorGetCode() << std::endl;
+		Logs::Puts("[AudioSample] Failed to initialize Memory Sample: %d", BASS_ErrorGetCode());
 		return false;
 	}
 
@@ -42,7 +43,7 @@ bool AudioSample::Create(uint8_t* buffer, size_t size) {
 bool AudioSample::Create(std::filesystem::path path) {
 	std::fstream fs(path, std::ios::binary | std::ios::in);
 	if (!fs.is_open()) {
-		std::cout << "Failed to open file: " << path << std::endl;
+		Logs::Puts("[AudioSample] Failed to open file: %s", path.string().c_str());
 		return false;
 	}
 
@@ -55,7 +56,7 @@ bool AudioSample::Create(std::filesystem::path path) {
 
 	m_handle = BASS_SampleLoad(TRUE, buffer.data(), 0, (DWORD)size, 10, BASS_SAMPLE_OVER_POS | BASS_MUSIC_PRESCAN);
 	if (!m_handle) {
-		std::cout << "Failed to initialize FILE Sample: " << BASS_ErrorGetCode() << std::endl;
+		Logs::Puts("[AudioSample] Failed to initialize FILE Sample: %d", BASS_ErrorGetCode());
 		return false;
 	}
 
@@ -66,7 +67,7 @@ bool AudioSample::Create(std::filesystem::path path) {
 bool AudioSample::CreateFromData(int sampleFlags, int sampleRate, int sampleChannels, int sampleLength, void* sampleData) {
 	m_handle = BASS_SampleCreate(sampleLength, sampleRate, sampleChannels, 10, BASS_MUSIC_PRESCAN | BASS_SAMPLE_OVER_POS | sampleFlags);
 	if (!m_handle) {
-		std::cout << "Failed to create blank sample: " << BASS_ErrorGetCode() << std::endl;
+		Logs::Puts("[AudioSample] Failed to create placeholder sample");
 		return false;
 	}
 
@@ -75,7 +76,7 @@ bool AudioSample::CreateFromData(int sampleFlags, int sampleRate, int sampleChan
 
 	bool success = BASS_SampleSetData(m_handle, reinterpret_cast<void*>(data.data()));
 	if (!success) {
-		std::cout << "Failed to set sample data: " << BASS_ErrorGetCode() << std::endl;
+		Logs::Puts("[AudioSample] Failed to set sample data on placeholder sample: %d", BASS_ErrorGetCode());
 		return false;
 	}
 

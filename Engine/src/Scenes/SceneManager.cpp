@@ -10,6 +10,7 @@
 #include <mutex>
 #include <iostream>
 #include <exception>
+#include <Logs.h>
 
 static std::condition_variable m_cv;
 static bool m_ready_change_state = false;
@@ -38,6 +39,10 @@ SceneManager* SceneManager::s_instance = nullptr;
 void SceneManager::Update(double delta) {
 	if (m_nextScene != nullptr) {
 		//std::lock_guard<std::mutex> lock(m_mutex);
+		if (m_onSceneChange) {
+			m_onSceneChange();
+		}
+
 		if (!m_nextScene->Attach()) {
 			MsgBox::ShowOut("EstEngine Error", "Failed to init next scene", MsgBoxType::OK, MsgBoxFlags::BTN_ERROR);
 			m_parent->Stop();
@@ -183,7 +188,7 @@ static const char* notInitialized = "SceneManager is not initalized";
 void SceneManager::AddScene(int idx, Scene* scene) {
 	if (s_instance == nullptr) throw std::runtime_error(notInitialized);
 
-	std::cout << "Added scene: " << idx << std::endl;
+	Logs::Puts("[SceneManager] Added scene Id: %d", idx);
 	s_instance->m_scenes[idx] = std::unique_ptr<Scene>(scene);
 }
 
@@ -219,6 +224,10 @@ void SceneManager::OverlayClose() {
 		s_instance->m_currentOverlay->Detach();
 		s_instance->m_currentOverlay = nullptr;
 	}
+}
+
+void SceneManager::AddOnSceneChange(std::function<void(void)> callback) {
+	s_instance->m_onSceneChange = callback;
 }
 
 void SceneManager::IAddScene(int idx, Scene* scene) {

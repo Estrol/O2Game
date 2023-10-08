@@ -7,6 +7,7 @@
 #include "Texture/MathUtils.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 #if _WIN32
 #include <windows.h>
@@ -21,6 +22,8 @@ Text::Text() {
     Transparency = 0.0f;
     Size = 13;
     Color3 = { 1.0, 1.0, 1.0 };
+
+    Clip = { -1, -1, -1, -1 };
     rotation_start_index = 0;
     DrawOverEverything = false;
 }
@@ -99,12 +102,25 @@ void Text::InternalDraw(std::u8string& formated) {
     xPos *= window->GetWidthScale();
 	yPos *= window->GetHeightScale();
 
-    ImVec4 clipRect = ImVec4(
-        Clip.left * window->GetWidthScale(),
-        Clip.top * window->GetHeightScale(),
-        (Clip.left + Clip.right) * window->GetWidthScale(),
-        (Clip.top + Clip.bottom) * window->GetHeightScale()
-    );
+    int width = GameWindow::GetInstance()->GetBufferWidth();
+    int height = GameWindow::GetInstance()->GetBufferHeight();
+
+    bool notUseClip = Clip.left == -1 || Clip.top == -1 
+        || Clip.right == -1 || Clip.bottom == -1;
+
+    ImVec4 clipRect = {};
+    if (!notUseClip) {
+        clipRect = ImVec4(
+            Clip.left * window->GetWidthScale(),
+            Clip.top * window->GetHeightScale(),
+            (Clip.left + Clip.right) * window->GetWidthScale(),
+            (Clip.top + Clip.bottom) * window->GetHeightScale()
+        );
+    } else {
+        clipRect = ImVec4(
+            0, 0, displaySize.x, displaySize.y
+        );
+    }
 
     float originScale = (window->GetBufferWidth() + window->GetBufferHeight()) / 15.6f;
 	float targetScale = (window->GetWidth() + window->GetHeight()) / 15.6f;
@@ -136,6 +152,7 @@ void Text::InternalDraw(std::u8string& formated) {
     ImRotationStart();
 
     ImGui::PushFont(FontResources::GetFont());
+    draw_list->PushClipRect(ImVec2(clipRect.x, clipRect.y), ImVec2(clipRect.z, clipRect.w));
     draw_list->AddText(
         NULL, 
         Size * scale,
@@ -143,9 +160,10 @@ void Text::InternalDraw(std::u8string& formated) {
         ImColor(255 * red, 255 * green, 255 * blue), 
         (const char*)formated.c_str(),
         NULL,
-        0.0f,
-        &clipRect
+        0.0f
     );
+    draw_list->PopClipRect();
+
     ImGui::PopFont();
 
     ImRotationEnd(radians, ImRotationCenter());

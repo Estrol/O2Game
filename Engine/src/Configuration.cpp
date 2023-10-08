@@ -1,6 +1,7 @@
 #include "Configuration.h"
 #include <iostream>
 #include "Misc/mINI.h"
+#include <Logs.h>
 
 namespace {
     bool IsLoaded = false;
@@ -10,6 +11,7 @@ namespace {
 	mINI::INIStructure SkinConfig;
 
 	std::string defaultConfig;
+	std::filesystem::path FontPath;
 }
 
 void Configuration::SetDefaultConfiguration(std::string conf) {
@@ -20,7 +22,7 @@ void Configuration::ResetConfiguration() {
 	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
 
 	if (std::filesystem::exists(path)) {
-		std::cout << "Deleting configuration at path: " << path.string() << std::endl;
+		Logs::Puts("[Configuration] Deleting configuration at path: %s", path.string().c_str());
 		std::filesystem::remove(path);
 	}
 
@@ -42,7 +44,7 @@ void LoadConfiguration() {
 	std::filesystem::path path = std::filesystem::current_path() / "Game.ini";
 
 	if (!std::filesystem::exists(path)) {
-		std::cout << "Creating default configuration at path: " << path.string() << std::endl;
+		Logs::Puts("[Configuration] Creating default configuration at path: %s", path.string().c_str());
 
 		std::fstream fs(path, std::ios::out);
 		fs << defaultConfig;
@@ -70,27 +72,14 @@ void Configuration::Set(std::string key, std::string prop, std::string value) {
 	
 	mINI::INIFile file(path);
 	if (!file.write(Config, true)) {
-		std::cout << "Failed to write configuration to file" << std::endl;
+		Logs::Puts("[Configuration] Failed to write configuration to file");
 	}
 }
 
-void Configuration::Skin_Load(std::string name) {
-	CurrentSkin = name;
+void Configuration::Font_SetPath(std::filesystem::path path) {
+	FontPath = path;
 }
 
-std::filesystem::path Configuration::Skin_GetPath() {
-	return std::filesystem::current_path() / "Skins" / CurrentSkin;
-}
-
-std::string Configuration::Skin_LoadValue(std::string key, std::string prop) {
-	mINI::INIStructure skinConfig;
-	mINI::INIFile file(Skin_GetPath() / "GameSkin.ini");
-	file.read(skinConfig);
-
-	return skinConfig[key][prop];
-}
-
-bool Configuration::Skin_Exist(std::string name) {
-	std::filesystem::path path = std::filesystem::current_path() / "Skins" / name;
-	return std::filesystem::exists(path);
+std::filesystem::path Configuration::Font_GetPath() {
+	return FontPath;
 }

@@ -5,6 +5,9 @@
 #include <array>
 #include <fstream>
 #include <mutex>
+#include <Logs.h>
+
+#include <bass.h>
 
 #include "../Data/Chart.hpp"
 #include "Audio/AudioManager.h"
@@ -66,7 +69,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 				if (!pitch && m_rate != 1.0f) {
 					auto data = BASS_FX_SampleEncoding::Encode(it.FileBuffer.data(), it.FileBuffer.size(), (float)m_rate);
 					if (data.sampleFlags == 0) {
-						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
+						Logs::Puts("[BASSFxSampleEncoding] Failed to pre-process time-stretch sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -78,14 +81,14 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 						data.sampleLength,
 						data.sampleData.data(),
 						&sample.Sample)) {
-						
-						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+
+						Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 						continue;
 					}
 				}
 				else {
 					if (!audioManager->CreateSample(sample.FilePath, it.FileBuffer.data(), it.FileBuffer.size(), &sample.Sample)) {
-						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+						Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -124,7 +127,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 				if (!pitch && m_rate != 1.0f) {
 					std::fstream fs(path, std::ios::binary | std::ios::in);
 					if (!fs.is_open()) {
-						std::cout << "Failed to open file: " << path.string() << std::endl;
+						Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -139,7 +142,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 					auto data = BASS_FX_SampleEncoding::Encode(buffer.data(), size, (float)m_rate);
 
 					if (data.sampleFlags == 0) {
-						std::cout << "Failed to preprocess audio tempo for non-pitch sample: " << it.FileName << std::endl;
+						Logs::Puts("[BASSFxSampleEncoding] Failed to pre-process time-stretch sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -152,7 +155,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 						data.sampleData.data(),
 						&sample.Sample)) {
 
-						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+						Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -161,7 +164,7 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 				else {
 					if (audioManager->GetSample(path.string() + std::to_string(it.Index)) == nullptr) {
 						if (!audioManager->CreateSample(path.string() + std::to_string(it.Index), path, &sample.Sample)) {
-							std::cout << "Failed to load sample: " << it.FileName << std::endl;
+							Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 							continue;
 						}
 
@@ -172,11 +175,11 @@ void GameAudioSampleCache::Load(Chart* chart, bool pitch) {
 			}
 			else {
 				sample.FilePath = path.string();
-				::printf("Cannot find audio: %s, at index: %d, Creating a silent audio\n", path.string().c_str(), it.Index);
+				Logs::Puts("[AudioSampleManager] Cannot find audio: %s, at index: %d, Creating a silent audio", path.string().c_str(), it.Index);
 
 				if (audioManager->GetSample(path.string() + std::to_string(it.Index)) == nullptr) {
 					if (!audioManager->CreateSample(path.string() + std::to_string(it.Index), "", &sample.Sample)) {
-						std::cout << "Failed to load sample: " << it.FileName << std::endl;
+						Logs::Puts("[AudioSampleManager] Failed to load sample: %s", it.FileName.c_str());
 						continue;
 					}
 
@@ -269,6 +272,10 @@ void GameAudioSampleCache::StopAll() {
 	}
 
 	sampleIndex.clear();
+}
+
+std::vector<float> GameAudioSampleCache::QueryMixerData() {
+	throw std::runtime_error("Not implemented");
 }
 
 void GameAudioSampleCache::Dispose() {

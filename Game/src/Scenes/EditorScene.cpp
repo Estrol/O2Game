@@ -106,7 +106,8 @@ void EditorScene::Render(double delta) {
 		| ImGuiWindowFlags_NoMove
 		| ImGuiWindowFlags_NoScrollbar
 		| ImGuiWindowFlags_NoScrollWithMouse
-		| ImGuiWindowFlags_MenuBar;
+		| ImGuiWindowFlags_MenuBar
+		| ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(1280, 720));

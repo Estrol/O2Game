@@ -1,0 +1,2 @@
+# exclude all the generated files from the source list
+*.spv.h
