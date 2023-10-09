@@ -4,6 +4,7 @@
     {
       "name": "windows-base",
       "hidden": true,
+      "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build",
       "installDir": "${sourceDir}/build",
       "cacheVariables": {
@@ -24,7 +25,7 @@
     },
     {
       "name": "x64-windows-debug",
-      "displayName": "x64 Debug",
+      "displayName": "x64 Windows Debug",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -36,8 +37,8 @@
     },
     {
       "name": "x64-windows",
-      "displayName": "x64 Release",
-      "inherits": "x64-debug",
+      "displayName": "x64 Windows Release",
+      "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }

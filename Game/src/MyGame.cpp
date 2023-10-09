@@ -51,10 +51,6 @@ bool MyGame::Init() {
 
 		EnvironmentSetup::SetInt("Key", -1);
 
-		SceneManager::AddOnSceneChange([=] {
-			
-		});
-
 		/* Screen */
 		SceneManager::AddScene(GameScene::INTRO, new IntroScene());
 		SceneManager::AddScene(GameScene::MAINMENU, new MainMenu());
