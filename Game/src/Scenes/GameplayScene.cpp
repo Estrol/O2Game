@@ -207,20 +207,10 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
-		m_amplitude = 30.0;
-		m_wiggleTime = m_comboTimer * 60.0 * 4.0; // Increased animation speed to more aggressive and faster
-		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
+		m_amplitude = 30.0; // TODO: Fix the slow down issues for consistent speed
+		m_wiggleTime = 60.0 * (m_comboTimer * 2); // Temporary fix the slow down issues 
 
-		constexpr double comboFrame = 3.0;
-
-		double currentAmplitude;
-
-		if (m_wiggleTime < comboFrame) {
-			currentAmplitude = m_amplitude / 2 + (m_wiggleTime / comboFrame) * (m_amplitude / 2);
-		}
-		else {
-			currentAmplitude = m_amplitude * std::pow(0.75, m_wiggleTime - comboFrame); // More aggressive Combo Animation
-		}
+		double currentAmplitude = m_amplitude * std::pow(0.75, m_wiggleTime); // Has slow down issues. Also if std::pow 0.75 removed, the animation will be slow-mo
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
 		m_comboLogo->Draw(delta);
