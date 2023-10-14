@@ -207,10 +207,13 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
-		m_amplitude = 30.0; // TODO: Fix the slow down issues for consistent speed
-		m_wiggleTime = 60.0 * (m_comboTimer * 2); // Temporary fix the slow down issues 
+		m_amplitude = 30.0;
+		m_wiggleTime = 60.0 * m_comboTimer; // Do not edit
 
-		double currentAmplitude = m_amplitude * std::pow(0.75, m_wiggleTime); // Has slow down issues. Also if std::pow 0.75 removed, the animation will be slow-mo
+		double currentAmplitude = m_amplitude * std::pow(0.60, m_wiggleTime); // std::pow 0.60 = o2jam increment
+		if (currentAmplitude < 1.0) { // Fix for slowdown issues
+			currentAmplitude = 1.0; // Plz don't delete
+		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
 		m_comboLogo->Draw(delta);
@@ -223,6 +226,7 @@ void GameplayScene::Render(double delta) {
 			m_drawCombo = false;
 		}
 	}
+
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
 		m_wiggleTime = m_lnTimer * 60.0;
