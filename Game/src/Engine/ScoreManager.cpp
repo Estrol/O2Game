@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <algorithm>
 // TODO: Make Proper O2Jam Health Rules with MAXHP 1000 instead 100
+// This health system look like on Hard only, not good
 ScoreManager::ScoreManager() {
 	m_cool = 0;
 	m_good = 0;
