@@ -189,7 +189,7 @@ void GameplayScene::Render(double delta) {
 		m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
 		m_judgement[m_judgeIndex]->Draw();
 
-		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
+		m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.5, 1.0); // Nice
 		if ((m_judgeTimer += delta) > 0.60) {
 			m_drawJudge = false;
 		}
@@ -401,6 +401,10 @@ bool GameplayScene::Attach() {
 		}
 
 		int arena = EnvironmentSetup::GetInt("Arena");
+		auto skinPath = manager->GetPath(); // Move to above, make it easiest
+		auto playingPath = skinPath / "Playing";
+		auto arenaPath = playingPath / "Arena";
+
 		if (arena == 0) {
 			std::random_device dev;
 			std::mt19937 rng(dev());
@@ -410,11 +414,8 @@ bool GameplayScene::Attach() {
 			arena = dist(rng);
 		}
 
+		arenaPath /= std::to_string(arena);
 		EnvironmentSetup::SetInt("CurrentArena", arena);
-
-		auto skinPath = manager->GetPath();
-		auto playingPath = skinPath / "Playing";
-		auto arenaPath = playingPath / "Arena" / std::to_string(arena);
 
 		if (!std::filesystem::exists(arenaPath)) {
 			throw std::runtime_error("Arena " + std::to_string(arena) + " is missing from folder: " + (playingPath / "Arena").string());
