@@ -1,4 +1,5 @@
 #pragma once
+#define VK_NO_PROTOTYPES
 
 #include <SDL2/SDL.h>
 #include <Rendering/Vulkan/volk/volk.h>

@@ -900,7 +900,7 @@ bool GameplayScene::Attach() {
 			m_hitEffect[i]->AlphaBlend = true;
 			m_holdEffect[i]->AlphaBlend = true;
 
-			int pos = (int)std::ceil(static_cast<double>(lanePos[i]) + (static_cast<double>(laneSize[i]) / 2.0));
+			float pos = std::ceil(lanePos[i] + (laneSize[i] / 2.0));
 			auto hitPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(hitEffectPos.X, hitEffectPos.Y);
 			auto holdPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(holdEffectPos.X, holdEffectPos.Y);
 

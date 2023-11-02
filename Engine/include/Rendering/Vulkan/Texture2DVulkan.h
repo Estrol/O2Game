@@ -6,6 +6,7 @@
 #include <filesystem>
 #endif
 
+#define VK_NO_PROTOTYPES
 #include <stdint.h>
 #include <fstream>
 #include <vulkan/vulkan.h>

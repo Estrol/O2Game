@@ -57,8 +57,8 @@ public:
 	double 	GetAudioLength() const;
 	int 	GetGameVolume() const;
 
-	int* 	GetLaneSizes() const;
-	int* 	GetLanePos() const;
+	const float* 	GetLaneSizes() const;
+	const float* 	GetLanePos() const;
 
 	void 	SetHitPosition(int offset);
 	void 	SetLaneOffset(int offset);
@@ -122,8 +122,8 @@ private:
 	std::u8string m_title;
 
 	Rect 	m_playRectangle;
-	int 	m_laneSize[7];
-	int 	m_lanePos[7];
+	float 	m_laneSize[7];
+	float 	m_lanePos[7];
 
 	std::filesystem::path m_audioPath = "";
 	Chart* 	m_currentChart;

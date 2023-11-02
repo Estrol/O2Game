@@ -650,15 +650,15 @@ ReplayFrameData RhythmEngine::GetAutoplayAtThisFrame(double offset) {
 		}
 	}
 
-	return std::move(data);
+	return std::move(data); 
 }
 
-int* RhythmEngine::GetLaneSizes() const {
-	return (int*)&m_laneSize;
+const float* RhythmEngine::GetLaneSizes() const {
+	return &m_laneSize[0];
 }
 
-int* RhythmEngine::GetLanePos() const {
-	return (int*)&m_lanePos;
+const float* RhythmEngine::GetLanePos() const {
+	return &m_lanePos[0];
 }
 
 void RhythmEngine::SetHitPosition(int offset) {
