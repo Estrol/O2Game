@@ -1,7 +1,8 @@
 #include "ScoreManager.hpp"
 #include <limits.h>
 #include <algorithm>
-
+// TODO: Make Proper O2Jam Health Rules with MAXHP 1000 instead 100
+// This health system look like on Hard only, not good
 ScoreManager::ScoreManager() {
 	m_cool = 0;
 	m_good = 0;
@@ -20,7 +21,7 @@ ScoreManager::ScoreManager() {
 	m_maxJamCombo = 0;
 
 	m_numOfPills = 0;
-	m_life = 100;
+	m_life = 100.0f;
 
 	m_lnCombo = 0;
 	m_lnMaxCombo = 0;
@@ -34,7 +35,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
     switch (info.Result) {
 
     case NoteResult::COOL: {
-        AddLife(1);
+        AddLife(0.1);
         m_jamGauge += 4;
         m_score += 200 + (10 * m_jamCombo);
         m_cool++;
@@ -42,7 +43,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
     }
 
     case NoteResult::GOOD: {
-        AddLife(0.5);
+        AddLife(0);
         m_jamGauge += 2;
         m_score += 100 + (5 * m_jamCombo);
         m_good++;
@@ -58,7 +59,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
             info.Result = NoteResult::COOL;
         }
         else {
-            AddLife(-1);
+            AddLife(-0.5);
             m_jamGauge = 0;
             m_coolCombo = 0;
             m_score += 4;
@@ -69,7 +70,7 @@ void ScoreManager::OnHit(NoteHitInfo info) {
     }
 
     default: {
-        AddLife(-10);
+        AddLife(-3);
         m_combo = 0;
         m_jamCombo = 0;
         m_jamGauge = 0;

@@ -389,8 +389,8 @@ void RhythmEngine::Update(double delta) {
 	}
 
 	auto currentTime = std::chrono::system_clock::now();
-	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startClock);
-	m_PlayTime = static_cast<int>(elapsedTime.count() / 1000);
+	auto elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - m_startClock);
+	m_PlayTime = static_cast<int>(elapsedTime.count());
 }
 
 void RhythmEngine::Render(double delta) {

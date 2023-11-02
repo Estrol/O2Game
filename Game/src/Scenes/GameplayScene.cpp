@@ -189,7 +189,7 @@ void GameplayScene::Render(double delta) {
 		m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
 		m_judgement[m_judgeIndex]->Draw();
 
-		m_judgeSize = std::clamp(m_judgeSize + (delta * 3), 0.5, 1.0);
+		m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.5, 1.0); // Nice
 		if ((m_judgeTimer += delta) > 0.60) {
 			m_drawJudge = false;
 		}
@@ -208,18 +208,11 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = m_comboTimer * 60.0 * 4.0; // Increased animation speed to more aggressive and faster
-		m_wiggleOffset = std::sin(m_wiggleTime) * m_amplitude;
+		m_wiggleTime = 60.0 * m_comboTimer; // Do not edit
 
-		constexpr double comboFrame = 3.0;
-
-		double currentAmplitude;
-
-		if (m_wiggleTime < comboFrame) {
-			currentAmplitude = m_amplitude / 2 + (m_wiggleTime / comboFrame) * (m_amplitude / 2);
-		}
-		else {
-			currentAmplitude = m_amplitude * std::pow(0.75, m_wiggleTime - comboFrame); // More aggressive Combo Animation
+		double currentAmplitude = m_amplitude * std::pow(0.60, m_wiggleTime); // std::pow 0.60 = o2jam increment
+		if (currentAmplitude < 1.0) { // Fix for slowdown issues
+			currentAmplitude = 1.0; // Plz don't delete
 		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
@@ -233,6 +226,7 @@ void GameplayScene::Render(double delta) {
 			m_drawCombo = false;
 		}
 	}
+
 
 	if (m_drawLN && std::get<9>(scores) > 0) {
 		m_wiggleTime = m_lnTimer * 60.0;
@@ -407,6 +401,10 @@ bool GameplayScene::Attach() {
 		}
 
 		int arena = EnvironmentSetup::GetInt("Arena");
+		auto skinPath = manager->GetPath(); // Move to above, make it easiest
+		auto playingPath = skinPath / "Playing";
+		auto arenaPath = playingPath / "Arena";
+
 		if (arena == 0) {
 			std::random_device dev;
 			std::mt19937 rng(dev());
@@ -416,11 +414,8 @@ bool GameplayScene::Attach() {
 			arena = dist(rng);
 		}
 
+		arenaPath /= std::to_string(arena);
 		EnvironmentSetup::SetInt("CurrentArena", arena);
-
-		auto skinPath = manager->GetPath();
-		auto playingPath = skinPath / "Playing";
-		auto arenaPath = playingPath / "Arena" / std::to_string(arena);
 
 		if (!std::filesystem::exists(arenaPath)) {
 			throw std::runtime_error("Arena " + std::to_string(arena) + " is missing from folder: " + (playingPath / "Arena").string());
