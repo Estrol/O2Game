@@ -208,7 +208,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = 24.0 * m_comboTimer;
+		m_wiggleTime = 25.0 * m_comboTimer;
 
 		// Linear decay formula to reduce amplitude over time
 		double decayFactor = 0.60;
@@ -233,7 +233,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = 24.0 * m_lnTimer;
+		m_wiggleTime = 25.0 * m_lnTimer;
 
 		// Linear decay formula to reduce amplitude over time
 		double decayFactor = 0.60;
