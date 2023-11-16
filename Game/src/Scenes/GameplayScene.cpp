@@ -75,7 +75,7 @@ void GameplayScene::Update(double delta) {
 		m_ended = true;
 		SceneManager::DisplayFade(100, [] {
 			SceneManager::ChangeScene(GameScene::RESULT);
-		});
+			});
 	}
 
 	int difficulty = EnvironmentSetup::GetInt("Difficulty");
@@ -95,12 +95,12 @@ void GameplayScene::Update(double delta) {
 		if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::RESULT);
-			});
+				});
 		}
 		else {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::SONGSELECT);
-			});
+				});
 		}
 	}
 
@@ -208,11 +208,15 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = 60.0 * m_comboTimer; // Do not edit
+		m_wiggleTime = 30.0 * m_comboTimer;
 
-		double currentAmplitude = m_amplitude * std::pow(0.60, m_wiggleTime); // std::pow 0.60 = o2jam increment
-		if (currentAmplitude < 1.0) { // Fix for slowdown issues
-			currentAmplitude = 1.0; // Plz don't delete
+		// Linear decay formula to reduce amplitude over time
+		double decayFactor = 0.50;
+		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
+
+		// Ensure that the amplitude doesn't being pulled up into a flying helicopter.
+		if (currentAmplitude < 0.0) { // I can't use std::max or std::min otherwise it has compiler issues, maybe you can fix the formula
+			currentAmplitude = 0.0;
 		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
@@ -227,39 +231,30 @@ void GameplayScene::Render(double delta) {
 		}
 	}
 
+	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
+		m_amplitude = 5.0;
+		m_wiggleTime = 30.0 * m_lnTimer;
 
-	if (m_drawLN && std::get<9>(scores) > 0) {
-		m_wiggleTime = m_lnTimer * 60.0;
-		m_wiggleOffset = std::sin(m_wiggleTime) * 5.0;
+		double decayFactor = 0.50;
+		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
 
-		constexpr double comboFrameLN = 3.0;
-
-		m_lnLogo->Position2 = UDim2::fromOffset(0, 0);
-		m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
-
-		if (m_wiggleTime < comboFrameLN) {
-			m_lnLogo->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
-			m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
+		if (currentAmplitude < 0.0) {
+			currentAmplitude = 0.0;
 		}
 
+		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
 		m_lnLogo->Draw(delta);
 
-		if (m_wiggleTime < comboFrameLN) {
-			m_lnComboNum->Position2 = UDim2::fromOffset(0, m_wiggleOffset);
-		}
-		else {
-			m_lnComboNum->Position2 = UDim2::fromOffset(0, 0);
-		}
-
+		m_lnComboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
 		m_lnComboNum->DrawNumber(std::get<9>(scores));
 
 		m_lnTimer += delta;
+
 		if (m_lnTimer > 1.0) {
 			m_drawLN = false;
 			m_lnLogo->Reset();
 		}
 	}
-
 
 	float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
 	if (gaugeVal > 0) {
@@ -319,7 +314,7 @@ void GameplayScene::Render(double delta) {
 	m_secondNum->DrawNumber(currentSeconds);
 
 	for (int i = 0; i < 7; i++) {
-		m_hitEffect[i]->Draw(delta); 
+		m_hitEffect[i]->Draw(delta);
 
 		if (m_drawHold[i]) {
 			m_holdEffect[i]->Draw(delta);
@@ -445,7 +440,7 @@ bool GameplayScene::Attach() {
 
 		m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 
-		m_PlayBG = std::make_unique<Texture2D>(arenaPath  / ("PlayingBG.png"));
+		m_PlayBG = std::make_unique<Texture2D>(arenaPath / ("PlayingBG.png"));
 		auto PlayBGPos = manager->Arena_GetPosition("PlayingBG"); //arena_conf.GetPosition("PlayingBG");
 		m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
 		m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
@@ -472,7 +467,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> numComboPaths = {};
 		for (int i = 0; i < 10; i++) {
-			auto filePath = arenaPath  / ("ComboNum" + std::to_string(i) + ".png");
+			auto filePath = arenaPath / ("ComboNum" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(filePath)) {
 				std::cout << "Missing: " << filePath.filename() << std::endl;
@@ -519,7 +514,7 @@ bool GameplayScene::Attach() {
 
 			if (!CheckSkinComponent(filePath)) {
 				std::cout << "Missing: " << filePath.filename() << std::endl;
-				
+
 				throw std::runtime_error("Failed to load Integer Images 0-9, please check your skin folder.");
 			}
 
@@ -541,7 +536,7 @@ bool GameplayScene::Attach() {
 		}
 
 		for (int i = 0; i < 4; i++) {
-			auto filePath = arenaPath  / ("Judge" + judgeFileName[i] + ".png");
+			auto filePath = arenaPath / ("Judge" + judgeFileName[i] + ".png");
 
 			if (!CheckSkinComponent(filePath)) {
 				throw std::runtime_error("Failed to load Judge image!");
@@ -568,7 +563,7 @@ bool GameplayScene::Attach() {
 
 			if (!CheckSkinComponent(filePath)) {
 				std::cout << "Missing: " << filePath.filename() << std::endl;
-				
+
 				throw std::runtime_error("Failed to load Jam Logo image!");
 			}
 
@@ -658,11 +653,11 @@ bool GameplayScene::Attach() {
 
 		auto OnButtonHover = [&](int state) {
 			m_drawExitButton = state;
-		};
+			};
 
 		auto OnButtonClick = [&]() {
 			m_doExit = true;
-		};
+			};
 
 		m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
 		m_exitButtonFunc->OnMouseClick = OnButtonClick;
@@ -696,7 +691,7 @@ bool GameplayScene::Attach() {
 		auto comboLogoPos = manager->Arena_GetSprite("ComboLogo"); //arena_conf.GetSprite("ComboLogo");
 		std::vector<std::filesystem::path> comboFileName = {};
 		for (int i = 0; i < comboLogoPos.numOfFrames; i++) {
-			auto file = arenaPath  / ("ComboLogo" + std::to_string(i) + ".png");
+			auto file = arenaPath / ("ComboLogo" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(file)) {
 				break;
@@ -729,7 +724,7 @@ bool GameplayScene::Attach() {
 		std::vector<std::filesystem::path> targetBarPaths = {};
 		for (int i = 0; i < targetPos.numOfFrames; i++) {
 			auto filePath = playingPath / ("TargetBar" + std::to_string(i) + ".png");
-			
+
 			if (!CheckSkinComponent(filePath)) {
 				throw std::runtime_error("Failed to load TargetBar Images, please check your skin folder.");
 			}
@@ -822,7 +817,7 @@ bool GameplayScene::Attach() {
 					}
 				}
 			}
-		};
+			};
 
 		m_game->ListenKeyEvent(OnTrackEvent);
 
@@ -862,7 +857,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> HitEffect = {};
 		for (int i = 0; i < hitEffectPos.numOfFrames; i++) {
-			auto path = arenaPath  / ("HitEffect" + std::to_string(i) + ".png");
+			auto path = arenaPath / ("HitEffect" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(path)) {
 				break;
@@ -873,7 +868,7 @@ bool GameplayScene::Attach() {
 
 		std::vector<std::filesystem::path> holdEffect = {};
 		for (int i = 0; i < holdEffectPos.numOfFrames; i++) {
-			auto path = arenaPath  / ("HoldEffect" + std::to_string(i) + ".png");
+			auto path = arenaPath / ("HoldEffect" + std::to_string(i) + ".png");
 
 			if (!CheckSkinComponent(path)) {
 				break;
@@ -918,7 +913,8 @@ bool GameplayScene::Attach() {
 					{0.61f, 0.67f, {0, 0, 0, 0	}, {0, 0, 0, 255}},
 					{0.67f, 1.00f, {0, 0, 0, 255}, {0, 0, 0, 255}}
 				};
-			} else {
+			}
+			else {
 				segments = {
 					{0.00f, 0.00f, {0, 0, 0, 255}, {0, 0, 0, 255}},
 					{0.00f, 0.00f, {0, 0, 0, 255}, {0, 0, 0, 0	}},
@@ -936,7 +932,7 @@ bool GameplayScene::Attach() {
 
 			m_laneHideImage = std::make_unique<Texture2D>(imageBuffer.data(), imageBuffer.size());
 			m_laneHideImage->Position = UDim2::fromOffset(imagePos, 0);
-			m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight );
+			m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight);
 		}
 
 		auto OnHitEvent = [&](NoteHitInfo info) {
@@ -951,7 +947,7 @@ bool GameplayScene::Attach() {
 			m_comboTimer = 0;
 			m_comboLogo->Reset();
 			m_judgeIndex = (int)info.Result;
-		};
+			};
 
 		m_game->GetScoreManager()->ListenHit(OnHitEvent);
 
@@ -959,14 +955,14 @@ bool GameplayScene::Attach() {
 			m_drawJam = true;
 			m_jamTimer = 0;
 			m_jamLogo->Reset();
-		};
+			};
 
 		m_game->GetScoreManager()->ListenJam(OnJamEvent);
 
 		auto OnLongComboEvent = [&] {
 			m_lnTimer = 0;
 			m_drawLN = true;
-		};
+			};
 
 		m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
 	}
@@ -1042,7 +1038,7 @@ bool GameplayScene::Detach() {
 			EnvironmentSetup::SetInt("LNMaxCombo", std::get<10>(score));
 		}
 	}
-	
+
 	m_game.reset();
 	m_title.reset();
 	m_exitButtonFunc.reset();
