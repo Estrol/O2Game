@@ -208,13 +208,13 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = 30.0 * m_comboTimer;
+		m_wiggleTime = 60 * m_comboTimer;
 
 		// Linear decay formula to reduce amplitude over time
-		double decayFactor = 0.50;
+		double decayFactor = 0.25;
 		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
 
-		// Ensure that the amplitude doesn't being pulled up into a flying helicopter.
+		// Ensure that the amplitude doesn't being pulled up like a flying helicopter.
 		if (currentAmplitude < 0.0) { // I can't use std::max or std::min otherwise it has compiler issues, maybe you can fix the formula
 			currentAmplitude = 0.0;
 		}
@@ -233,15 +233,14 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = 30.0 * m_lnTimer;
+		m_wiggleTime = 60 * m_lnTimer;
 
-		double decayFactor = 0.50;
+		double decayFactor = 0.25;
 		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
 
 		if (currentAmplitude < 0.0) {
 			currentAmplitude = 0.0;
 		}
-
 		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
 		m_lnLogo->Draw(delta);
 
@@ -331,7 +330,7 @@ void GameplayScene::Render(double delta) {
 		m_autoText->Position = m_autoTextPos;
 		m_autoText->Draw(AUTOPLAY_TEXT);
 
-		m_autoTextPos.X.Offset -= delta * 30.0;
+		m_autoTextPos.X.Offset -= delta * 50.0;
 		if (m_autoTextPos.X.Offset < (-m_autoTextSize + 20)) {
 			m_autoTextPos = UDim2::fromOffset(GameWindow::GetInstance()->GetBufferWidth(), 50);
 		}
