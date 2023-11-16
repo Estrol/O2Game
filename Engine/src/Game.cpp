@@ -17,7 +17,7 @@
 
 constexpr auto kInputDefaultRate = 1000.0;
 constexpr auto kMenuDefaultRate = 60.0;
-constexpr auto kAudioDefaultRate = 144.0;
+constexpr auto kAudioDefaultRate = 24.0;
 
 namespace {
 	thread_local double curTick = 0.0;

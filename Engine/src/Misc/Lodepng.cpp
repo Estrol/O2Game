@@ -2475,16 +2475,22 @@ static unsigned char readBitFromReversedStream(size_t* bitpointer, const unsigne
     return result;
 }
 
-/* TODO: make this faster */
 static unsigned readBitsFromReversedStream(size_t* bitpointer, const unsigned char* bitstream, size_t nbits) {
     unsigned result = 0;
     size_t i;
-    for (i = 0; i < nbits; ++i) {
-        result <<= 1u;
-        result |= (unsigned)readBitFromReversedStream(bitpointer, bitstream);
+    size_t bitsRead = 0;
+    while (bitsRead < nbits) {
+        unsigned char currentByte = bitstream[(*bitpointer) >> 3];
+        size_t shift = (*bitpointer) & 7;
+        size_t bitsToRead = std::min(nbits - bitsRead, 8 - shift);
+        unsigned char mask = (1 << bitsToRead) - 1;
+        result |= ((currentByte >> shift) & mask) << bitsRead;
+        bitsRead += bitsToRead;
+        (*bitpointer) += bitsToRead;
     }
     return result;
 }
+
 
 static void setBitOfReversedStream(size_t* bitpointer, unsigned char* bitstream, unsigned char bit) {
     /*the current bit in bitstream may be 0 or 1 for this to work*/

@@ -208,14 +208,14 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = 25.0 * m_comboTimer;
+		m_wiggleTime = 30.0 * m_comboTimer;
 
 		// Linear decay formula to reduce amplitude over time
-		double decayFactor = 0.60;
-		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
+		double decayFactor = 0.50;
+		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime); // I don't know why 1.0 on formula does the job
 
-		// Ensure that the amplitude doesn't go below 0.0
-		if (currentAmplitude < 0.0) {
+		// Ensure that the amplitude doesn't being pulled up into a flying helicopter.
+		if (currentAmplitude < 0.0) { // I can't use std::max or std::min otherwise it has compiler issues, maybe you can fix the formula
 			currentAmplitude = 0.0;
 		}
 
@@ -231,15 +231,13 @@ void GameplayScene::Render(double delta) {
 		}
 	}
 
-	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation like DrawCombo
+	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = 25.0 * m_lnTimer;
+		m_wiggleTime = 30.0 * m_lnTimer;
 
-		// Linear decay formula to reduce amplitude over time
-		double decayFactor = 0.60;
+		double decayFactor = 0.50;
 		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
 
-		// Ensure that the amplitude doesn't go below 0.0
 		if (currentAmplitude < 0.0) {
 			currentAmplitude = 0.0;
 		}

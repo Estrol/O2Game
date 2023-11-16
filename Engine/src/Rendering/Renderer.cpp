@@ -88,7 +88,7 @@ bool Renderer::Create(RendererMode mode, GameWindow* window, bool failed) {
                 }
 
                 SDL_SetHint(SDL_HINT_RENDER_DRIVER, rendererName.c_str());
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0"); // STOP CHANGING THIS, LEAVE IT "as is"
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
             }
 
             m_renderer = SDL_CreateRenderer(window->GetWindow(), -1, SDL_RENDERER_ACCELERATED);

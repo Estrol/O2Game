@@ -40,7 +40,7 @@ void NoteImageCacheManager::Repool(DrawableNote* image, NoteImageType noteType) 
 		return;
 	}
 
-	it.push_back(image);
+	it.emplace_back(image);
 }
 
 void NoteImageCacheManager::RepoolHold(DrawableNote* image, NoteImageType noteType) {
@@ -53,7 +53,7 @@ void NoteImageCacheManager::RepoolHold(DrawableNote* image, NoteImageType noteTy
 		return;
 	}
 
-	it.push_back(image);
+	it.emplace_back(image);
 }
 
 void NoteImageCacheManager::RepoolTrail(DrawableNote* image, NoteImageType noteType) {
@@ -66,7 +66,7 @@ void NoteImageCacheManager::RepoolTrail(DrawableNote* image, NoteImageType noteT
 		return;
 	}
 
-	it.push_back(image);
+	it.emplace_back(image);
 }
 
 DrawableNote* NoteImageCacheManager::Depool(NoteImageType noteType) {
