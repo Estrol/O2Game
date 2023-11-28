@@ -25,6 +25,8 @@
 #include "../Engine/SkinManager.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
+#include <glm/common.hpp> 
+
 #define AUTOPLAY_TEXT u8"Game currently on autoplay!"
 
 struct MissInfo {
@@ -208,16 +210,13 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = 60 * m_comboTimer;
+		m_wiggleTime = fmod(60 * m_comboTimer, 5 * 16.0); // Thank's HAZMAT. Formula = fmod(60 * m_comboTimer, totalFrames * frameDuration);
 
 		// Linear decay formula to reduce amplitude over time
-		double decayFactor = 0.25;
-		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
+		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); // 0.25 = decayFactor
 
-		// Ensure that the amplitude doesn't being pulled up like a flying helicopter.
-		if (currentAmplitude < 0.0) { // I can't use std::max or std::min otherwise it has compiler issues, maybe you can fix the formula
-			currentAmplitude = 0.0;
-		}
+		// Ensure that the amplitude doesn't go below 0.0
+		currentAmplitude = glm::clamp(currentAmplitude, 0.0, std::numeric_limits<double>::max()); // ChatGPT solution because i had no idea with compiler issues
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
 		m_comboLogo->Draw(delta);
@@ -233,14 +232,12 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = 60 * m_lnTimer;
+		m_wiggleTime = fmod(60 * m_lnTimer, 5 * 16.0);
 
-		double decayFactor = 0.25;
-		double currentAmplitude = m_amplitude * (1.0 - decayFactor * m_wiggleTime);
+		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); 
 
-		if (currentAmplitude < 0.0) {
-			currentAmplitude = 0.0;
-		}
+		currentAmplitude = glm::clamp(currentAmplitude, 0.0, std::numeric_limits<double>::max());
+
 		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
 		m_lnLogo->Draw(delta);
 
