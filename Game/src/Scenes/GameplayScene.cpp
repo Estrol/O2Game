@@ -237,7 +237,9 @@ void GameplayScene::Render(double delta) {
 
 		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); 
 
-		currentAmplitude = glm::clamp(currentAmplitude, 0.0, std::numeric_limits<double>::max());
+		if (currentAmplitude < 0.0) {
+			currentAmplitude = 0.0; // LEAVE THIS AS IT
+		}
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
 		m_lnLogo->Draw(delta);
