@@ -210,7 +210,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = fmod(60 * m_comboTimer, 5 * 16.0); // Thank's HAZMAT. Formula = fmod(60 * m_comboTimer, totalFrames * frameDuration);
+		m_wiggleTime = fmod(60 * m_comboTimer, 5 * 16.67); // Thank's HAZMAT. Formula = fmod(60 * m_comboTimer, totalFrames * frameDuration);
 
 		// Linear decay formula to reduce amplitude over time
 		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); // 0.25 = decayFactor
@@ -233,7 +233,7 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = fmod(60 * m_lnTimer, 5 * 16.0);
+		m_wiggleTime = fmod(60 * m_lnTimer, 5 * 16.67); // 16.67 = 1 frame
 
 		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); 
 
