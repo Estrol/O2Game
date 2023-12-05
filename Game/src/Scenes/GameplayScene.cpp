@@ -233,10 +233,10 @@ void GameplayScene::Render(double delta) {
 	}
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
-		m_amplitude = 10.0;
+		m_amplitude = 5.0;
 		m_wiggleTime = 60 * m_lnTimer;
 
-		double displacement = 2.0;
+		double displacement = 1.0;
 		double totalDisplacement = displacement * m_wiggleTime;
 
 		double currentAmplitude = m_amplitude - totalDisplacement;
