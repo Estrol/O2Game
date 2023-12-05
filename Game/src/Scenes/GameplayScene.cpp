@@ -25,8 +25,6 @@
 #include "../Engine/SkinManager.hpp"
 #include "../Engine/NoteImageCacheManager.hpp"
 
-#include <glm/common.hpp> 
-
 #define AUTOPLAY_TEXT u8"Game currently on autoplay!"
 
 struct MissInfo {
@@ -210,13 +208,15 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawCombo && std::get<7>(scores) > 0) {
 		m_amplitude = 30.0;
-		m_wiggleTime = fmod(60 * m_comboTimer, 5 * 16.67); // Thank's HAZMAT. Formula = fmod(60 * m_comboTimer, totalFrames * frameDuration);
+		m_wiggleTime = 60 * m_comboTimer;
 
-		// Linear decay formula to reduce amplitude over time
-		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); // 0.25 = decayFactor
+		double displacement = 6.0; // Calculate the displacement for each frame
+		double totalDisplacement = displacement * m_wiggleTime; // Calculate the total displacement based on the current frame/time
+
+		double currentAmplitude = m_amplitude - totalDisplacement; // Adjust the amplitude based on the total displacement
 
 		if (currentAmplitude < 0.0) {
-			currentAmplitude = 0.0; // LEAVE THIS AS IT
+			currentAmplitude = 0.0; // Stopper like this due compiler issues
 		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
@@ -233,12 +233,15 @@ void GameplayScene::Render(double delta) {
 
 	if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
 		m_amplitude = 5.0;
-		m_wiggleTime = fmod(60 * m_lnTimer, 5 * 16.67); // 16.67 = 1 frame
+		m_wiggleTime = 60 * m_lnTimer;
 
-		double currentAmplitude = m_amplitude * (1.0 - 0.25 * m_wiggleTime); 
+		double displacement = 6.0;
+		double totalDisplacement = displacement * m_wiggleTime;
+
+		double currentAmplitude = m_amplitude - totalDisplacement;
 
 		if (currentAmplitude < 0.0) {
-			currentAmplitude = 0.0; // LEAVE THIS AS IT
+			currentAmplitude = 0.0;
 		}
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
