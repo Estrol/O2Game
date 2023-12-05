@@ -227,6 +227,7 @@ void GameplayScene::Render(double delta) {
 
 		m_comboTimer += delta;
 		if (m_comboTimer > 1.0) {
+			m_comboTimer = 0.0;
 			m_drawCombo = false;
 		}
 	}
@@ -253,6 +254,7 @@ void GameplayScene::Render(double delta) {
 		m_lnTimer += delta;
 
 		if (m_lnTimer > 1.0) {
+			m_lnTimer = 0.0;
 			m_drawLN = false;
 			m_lnLogo->Reset();
 		}
