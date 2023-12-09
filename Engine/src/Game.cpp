@@ -39,8 +39,9 @@ namespace {
 
 	double FrameLimit(double MaxFrameRate) {
 		double newTick = SDL_GetTicks();
-		double targetTick = curTick + 1000.0 / MaxFrameRate;
+		double targetTick = lastTick + 1000.0 / MaxFrameRate;
 
+		// If the frame rate is too high, wait to avoid shaky animations
 		if (newTick < targetTick) {
 			double delayTicks = targetTick - newTick;
 			SDL_Delay(static_cast<Uint32>(delayTicks));
@@ -49,6 +50,9 @@ namespace {
 
 		double delta = (newTick - curTick) / 1000.0;
 		curTick = newTick;
+
+		// Update lastTick for the next frame
+		lastTick = curTick;	
 
 		return delta;
 	}
