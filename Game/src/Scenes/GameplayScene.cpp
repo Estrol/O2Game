@@ -241,7 +241,7 @@ void GameplayScene::Render(double delta) {
 		m_amplitude = 5.0;
 		m_wiggleTime = 60 * m_lnTimer;
 
-		double decrement = 6.0;
+		double decrement = 1.0;
 		double totalDecrement = decrement * m_wiggleTime;
 
 		double currentAmplitude = m_amplitude - totalDecrement;
