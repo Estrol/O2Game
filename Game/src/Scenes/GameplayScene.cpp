@@ -210,13 +210,18 @@ void GameplayScene::Render(double delta) {
 		m_amplitude = 30.0;
 		m_wiggleTime = 60 * m_comboTimer;
 
-		double displacement = 6.0; // Calculate the displacement for each frame
-		double totalDisplacement = displacement * m_wiggleTime; // Calculate the total displacement based on the current frame/time
+		double decrement = 6.0; // Calculate the decrement for each frame
+		double totalDecrement = decrement * m_wiggleTime; // Calculate the total decrement based on the current frame/time
 
-		double currentAmplitude = m_amplitude - totalDisplacement; // Adjust the amplitude based on the total displacement
+		double currentAmplitude = m_amplitude - totalDecrement; // Adjust the amplitude based on the total decrement
 
 		if (currentAmplitude < 0.0) {
 			currentAmplitude = 0.0; // Stopper like this due compiler issues
+		}
+
+		if (m_comboTimer > 1.0) { // Check if the previous animation hasn't finished
+			m_comboTimer = 0.0; // Reset the timer
+			m_amplitude += decrement; // Increase the starting amplitude for the next animation
 		}
 
 		m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
@@ -236,13 +241,18 @@ void GameplayScene::Render(double delta) {
 		m_amplitude = 5.0;
 		m_wiggleTime = 60 * m_lnTimer;
 
-		double displacement = 1.0;
-		double totalDisplacement = displacement * m_wiggleTime;
+		double decrement = 6.0;
+		double totalDecrement = decrement * m_wiggleTime;
 
-		double currentAmplitude = m_amplitude - totalDisplacement;
+		double currentAmplitude = m_amplitude - totalDecrement;
 
 		if (currentAmplitude < 0.0) {
 			currentAmplitude = 0.0;
+		}
+
+		if (m_lnTimer > 1.0) {
+			m_lnTimer = 0.0;
+			m_amplitude += decrement;
 		}
 
 		m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
