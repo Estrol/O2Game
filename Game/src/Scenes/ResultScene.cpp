@@ -172,12 +172,7 @@ bool ResultScene::Attach()
     Chart *chart = (Chart *)EnvironmentSetup::GetObj("SONG");
     EnvironmentSetup::SetObj("SONG", nullptr);
 
-    if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
-        GameWindow *window = GameWindow::GetInstance();
-
-        m_background = std::make_unique<Texture2D>((uint8_t *)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
-        m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
-    }
+    m_background = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
 
     delete chart;
 
@@ -191,6 +186,10 @@ bool ResultScene::Detach()
         audio->Stop();
     }
 
-    m_background.reset();
+    if (!m_retryButton) {
+        EnvironmentSetup::SetObj("SongBackground", nullptr);
+    }
+
+    m_background = nullptr;
     return true;
 }

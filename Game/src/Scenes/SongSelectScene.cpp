@@ -29,7 +29,8 @@
 #include "../Data/Util/Util.hpp"
 
 static std::array<std::string, 6>  Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
-static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
+static std::array<std::string, 14> Arena = { "Music Background", "Random",
+                                             "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
 SongSelectScene::SongSelectScene()
 {
@@ -543,12 +544,12 @@ void SongSelectScene::OnGameSelectMusic(double delta)
             ImGui::Text("Arena");
 
             // select
-            int value = EnvironmentSetup::GetInt("Arena");
+            int value = EnvironmentSetup::GetInt("Arena") + 1;
             if (ImGui::BeginCombo("###ComboBox1Arena", Arena[value].c_str(), 0)) {
                 for (int i = 0; i < Arena.size(); i++) {
                     bool is_selected = i == value;
                     if (ImGui::Selectable(Arena[i].c_str(), is_selected)) {
-                        EnvironmentSetup::SetInt("Arena", i);
+                        EnvironmentSetup::SetInt("Arena", i - 1);
                     }
                 }
 

@@ -120,7 +120,17 @@ void GameplayScene::Render(double delta)
 
     bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
 
-    m_PlayBG->Draw();
+    int arena = EnvironmentSetup::GetInt("Arena");
+
+    if (arena != -1) {
+        m_PlayBG->Draw();
+    } else {
+        auto songBG = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+        if (songBG) {
+            songBG->Draw();
+        }
+    }
+
     m_Playfooter->Draw();
     m_Playfield->Draw();
     if (!is_flhd_enabled) {
@@ -421,7 +431,7 @@ bool GameplayScene::Attach()
         auto playingPath = skinPath / "Playing";
         auto arenaPath = playingPath / "Arena";
 
-        if (arena == 0) {
+        if (arena == 0 || arena == -1) {
             std::random_device dev;
             std::mt19937       rng(dev());
 
@@ -430,18 +440,15 @@ bool GameplayScene::Attach()
             arena = dist(rng);
         }
 
+        // HACK: arena -1 is Music Arena
         arenaPath /= std::to_string(arena);
         EnvironmentSetup::SetInt("CurrentArena", arena);
 
         if (!std::filesystem::exists(arenaPath)) {
             throw std::runtime_error("Arena " + std::to_string(arena) + " is missing from folder: " + (playingPath / "Arena").string());
         }
-
         manager->SetKeyCount(7);
-        manager->Arena_SetIndex(arena);
-
-        // SkinConfig conf(playingPath / "Playing.ini", 7);
-        // SkinConfig arena_conf(arenaPath / "Arena.ini", 7);
+        manager->Arena_SetIndex(arena != -1 ? arena : 0);
 
         for (int i = 0; i < 7; i++) {
             m_keyState[i] = false;
@@ -982,6 +989,14 @@ bool GameplayScene::Attach()
         };
 
         m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
+
+        if (arena != -1) {
+            auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+            if (obj) {
+                obj->TintColor = Color3::FromRGB(128, 128, 128);
+            }
+        }
+
     } catch (SDLException &e) {
         MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;
@@ -1058,6 +1073,14 @@ bool GameplayScene::Detach()
     m_game.reset();
     m_title.reset();
     m_exitButtonFunc.reset();
+
+    int arena = EnvironmentSetup::GetInt("Arena");
+    if (arena != -1) {
+        auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+        if (obj) {
+            obj->TintColor = Color3::FromRGB(255, 255, 255);
+        }
+    }
 
     SceneManager::GetInstance()->SetFrameLimitMode(FrameLimitMode::MENU);
     return true;

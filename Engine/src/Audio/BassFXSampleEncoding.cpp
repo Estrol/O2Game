@@ -25,7 +25,7 @@ BASS_FX_SampleEncoding::FXEncoding BASS_FX_SampleEncoding::Encode(void *audioDat
     BASS_ChannelGetAttribute(tempoch, BASS_ATTRIB_FREQ, &frequency);
 
     BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_TEMPO, rate * 100.0f - 100.0f);
-    BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_FREQ, frequency * rate);
+    // BASS_ChannelSetAttribute(tempoch, BASS_ATTRIB_FREQ, frequency * rate);
 
     BASS_CHANNELINFO tempoInfo;
     BASS_ChannelGetInfo(tempoch, &tempoInfo);

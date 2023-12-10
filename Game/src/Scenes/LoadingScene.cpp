@@ -184,8 +184,6 @@ bool LoadingScene::Attach()
 
     m_background = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
     dont_dispose = m_background != nullptr;
-
-    EnvironmentSetup::SetObj("SongBackground", nullptr);
     return true;
 }
 
