@@ -8,11 +8,12 @@ namespace Autoplay {
         KEY_UP
     };
 
-    struct ReplayHitInfo {
-        double Time;
-        int Lane;
+    struct ReplayHitInfo
+    {
+        double                  Time;
+        int                     Lane;
         Autoplay::ReplayHitType Type;
     };
 
-    std::vector<Autoplay::ReplayHitInfo> CreateReplay(Chart* chart);
-};
+    std::vector<Autoplay::ReplayHitInfo> CreateReplay(Chart *chart);
+}; // namespace Autoplay

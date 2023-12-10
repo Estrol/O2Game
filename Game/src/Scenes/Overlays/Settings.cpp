@@ -1,25 +1,25 @@
 #include "Settings.h"
-#include <Imgui/imgui.h>
-#include <Imgui/ImguiUtil.h>
-#include <SDL2/SDL.h>
 #include <Configuration.h>
-#include <Texture/MathUtils.h>
+#include <Imgui/ImguiUtil.h>
+#include <Imgui/imgui.h>
 #include <Rendering/Window.h>
+#include <SDL2/SDL.h>
 #include <SceneManager.h>
+#include <Texture/MathUtils.h>
 
-#include "../../Engine/SkinManager.hpp"
 #include "../../Data/Util/Util.hpp"
+#include "../../Engine/SkinManager.hpp"
 #include "../../EnvironmentSetup.hpp"
-#include <map>
 #include <array>
+#include <map>
 
-
-SettingsOverlay::SettingsOverlay() {
+SettingsOverlay::SettingsOverlay()
+{
     m_name = "Settings";
     m_position = MathUtil::ScaleVec2(450, 450);
     m_size = ImVec2(0, 0);
 
-    for (auto& dir : std::filesystem::directory_iterator(std::filesystem::current_path() / "Skins")) {
+    for (auto &dir : std::filesystem::directory_iterator(std::filesystem::current_path() / "Skins")) {
         if (dir.is_directory()) {
             if (std::filesystem::exists(dir.path() / "GameSkin.ini")) {
                 skins.push_back(dir.path().filename().string());
@@ -43,19 +43,21 @@ static std::map<int, std::string> Graphics = {
 #endif
 };
 
-static std::array<std::string, 4> LongNote = { "None", "Short", "Normal", "Long" };
+static std::array<std::string, 4>  LongNote = { "None", "Short", "Normal", "Long" };
 static std::array<std::string, 14> m_fps = { "30", "60", "75", "120", "144", "165", "180", "240", "360", "480", "600", "800", "1000", "Unlimited" };
 
 static std::vector<std::string> m_resolutions = {};
 
-void SettingsOverlay::Render(double delta) {
-    auto& io = ImGui::GetIO();
+void SettingsOverlay::Render(double delta)
+{
+    auto &io = ImGui::GetIO();
 
-    int sceneIndex = EnvironmentSetup::GetInt("Setting_SceneIndex");
+    int  sceneIndex = EnvironmentSetup::GetInt("Setting_SceneIndex");
     bool changeResolution = false;
 
     switch (sceneIndex) {
-        case 1: {
+        case 1:
+        {
             auto key = EnvironmentSetup::Get("Scene_KbKey");
             ImGui::Text("%s", "Waiting for keybind input...");
             ImGui::Text("%s", ("Press any key to set the Key: " + key).c_str());
@@ -72,7 +74,7 @@ void SettingsOverlay::Render(double delta) {
                 if (io.KeysDown[i] && !blacklistedKey[(ImGuiKey)i]) {
                     EnvironmentSetup::SetInt("Setting_SceneIndex", 0);
 
-                    auto ikey = SDL_GetKeyFromScancode((SDL_Scancode)i);
+                    auto        ikey = SDL_GetKeyFromScancode((SDL_Scancode)i);
                     std::string name = SDL_GetKeyName(ikey);
 
                     Configuration::Set("KeyMapping", keyCount + "Lane" + key, name);
@@ -82,7 +84,8 @@ void SettingsOverlay::Render(double delta) {
             break;
         }
 
-        case 2: {
+        case 2:
+        {
             ImGui::Text("You sure you want reset the settings?");
             ImGui::Text("This will reset all settings to default.");
 
@@ -107,7 +110,8 @@ void SettingsOverlay::Render(double delta) {
             break;
         }
 
-        default: {
+        default:
+        {
             auto childSettingVec2 = MathUtil::ScaleVec2(ImVec2(400, 250));
 
             if (ImGui::BeginChild("###ChildSettingWnd", MathUtil::ScaleVec2(ImVec2(400, 250)))) {
@@ -183,11 +187,9 @@ void SettingsOverlay::Render(double delta) {
                         int nextGraphicsIndex = -1;
                         try {
                             GraphicsIndex = std::stoi(Configuration::Load("Game", "Renderer").c_str());
+                        } catch (const std::invalid_argument &) {
                         }
-                        catch (const std::invalid_argument&) {
-                            
-                        }
-                        
+
                         ImGui::Text("Graphics");
                         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "You need restart game after setting this!");
                         auto it = Graphics.find(GraphicsIndex);
@@ -238,7 +240,7 @@ void SettingsOverlay::Render(double delta) {
                             changeResolution = true;
                             Configuration::Set("Game", "Resolution", m_resolutions[currentResolutionIndex]);
                         }
-                    
+
                         ImGui::NewLine();
 
                         ImGui::Text("FPS");
@@ -284,16 +286,18 @@ void SettingsOverlay::Render(double delta) {
 
                         for (int i = (int)LongNote.size() - 1; i >= 0; i--) {
                             bool is_combo_selected = currentGuideLineIndex == i;
-                            
+
                             ImGui::PushItemWidth(50);
                             if (ImGui::Checkbox(("###ComboCheck" + std::to_string(i)).c_str(), &is_combo_selected)) {
                                 currentGuideLineIndex = i;
                             }
 
                             ImGui::SameLine();
-                            ImGui::Text("%s", LongNote[i].c_str()); ImGui::SameLine();
-                            ImGui::Dummy(MathUtil::ScaleVec2(ImVec2(25, 0))); ImGui::SameLine();
-                            
+                            ImGui::Text("%s", LongNote[i].c_str());
+                            ImGui::SameLine();
+                            ImGui::Dummy(MathUtil::ScaleVec2(ImVec2(25, 0)));
+                            ImGui::SameLine();
+
                             if (i < LongNote.size()) {
                                 ImGui::SameLine();
                             }
@@ -361,94 +365,89 @@ void SettingsOverlay::Render(double delta) {
 
     if (changeResolution) {
         std::vector<std::string> resolution = splitString(m_resolutions[currentResolutionIndex], 'x');
-        int x = 800, y = 600;
+        int                      x = 800, y = 600;
 
         try {
             x = std::stoi(resolution[0]);
             y = std::stoi(resolution[1]);
-        } catch (const std::invalid_argument&) {
-
+        } catch (const std::invalid_argument &) {
         }
 
         GameWindow::GetInstance()->ResizeWindow(
-            x, y
-        );
+            x, y);
     }
 }
 
-bool SettingsOverlay::Attach() {
+bool SettingsOverlay::Attach()
+{
     LoadConfiguration();
 
     m_exit = false;
     return true;
 }
 
-bool SettingsOverlay::Detach() {
+bool SettingsOverlay::Detach()
+{
     ImGui::CloseCurrentPopup();
     SaveConfiguration();
 
     return true;
 }
 
-void SettingsOverlay::LoadConfiguration() {
+void SettingsOverlay::LoadConfiguration()
+{
     if (m_resolutions.size() == 0) {
         int displayCount = SDL_GetNumDisplayModes(0);
         for (int i = 0; i < displayCount; i++) {
             SDL_DisplayMode mode;
-			SDL_GetDisplayMode(0, i, &mode);
+            SDL_GetDisplayMode(0, i, &mode);
 
-			m_resolutions.push_back(std::to_string(mode.w) + "x" + std::to_string(mode.h));	
+            m_resolutions.push_back(std::to_string(mode.w) + "x" + std::to_string(mode.h));
         }
 
         // remove duplicate field
-		m_resolutions.erase(std::unique(m_resolutions.begin(), m_resolutions.end()), m_resolutions.end());
+        m_resolutions.erase(std::unique(m_resolutions.begin(), m_resolutions.end()), m_resolutions.end());
 
-        GameWindow* window = GameWindow::GetInstance();
+        GameWindow *window = GameWindow::GetInstance();
         std::string currentResolution = std::to_string(window->GetWidth()) + "x" + std::to_string(window->GetHeight());
-		
+
         // find index
         currentResolutionIndex = (int)(std::find(m_resolutions.begin(), m_resolutions.end(), currentResolution) - m_resolutions.begin());
     }
 
     try {
         currentOffset = std::stoi(Configuration::Load("Game", "AudioOffset").c_str());
-    }
-    catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         currentOffset = 0;
     }
 
     try {
         currentVolume = std::stoi(Configuration::Load("Game", "AudioVolume").c_str());
-    }
-    catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         currentVolume = 0;
     }
 
     try {
-		convertAutoSound = std::stoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
+        convertAutoSound = std::stoi(Configuration::Load("Game", "AutoSound").c_str()) != 0;
+    } catch (const std::invalid_argument &) {
+        convertAutoSound = true;
     }
-	catch (const std::invalid_argument&) {
-		convertAutoSound = true;
-	}
 
     try {
         auto value = Configuration::Load("Game", "FrameLimit");
         auto it = std::find(m_fps.begin(), m_fps.end(), value);
         if (it == m_fps.end()) {
             currentFPSIndex = 4;
-        }
-        else {
+        } else {
             currentFPSIndex = (int)(it - m_fps.begin());
         }
-    }
-    catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         currentFPSIndex = 4;
     }
 
     try {
         currentGuideLineIndex = std::stoi(Configuration::Load("Game", "GuideLine").c_str());
-    }
-    catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         currentGuideLineIndex = 2;
     }
 
@@ -462,7 +461,8 @@ void SettingsOverlay::LoadConfiguration() {
     PreloadSkin();
 }
 
-void SettingsOverlay::SaveConfiguration() {
+void SettingsOverlay::SaveConfiguration()
+{
     Configuration::Set("Game", "AudioOffset", std::to_string(currentOffset));
     Configuration::Set("Game", "AudioVolume", std::to_string(currentVolume));
     Configuration::Set("Game", "AutoSound", std::to_string(convertAutoSound ? 1 : 0));
@@ -484,7 +484,8 @@ void SettingsOverlay::SaveConfiguration() {
     PreloadSkin();
 }
 
-void SettingsOverlay::PreloadSkin() {
+void SettingsOverlay::PreloadSkin()
+{
     auto manager = SkinManager::GetInstance();
     manager->LoadSkin(currentSkin);
 
@@ -494,16 +495,14 @@ void SettingsOverlay::PreloadSkin() {
     }
 
     std::vector<std::string> resolutionVec = splitString(resolution, 'x');
-    int x = 800, y = 600;
+    int                      x = 800, y = 600;
 
     try {
         x = std::stoi(resolutionVec[0]);
         y = std::stoi(resolutionVec[1]);
-    } catch (const std::invalid_argument&) {
-
+    } catch (const std::invalid_argument &) {
     }
 
     GameWindow::GetInstance()->ResizeBuffer(
-        x, y
-    );
+        x, y);
 }

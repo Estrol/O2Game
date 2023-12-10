@@ -4,7 +4,8 @@
 
 #include "Console.h"
 
-void Logs::Puts(const char* fmt, ...) {
+void Logs::Puts(const char *fmt, ...)
+{
     char buffer[256] = {};
 
     va_list args;

@@ -3,26 +3,27 @@
 #include "Texture/Texture2D.h"
 #include <iostream>
 
-class LoadingScene : public Scene {
+class LoadingScene : public Scene
+{
 public:
-	LoadingScene();
-	~LoadingScene();
+    LoadingScene();
+    ~LoadingScene();
 
-	void Update(double delta) override;
-	void Render(double delta) override;
+    void Update(double delta) override;
+    void Render(double delta) override;
 
-	bool Attach() override;
-	bool Detach() override;
+    bool Attach() override;
+    bool Detach() override;
 
 private:
-	// can't load chart lmao
-	bool fucked = false;
-	bool is_shown = false;
-	bool is_ready = false;
-	bool dont_dispose = false;
+    // can't load chart lmao
+    bool fucked = false;
+    bool is_shown = false;
+    bool is_ready = false;
+    bool dont_dispose = false;
 
-	std::u8string m_title;
+    std::u8string m_title;
 
-	double m_counter;
-	Texture2D* m_background;
+    double     m_counter;
+    Texture2D *m_background;
 };

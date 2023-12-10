@@ -2,23 +2,26 @@
 #include <filesystem>
 #include <vector>
 
-struct O2Sample {
-	char8_t FileName[32];
-	uint32_t RefValue;
-	std::vector<uint8_t> AudioData;
+struct O2Sample
+{
+    char8_t              FileName[32];
+    uint32_t             RefValue;
+    std::vector<uint8_t> AudioData;
 };
 
-class OJM {
+class OJM
+{
 public:
-	~OJM();
+    ~OJM();
 
-	void Load(std::filesystem::path& fileName);
-	bool IsValid();
+    void Load(std::filesystem::path &fileName);
+    bool IsValid();
 
-	std::vector<O2Sample> Samples;
+    std::vector<O2Sample> Samples;
+
 private:
-	void LoadM30Data(std::fstream& fs);
-	void LoadOJMData(std::fstream& fs, bool encrypted);
-	
-	bool m_valid;
+    void LoadM30Data(std::fstream &fs);
+    void LoadOJMData(std::fstream &fs, bool encrypted);
+
+    bool m_valid;
 };

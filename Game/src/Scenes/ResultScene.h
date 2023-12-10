@@ -1,20 +1,21 @@
 #pragma once
-#include <memory>
 #include "Scene.h"
 #include "Texture/Texture2D.h"
+#include <memory>
 
-class ResultScene : public Scene {
+class ResultScene : public Scene
+{
 public:
-	ResultScene();
+    ResultScene();
 
-	void Render(double delta) override;
+    void Render(double delta) override;
 
-	bool Attach() override;
-	bool Detach() override;
+    bool Attach() override;
+    bool Detach() override;
 
 private:
-	bool m_backButton;
-	bool m_retryButton;
+    bool m_backButton;
+    bool m_retryButton;
 
-	std::unique_ptr<Texture2D> m_background;
+    std::unique_ptr<Texture2D> m_background;
 };

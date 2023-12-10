@@ -1,9 +1,10 @@
 #pragma once
+#include "../Engine/SkinConfig.hpp"
 #include "Scene.h"
 #include "Texture/Texture2D.h"
-#include "../Engine/SkinConfig.hpp"
 
-class MainMenu : public Scene {
+class MainMenu : public Scene
+{
 public:
     MainMenu();
 
@@ -12,9 +13,10 @@ public:
 
     bool Attach() override;
     bool Detach() override;
+
 private:
     std::unique_ptr<Texture2D> m_background;
-    int m_targetScene = -1;
+    int                        m_targetScene = -1;
 
     SkinConfig m_skin;
 };

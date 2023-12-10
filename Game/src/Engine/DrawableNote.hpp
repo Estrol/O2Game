@@ -3,7 +3,8 @@
 
 struct NoteImage;
 
-class DrawableNote : public FrameTimer {
+class DrawableNote : public FrameTimer
+{
 public:
-	DrawableNote(NoteImage* frame);
+    DrawableNote(NoteImage *frame);
 };

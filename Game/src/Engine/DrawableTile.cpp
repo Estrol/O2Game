@@ -1,7 +1,7 @@
 #include "DrawableTile.hpp"
 #include "../Resources/GameResources.hpp"
 
-//DrawableTile::DrawableTile(NoteImage* frame) : Texture2D::Texture2D(frame->Texture) {
+// DrawableTile::DrawableTile(NoteImage* frame) : Texture2D::Texture2D(frame->Texture) {
 //	m_bDisposeTexture = false;
 //
 //	m_actualSize = frame->TextureRect;
@@ -13,4 +13,4 @@
 //	Size.Y.Offset = 0;
 //
 //	AnchorPoint = { 0, 0.5 };
-//}
+// }

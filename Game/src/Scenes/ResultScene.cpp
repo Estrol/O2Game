@@ -1,32 +1,33 @@
 #include "ResultScene.h"
-#include <string>
 #include <array>
+#include <string>
 
-#include "SceneManager.h"
+#include "Audio/AudioManager.h"
 #include "Configuration.h"
 #include "Rendering/Window.h"
+#include "SceneManager.h"
 #include "Texture/MathUtils.h"
-#include "Audio/AudioManager.h"
 
-#include "Imgui/imgui.h"
 #include "Imgui/ImguiUtil.h"
+#include "Imgui/imgui.h"
 #include "Imgui/imgui_internal.h"
 
 #include "Fonts/FontResources.h"
 
-#include "../GameScenes.h"
 #include "../Data/Chart.hpp"
-#include "../EnvironmentSetup.hpp"
 #include "../Engine/SkinManager.hpp"
+#include "../EnvironmentSetup.hpp"
+#include "../GameScenes.h"
 
 static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 
-ResultScene::ResultScene() {
-    
+ResultScene::ResultScene()
+{
 }
 
-void ResultScene::Render(double delta) {
-	ImguiUtil::NewFrame();
+void ResultScene::Render(double delta)
+{
+    ImguiUtil::NewFrame();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     auto window = GameWindow::GetInstance();
@@ -39,15 +40,8 @@ void ResultScene::Render(double delta) {
     }
 
     if (ImGui::Begin("#SongSelectMenuBar",
-        nullptr,
-        ImGuiWindowFlags_NoTitleBar
-        | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoMove
-        | ImGuiWindowFlags_NoScrollbar
-        | ImGuiWindowFlags_NoScrollWithMouse
-        | ImGuiWindowFlags_MenuBar
-        | ImGuiWindowFlags_NoBringToFrontOnFocus
-    )) {
+                     nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::Button("Back", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
                 m_backButton = true;
@@ -140,27 +134,27 @@ void ResultScene::Render(double delta) {
     if (m_backButton) {
         if (EnvironmentSetup::GetPath("FILE").empty()) {
             SceneManager::DisplayFade(100, [] {
-                SceneManager::ChangeScene(GameScene::SONGSELECT); 
+                SceneManager::ChangeScene(GameScene::SONGSELECT);
             });
-        }
-        else {
+        } else {
             SceneManager::GetInstance()->StopGame();
         }
     }
 
     if (m_retryButton) {
         SceneManager::DisplayFade(100, [] {
-            SceneManager::ChangeScene(GameScene::LOADING); 
+            SceneManager::ChangeScene(GameScene::LOADING);
         });
     }
 }
 
-bool ResultScene::Attach() {
+bool ResultScene::Attach()
+{
     SkinManager::GetInstance()->ReloadSkin();
     SceneManager::DisplayFade(0, [] {});
     m_backButton = m_retryButton = false;
 
-	Audio* audio = AudioManager::GetInstance()->Get("FINISH");
+    Audio *audio = AudioManager::GetInstance()->Get("FINISH");
     if (!audio) {
         auto BGMPath = SkinManager::GetInstance()->GetPath() / "Audio";
         BGMPath /= "FINISH.ogg";
@@ -175,27 +169,28 @@ bool ResultScene::Attach() {
         audio->Play();
     }
 
-    Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
+    Chart *chart = (Chart *)EnvironmentSetup::GetObj("SONG");
     EnvironmentSetup::SetObj("SONG", nullptr);
 
     if (chart->m_backgroundBuffer.size() > 0 && m_background == nullptr) {
-        GameWindow* window = GameWindow::GetInstance();
+        GameWindow *window = GameWindow::GetInstance();
 
-        m_background = std::make_unique<Texture2D>((uint8_t*)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
+        m_background = std::make_unique<Texture2D>((uint8_t *)chart->m_backgroundBuffer.data(), chart->m_backgroundBuffer.size());
         m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
     }
 
     delete chart;
 
-	return true;
+    return true;
 }
 
-bool ResultScene::Detach() {
-    Audio* audio = AudioManager::GetInstance()->Get("FINISH");
+bool ResultScene::Detach()
+{
+    Audio *audio = AudioManager::GetInstance()->Get("FINISH");
     if (audio) {
         audio->Stop();
     }
 
     m_background.reset();
-	return true;
+    return true;
 }

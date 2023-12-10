@@ -1,41 +1,42 @@
 #pragma once
-#include <string>
 #include <map>
+#include <string>
 
 struct ImFont;
 
-struct FontResolution {
+struct FontResolution
+{
     int Index;
     int Width;
     int Height;
 
-    ImFont* Font;
-    ImFont* ButtonFont;
-    ImFont* SliderFont;
+    ImFont *Font;
+    ImFont *ButtonFont;
+    ImFont *SliderFont;
 };
 
 enum class TextRegion {
     Unknown,
-	
-	Japanese,
+
+    Japanese,
     Korean,
-	Chinese,
+    Chinese,
 };
 
 namespace FontResources {
-	void RegisterFontIndex(int idx, int width, int height);
-	void ClearFontIndex();
+    void RegisterFontIndex(int idx, int width, int height);
+    void ClearFontIndex();
 
-	void PreloadFontCaches(); 
-	bool ShouldRebuild(); // Only do this, if window size is updated, not buffer size
-	void DoRebuild();
+    void PreloadFontCaches();
+    bool ShouldRebuild(); // Only do this, if window size is updated, not buffer size
+    void DoRebuild();
 
-	void LoadFontRegion(TextRegion region);
+    void LoadFontRegion(TextRegion region);
 
-	void SetFontIndex(int idx);
-	FontResolution* GetFontIndex(int idx);
+    void            SetFontIndex(int idx);
+    FontResolution *GetFontIndex(int idx);
 
-	ImFont* GetFont();
-	ImFont* GetButtonFont();
-	ImFont* GetReallyBigFontForSlider();
-};
+    ImFont *GetFont();
+    ImFont *GetButtonFont();
+    ImFont *GetReallyBigFontForSlider();
+}; // namespace FontResources

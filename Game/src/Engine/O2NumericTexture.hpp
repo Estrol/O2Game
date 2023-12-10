@@ -1,8 +1,9 @@
 #pragma once
-#include "Texture/NumericTexture.h"
 #include "../Resources/GameResources.hpp"
+#include "Texture/NumericTexture.h"
 
-class O2NumericTexture : public NumericTexture {
+class O2NumericTexture : public NumericTexture
+{
 public:
-	O2NumericTexture(OJS* ojs);
+    O2NumericTexture(OJS *ojs);
 };

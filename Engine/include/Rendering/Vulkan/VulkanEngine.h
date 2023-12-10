@@ -1,218 +1,227 @@
 #pragma once
 #define VK_NO_PROTOTYPES
 
-#include <SDL2/SDL.h>
-#include <Rendering/Vulkan/volk/volk.h>
-#include <vector>
-#include <functional>
-#include <deque>
-#include <unordered_map>
-#include "vk_mem_alloc/vk_mem_alloc.h"
-#include "VkBootstrap/VkBootstrap.h"
 #include "Rendering/WindowsTypes.h"
+#include "VkBootstrap/VkBootstrap.h"
+#include "vk_mem_alloc/vk_mem_alloc.h"
+#include <Rendering/Vulkan/volk/volk.h>
+#include <SDL2/SDL.h>
+#include <deque>
+#include <functional>
+#include <unordered_map>
+#include <vector>
 
 struct DeletionQueue
 {
-	std::deque<std::function<void()>> deletors;
+    std::deque<std::function<void()>> deletors;
 
-	void push_function(std::function<void()>&& function) {
-		deletors.push_back(function);
-	}
+    void push_function(std::function<void()> &&function)
+    {
+        deletors.push_back(function);
+    }
 
-	void flush() {
-		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
-			(*it)();
-		}
+    void flush()
+    {
+        for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+            (*it)();
+        }
 
-		deletors.clear();
-	}
+        deletors.clear();
+    }
 };
 
-struct AllocatedImage {
+struct AllocatedImage
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "AllocatedImage";
+    const char SIGNATURE[25] = "AllocatedImage";
 #endif
 
-	VkImage _image;
-	VmaAllocation _allocation;
+    VkImage       _image;
+    VmaAllocation _allocation;
 };
 
-struct AllocatedBuffer {
+struct AllocatedBuffer
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "AllocatedBuffer";
+    const char SIGNATURE[25] = "AllocatedBuffer";
 #endif
 
-	VkBuffer _buffer;
-	VmaAllocation _allocation;
+    VkBuffer      _buffer;
+    VmaAllocation _allocation;
 };
 
-struct FrameData {
+struct FrameData
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "FrameData";
+    const char SIGNATURE[25] = "FrameData";
 #endif
 
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
+    VkSemaphore _presentSemaphore, _renderSemaphore;
+    VkFence     _renderFence;
 
-	DeletionQueue _frameDeletionQueue;
+    DeletionQueue _frameDeletionQueue;
 
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
+    VkCommandPool   _commandPool;
+    VkCommandBuffer _mainCommandBuffer;
 
-	VkDeviceMemory _verticesBuffer;
-	VkDeviceMemory _indiciesBuffer;
+    VkDeviceMemory _verticesBuffer;
+    VkDeviceMemory _indiciesBuffer;
 
-	bool IsValid;
+    bool IsValid;
 };
 
-struct UploadContext {
+struct UploadContext
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "UploadContext";
+    const char SIGNATURE[25] = "UploadContext";
 #endif
 
-	VkFence _uploadFence;
-	VkCommandPool _commandPool;
-	VkCommandBuffer _commandBuffer;
+    VkFence         _uploadFence;
+    VkCommandPool   _commandPool;
+    VkCommandBuffer _commandBuffer;
 };
 
 struct ImDrawVert;
 
-struct SubmitQueueInfo {
+struct SubmitQueueInfo
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "SubmitQueueInfo";
+    const char SIGNATURE[25] = "SubmitQueueInfo";
 #endif
 
-	std::vector<ImDrawVert> vertices;
-	std::vector<uint16_t> indices;
+    std::vector<ImDrawVert> vertices;
+    std::vector<uint16_t>   indices;
 
-	VkRect2D scissor;
-	bool AlphaBlend;
-	VkDescriptorSet descriptor;
+    VkRect2D        scissor;
+    bool            AlphaBlend;
+    VkDescriptorSet descriptor;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
-class VulkanEngine {
+class VulkanEngine
+{
 #if _DEBUG
-	const char SIGNATURE[25] = "VulkanEngine";
+    const char SIGNATURE[25] = "VulkanEngine";
 #endif
 
 public:
-	bool _isInitialized{ false };
-	bool _swapChainOutdated{ false };
-	int _frameNumber{ 0 };
-	uint32_t _swapchainNumber{ 0 };
+    bool     _isInitialized{ false };
+    bool     _swapChainOutdated{ false };
+    int      _frameNumber{ 0 };
+    uint32_t _swapchainNumber{ 0 };
 
-	VkExtent2D _windowExtent{ 1700 , 900 };
+    VkExtent2D _windowExtent{ 1700, 900 };
 
-	struct SDL_Window* _window{ nullptr };
+    struct SDL_Window *_window{ nullptr };
 
-	VkInstance _instance = VK_NULL_HANDLE;
-	VkDebugUtilsMessengerEXT _debug_messenger = VK_NULL_HANDLE;
-	VkPhysicalDevice _chosenGPU = VK_NULL_HANDLE;
-	VkDevice _device = VK_NULL_HANDLE;
+    VkInstance               _instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT _debug_messenger = VK_NULL_HANDLE;
+    VkPhysicalDevice         _chosenGPU = VK_NULL_HANDLE;
+    VkDevice                 _device = VK_NULL_HANDLE;
 
-	VkPhysicalDeviceProperties _gpuProperties;
+    VkPhysicalDeviceProperties _gpuProperties;
 
-	FrameData _frames[FRAME_OVERLAP];
+    FrameData _frames[FRAME_OVERLAP];
 
-	VkQueue _graphicsQueue;
-	uint32_t _graphicsQueueFamily;
+    VkQueue  _graphicsQueue;
+    uint32_t _graphicsQueueFamily;
 
-	VkRenderPass _renderPass = VK_NULL_HANDLE;
+    VkRenderPass _renderPass = VK_NULL_HANDLE;
 
-	VkSurfaceKHR _surface = VK_NULL_HANDLE;
-	VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
-	vkb::Swapchain _swapchainData;
-	VkFormat _swachainImageFormat;
+    VkSurfaceKHR   _surface = VK_NULL_HANDLE;
+    VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
+    vkb::Swapchain _swapchainData;
+    VkFormat       _swachainImageFormat;
 
-	std::vector<VkFramebuffer> _framebuffers;
-	std::vector<VkImage> _swapchainImages;
-	std::vector<VkImageView> _swapchainImageViews;
+    std::vector<VkFramebuffer> _framebuffers;
+    std::vector<VkImage>       _swapchainImages;
+    std::vector<VkImageView>   _swapchainImageViews;
 
-	DeletionQueue _mainDeletionQueue;
-	DeletionQueue _swapChainQueue;
-	VmaAllocator _allocator = VK_NULL_HANDLE;
+    DeletionQueue _mainDeletionQueue;
+    DeletionQueue _swapChainQueue;
+    VmaAllocator  _allocator = VK_NULL_HANDLE;
 
-	VkImageView _depthImageView = VK_NULL_HANDLE;
-	AllocatedImage _depthImage;
+    VkImageView    _depthImageView = VK_NULL_HANDLE;
+    AllocatedImage _depthImage;
 
-	//the format for the depth image
-	VkFormat _depthFormat;
-	VkShaderModule _vert_shader = VK_NULL_HANDLE;
-	VkShaderModule _frag_shader = VK_NULL_HANDLE;
-	VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE;
-	VkPipelineLayout _pipeline_layout_non_blend = VK_NULL_HANDLE;
-	VkPipeline _graphics_pipeline = VK_NULL_HANDLE;
-	VkPipeline _graphics_pipeline_non_blend = VK_NULL_HANDLE;
+    // the format for the depth image
+    VkFormat         _depthFormat;
+    VkShaderModule   _vert_shader = VK_NULL_HANDLE;
+    VkShaderModule   _frag_shader = VK_NULL_HANDLE;
+    VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE;
+    VkPipelineLayout _pipeline_layout_non_blend = VK_NULL_HANDLE;
+    VkPipeline       _graphics_pipeline = VK_NULL_HANDLE;
+    VkPipeline       _graphics_pipeline_non_blend = VK_NULL_HANDLE;
 
-	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
+    VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 
-	VkDescriptorSetLayout _globalSetLayout = VK_NULL_HANDLE;
-	VkDescriptorSetLayout _objectSetLayout = VK_NULL_HANDLE;
-	VkDescriptorSetLayout _singleTextureSetLayout = VK_NULL_HANDLE;
-	UploadContext _uploadContext;
-	
-	void init(SDL_Window* window, int width, int height);
-	void cleanup();
+    VkDescriptorSetLayout _globalSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _objectSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _singleTextureSetLayout = VK_NULL_HANDLE;
+    UploadContext         _uploadContext;
 
-	void begin();
-	void end();
+    void init(SDL_Window *window, int width, int height);
+    void cleanup();
 
-	void imgui_init();
-	void imgui_begin();
-	void imgui_end();
+    void begin();
+    void end();
 
-	void set_vsync(bool v);
+    void imgui_init();
+    void imgui_begin();
+    void imgui_end();
 
-	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-	size_t pad_uniform_buffer_size(size_t originalSize);
+    void set_vsync(bool v);
 
-	FrameData& get_current_frame();
-	FrameData& get_last_frame();
+    AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+    size_t          pad_uniform_buffer_size(size_t originalSize);
 
-	static VulkanEngine* GetInstance();
-	static void Release();
+    FrameData &get_current_frame();
+    FrameData &get_last_frame();
 
-	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
-	void queue_submit(SubmitQueueInfo info);
-	void flush_queue();
+    static VulkanEngine *GetInstance();
+    static void          Release();
 
-	std::vector<SubmitQueueInfo> _queueInfos;
+    void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
+    void queue_submit(SubmitQueueInfo info);
+    void flush_queue();
 
-	uint64_t _maxVertexBufferSize = 0;
-	uint64_t _maxIndexBufferSize = 0;
-	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
-	VkBuffer _indexBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
-	VkDeviceMemory _indexBufferMemory = VK_NULL_HANDLE;
-	VkAllocationCallbacks* _allocCallback = VK_NULL_HANDLE;
-	
-	void re_init_swapchains(int width, int height);
+    std::vector<SubmitQueueInfo> _queueInfos;
 
-	DeletionQueue _perFrameDeletionQueue;
+    uint64_t               _maxVertexBufferSize = 0;
+    uint64_t               _maxIndexBufferSize = 0;
+    VkBuffer               _vertexBuffer = VK_NULL_HANDLE;
+    VkBuffer               _indexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory         _vertexBufferMemory = VK_NULL_HANDLE;
+    VkDeviceMemory         _indexBufferMemory = VK_NULL_HANDLE;
+    VkAllocationCallbacks *_allocCallback = VK_NULL_HANDLE;
+
+    void re_init_swapchains(int width, int height);
+
+    DeletionQueue _perFrameDeletionQueue;
+
 private:
-	VulkanEngine() = default;
-	~VulkanEngine();
+    VulkanEngine() = default;
+    ~VulkanEngine();
 
-	bool m_vsync = false;
-	static VulkanEngine* m_instance;
+    bool                 m_vsync = false;
+    static VulkanEngine *m_instance;
 
-	void init_vulkan();
+    void init_vulkan();
 
-	bool init_swapchain();
+    bool init_swapchain();
 
-	void init_default_renderpass();
+    void init_default_renderpass();
 
-	bool init_framebuffers();
+    bool init_framebuffers();
 
-	void init_commands();
+    void init_commands();
 
-	void init_sync_structures();
+    void init_sync_structures();
 
-	void init_descriptors();
+    void init_descriptors();
 
-	void init_shaders();
+    void init_shaders();
 
-	void init_pipeline();
+    void init_pipeline();
 };

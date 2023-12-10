@@ -1,7 +1,8 @@
 #pragma once
 #include <Scene.h>
 
-class ReloadScene : public Scene {
+class ReloadScene : public Scene
+{
 public:
     ReloadScene();
 

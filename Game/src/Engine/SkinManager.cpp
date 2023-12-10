@@ -1,8 +1,9 @@
 #include "SkinManager.hpp"
 
-SkinManager* SkinManager::m_instance = nullptr;
+SkinManager *SkinManager::m_instance = nullptr;
 
-void SkinManager::LoadSkin(std::string skinName) {
+void SkinManager::LoadSkin(std::string skinName)
+{
     if (m_currentSkin != skinName) {
         if (m_luaScripting) {
             m_luaScripting.reset();
@@ -12,7 +13,7 @@ void SkinManager::LoadSkin(std::string skinName) {
     }
 
     auto skinPath = std::filesystem::current_path() / "Skins";
-    auto selectedSkin = skinPath / skinName; 
+    auto selectedSkin = skinPath / skinName;
 
     mINI::INIFile f(selectedSkin / "GameSkin.ini");
     ini = {};
@@ -37,7 +38,7 @@ void SkinManager::LoadSkin(std::string skinName) {
         auto value = ini["Game"]["UseLua"];
 
         m_useLua = std::stoi(value) == 1;
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         std::cout << "Invalid argument for UseLua" << std::endl;
     }
 
@@ -46,40 +47,46 @@ void SkinManager::LoadSkin(std::string skinName) {
     }
 }
 
-void SkinManager::ReloadSkin() {
+void SkinManager::ReloadSkin()
+{
     m_skinConfigs.clear();
 
     LoadSkin(m_currentSkin);
 }
 
-LaneInfo SkinManager::GetLaneInfo() {
+LaneInfo SkinManager::GetLaneInfo()
+{
     LaneInfo info = {};
 
     try {
         info.HitPosition = std::stoi(ini["Game"]["HitPos"]);
         info.LaneOffset = std::stoi(ini["Game"]["LaneOffset"]);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         std::cout << "Invalid argument for HitPos or LaneOffset" << std::endl;
     }
 
     return info;
 }
 
-std::string SkinManager::GetSkinProp(std::string group, std::string key, std::string defaultValue) {
+std::string SkinManager::GetSkinProp(std::string group, std::string key, std::string defaultValue)
+{
     auto value = ini[group][key];
 
     return value.size() ? value : defaultValue;
 }
 
-std::filesystem::path SkinManager::GetPath() {
+std::filesystem::path SkinManager::GetPath()
+{
     return std::filesystem::current_path() / "Skins" / m_currentSkin;
 }
 
-void SkinManager::SetKeyCount(int key) {
+void SkinManager::SetKeyCount(int key)
+{
     m_keyCount = key;
 }
 
-std::vector<NumericValue> SkinManager::GetNumeric(SkinGroup group, std::string key) {
+std::vector<NumericValue> SkinManager::GetNumeric(SkinGroup group, std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->GetNumeric(group, key);
     } else {
@@ -91,7 +98,8 @@ std::vector<NumericValue> SkinManager::GetNumeric(SkinGroup group, std::string k
     }
 }
 
-std::vector<PositionValue> SkinManager::GetPosition(SkinGroup group, std::string key) {
+std::vector<PositionValue> SkinManager::GetPosition(SkinGroup group, std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->GetPosition(group, key, m_keyCount);
     } else {
@@ -103,7 +111,8 @@ std::vector<PositionValue> SkinManager::GetPosition(SkinGroup group, std::string
     }
 }
 
-std::vector<RectInfo> SkinManager::GetRect(SkinGroup group, std::string key) {
+std::vector<RectInfo> SkinManager::GetRect(SkinGroup group, std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->GetRect(group, key);
     } else {
@@ -115,7 +124,8 @@ std::vector<RectInfo> SkinManager::GetRect(SkinGroup group, std::string key) {
     }
 }
 
-NoteValue SkinManager::GetNote(SkinGroup group, std::string key) {
+NoteValue SkinManager::GetNote(SkinGroup group, std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->GetNote(group, key, m_keyCount);
     } else {
@@ -127,7 +137,8 @@ NoteValue SkinManager::GetNote(SkinGroup group, std::string key) {
     }
 }
 
-SpriteValue SkinManager::GetSprite(SkinGroup group, std::string key) {
+SpriteValue SkinManager::GetSprite(SkinGroup group, std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->GetSprite(group, key);
     } else {
@@ -139,24 +150,21 @@ SpriteValue SkinManager::GetSprite(SkinGroup group, std::string key) {
     }
 }
 
-void SkinManager::Arena_SetIndex(int index) {
+void SkinManager::Arena_SetIndex(int index)
+{
     m_arena = index;
 
     if (m_luaScripting) {
         m_luaScripting->Arena_SetIndex(index);
     } else {
         m_arenaConfig = std::make_unique<SkinConfig>(
-            GetPath() 
-            / m_expected_directory[SkinGroup::Playing] 
-            / "Arena"
-            / std::to_string(index) 
-            / "Arena.ini", 
-            m_keyCount
-        );
+            GetPath() / m_expected_directory[SkinGroup::Playing] / "Arena" / std::to_string(index) / "Arena.ini",
+            m_keyCount);
     }
 }
 
-std::vector<NumericValue> SkinManager::Arena_GetNumeric(std::string key) {
+std::vector<NumericValue> SkinManager::Arena_GetNumeric(std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->Arena_GetNumeric(key);
     } else {
@@ -164,7 +172,8 @@ std::vector<NumericValue> SkinManager::Arena_GetNumeric(std::string key) {
     }
 }
 
-std::vector<PositionValue> SkinManager::Arena_GetPosition(std::string key) {
+std::vector<PositionValue> SkinManager::Arena_GetPosition(std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->Arena_GetPosition(key, m_keyCount);
     } else {
@@ -172,7 +181,8 @@ std::vector<PositionValue> SkinManager::Arena_GetPosition(std::string key) {
     }
 }
 
-std::vector<RectInfo> SkinManager::Arena_GetRect(std::string key) {
+std::vector<RectInfo> SkinManager::Arena_GetRect(std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->Arena_GetRect(key);
     } else {
@@ -180,7 +190,8 @@ std::vector<RectInfo> SkinManager::Arena_GetRect(std::string key) {
     }
 }
 
-SpriteValue SkinManager::Arena_GetSprite(std::string key) {
+SpriteValue SkinManager::Arena_GetSprite(std::string key)
+{
     if (m_luaScripting) {
         return m_luaScripting->Arena_GetSprite(key);
     } else {
@@ -188,7 +199,8 @@ SpriteValue SkinManager::Arena_GetSprite(std::string key) {
     }
 }
 
-SkinManager *SkinManager::GetInstance() {
+SkinManager *SkinManager::GetInstance()
+{
     if (!m_instance) {
         m_instance = new SkinManager;
     }
@@ -196,30 +208,29 @@ SkinManager *SkinManager::GetInstance() {
     return m_instance;
 }
 
-void SkinManager::Release() {
+void SkinManager::Release()
+{
     if (m_instance) {
         delete m_instance;
     }
 }
 
-SkinManager::SkinManager() {
-
+SkinManager::SkinManager()
+{
 }
 
-SkinManager::~SkinManager() {
-
+SkinManager::~SkinManager()
+{
 }
 
-void SkinManager::TryLoadGroup(SkinGroup group) {
+void SkinManager::TryLoadGroup(SkinGroup group)
+{
     m_skinConfigs[group] = std::make_unique<SkinConfig>(
-        GetPath() 
-        / m_expected_directory[group] 
-        / m_expected_skin_config[group]
-        , m_keyCount
-    );
+        GetPath() / m_expected_directory[group] / m_expected_skin_config[group], m_keyCount);
 }
 
-void SkinManager::Update(double delta) {
+void SkinManager::Update(double delta)
+{
     if (m_luaScripting) {
         m_luaScripting->Update(delta);
     }

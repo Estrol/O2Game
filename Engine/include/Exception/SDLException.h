@@ -3,11 +3,12 @@
 
 constexpr auto SDL_EXCEPTION_MAX_CHARS = 500;
 
-class SDLException : std::exception {
+class SDLException : std::exception
+{
 public:
-	SDLException();
-	const char* what() const throw();
+    SDLException();
+    const char *what() const throw();
 
 private:
-	char m_msg[SDL_EXCEPTION_MAX_CHARS];
+    char m_msg[SDL_EXCEPTION_MAX_CHARS];
 };

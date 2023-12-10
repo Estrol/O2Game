@@ -1,11 +1,11 @@
 #pragma once
-#include <vector>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
-#include "Scene.h"
-#include "Imgui/imgui.h"
 #include "Audio/AudioSample.h"
+#include "Imgui/imgui.h"
+#include "Scene.h"
 
 #include "../Data/OJN.h"
 
@@ -14,48 +14,48 @@ struct O2Sample;
 struct O2Note;
 struct LineInfo;
 
-class EditorScene : public Scene {
+class EditorScene : public Scene
+{
 public:
-	EditorScene();
+    EditorScene();
 
-	void Update(double delta) override;
-	void Render(double delta) override;
+    void Update(double delta) override;
+    void Render(double delta) override;
 
-	bool Attach() override;
-	bool Detach() override;
+    bool Attach() override;
+    bool Detach() override;
 
 private:
-	void PlaySample(int idx);
-	void StopSample();
+    void PlaySample(int idx);
+    void StopSample();
 
-	void LoadDifficulty(int idx);
+    void LoadDifficulty(int idx);
 
-	std::vector<INote> m_notes;
-	std::vector<O2Sample> m_samples;
-	
-	std::vector<std::pair<double, double>> m_bpms;
-	std::unordered_map<int, AudioSample*> m_audio_sample;
-	std::unordered_map<int, AudioSampleChannel*> m_tracked_audio_sample;
+    std::vector<INote>    m_notes;
+    std::vector<O2Sample> m_samples;
 
-	std::vector<LineInfo> m_lines;
-	std::vector<LineInfo> m_majorLines;
+    std::vector<std::pair<double, double>>        m_bpms;
+    std::unordered_map<int, AudioSample *>        m_audio_sample;
+    std::unordered_map<int, AudioSampleChannel *> m_tracked_audio_sample;
 
-	int m_measureGridSize = 16, m_measureGridSeparator = 4;
-	int m_currentDifficulty = 0;
+    std::vector<LineInfo> m_lines;
+    std::vector<LineInfo> m_majorLines;
 
-	float m_currentTime;
-	float m_currentNotespeed;
-	double m_currentMultiplier = 1;
-	float m_laneWidth = 40.25;
+    int m_measureGridSize = 16, m_measureGridSeparator = 4;
+    int m_currentDifficulty = 0;
 
-	ImVec2 m_oldBufferSize; 
-	ImVec2 m_lastMousePos;
-	bool m_isMouseClickSlider;
+    float  m_currentTime;
+    float  m_currentNotespeed;
+    double m_currentMultiplier = 1;
+    float  m_laneWidth = 40.25;
 
-	std::unique_ptr<O2::OJN> m_ojn;
+    ImVec2 m_oldBufferSize;
+    ImVec2 m_lastMousePos;
+    bool   m_isMouseClickSlider;
 
-	bool m_ready;
-	bool m_autoscroll;
-	bool m_exit;
+    std::unique_ptr<O2::OJN> m_ojn;
+
+    bool m_ready;
+    bool m_autoscroll;
+    bool m_exit;
 };
-

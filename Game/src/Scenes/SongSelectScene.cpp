@@ -1,45 +1,47 @@
 ﻿#include "SongSelectScene.h"
-#include <iostream>
 #include <array>
+#include <iostream>
 
-#include "MsgBox.h"
-#include "Inputs/Keys.h"
-#include "SceneManager.h"
-#include "Configuration.h"
-#include "Rendering/Window.h"
-#include "Texture/MathUtils.h"
 #include "Audio/AudioManager.h"
+#include "Configuration.h"
+#include "Inputs/Keys.h"
+#include "MsgBox.h"
+#include "Rendering/Window.h"
+#include "SceneManager.h"
+#include "Texture/MathUtils.h"
 
-#include "Imgui/imgui.h"
 #include "Imgui/ImguiUtil.h"
-#include "Imgui/imgui_internal.h"
+#include "Imgui/imgui.h"
 #include "Imgui/imgui_extends.h"
+#include "Imgui/imgui_internal.h"
 
-#include "Fonts/FontResources.h"
 #include "Exception/SDLException.h"
+#include "Fonts/FontResources.h"
 
-#include "../GameScenes.h"
-#include "../EnvironmentSetup.hpp"
 #include "../Engine/SkinConfig.hpp"
 #include "../Engine/SkinManager.hpp"
+#include "../EnvironmentSetup.hpp"
+#include "../GameScenes.h"
 #include "../Resources/GameDatabase.h"
 #include "../Resources/MusicListMaker.h"
 
 #include "../Data/Chart.hpp"
 #include "../Data/Util/Util.hpp"
 
-static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
+static std::array<std::string, 6>  Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
 static std::array<std::string, 13> Arena = { "Random", "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
-SongSelectScene::SongSelectScene() {
+SongSelectScene::SongSelectScene()
+{
     index = -1;
     memset(lanePos, 0, sizeof(lanePos));
 
-    int* data = new int[7];
+    int *data = new int[7];
     EnvironmentSetup::SetObj("LaneData", data);
 }
 
-SongSelectScene::~SongSelectScene() {
+SongSelectScene::~SongSelectScene()
+{
     if (m_bgm) {
         m_bgm.reset();
     }
@@ -51,11 +53,12 @@ SongSelectScene::~SongSelectScene() {
     EnvironmentSetup::SetObj("LaneData", nullptr);
 }
 
-void SongSelectScene::Render(double delta) {
+void SongSelectScene::Render(double delta)
+{
     ImguiUtil::NewFrame();
 
     auto window = GameWindow::GetInstance();
-	
+
     bPlay = false;
     bExitPopup = false;
     bOptionPopup = false;
@@ -68,31 +71,23 @@ void SongSelectScene::Render(double delta) {
     auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
     if (m_songBackground) {
         m_songBackground->Draw();
-    }
-    else {
+    } else {
         if (m_background) {
             m_background->Draw();
         }
     }
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
+    ImGui::SetNextWindowSize(MathUtil::ScaleVec2(windowNextSz));
 
     ImGui::GetStyle().DisabledAlpha = std::clamp(currentAlpha / 100.0f, 0.00000001f, 1.0f);
-    auto flags = ImGuiWindowFlags_NoTitleBar
-        | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoMove
-        | ImGuiWindowFlags_NoScrollbar
-        | ImGuiWindowFlags_NoScrollWithMouse
-        | ImGuiWindowFlags_MenuBar
-        | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    auto flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     ImGui::BeginDisabled(is_departing);
 
     if (ImGui::Begin("#SongSelectMenuBar",
-        nullptr,
-        flags
-    )) {
+                     nullptr,
+                     flags)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::Button("Back", MathUtil::ScaleVec2(ImVec2(50, 0)))) {
                 bExitPopup = true;
@@ -102,30 +97,32 @@ void SongSelectScene::Render(double delta) {
                 bOptionPopup = true;
             }
 
-            ImGuiIO& io = ImGui::GetIO();
+            ImGuiIO &io = ImGui::GetIO();
 
             ImGui::Text("Song Selection....");
 
             std::string text = "No Account!";
-			auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
+            auto        textWidth = ImGui::CalcTextSize(text.c_str()).x;
 
-			ImGui::SameLine(MathUtil::ScaleVec2(ImVec2(windowNextSz.x, 0)).x - textWidth - 15);
-			ImGui::Text(text.c_str());
+            ImGui::SameLine(MathUtil::ScaleVec2(ImVec2(windowNextSz.x, 0)).x - textWidth - 15);
+            ImGui::Text(text.c_str());
 
             ImGui::EndMenuBar();
         }
 
         switch (scene_index) {
-            case 0: {
+            case 0:
+            {
                 OnGameSelectMusic(delta);
                 break;
             }
-            case 1: {
+            case 1:
+            {
                 OnGameLoadMusic(delta);
                 break;
             }
         }
-	
+
         // fuck it, whatever rebuild the font, this thing is required!
         if (ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_ChildWindow) {
             ImGui::EndChild();
@@ -159,32 +156,34 @@ void SongSelectScene::Render(double delta) {
         ImGui::OpenPopup("###open_rearrange");
     }
 
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
 
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Set lane position###open_rearrange", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
         int state = EnvironmentSetup::GetInt("rearrange_dialog_state");
         switch (state) {
-            case 1: {
-				ImGui::Text("%s", EnvironmentSetup::Get("rearrange_dialog_msg").c_str());
-                
+            case 1:
+            {
+                ImGui::Text("%s", EnvironmentSetup::Get("rearrange_dialog_msg").c_str());
+
                 if (ImGui::Button("OK", MathUtil::ScaleVec2(50, 0))) {
-					EnvironmentSetup::SetInt("rearrange_dialog_state", 0);
+                    EnvironmentSetup::SetInt("rearrange_dialog_state", 0);
                 }
                 break;
             }
 
-            default: {
-                int* data = reinterpret_cast<int*>(EnvironmentSetup::GetObj("LaneData"));
+            default:
+            {
+                int *data = reinterpret_cast<int *>(EnvironmentSetup::GetObj("LaneData"));
                 ImGui::InputText("###LanePos", lanePos, sizeof(lanePos), ImGuiInputTextFlags_CharsDecimal);
-                
+
                 ImGui::NewLine();
                 if (ImGui::Button("OK", MathUtil::ScaleVec2(50, 0))) {
                     bool error = false;
 
                     int laneIndex[7] = {};
                     memset(laneIndex, -1, sizeof(laneIndex));
-                    
+
                     for (int i = 0; i < 7; i++) {
                         char c = lanePos[i];
 
@@ -202,20 +201,19 @@ void SongSelectScene::Render(double delta) {
                                 throw std::invalid_argument("Invalid input found!, Please input correct number between 0 to 6\n\nExample: 0123456 or 6543210 or 6540123");
                             }
 
-							// find duplicates
+                            // find duplicates
                             for (int j = 0; j < 7; j++) {
                                 if (j == i) {
                                     continue;
                                 }
 
-								if (num == laneIndex[j]) {
+                                if (num == laneIndex[j]) {
                                     throw std::invalid_argument("Duplicated lane position found!, Please input different lane from 0 to 6\n\nExample: 0123456 or 6543210 or 6540123");
-								}
+                                }
                             }
 
                             laneIndex[i] = num;
-                        }
-                        catch (std::invalid_argument e) {
+                        } catch (std::invalid_argument e) {
                             error = true;
 
                             EnvironmentSetup::Set("rearrange_dialog_msg", e.what());
@@ -246,10 +244,10 @@ void SongSelectScene::Render(double delta) {
 
     bool changeResolution = false;
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    
+
     if (ImGui::BeginPopupModal("###pop_up_right_click_song_context", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)) {
         std::string text = "What do you want to do?";
-        ImVec2 size = ImGui::CalcTextSize(text.c_str());
+        ImVec2      size = ImGui::CalcTextSize(text.c_str());
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - size.x) * 0.5f);
         ImGui::Text("%s", text.c_str());
@@ -316,7 +314,7 @@ void SongSelectScene::Render(double delta) {
     if (bOpenEditor) {
         is_departing = true;
         SaveConfiguration();
-		
+
         if (m_songBackground) {
             EnvironmentSetup::SetObj("SongBackground", m_songBackground.get());
         }
@@ -334,13 +332,14 @@ void SongSelectScene::Render(double delta) {
     }
 }
 
-void SongSelectScene::OnGameLoadMusic(double delta) {
-    auto db = GameDatabase::GetInstance();
-	auto path = db->GetPath();
-    auto& io = ImGui::GetIO();
+void SongSelectScene::OnGameLoadMusic(double delta)
+{
+    auto  db = GameDatabase::GetInstance();
+    auto  path = db->GetPath();
+    auto &io = ImGui::GetIO();
 
     m_lastTime += delta;
-	
+
     bool bExit = false;
     if (m_tempMusicIndex < m_tempMusicLists.size()) {
         if (m_lastTime >= 0.0025) {
@@ -379,11 +378,12 @@ void SongSelectScene::OnGameLoadMusic(double delta) {
     }
 }
 
-void SongSelectScene::OnGameSelectMusic(double delta) {
+void SongSelectScene::OnGameSelectMusic(double delta)
+{
     auto music = GameDatabase::GetInstance();
     auto window = GameWindow::GetInstance();
     auto windowNextSz = ImVec2((float)window->GetBufferWidth(), (float)window->GetBufferHeight());
-    int currentDifficulty = EnvironmentSetup::GetInt("Difficulty");
+    int  currentDifficulty = EnvironmentSetup::GetInt("Difficulty");
 
     // create child window
     if (ImGui::BeginChild("#Container1", MathUtil::ScaleVec2(ImVec2(200, 500)))) {
@@ -393,7 +393,7 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
 
             DB_MusicItem item = {};
             if (index != -1) {
-                auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& item) {
+                auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem &item) {
                     return item.Id == index;
                 });
 
@@ -405,13 +405,13 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
             ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 
             ImGui::Text("Title\r");
-            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Title);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char *)item.Title);
 
             ImGui::Text("Artist\r");
-            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Artist);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char *)item.Artist);
 
             ImGui::Text("Notecharter\r");
-            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char*)item.Noter);
+            imgui_extends::TextBackground(color, MathUtil::ScaleVec2(340, 0), "%s", (const char *)item.Noter);
 
             ImGui::Text("Note count\r");
 
@@ -475,8 +475,8 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
             ImGui::Text("Mods");
 
             for (int i = 0; i < Mods.size(); i++) {
-                auto& mod = Mods[i];
-                
+                auto &mod = Mods[i];
+
                 int value = EnvironmentSetup::GetInt(mod);
                 if (value == 1) {
                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.9f);
@@ -489,19 +489,22 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                     EnvironmentSetup::SetInt(mod, value == 1 ? 0 : 1);
 
                     switch (i) {
-                        case 0: {
+                        case 0:
+                        {
                             EnvironmentSetup::SetInt(Mods[1], 0);
                             EnvironmentSetup::SetInt(Mods[2], 0);
                             break;
                         }
 
-                        case 1: {
+                        case 1:
+                        {
                             EnvironmentSetup::SetInt(Mods[0], 0);
                             EnvironmentSetup::SetInt(Mods[2], 0);
                             break;
                         }
 
-                        case 2: {
+                        case 2:
+                        {
                             bOpenRearrange = EnvironmentSetup::GetInt(Mods[2]) == 1;
 
                             EnvironmentSetup::SetInt(Mods[0], 0);
@@ -509,12 +512,14 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                             break;
                         }
 
-                        case 4: { 
+                        case 4:
+                        {
                             EnvironmentSetup::SetInt(Mods[5], 0);
                             break;
                         }
 
-                        case 5: {
+                        case 5:
+                        {
                             EnvironmentSetup::SetInt(Mods[4], 0);
                             break;
                         }
@@ -531,7 +536,6 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                     ImGui::SameLine();
                 }
             }
-            
 
             ImGui::NewLine();
 
@@ -587,10 +591,10 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
             }
 
             for (int i = 0; i < m_musicList.size(); i++) {
-                DB_MusicItem& item = m_musicList[i];
+                DB_MusicItem &item = m_musicList[i];
 
                 std::string Id = "###Button" + std::to_string(i);
-                bool isSelected = item.Id == index;
+                bool        isSelected = item.Id == index;
 
                 ImVec4 previousColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 
@@ -599,15 +603,15 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                 }
 
                 char buffer[256];
-                sprintf(buffer, "Lv.%03d | %s", item.Difficulty[currentDifficulty], (char*)item.Title);
+                sprintf(buffer, "Lv.%03d | %s", item.Difficulty[currentDifficulty], (char *)item.Title);
 
                 std::string content = buffer + Id;
-                auto cursorPos = ImGui::GetCursorPos();
+                auto        cursorPos = ImGui::GetCursorPos();
 
                 if (ImGui::ButtonEx(
-                    content.c_str(), 
-                    MathUtil::ScaleVec2(245, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
-                    
+                        content.c_str(),
+                        MathUtil::ScaleVec2(245, 25), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight)) {
+
                     if (item.Id != index) {
                         index = item.Id;
 
@@ -620,7 +624,7 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
                     ImGui::IsMouseClicked won't work if ImGui::ButtonEx handled it.
                 */
                 content += "_Context";
-                if (ImGui::BeginPopupContextWindow((const char*)content.c_str())) {
+                if (ImGui::BeginPopupContextWindow((const char *)content.c_str())) {
                     ImGui::CloseCurrentPopup();
                     ImGui::EndPopup();
 
@@ -646,7 +650,7 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
         ImGui::SetCursorPosY(cursorPos.y - 20);
         ImGui::Separator();
 
-        if (ImGui::BeginChild("###CHILD", ImVec2(0,0), false, 0)) {
+        if (ImGui::BeginChild("###CHILD", ImVec2(0, 0), false, 0)) {
             ImGui::PushItemWidth(ImGui::GetWindowSize().x);
             ImGui::Text("Search:");
             ImGui::InputTextEx("###Search", "Search by Title, Artist, Noter or Id....", search, sizeof(search), ImVec2(0, 0), ImGuiInputTextFlags_AutoSelectAll);
@@ -670,14 +674,14 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
     if (ImGui::Button("Play", MathUtil::ScaleVec2(ImVec2(200, 60)))) {
         bPlay = true;
     }
-    
+
     ImGui::PopFont();
 
     waitTime += delta;
     const double waitTimeDelay = 0.1;
 
     if (ImGui::IsKeyDown(ImGuiKey_UpArrow) && waitTime >= waitTimeDelay) {
-        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& a) {
+        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem &a) {
             return a.Id == index;
         });
 
@@ -690,8 +694,8 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
         waitTime = 0;
     }
 
-    if (ImGui::IsKeyDown(ImGuiKey_DownArrow)  && waitTime >= waitTimeDelay) {
-        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem& a) {
+    if (ImGui::IsKeyDown(ImGuiKey_DownArrow) && waitTime >= waitTimeDelay) {
+        auto it = std::find_if(m_musicList.begin(), m_musicList.end(), [&](const DB_MusicItem &a) {
             return a.Id == index;
         });
 
@@ -705,19 +709,18 @@ void SongSelectScene::OnGameSelectMusic(double delta) {
     }
 }
 
-void SongSelectScene::Update(double delta) {
+void SongSelectScene::Update(double delta)
+{
     if (static_cast<int>(currentAlpha) != static_cast<int>(nextAlpha)) {
         double increment = (delta * 2) * 100;
 
         // compare it using epsilon
         if (std::abs(currentAlpha - nextAlpha) < FLT_EPSILON) {
             currentAlpha = nextAlpha;
-        }
-        else {
+        } else {
             if (currentAlpha < nextAlpha) {
                 currentAlpha = std::clamp(currentAlpha + (float)increment, 0.0f, 100.0f);
-            }
-            else {
+            } else {
                 currentAlpha = std::clamp(currentAlpha - (float)increment, 0.0f, 100.0f);
             }
         }
@@ -733,24 +736,25 @@ void SongSelectScene::Update(double delta) {
 
         auto path = db->GetPath();
         if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
-			m_tempMusicLists = MusicListMaker::Prepare(path);
+            m_tempMusicLists = MusicListMaker::Prepare(path);
 
             db->Reset();
             scene_index = 1;
             m_tempMusicIndex = 0;
-		}
+        }
     }
 }
 
-void SongSelectScene::Input(double delta) {
-	
+void SongSelectScene::Input(double delta)
+{
 }
 
-void SongSelectScene::OnMouseDown(const MouseState& state) {
-    
+void SongSelectScene::OnMouseDown(const MouseState &state)
+{
 }
 
-bool SongSelectScene::Attach() {
+bool SongSelectScene::Attach()
+{
     SkinManager::GetInstance()->ReloadSkin();
     SceneManager::DisplayFade(0, [] {});
 
@@ -760,16 +764,16 @@ bool SongSelectScene::Attach() {
     m_lastTime = 0;
 
     auto db = GameDatabase::GetInstance();
-	bool music_reload_required = db->FindAll().size() == 0;
+    bool music_reload_required = db->FindAll().size() == 0;
 
     if (music_reload_required) {
         scene_index = 1;
 
         auto path = db->GetPath();
         if (db->FindAll().size() == 0 && std::filesystem::exists(path)) {
-			m_tempMusicLists = MusicListMaker::Prepare(path);
+            m_tempMusicLists = MusicListMaker::Prepare(path);
             m_tempMusicIndex = 0;
-		}
+        }
     } else {
         if (index == -1) {
             bSelectNewSong = true;
@@ -780,7 +784,7 @@ bool SongSelectScene::Attach() {
     auto path = SkinManager::GetInstance()->GetPath();
 
     if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
-        Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+        Audio *bgm = AudioManager::GetInstance()->Get("BGM");
         if (!bgm) {
             auto BGMPath = path / "Audio";
             BGMPath /= "BGM.ogg";
@@ -798,7 +802,7 @@ bool SongSelectScene::Attach() {
 
     auto bgPath = path / "Menu" / "MenuBackground.png";
     if (std::filesystem::exists(bgPath) && !m_background) {
-        GameWindow* wnd = GameWindow::GetInstance();
+        GameWindow *wnd = GameWindow::GetInstance();
 
         m_background = std::make_unique<Texture2D>(bgPath);
         m_background->Size = UDim2::fromOffset(wnd->GetBufferWidth(), wnd->GetBufferHeight());
@@ -809,17 +813,15 @@ bool SongSelectScene::Attach() {
 
     try {
         currentRate = std::stof(rateValue.c_str());
-    }
-    catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         currentRate = 1.0f;
     }
 
     try {
         int value = std::stoi(noteValue.c_str());
 
-		currentSpeed = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
-	} 
-    catch (const std::invalid_argument&) {
+        currentSpeed = std::clamp(static_cast<float>(value) / 100.0f, 0.1f, 4.0f);
+    } catch (const std::invalid_argument &) {
         currentSpeed = 2.2f;
     }
 
@@ -830,7 +832,7 @@ bool SongSelectScene::Attach() {
     if (!m_bgm) {
         m_bgm = std::make_unique<BGMPreview>();
         m_bgm->OnReady([&](bool start) {
-            Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+            Audio *bgm = AudioManager::GetInstance()->Get("BGM");
             if (start) {
                 if (bgm) {
                     bgm->FadeOut();
@@ -842,8 +844,7 @@ bool SongSelectScene::Attach() {
                 }
 
                 is_update_bgm = true;
-            }
-            else {
+            } else {
                 if (bgm) {
                     bgm->FadeIn();
                 }
@@ -859,13 +860,14 @@ bool SongSelectScene::Attach() {
     return true;
 }
 
-bool SongSelectScene::Detach() {
+bool SongSelectScene::Detach()
+{
     if (m_bgm) {
         m_bgm->Stop();
     }
 
     if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::MAINMENU) {
-        Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+        Audio *bgm = AudioManager::GetInstance()->Get("BGM");
         if (bgm) {
             bgm->Stop();
         }
@@ -876,12 +878,14 @@ bool SongSelectScene::Detach() {
     return true;
 }
 
-void SongSelectScene::SaveConfiguration() {
+void SongSelectScene::SaveConfiguration()
+{
     EnvironmentSetup::Set("SongRate", std::to_string(currentRate));
     Configuration::Set("Gameplay", "Notespeed", std::to_string(static_cast<int>(::round(currentSpeed * 100.0))));
 }
 
-void SongSelectScene::LoadChartImage() {
+void SongSelectScene::LoadChartImage()
+{
     std::lock_guard<std::mutex> lock(m_imageLock);
 
     if (index != -1) {
@@ -901,22 +905,20 @@ void SongSelectScene::LoadChartImage() {
                 return;
             }
 
-            GameWindow* wnd = GameWindow::GetInstance();
+            GameWindow *wnd = GameWindow::GetInstance();
 
             auto buffer = O2::OJN::LoadOJNFile(file);
             buffer.seekg(item.CoverOffset);
 
-			std::vector<uint8_t> coverData;
-			coverData.resize(item.CoverSize);
-            buffer.read((char*)coverData.data(), item.CoverSize);
+            std::vector<uint8_t> coverData;
+            coverData.resize(item.CoverSize);
+            buffer.read((char *)coverData.data(), item.CoverSize);
 
             m_songBackground = std::make_unique<Texture2D>(coverData.data(), item.CoverSize);
             m_songBackground->Size = UDim2::fromOffset(wnd->GetBufferWidth(), wnd->GetBufferHeight());
-        }
-        catch (std::runtime_error& e) {
+        } catch (std::runtime_error &e) {
             MsgBox::Show("Selection_BgError", "Error", e.what());
-        }
-        catch (SDLException& e) {
+        } catch (SDLException &e) {
             MsgBox::Show("Selection_BgError", "Error", e.what());
         }
     }

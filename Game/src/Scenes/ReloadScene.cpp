@@ -1,10 +1,12 @@
 #include "ReloadScene.h"
 #include <SceneManager.h>
 
-ReloadScene::ReloadScene() {
+ReloadScene::ReloadScene()
+{
 }
 
-void ReloadScene::Update(double delta) {
+void ReloadScene::Update(double delta)
+{
     m_time += delta;
 
     if (m_time >= 0.25) {
@@ -12,11 +14,13 @@ void ReloadScene::Update(double delta) {
     }
 }
 
-bool ReloadScene::Attach() {
+bool ReloadScene::Attach()
+{
     m_time = 0;
     return true;
 }
 
-bool ReloadScene::Detach() {
+bool ReloadScene::Detach()
+{
     return true;
 }

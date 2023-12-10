@@ -1,12 +1,14 @@
 #include "TimingBase.h"
 
-TimingBase::TimingBase(std::vector<TimingInfo>& _timings, std::vector<TimingInfo>& _velocities, double base) {
+TimingBase::TimingBase(std::vector<TimingInfo> &_timings, std::vector<TimingInfo> &_velocities, double base)
+{
     timings = _timings;
     velocities = _velocities;
     base_multiplier = base;
 }
 
-TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
+TimingInfo &FindTimingAt(std::vector<TimingInfo> &timings, double offset)
+{
     int min = 0, max = (int)timings.size() - 1;
     int left = min, right = max;
 
@@ -18,11 +20,9 @@ TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
 
         if (afterMid && beforeMid) {
             return timings[mid];
-        }
-        else if (afterMid) {
+        } else if (afterMid) {
             left = mid + 1;
-        }
-        else {
+        } else {
             right = mid - 1;
         }
     }
@@ -30,19 +30,22 @@ TimingInfo& FindTimingAt(std::vector<TimingInfo>& timings, double offset) {
     return timings[0];
 }
 
-double TimingBase::GetBeatAt(double offset) {
+double TimingBase::GetBeatAt(double offset)
+{
     return FindTimingAt(timings, offset).CalculateBeat(offset);
 }
 
-double TimingBase::GetBPMAt(double offset) {
+double TimingBase::GetBPMAt(double offset)
+{
     return FindTimingAt(timings, offset).Value;
 }
 
-
-double TimingBase::GetOffsetAt(double offset) {
+double TimingBase::GetOffsetAt(double offset)
+{
     return GetOffsetAt(offset, 0);
 }
 
-double TimingBase::GetOffsetAt(double offset, int index) {
+double TimingBase::GetOffsetAt(double offset, int index)
+{
     return 0;
 }

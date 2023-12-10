@@ -4,5 +4,5 @@
 
 namespace MusicListMaker {
     std::vector<std::filesystem::path> Prepare(std::filesystem::path path);
-    void Insert(std::filesystem::path song_file);
-}
+    void                               Insert(std::filesystem::path song_file);
+} // namespace MusicListMaker

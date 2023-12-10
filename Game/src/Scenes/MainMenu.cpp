@@ -1,27 +1,28 @@
 #include "MainMenu.h"
-#include "Imgui/imgui.h"
+#include "../Engine/SkinManager.hpp"
+#include "../GameScenes.h"
+#include "../Version.h"
+#include "Configuration.h"
+#include "Fonts/FontResources.h"
 #include "Imgui/ImguiUtil.h"
+#include "Imgui/imgui.h"
 #include "Rendering/Window.h"
 #include "Texture/MathUtils.h"
-#include "Configuration.h"
-#include <filesystem>
-#include <MsgBox.h>
-#include "Fonts/FontResources.h"
-#include <SceneManager.h>
-#include "../GameScenes.h"
 #include <Audio/AudioManager.h>
-#include "../Version.h"
-#include "../Engine/SkinManager.hpp"
+#include <MsgBox.h>
+#include <SceneManager.h>
+#include <filesystem>
 
-MainMenu::MainMenu() {
-
+MainMenu::MainMenu()
+{
 }
 
-void MainMenu::Update(double delta) {
-
+void MainMenu::Update(double delta)
+{
 }
 
-void MainMenu::Render(double delta) {
+void MainMenu::Render(double delta)
+{
     ImguiUtil::NewFrame();
 
     auto window = GameWindow::GetInstance();
@@ -35,13 +36,7 @@ void MainMenu::Render(double delta) {
         m_background->Draw();
     }
 
-    auto flags = ImGuiWindowFlags_NoTitleBar
-        | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoMove
-        | ImGuiWindowFlags_NoScrollbar
-        | ImGuiWindowFlags_NoScrollWithMouse
-        | ImGuiWindowFlags_MenuBar
-        | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    auto flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     int nextScene = -1;
     if (ImGui::Begin("###BEGIN", nullptr, flags)) {
@@ -50,16 +45,16 @@ void MainMenu::Render(double delta) {
             ImGui::Text("%s", title.c_str());
 
             std::string text = "No Account!";
-			auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
+            auto        textWidth = ImGui::CalcTextSize(text.c_str()).x;
 
-			ImGui::SameLine(MathUtil::ScaleVec2(ImVec2(windowNextSz.x, 0)).x - textWidth - 15);
-			ImGui::Text(text.c_str());
+            ImGui::SameLine(MathUtil::ScaleVec2(ImVec2(windowNextSz.x, 0)).x - textWidth - 15);
+            ImGui::Text(text.c_str());
 
             ImGui::EndMenuBar();
         }
 
         {
-			ImFont* font = FontResources::GetButtonFont();
+            ImFont *font = FontResources::GetButtonFont();
             ImGui::PushFont(font);
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
             auto ButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
@@ -91,9 +86,9 @@ void MainMenu::Render(double delta) {
                 nextScene = 2;
             }
 
-			ImGui::NewLine();
+            ImGui::NewLine();
             ImGui::Spacing();
-			if (ImGui::Button("Options", ButtonSize)) {
+            if (ImGui::Button("Options", ButtonSize)) {
                 nextScene = 3;
             }
 
@@ -101,10 +96,10 @@ void MainMenu::Render(double delta) {
             if (ImGui::Button("Quit", ButtonSize)) {
                 nextScene = 4;
             }
-			
+
             ImGui::PopStyleVar();
             ImGui::PopStyleColor(3);
-			ImGui::PopFont();
+            ImGui::PopFont();
         }
 
         ImGui::End();
@@ -112,41 +107,47 @@ void MainMenu::Render(double delta) {
 
     if (nextScene != -1) {
         switch (nextScene) {
-            case 0: {
+            case 0:
+            {
                 SceneManager::DisplayFade(100, [this]() {
                     SceneManager::ChangeScene(GameScene::SONGSELECT);
                 });
                 break;
             }
 
-            case 1: {
+            case 1:
+            {
                 break;
             }
 
-            case 2: {
+            case 2:
+            {
                 SceneManager::DisplayFade(100, [this]() {
                     SceneManager::ChangeScene(GameScene::EDITOR);
                 });
                 break;
             }
 
-            case 3: {
+            case 3:
+            {
                 SceneManager::OverlayShow(GameOverlay::SETTINGS);
                 break;
             }
 
-            case 4: {
+            case 4:
+            {
                 SDL_Event e = {};
-				e.type = SDL_QUIT;
+                e.type = SDL_QUIT;
 
-				SDL_PushEvent(&e);
+                SDL_PushEvent(&e);
                 break;
             }
         }
     }
 }
 
-bool MainMenu::Attach() {
+bool MainMenu::Attach()
+{
     SkinManager::GetInstance()->ReloadSkin();
 
     auto path = SkinManager::GetInstance()->GetPath();
@@ -160,7 +161,7 @@ bool MainMenu::Attach() {
         m_background->Size = UDim2::fromOffset(window->GetBufferWidth(), window->GetBufferHeight());
     }
 
-    Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+    Audio *bgm = AudioManager::GetInstance()->Get("BGM");
     if (bgm == nullptr || !bgm->IsPlaying()) {
         if (!bgm) {
             if (std::filesystem::exists(bgm_path)) {
@@ -178,13 +179,14 @@ bool MainMenu::Attach() {
     return true;
 }
 
-bool MainMenu::Detach() {
+bool MainMenu::Detach()
+{
     if (m_background) {
         m_background.reset();
     }
 
     if (SceneManager::GetInstance()->GetCurrentSceneIndex() != GameScene::SONGSELECT) {
-        Audio* bgm = AudioManager::GetInstance()->Get("BGM");
+        Audio *bgm = AudioManager::GetInstance()->Get("BGM");
 
         if (bgm) {
             bgm->Stop();

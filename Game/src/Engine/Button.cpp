@@ -1,7 +1,7 @@
 #include "Button.hpp"
-#include "Inputs/InputManager.h"
 #include "Imgui/ImguiUtil.h"
 #include "Imgui/imgui.h"
+#include "Inputs/InputManager.h"
 #include "Texture/Bitmap.h"
 #include <Texture/MathUtils.h>
 
@@ -10,109 +10,117 @@
 #define FALSE 0
 #endif
 
-struct Vector2 {
-	LONG X, Y;
+struct Vector2
+{
+    LONG X, Y;
 };
 
-bool IsRectInsideRect(const Vector2& innerRect, const Rect& outerRect) {
-	if (innerRect.X < outerRect.left) {
-		return false;
-	}
+bool IsRectInsideRect(const Vector2 &innerRect, const Rect &outerRect)
+{
+    if (innerRect.X < outerRect.left) {
+        return false;
+    }
 
-	if (innerRect.X > outerRect.right) {
-		return false;
-	}
+    if (innerRect.X > outerRect.right) {
+        return false;
+    }
 
-	if (innerRect.Y < outerRect.top) {
-		return false;
-	}
+    if (innerRect.Y < outerRect.top) {
+        return false;
+    }
 
-	if (innerRect.Y > outerRect.bottom) {
-		return false;
-	}
+    if (innerRect.Y > outerRect.bottom) {
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
-Button::Button(int x, int y, int width, int height) {
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
+Button::Button(int x, int y, int width, int height)
+{
+    m_x = x;
+    m_y = y;
+    m_width = width;
+    m_height = height;
 }
 
-Button::Button(int x, int y, int width, int height, std::function<void(int)> mouse_hover, std::function<void()> mouse_click) 
-	: Button(x, y, width, height) {
+Button::Button(int x, int y, int width, int height, std::function<void(int)> mouse_hover, std::function<void()> mouse_click)
+    : Button(x, y, width, height)
+{
 
-	OnMouseClick = mouse_click;
-	OnMouseHover = mouse_hover;
+    OnMouseClick = mouse_click;
+    OnMouseHover = mouse_hover;
 
-	m_lastState = {};
+    m_lastState = {};
 }
 
-Button::~Button() {
-	OnMouseClick = nullptr;
-	OnMouseHover = nullptr;
+Button::~Button()
+{
+    OnMouseClick = nullptr;
+    OnMouseHover = nullptr;
 }
 
-bool Button::IsHovered() {
+bool Button::IsHovered()
+{
     return m_isHovered;
 }
 
-void Button::Render(double delta) {
-    Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
-	Vector2 pos = { m_lastState.left, m_lastState.top };
+void Button::Render(double delta)
+{
+    Rect    targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+    Vector2 pos = { m_lastState.left, m_lastState.top };
 
-	if (IsRectInsideRect(pos, targetRect)) {
-		ImguiUtil::BeginText(ImVec2(m_x, m_y), ImVec2(m_width, m_height));
+    if (IsRectInsideRect(pos, targetRect)) {
+        ImguiUtil::BeginText(ImVec2(m_x, m_y), ImVec2(m_width, m_height));
 
-		auto draw_list = ImGui::GetWindowDrawList();
+        auto draw_list = ImGui::GetWindowDrawList();
 
-		ImColor col = { 255, 255, 255, 255 };
-		if (!m_isHovered) {
-			col = { 255, 0, 0, 255 };
-		}
+        ImColor col = { 255, 255, 255, 255 };
+        if (!m_isHovered) {
+            col = { 255, 0, 0, 255 };
+        }
 
-		draw_list->AddRectFilled(ImVec2(m_x, m_y), ImVec2(m_width, m_height), ImColor(255, 255, 255, 255));
+        draw_list->AddRectFilled(ImVec2(m_x, m_y), ImVec2(m_width, m_height), ImColor(255, 255, 255, 255));
 
-		ImguiUtil::EndText();
-	}
+        ImguiUtil::EndText();
+    }
 }
 
-void Button::Input(double delta) {
-	InputManager* inputs = InputManager::GetInstance();
+void Button::Input(double delta)
+{
+    InputManager *inputs = InputManager::GetInstance();
 
-	m_lastState = inputs->GetMousePosition();
-	
-	Rect targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
-	Vector2 pos = { m_lastState.left, m_lastState.top };
+    m_lastState = inputs->GetMousePosition();
 
-	if (IsRectInsideRect(pos, targetRect)) {
-		bool previousClick = m_isClicked;
-		m_isClicked = inputs->IsMouseButton(MouseButton::LEFT);
+    Rect    targetRect = { m_x, m_y, m_x + m_width, m_y + m_height };
+    Vector2 pos = { m_lastState.left, m_lastState.top };
 
-		if (!previousClick && m_isClicked) {
-			if (OnMouseClick) {
-				OnMouseClick();
-			}
-		} else if (previousClick && !m_isClicked) {
-			m_isClicked = false;
-		}
+    if (IsRectInsideRect(pos, targetRect)) {
+        bool previousClick = m_isClicked;
+        m_isClicked = inputs->IsMouseButton(MouseButton::LEFT);
 
-		if (!m_isHovered) {
-			m_isHovered = true;
+        if (!previousClick && m_isClicked) {
+            if (OnMouseClick) {
+                OnMouseClick();
+            }
+        } else if (previousClick && !m_isClicked) {
+            m_isClicked = false;
+        }
 
-			if (OnMouseHover) {
-				OnMouseHover(TRUE);
-			}
-		}
-	} else {
-		if (m_isHovered) {
-			m_isHovered = false;
+        if (!m_isHovered) {
+            m_isHovered = true;
 
-			if (OnMouseHover) {
-				OnMouseHover(FALSE);
-			}
-		}	
-	}
+            if (OnMouseHover) {
+                OnMouseHover(TRUE);
+            }
+        }
+    } else {
+        if (m_isHovered) {
+            m_isHovered = false;
+
+            if (OnMouseHover) {
+                OnMouseHover(FALSE);
+            }
+        }
+    }
 }
