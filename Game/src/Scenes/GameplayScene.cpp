@@ -95,12 +95,12 @@ void GameplayScene::Update(double delta) {
 		if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::RESULT);
-				});
+			});
 		}
 		else {
 			SceneManager::DisplayFade(100, [] {
 				SceneManager::ChangeScene(GameScene::SONGSELECT);
-				});
+			});
 		}
 	}
 
@@ -667,11 +667,11 @@ bool GameplayScene::Attach() {
 
 		auto OnButtonHover = [&](int state) {
 			m_drawExitButton = state;
-			};
+		};
 
 		auto OnButtonClick = [&]() {
 			m_doExit = true;
-			};
+		};
 
 		m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
 		m_exitButtonFunc->OnMouseClick = OnButtonClick;
@@ -831,7 +831,7 @@ bool GameplayScene::Attach() {
 					}
 				}
 			}
-			};
+		};
 
 		m_game->ListenKeyEvent(OnTrackEvent);
 
@@ -969,14 +969,14 @@ bool GameplayScene::Attach() {
 			m_drawJam = true;
 			m_jamTimer = 0;
 			m_jamLogo->Reset();
-			};
+		};
 
 		m_game->GetScoreManager()->ListenJam(OnJamEvent);
 
 		auto OnLongComboEvent = [&] {
 			m_lnTimer = 0;
 			m_drawLN = true;
-			};
+		};
 
 		m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
 	}
