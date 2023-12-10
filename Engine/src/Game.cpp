@@ -17,11 +17,9 @@
 
 constexpr auto kInputDefaultRate = 1000.0;
 constexpr auto kMenuDefaultRate = 60.0;
-constexpr auto kAudioDefaultRate = 144.0;
+constexpr auto kAudioDefaultRate = 24.0;
 
 namespace {
-	thread_local double curTick = 0.0;
-	thread_local double lastTick = 0.0;
 
 	bool InitSDL() {
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
@@ -36,22 +34,25 @@ namespace {
 		IMG_Quit();
 	}
 
-	// Improve accuracy frame limiter also fix framedrop if fps limit is enabled
+	thread_local double curTick = 0.0;
+	thread_local double lastTick = 0.0;
+
 	double FrameLimit(double MaxFrameRate) {
 		double newTick = SDL_GetTicks();
-		double deltaTick = 1000.0 / MaxFrameRate - (newTick - lastTick);
+		double targetTick = lastTick + 1000.0 / MaxFrameRate;
 
-		if (deltaTick > 0.0) {
-			int delayTicks = static_cast<int>(deltaTick);
-			SDL_Delay(delayTicks);
+		// If the frame rate is too high, wait to avoid shaky animations
+		if (newTick < targetTick) {
+			double delayTicks = targetTick - newTick;
+			SDL_Delay(static_cast<Uint32>(delayTicks));
 			newTick += delayTicks;
-			deltaTick -= delayTicks;
 		}
-
-		lastTick = (deltaTick < -30.0) ? newTick : newTick + deltaTick;
 
 		double delta = (newTick - curTick) / 1000.0;
 		curTick = newTick;
+
+		// Update lastTick for the next frame
+		lastTick = curTick;	
 
 		return delta;
 	}
