@@ -71,7 +71,7 @@ void Button::Render(double delta)
     Vector2 pos = { m_lastState.left, m_lastState.top };
 
     if (IsRectInsideRect(pos, targetRect)) {
-        ImguiUtil::BeginText(ImVec2(m_x, m_y), ImVec2(m_width, m_height));
+        ImguiUtil::BeginText(ImVec2((float)m_x, (float)m_y), ImVec2((float)m_width, (float)m_height));
 
         auto draw_list = ImGui::GetWindowDrawList();
 
@@ -80,7 +80,7 @@ void Button::Render(double delta)
             col = { 255, 0, 0, 255 };
         }
 
-        draw_list->AddRectFilled(ImVec2(m_x, m_y), ImVec2(m_width, m_height), ImColor(255, 255, 255, 255));
+        draw_list->AddRectFilled(ImVec2((float)m_x, (float)m_y), ImVec2((float)m_width, (float)m_height), ImColor(255, 255, 255, 255));
 
         ImguiUtil::EndText();
     }

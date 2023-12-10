@@ -338,7 +338,7 @@ void SongSelectScene::OnGameLoadMusic(double delta)
     auto  path = db->GetPath();
     auto &io = ImGui::GetIO();
 
-    m_lastTime += delta;
+    m_lastTime += static_cast<float>(delta);
 
     bool bExit = false;
     if (m_tempMusicIndex < m_tempMusicLists.size()) {
@@ -677,7 +677,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
 
     ImGui::PopFont();
 
-    waitTime += delta;
+    waitTime += static_cast<float>(delta);
     const double waitTimeDelay = 0.1;
 
     if (ImGui::IsKeyDown(ImGuiKey_UpArrow) && waitTime >= waitTimeDelay) {

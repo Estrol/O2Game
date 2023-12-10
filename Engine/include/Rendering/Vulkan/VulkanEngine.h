@@ -1,5 +1,7 @@
 #pragma once
+#ifndef VK_NO_PROTOTYPES
 #define VK_NO_PROTOTYPES
+#endif
 
 #include "Rendering/WindowsTypes.h"
 #include "VkBootstrap/VkBootstrap.h"

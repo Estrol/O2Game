@@ -178,7 +178,7 @@ void Audio::FadeStream(int current_vol, bool state)
     if (state) {
         target_vol = 0.0;
     } else {
-        target_vol = current_vol / 100.0;
+        target_vol = current_vol / 100.0f;
     }
 
     BASS_ChannelSlideAttribute(m_hStream, BASS_ATTRIB_VOL, target_vol, 1500);

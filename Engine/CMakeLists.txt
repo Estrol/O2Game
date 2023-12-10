@@ -87,9 +87,9 @@ add_library(EstEngine
 	"src/Texture/ImageGenerator.cpp"
 
 	#UI
-	"src/UI/UIBase.cpp" 
-	"src/UI/Quad.cpp" 
-	"src/UI/Circle.cpp" 
+	# "src/UI/UIBase.cpp" 
+	# "src/UI/Quad.cpp" 
+	# "src/UI/Circle.cpp" 
 
 	#Threading
 	"src/Threading/GameThread.cpp"

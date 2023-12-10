@@ -108,12 +108,12 @@ bool RhythmEngine::Load(Chart *chart)
         int size = noteTex->TextureRect.right;
         m_noteMaxImageIndex = (std::min)(noteTex->MaxFrames, m_noteMaxImageIndex);
 
-        m_lanePos[i] = currentX;
-        m_laneSize[i] = size;
+        m_lanePos[i] = static_cast<float>(currentX);
+        m_laneSize[i] = static_cast<float>(size);
         currentX += size;
     }
 
-    currentX = std::accumulate(m_laneSize, m_laneSize + 7, 0);
+    currentX = static_cast<int>(std::accumulate(m_laneSize, m_laneSize + 7, 0.0f));
     m_playRectangle = { m_laneOffset, 0, m_laneOffset + currentX, m_hitPosition };
 
     std::filesystem::path audioPath = chart->m_beatmapDirectory;

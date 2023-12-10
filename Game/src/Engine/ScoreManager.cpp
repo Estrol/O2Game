@@ -38,7 +38,7 @@ void ScoreManager::OnHit(NoteHitInfo info)
 
         case NoteResult::COOL:
         {
-            AddLife(0.1);
+            AddLife(0.1f);
             m_jamGauge += 4;
             m_score += 200 + (10 * m_jamCombo);
             m_cool++;

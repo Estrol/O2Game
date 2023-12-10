@@ -908,7 +908,7 @@ bool GameplayScene::Attach()
             m_hitEffect[i]->AlphaBlend = true;
             m_holdEffect[i]->AlphaBlend = true;
 
-            float pos = std::ceil(lanePos[i] + (laneSize[i] / 2.0));
+            float pos = std::ceil(lanePos[i] + (laneSize[i] / 2.0f));
             auto  hitPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(hitEffectPos.X, hitEffectPos.Y);
             auto  holdPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(holdEffectPos.X, holdEffectPos.Y);
 
@@ -941,9 +941,9 @@ bool GameplayScene::Attach()
                 };
             }
 
-            int imageWidth = std::accumulate(laneSize, laneSize + 7, 0);
+            int imageWidth = static_cast<int>(std::accumulate(laneSize, laneSize + 7, 0.0f));
             int imageHeight = HitPos;
-            int imagePos = lanePos[0];
+            int imagePos = static_cast<int>(lanePos[0]);
 
             std::vector<uint8_t> imageBuffer = ImageGenerator::GenerateGradientImage(imageWidth, imageHeight, segments);
 

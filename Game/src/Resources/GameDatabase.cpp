@@ -328,7 +328,7 @@ DB_MusicItem GameDatabase::Find(int id)
         strncpy(reinterpret_cast<char *>(item.Title), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2)), 64);
         strncpy(reinterpret_cast<char *>(item.Artist), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3)), 32);
         strncpy(reinterpret_cast<char *>(item.Noter), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4)), 32);
-        item.BPM = sqlite3_column_double(stmt, 5);
+        item.BPM = static_cast<float>(sqlite3_column_double(stmt, 5));
 
         strncpy(reinterpret_cast<char *>(item.Hash[0]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6)), 128);
         strncpy(reinterpret_cast<char *>(item.Hash[1]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7)), 128);
@@ -381,7 +381,7 @@ DB_MusicItem GameDatabase::Random()
         strncpy(reinterpret_cast<char *>(item.Title), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2)), 64);
         strncpy(reinterpret_cast<char *>(item.Artist), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3)), 32);
         strncpy(reinterpret_cast<char *>(item.Noter), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4)), 32);
-        item.BPM = sqlite3_column_double(stmt, 5);
+        item.BPM = static_cast<float>(sqlite3_column_double(stmt, 5));
 
         strncpy(reinterpret_cast<char *>(item.Hash[0]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6)), 128);
         strncpy(reinterpret_cast<char *>(item.Hash[1]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7)), 128);
@@ -456,7 +456,7 @@ std::vector<DB_MusicItem> GameDatabase::FindQuery(std::string query)
         strncpy(reinterpret_cast<char *>(item.Title), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2)), 64);
         strncpy(reinterpret_cast<char *>(item.Artist), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3)), 32);
         strncpy(reinterpret_cast<char *>(item.Noter), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4)), 32);
-        item.BPM = sqlite3_column_double(stmt, 5);
+        item.BPM = static_cast<float>(sqlite3_column_double(stmt, 5));
 
         strncpy(reinterpret_cast<char *>(item.Hash[0]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6)), 128);
         strncpy(reinterpret_cast<char *>(item.Hash[1]), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7)), 128);
