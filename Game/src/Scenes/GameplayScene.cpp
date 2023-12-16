@@ -219,22 +219,46 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawCombo && std::get<7>(scores) > 0) {
+    if (m_drawCombo && std::get<7>(scores) > 0) { // Ribet amat anjir (if gonna full release please remove whole comment from my code)
+        const double defaultDecrement = 6.0;
+        const double minComboUpdateInterval = 0.05;
+        const double amplitudeCooldown = 0.001; 
+
+        double speedFactor = (m_comboTimer / minComboUpdateInterval > 1.0) ? 1.0 : (m_comboTimer / minComboUpdateInterval);
+
+        double decrement = defaultDecrement * 2 * speedFactor;
+
         m_amplitude = 30.0;
-        m_wiggleTime = 60 * m_comboTimer;
+        m_wiggleTime = 30 * m_comboTimer;
 
-        double decrement = 6.0;                           // Calculate the decrement for each frame
-        double totalDecrement = decrement * m_wiggleTime; // Calculate the total decrement based on the current frame/time
-
-        double currentAmplitude = m_amplitude - totalDecrement; // Adjust the amplitude based on the total decrement
+        double totalDecrement = decrement * m_wiggleTime;
+        double currentAmplitude = m_amplitude - totalDecrement;
 
         if (currentAmplitude < 0.0) {
-            currentAmplitude = 0.0; // Stopper like this due compiler issues
+            currentAmplitude = 0.0;
         }
 
-        if (m_comboTimer > 1.0) {     // Check if the previous animation hasn't finished
-            m_comboTimer = 0.0;       // Reset the timer
-            m_amplitude += decrement; // Increase the starting amplitude for the next animation
+        static bool cooldownAchieved = false;
+
+        if (m_comboTimer > 1.0) {
+            if (currentAmplitude == 0.0) { // Check if this is the last animation index
+                m_comboTimer = 0.0;
+                m_drawCombo = false;
+                cooldownAchieved = false; // Reset the cooldown flag when the animation is complete
+            }
+            else {
+                if (m_comboTimer >= amplitudeCooldown) { // Check if enough time has passed for amplitude increase
+                    m_comboTimer = 0.0;
+                    m_amplitude += defaultDecrement;  // Increase the starting amplitude for the next animation using default decrement
+                    cooldownAchieved = true; // Set the cooldown flag to true when amplitude is increased
+                }
+                else if (cooldownAchieved) {
+                    m_amplitude -= defaultDecrement; // Decrease the amplitude by one step down
+                    if (m_amplitude < 0.0) {
+                        m_amplitude = 0.0;
+                    }
+                }
+            }
         }
 
         m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
@@ -244,10 +268,6 @@ void GameplayScene::Render(double delta)
         m_comboNum->DrawNumber(std::get<7>(scores));
 
         m_comboTimer += delta;
-        if (m_comboTimer > 1.0) {
-            m_comboTimer = 0.0;
-            m_drawCombo = false;
-        }
     }
 
     if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
@@ -279,7 +299,6 @@ void GameplayScene::Render(double delta)
         if (m_lnTimer > 1.0) {
             m_lnTimer = 0.0;
             m_drawLN = false;
-            m_lnLogo->Reset();
         }
     }
 
