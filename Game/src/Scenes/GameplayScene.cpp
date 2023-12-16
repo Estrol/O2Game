@@ -221,8 +221,8 @@ void GameplayScene::Render(double delta)
 
     if (m_drawCombo && std::get<7>(scores) > 0) {
         const double defaultDecrement = 6.0;
-        const double minComboUpdateInterval = 0.05;  // Adjust this value based on the desired interval
-        const double amplitudeCooldown = 0.002;  // Adjust this value based on the desired cooldown period
+        const double minComboUpdateInterval = 0.05;
+        const double amplitudeCooldown = 0.001;
 
         double speedFactor = (m_comboTimer / minComboUpdateInterval > 1.0) ? 1.0 : (m_comboTimer / minComboUpdateInterval);
 
@@ -241,21 +241,18 @@ void GameplayScene::Render(double delta)
         static double lastDecrement = 0.0;
 
         if (m_comboTimer > 1.0) {
-            // Check if this is the last animation index
-            if (currentAmplitude == 0.0) {
+            if (currentAmplitude == 0.0) { // Check if this is the last animation index
                 m_comboTimer = 0.0;
                 m_drawCombo = false;
             }
             else {
-                // Check if enough time has passed for amplitude increase
-                if (m_comboTimer >= amplitudeCooldown) {
+                if (m_comboTimer >= amplitudeCooldown) { // Check if enough time has passed for amplitude increase
                     m_comboTimer = 0.0;
                     lastDecrement = defaultDecrement;
                     m_amplitude += lastDecrement;  // Increase the starting amplitude for the next animation using default decrement
                 }
                 else {
-                    // If animation doesn't finish, reduce one step down decrement by defaultDecrement value
-                    m_amplitude += lastDecrement;
+                    m_amplitude += lastDecrement; // If animation doesn't finish, reduce one step down decrement by defaultDecrement value
                 }
             }
         }
@@ -269,7 +266,7 @@ void GameplayScene::Render(double delta)
         m_comboTimer += delta;
     }
 
-    if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
+    if (m_drawLN && std::get<9>(scores) > 0) { // Ok
         m_amplitude = 5.0;
         m_wiggleTime = 60 * m_lnTimer;
 
