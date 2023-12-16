@@ -219,10 +219,10 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawCombo && std::get<7>(scores) > 0) { // Ribet amat anjir (if gonna full release please remove whole comment from my code)
+    if (m_drawCombo && std::get<7>(scores) > 0) {
         const double defaultDecrement = 6.0;
-        const double minComboUpdateInterval = 0.05;
-        const double amplitudeCooldown = 0.001; 
+        const double minComboUpdateInterval = 0.05;  // Adjust this value based on the desired interval
+        const double amplitudeCooldown = 0.002;  // Adjust this value based on the desired cooldown period
 
         double speedFactor = (m_comboTimer / minComboUpdateInterval > 1.0) ? 1.0 : (m_comboTimer / minComboUpdateInterval);
 
@@ -238,25 +238,24 @@ void GameplayScene::Render(double delta)
             currentAmplitude = 0.0;
         }
 
-        static bool cooldownAchieved = false;
+        static double lastDecrement = 0.0;
 
         if (m_comboTimer > 1.0) {
-            if (currentAmplitude == 0.0) { // Check if this is the last animation index
+            // Check if this is the last animation index
+            if (currentAmplitude == 0.0) {
                 m_comboTimer = 0.0;
                 m_drawCombo = false;
-                cooldownAchieved = false; // Reset the cooldown flag when the animation is complete
             }
             else {
-                if (m_comboTimer >= amplitudeCooldown) { // Check if enough time has passed for amplitude increase
+                // Check if enough time has passed for amplitude increase
+                if (m_comboTimer >= amplitudeCooldown) {
                     m_comboTimer = 0.0;
-                    m_amplitude += defaultDecrement;  // Increase the starting amplitude for the next animation using default decrement
-                    cooldownAchieved = true; // Set the cooldown flag to true when amplitude is increased
+                    lastDecrement = defaultDecrement;
+                    m_amplitude += lastDecrement;  // Increase the starting amplitude for the next animation using default decrement
                 }
-                else if (cooldownAchieved) {
-                    m_amplitude -= defaultDecrement; // Decrease the amplitude by one step down
-                    if (m_amplitude < 0.0) {
-                        m_amplitude = 0.0;
-                    }
+                else {
+                    // If animation doesn't finish, reduce one step down decrement by defaultDecrement value
+                    m_amplitude += lastDecrement;
                 }
             }
         }
