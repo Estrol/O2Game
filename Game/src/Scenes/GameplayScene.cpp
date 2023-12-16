@@ -219,10 +219,10 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawCombo && std::get<7>(scores) > 0) {
+    if (m_drawCombo && std::get<7>(scores) > 0) { // maybe people can fix this formula
         const double defaultDecrement = 6.0;
         const double minComboUpdateInterval = 0.05;
-        const double amplitudeCooldown = 0.001;
+        const double amplitudeCooldown = 0.0082;
 
         double speedFactor = (m_comboTimer / minComboUpdateInterval > 1.0) ? 1.0 : (m_comboTimer / minComboUpdateInterval);
 
