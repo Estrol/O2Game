@@ -368,7 +368,16 @@ void Game::CheckFont()
 
 void Game::Stop()
 {
-    m_running = false;
+    if (m_running) {
+        m_running = false;
+
+        // Notify condition variable to indicate that the threads should finish
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_notify = false;
+        }
+        m_conditionVariable.notify_all();
+    }
 }
 
 void Game::SetThreadMode(ThreadMode mode)
