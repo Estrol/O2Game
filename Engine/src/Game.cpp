@@ -86,12 +86,11 @@ Game::~Game()
         }
     }
 
-    // Release resources in reverse order of initialization
-    GameWindow::Release();
-    Renderer::Release();
     InputManager::Release();
     AudioManager::Release();
     SceneManager::Release();
+    Renderer::Release();
+    GameWindow::Release();
 
     DeInitSDL();
 }
@@ -376,7 +375,7 @@ void Game::Stop()
             std::lock_guard<std::mutex> lock(m_mutex);
             m_notify = false;
         }
-        m_conditionVariable.notify_all();
+        m_conditionVariable.notify_one();
     }
 }
 
