@@ -87,4 +87,7 @@ private:
     GameThread mRenderThread;
     GameThread mAudioThread;
     GameThread mLocalThread;
+
+    std::mutex m_mutex;
+    std::condition_variable m_conditionVariable;
 };

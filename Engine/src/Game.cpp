@@ -79,18 +79,19 @@ Game::~Game()
     if (m_running) {
         Stop();
 
-        // Wait for threads to finish
-        // TODO: Figure a way to do this without using sleep
-        while (m_notify) {
-            SDL_Delay(500);
+        // Properly wait for threads to finish using synchronization, get rid SDL_Delay since it's not good
+        if (m_notify) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_conditionVariable.wait(lock, [this] { return !m_notify; });
         }
     }
 
-    SceneManager::Release();
-    AudioManager::Release();
-    InputManager::Release();
-    Renderer::Release();
+    // Release resources in reverse order of initialization
     GameWindow::Release();
+    Renderer::Release();
+    InputManager::Release();
+    AudioManager::Release();
+    SceneManager::Release();
 
     DeInitSDL();
 }
