@@ -79,7 +79,7 @@ Game::~Game()
     if (m_running) {
         Stop();
 
-        // Properly wait for threads to finish using synchronization, get rid SDL_Delay since it's not good
+        // Properly wait for threads to finish using synchronization, get rid of SDL_Delay since it's not good
         if (m_notify) {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_conditionVariable.wait(lock, [this] { return !m_notify; });
@@ -373,7 +373,7 @@ void Game::Stop()
         // Notify condition variable to indicate that the threads should finish
         {
             std::lock_guard<std::mutex> lock(m_mutex);
-            m_notify = false;
+            m_notify = true; // This should be true
         }
         m_conditionVariable.notify_one();
     }
