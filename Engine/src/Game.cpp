@@ -79,7 +79,7 @@ Game::~Game()
     if (m_running) {
         Stop();
 
-        // Properly wait for threads to finish using synchronization, get rid of SDL_Delay since it's not good
+        // Properly wait for threads to finish using synchronization
         if (m_notify) {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_conditionVariable.wait(lock, [this] { return !m_notify; });
@@ -372,7 +372,7 @@ void Game::Stop()
 
         // Notify condition variable to indicate that the threads should finish
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
+            std::lock_guard<std::mutex> lock(m_mutex); // TODO: Fix game does not properly exit while crash (if not just revert back to SDL_Delay Sleep)
             m_notify = true; // This should be true
         }
         m_conditionVariable.notify_one();

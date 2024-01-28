@@ -35,6 +35,10 @@ struct MissInfo
     float time;
 };
 
+double lerp(double a, double b, double t) {
+    return a + t * (b - a);
+}
+
 bool CheckSkinComponent(std::filesystem::path x)
 {
     return std::filesystem::exists(x);
@@ -178,16 +182,16 @@ void GameplayScene::Render(double delta)
     curLifeTex->CalculateSize();
 
     Rect rc = {};
-    rc.left = (int)curLifeTex->AbsolutePosition.X;
-    rc.top = (int)curLifeTex->AbsolutePosition.Y;
-    rc.right = rc.left + (int)curLifeTex->AbsoluteSize.X;
-    rc.bottom = rc.top + (int)curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+    rc.left = static_cast<int>(curLifeTex->AbsolutePosition.X);
+    rc.top = static_cast<int>(curLifeTex->AbsolutePosition.Y);
+    rc.right = static_cast<int>(rc.left + curLifeTex->AbsoluteSize.X);
+    rc.bottom = static_cast<int>(rc.top + curLifeTex->AbsoluteSize.Y + 10); // Add + value because of the wiggle effect
     float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
 
     // Add wiggle effect
     float yOffset = 0.0f;
     // Wiggle effect after the first second
-    yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 5.0f;
+    yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 10.0f;
 
     int topCur = (int)::round((1.0f - alpha) * rc.top + alpha * rc.bottom);
     rc.top = topCur + static_cast<int>(::round(yOffset));
@@ -202,7 +206,7 @@ void GameplayScene::Render(double delta)
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
 
-        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.5, 1.0); // Nice
+        m_judgeSize = std::clamp(m_judgeSize + (delta * 7), 0.5, 1.0); // Nice
         if ((m_judgeTimer += delta) > 0.60) {
             m_drawJudge = false;
         }
@@ -221,20 +225,25 @@ void GameplayScene::Render(double delta)
 
     if (m_drawCombo && std::get<7>(scores) > 0) {
         const double amplitudeStart = 30.0; // Constants
-        const double decrement = 1.0;
+        const double decrement = 6.0;
         const double animationSpeed = 60.0;
 
         if (m_comboTimer >= 1.0) { // Animation finished, reset parameters for the next animation
             m_comboTimer = 0.0;
-            m_amplitude = amplitudeStart;
             m_drawCombo = false;
         }
         else {
-            double targetAmplitude = amplitudeStart - decrement * m_comboTimer * animationSpeed * 6;
+            double targetAmplitude = amplitudeStart - decrement * m_comboTimer * animationSpeed;
             double currentAmplitude = (targetAmplitude > 0.0) ? targetAmplitude : 0.0;
 
-            m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0); // Update position based on amplitude
-            m_comboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
+            // Wiggle effect
+            if (currentAmplitude > 0.0 && currentAmplitude > decrement && m_comboTimer <= 0.005) {
+                double wiggleAmount = decrement * m_comboTimer * animationSpeed;
+                currentAmplitude -= wiggleAmount;
+            }
+
+            m_comboLogo->Position2 = UDim2::fromOffset(0, lerp(m_comboLogo->Position2.Y.Offset, currentAmplitude / 3.0, 0.2));
+            m_comboNum->Position2 = UDim2::fromOffset(0, lerp(m_comboNum->Position2.Y.Offset, currentAmplitude, 0.2));
 
             m_comboLogo->Draw(delta);
             m_comboNum->DrawNumber(std::get<7>(scores));
@@ -243,7 +252,7 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo 
+    if (m_drawLN && std::get<9>(scores) > 0) {
         m_amplitude = 5.0;
         m_wiggleTime = 60 * m_lnTimer;
 
