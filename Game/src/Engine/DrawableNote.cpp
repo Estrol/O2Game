@@ -9,11 +9,11 @@ DrawableNote::DrawableNote(NoteImage *frame) : FrameTimer::FrameTimer()
 
     if (Renderer::GetInstance()->IsVulkan()) {
         for (auto &frame : frame->VulkanTexture) {
-            m_frames.push_back(new Texture2D(frame));
+            m_frames.emplace_back(new Texture2D(frame));
         }
     } else {
         for (auto &frame : frame->Texture) {
-            m_frames.push_back(new Texture2D(frame));
+            m_frames.emplace_back(new Texture2D(frame));
         }
     }
 
@@ -23,5 +23,5 @@ DrawableNote::DrawableNote(NoteImage *frame) : FrameTimer::FrameTimer()
         _frame->SetOriginalRECT(frame->TextureRect);
     }
 
-    SetFPS(30);
+    SetFPS(30); //TODO: Fix animation render glitch, i can't figure it out
 }

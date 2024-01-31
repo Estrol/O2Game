@@ -71,7 +71,7 @@ void BGMPreview::Load()
             m_autoSamples.clear();
 
             for (auto &sample : m_currentChart->m_autoSamples) {
-                m_autoSamples.push_back(sample);
+                m_autoSamples.emplace_back(sample);
             }
 
             for (auto &note : m_currentChart->m_notes) {
@@ -82,7 +82,7 @@ void BGMPreview::Load()
                     sm.Volume = note.Volume;
                     sm.Pan = note.Pan;
 
-                    m_autoSamples.push_back(sm);
+                    m_autoSamples.emplace_back(sm);
                 }
             }
 

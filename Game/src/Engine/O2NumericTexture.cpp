@@ -15,7 +15,7 @@ O2NumericTexture::O2NumericTexture(OJS *ojs)
         auto frame = ojs->Frames[i].get();
 
         auto tex = new O2Texture(frame);
-        m_numericsTexture.push_back(tex);
+        m_numericsTexture.emplace_back(tex);
         m_numbericsWidth[i] = tex->GetOriginalRECT();
     }
 }
