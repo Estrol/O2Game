@@ -341,7 +341,7 @@ Chart::Chart(O2::OJN &file, int diffIndex)
 
         // check if overlap lastTime
         if (info.StartTime < lastTime[info.LaneIndex]) {
-            Logs::Puts("[Chart] Overlapped note found on FileID: o2ma%d on %.2f ms and conflict with %.2f ms", O2JamId, info.StartTime, lastTime[info.LaneIndex]);
+            Logs::Puts("[Chart] Overlapped note found on file o2ma%d at %.2f ms and conflict with %.2f ms", O2JamId, info.StartTime, lastTime[info.LaneIndex]);
 
             if (note.SampleRefId != -1) {
                 AutoSample sm = {};
