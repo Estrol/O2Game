@@ -2,6 +2,10 @@ name: CI
 
 on: [push, workflow_dispatch]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  VCPKG_FEATURE_FLAGS: dependencygraph
+
 jobs:
   build:
     runs-on: windows-latest
@@ -9,6 +13,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
@@ -19,6 +25,9 @@ jobs:
         vulkan-query-version: 1.2.198.1
         vulkan-components: Vulkan-Headers, Glslang
         vulkan-use-cache: true
+
+    - name: Pass VULKAN_SDK to CMake
+      run: echo "VULKAN_SDK=$VULKAN_SDK" >> $GITHUB_ENV
 
     - name: Configure CMake
       run:
