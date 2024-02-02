@@ -13,7 +13,7 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
-    -name: Prepare Vulkan SDK
+    - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.0
       with:
         vulkan-query-version: 1.2.198.1
