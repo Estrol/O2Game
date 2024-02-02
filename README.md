@@ -10,10 +10,10 @@ Currently the game is under heavy development, so while the game is playable, it
 - Game, Game code for this game logic.
 
 ## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for more information.
 
 ## Compiling
-See [BUILDING.md](BUILDING.md) for more information.
+See [BUILDING.md](docs/BUILDING.md) for more information.
 
 ## License
 The source code is licensed under the MIT license. See [LICENSE](LICENSE) for more information.

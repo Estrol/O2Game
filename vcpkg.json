@@ -1,38 +1,46 @@
 {
-  "name": "o2game",
+  "name": "estengine",
   "version": "1.0.0",
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     {
       "name": "sdl2",
-      "features": [ "vulkan" ]
+      "features": [
+        "vulkan"
+      ]
     },
     {
       "name": "sdl2-image",
-      "features": [ "libjpeg-turbo" ]
+      "features": [
+        "libjpeg-turbo"
+      ]
     },
     {
       "name": "glm"
     },
     {
-      "name": "freetype",
-      "default-features": false,
-      "features": [ "bzip2", "png", "zlib" ]
-    },
-    {
       "name": "vulkan"
     },
     {
-      "name": "libpng"
+      "name": "vulkan-headers"
     },
     {
-      "name": "sqlite3"
+      "name": "spirv-cross"
+    },
+    {
+      "name": "lodepng"
+    },
+    {
+      "name": "freetype"
     },
     {
       "name": "libiconv"
     },
     {
       "name": "sol2"
+    },
+    {
+      "name": "sqlite3"
     }
   ],
   "overrides": [

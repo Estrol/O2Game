@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "intellisenseOptions": { "useCompilerDefaults": false },
+      "name": "Unnamed",
+      "inheritEnvironments": [ "msvc_x64" ],
+      "configurationType": "Debug",
+      "cmakeToolchain": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "buildRoot": "${sourceDir}/build"
+    }
+  ]
+}
