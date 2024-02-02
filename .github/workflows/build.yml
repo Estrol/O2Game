@@ -13,8 +13,14 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name: Install Vulkan SDK
+      run: |
+        choco install vulkan-sdk
+
     - name: Configure CMake
-      run: cmake --preset x64-windows
+      run: |
+        echo "VULKAN_SDK=$env:VULKAN_SDK" >> $GITHUB_ENV
+        cmake --preset x64-windows
 
     - name: Build
       run: cmake --build build
