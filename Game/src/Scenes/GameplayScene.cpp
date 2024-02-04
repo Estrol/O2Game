@@ -224,26 +224,27 @@ void GameplayScene::Render(double delta)
     }
 
     if (m_drawCombo && std::get<7>(scores) > 0) {
-        const double amplitudeStart = 30.0; // Constants
+        const double positionStart = 30.0; // Constants
         const double decrement = 6.0;
-        const double animationSpeed = 60.0;
+        double animationSpeed = 60.0;
 
         if (m_comboTimer >= 1.0) { // Animation finished, reset parameters for the next animation
             m_comboTimer = 0.0;
             m_drawCombo = false;
         }
         else {
-            double targetAmplitude = amplitudeStart - decrement * m_comboTimer * animationSpeed;
-            double currentAmplitude = (targetAmplitude > 0.0) ? targetAmplitude : 0.0;
+            double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
+            double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
             // Wiggle effect
-            if (currentAmplitude > 0.0 && currentAmplitude > decrement && m_comboTimer <= 0.005) {
+            if (currentposition > 0.0 && currentposition > decrement && m_comboTimer <= 0.01667) {
                 double wiggleAmount = decrement * m_comboTimer * animationSpeed;
-                currentAmplitude -= wiggleAmount;
+                currentposition -= wiggleAmount;
             }
 
-            m_comboLogo->Position2 = UDim2::fromOffset(0, lerp(m_comboLogo->Position2.Y.Offset, currentAmplitude / 3.0, 0.2));
-            m_comboNum->Position2 = UDim2::fromOffset(0, lerp(m_comboNum->Position2.Y.Offset, currentAmplitude, 0.2));
+            // Directly decrement positions
+            m_comboLogo->Position2 = UDim2::fromOffset(0, lerp(m_comboLogo->Position2.Y.Offset, currentposition / 3.0, 0.2));
+            m_comboNum->Position2 = UDim2::fromOffset(0, lerp(m_comboNum->Position2.Y.Offset, currentposition, 0.2));
 
             m_comboLogo->Draw(delta);
             m_comboNum->DrawNumber(std::get<7>(scores));
@@ -253,22 +254,22 @@ void GameplayScene::Render(double delta)
     }
 
     if (m_drawLN && std::get<9>(scores) > 0) {
-        m_amplitude = 5.0;
+        m_position = 5.0;
         m_wiggleTime = 60 * m_lnTimer;
 
         double decrement = 1.0;
         double totalDecrement = decrement * m_wiggleTime;
 
-        double currentAmplitude = m_amplitude - totalDecrement;
+        double currentposition = m_position - totalDecrement;
 
-        if (currentAmplitude < 0.0) {
-            currentAmplitude = 0.0;
+        if (currentposition < 0.0) {
+            currentposition = 0.0;
         }
 
-        m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
+        m_lnLogo->Position2 = UDim2::fromOffset(0, currentposition);
         m_lnLogo->Draw(delta);
 
-        m_lnComboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
+        m_lnComboNum->Position2 = UDim2::fromOffset(0, currentposition);
         m_lnComboNum->DrawNumber(std::get<9>(scores));
 
         m_lnTimer += delta;

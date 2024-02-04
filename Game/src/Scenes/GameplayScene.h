@@ -104,7 +104,7 @@ private:
     /* Fixed Animation*/
     double m_wiggleTime;
     double m_wiggleOffset;
-    double m_amplitude;
+    double m_position;
 
     /* button */
     bool m_drawExitButton;

@@ -19,6 +19,9 @@ constexpr auto kMenuDefaultRate = 60.0;
 constexpr auto kAudioDefaultRate = 24.0;
 
 namespace {
+
+    constexpr double FixedDeltaTime = 1.0 / 60.0;
+
     bool InitSDL()
     {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
@@ -39,21 +42,22 @@ namespace {
 
     double FrameLimit(double MaxFrameRate)
     {
-        double newTick = SDL_GetTicks();
-        double targetTick = lastTick + 1000.0 / MaxFrameRate;
+        const double targetFrameTime = 1000.0 / MaxFrameRate;
 
-        // If the frame rate is too high, wait to avoid shaky animations
-        if (newTick < targetTick) {
-            double delayTicks = targetTick - newTick;
-            SDL_Delay(static_cast<Uint32>(delayTicks));
-            newTick += delayTicks;
+        double newTick = SDL_GetTicks();
+        double frameTime = newTick - curTick;
+
+        if (frameTime < targetFrameTime)
+        {
+            double delayTime = targetFrameTime - frameTime;
+            SDL_Delay(static_cast<Uint32>(delayTime));
+            newTick += delayTime;
         }
 
         double delta = (newTick - curTick) / 1000.0;
-        curTick = newTick;
 
-        // Update lastTick for the next frame
         lastTick = curTick;
+        curTick = newTick;
 
         return delta;
     }
@@ -79,7 +83,6 @@ Game::~Game()
     if (m_running) {
         Stop();
 
-        // Properly wait for threads to finish using synchronization
         if (m_notify) {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_conditionVariable.wait(lock, [this] { return !m_notify; });
@@ -153,8 +156,8 @@ void Game::Run()
     mAudioThread.Run([&] {
         double delta = FrameLimit(kAudioDefaultRate);
         AudioManager::GetInstance()->Update(delta);
-    },
-                     true);
+        },
+        true);
 
     std::mutex m1, m2;
 
@@ -169,7 +172,7 @@ void Game::Run()
             switch (m_frameLimitMode) {
                 case FrameLimitMode::GAME:
                 {
-                    delta = FrameLimit(m_frameLimit);
+                delta = FrameLimit(m_frameLimit);
                     break;
                 }
 
@@ -180,34 +183,34 @@ void Game::Run()
                 }
             }
 
-            CheckFont();
+                CheckFont();
 
-            Update(delta);
+                Update(delta);
 
-            UpdateFade(delta);
+                UpdateFade(delta);
 
-            if (!m_minimized && m_renderer->BeginRender()) {
-                if (frameWithoutSwapchain > 0) {
-                    Logs::Puts("[Game] Game iterate %d times without swap chain", frameWithoutSwapchain);
-                    frameWithoutSwapchain = 0;
-                }
+                if (!m_minimized && m_renderer->BeginRender()) {
+                    if (frameWithoutSwapchain > 0) {
+                        Logs::Puts("[Game] Game iterate %d times without swap chain", frameWithoutSwapchain);
+                        frameWithoutSwapchain = 0;
+                    }
 
-                std::lock_guard<std::mutex> lock(m1);
+                    std::lock_guard<std::mutex> lock(m1);
 
-                Render(delta);
-                MsgBox::Draw();
-                DrawFade(delta);
+                    Render(delta);
+                    MsgBox::Draw();
+                    DrawFade(delta);
 
-                DrawConsole();
-                m_renderer->EndRender();
+                    DrawConsole();
+                    m_renderer->EndRender();
 
-                frames++;
+                    frames++;
             } else {
-                frameWithoutSwapchain++;
-            }
+                    frameWithoutSwapchain++;
+                }
         } else {
-            FrameLimit(15.0f);
-        }
+                FrameLimit(15.0f);
+            }
     },
                       true);
 
@@ -217,7 +220,7 @@ void Game::Run()
         } else {
             m_sceneManager->OnKeyUp(state);
         }
-    });
+        });
 
     m_inputManager->ListenMouseEvent([&](const MouseState &state) {
         if (state.isDown) {
@@ -225,23 +228,23 @@ void Game::Run()
         } else {
             m_sceneManager->OnMouseUp(state);
         }
-    });
+        });
 
     m_minimized = false;
     mLocalThread.Run([&] {
         double delta = 0;
         switch (m_frameLimitMode) {
-            case FrameLimitMode::GAME:
-            {
-                delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? kInputDefaultRate : m_frameLimit);
-                break;
-            }
+        case FrameLimitMode::GAME:
+        {
+            delta = FrameLimit(m_threadMode == ThreadMode::MULTI_THREAD ? kInputDefaultRate : m_frameLimit);
+            break;
+        }
 
-            case FrameLimitMode::MENU:
-            {
-                delta = FrameLimit(kMenuDefaultRate);
-                break;
-            }
+        case FrameLimitMode::MENU:
+        {
+            delta = FrameLimit(kMenuDefaultRate);
+            break;
+        }
         }
 
         m_imguiInterval += delta;
@@ -249,9 +252,9 @@ void Game::Run()
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
-                case SDL_QUIT:
-                    MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
-                    break;
+            case SDL_QUIT:
+                MsgBox::Show("Quit", "Quit confirmation", "Are you sure you want to quit?", MsgBoxType::YESNO);
+                break;
             }
 
             m_minimized = SDL_GetWindowFlags(m_window->GetWindow()) & SDL_WINDOW_MINIMIZED;
@@ -305,8 +308,8 @@ void Game::Run()
             frames = 0;
             time = 0;
         }
-    },
-                     false);
+        },
+        false);
 
     while (m_running) {
         mLocalThread.Update();
@@ -370,14 +373,14 @@ void Game::Stop()
     if (m_running) {
         m_running = false;
 
-        // Notify condition variable to indicate that the threads should finish
         {
             std::lock_guard<std::mutex> lock(m_mutex); // TODO: Fix game does not properly exit while crash (if not just revert back to SDL_Delay Sleep)
-            m_notify = true; // This should be true
+            m_notify = true;
         }
         m_conditionVariable.notify_one();
     }
 }
+
 
 void Game::SetThreadMode(ThreadMode mode)
 {

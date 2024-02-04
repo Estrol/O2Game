@@ -5,6 +5,7 @@
 #include "Rendering/Threading/GameThread.h"
 #include "SceneManager.h"
 #include <thread>
+#include <chrono>
 
 enum class ThreadMode {
     SINGLE_THREAD,
