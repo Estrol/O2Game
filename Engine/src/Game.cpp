@@ -20,8 +20,6 @@ constexpr auto kAudioDefaultRate = 24.0;
 
 namespace {
 
-    constexpr double FixedDeltaTime = 1.0 / 60.0;
-
     bool InitSDL()
     {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
