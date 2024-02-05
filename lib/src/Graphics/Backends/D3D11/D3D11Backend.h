@@ -59,6 +59,8 @@ namespace Graphics {
             virtual void SetClearDepth(float depth) override;
             virtual void SetClearStencil(uint32_t stencil) override;
 
+            virtual void CaptureFrame(std::function<void(std::vector<unsigned char>)>) override;
+
             virtual BlendHandle CreateBlendState(TextureBlendInfo blendInfo) override;
 
             D3D11Object *GetData();

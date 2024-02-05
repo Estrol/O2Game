@@ -9,13 +9,14 @@
 #include <unordered_map>
 
 namespace {
-    std::unordered_map<std::string, std::string> env;
-    std::unordered_map<std::string, int>         env_int;
-    std::unordered_map<std::string, float>       env_float;
-    std::unordered_map<std::string, bool>        env_bool;
+    std::unordered_map<std::string, std::string>           env;
+    std::unordered_map<std::string, int>                   env_int;
+    std::unordered_map<std::string, float>                 env_float;
+    std::unordered_map<std::string, bool>                  env_bool;
     std::unordered_map<std::string, std::filesystem::path> paths;
 
-    std::unordered_map<std::string, void *> pointers;
+    std::unordered_map<std::string, void *>            pointers;
+    std::unordered_map<std::string, std::vector<char>> buffers;
 } // namespace
 
 std::string Env::GetString(const std::string &key)
@@ -47,12 +48,12 @@ bool Env::GetBool(const std::string &key)
     return env_bool[key];
 }
 
-std::filesystem::path Env::GetPath(const std::string& key)
+std::filesystem::path Env::GetPath(const std::string &key)
 {
     if (paths.find(key) == paths.end())
-		return std::filesystem::path();
+        return std::filesystem::path();
 
-	return paths[key];
+    return paths[key];
 }
 
 void *Env::GetPointer(const std::string &key)
@@ -61,6 +62,11 @@ void *Env::GetPointer(const std::string &key)
         return nullptr;
 
     return pointers[key];
+}
+
+void Env::SetBuffer(const std::string &key, const std::vector<char> &value)
+{
+    buffers[key] = value;
 }
 
 void Env::SetString(const std::string &key, const std::string &value)
@@ -83,12 +89,20 @@ void Env::SetBool(const std::string &key, bool value)
     env_bool[key] = value;
 }
 
-void Env::SetPath(const std::string& key, const std::filesystem::path& value)
+void Env::SetPath(const std::string &key, const std::filesystem::path &value)
 {
-	paths[key] = value;
+    paths[key] = value;
 }
 
 void Env::SetPointer(const std::string &key, void *value)
 {
     pointers[key] = value;
+}
+
+std::vector<char> Env::GetBuffer(const std::string &key)
+{
+    if (buffers.find(key) == buffers.end())
+        return std::vector<char>();
+
+    return buffers[key];
 }

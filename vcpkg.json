@@ -19,10 +19,10 @@
       "name": "glm"
     },
     {
-      "name": "vulkan"
+      "name": "vulkan-headers"
     },
     {
-      "name": "vulkan-headers"
+      "name": "glslang"
     },
     {
       "name": "spirv-cross"

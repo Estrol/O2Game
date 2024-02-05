@@ -9,6 +9,7 @@
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
 #define SDL_MAIN_HANDLED
+#include <Logs.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <algorithm>
@@ -18,13 +19,11 @@
 #include "VulkanDescriptor.h"
 #include "vkinit.h"
 
-#include "../../Shaders/image.spv.h"
-#include "../../Shaders/position.spv.h"
-#include "../../Shaders/solid.spv.h"
+#include "../../Shaders/SPV/image.spv.h"
+#include "../../Shaders/SPV/position.spv.h"
 
-#include "../../Shaders/image_round.spv.h"
-#include "../../Shaders/position_round.spv.h"
-#include "../../Shaders/solid_round.spv.h"
+#include "../../Shaders/SPV/image_round.spv.h"
+#include "../../Shaders/SPV/position_round.spv.h"
 
 #include "../../ImguiBackends/imgui_impl_sdl2.h"
 #include "../../ImguiBackends/imgui_impl_vulkan.h"
@@ -289,6 +288,63 @@ bool Vulkan::InitSwapchain()
         m_Swapchain.depthImageMemory = VK_NULL_HANDLE;
     });
 
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_Vulkan.vkbDevice.physical_device, m_Vulkan.surface, &capabilities);
+
+    if (!(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
+        Logs::Puts("[Warning] %s", "Surface does not support VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
+    }
+
+    {
+        VkImageCreateInfo imageInfo = {};
+        imageInfo.extent = {
+            .width = swapchainExtent.width,
+            .height = swapchainExtent.height,
+            .depth = 1
+        };
+
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+        imageInfo.arrayLayers = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+        result = vkCreateImage(m_Vulkan.vkbDevice.device, &imageInfo, nullptr, &m_Swapchain.captureFrame.image);
+
+        if (result != VK_SUCCESS) {
+            throw Exceptions::EstException("Failed to create image");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = vkinit::find_memory_type(
+            m_Vulkan.vkbDevice.physical_device,
+            memRequirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        result = vkAllocateMemory(m_Vulkan.vkbDevice.device, &allocInfo, nullptr, &m_Swapchain.captureFrame.memory);
+        if (result != VK_SUCCESS) {
+            throw Exceptions::EstException("Failed to allocate image memory");
+        }
+
+        vkBindImageMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.image, m_Swapchain.captureFrame.memory, 0);
+
+        m_SwapchainDeletionQueue.push_function([=]() {
+            vkDestroyImage(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.image, nullptr);
+            vkFreeMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.memory, nullptr);
+
+            m_Swapchain.captureFrame.image = VK_NULL_HANDLE;
+            m_Swapchain.captureFrame.memory = VK_NULL_HANDLE;
+        });
+    }
+
     m_SwapchainReady = true;
     return true;
 }
@@ -345,19 +401,22 @@ void Vulkan::CreateRenderpass()
 
     std::array<VkSubpassDependency, 2> dependencies = {};
 
+    // Depth attachment
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = 0;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    dependencies[0].dependencyFlags = 0;
+    // Color attachment
     dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[1].dstSubpass = 0;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies[1].srcAccessMask = 0;
-    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[1].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    dependencies[1].dependencyFlags = 0;
 
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -386,16 +445,15 @@ void Vulkan::InitFramebuffers()
     m_Swapchain.framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
 
     for (uint32_t i = 0; i < swapchain_imagecount; i++) {
-        VkImageView attachments[3];
-        // attachments[0] = m_Swapchain.imageViews[i];
-        // attachments[1] = m_Swapchain.depthImageView;
 
-        attachments[0] = m_MultiSamplingTarget.color.view;
-        attachments[1] = m_Swapchain.imageViews[i];
-        attachments[2] = m_MultiSamplingTarget.depth.view;
+        std::array<VkImageView, 3> attachments = {
+            m_MultiSamplingTarget.color.view,
+            m_Swapchain.imageViews[i],
+            m_MultiSamplingTarget.depth.view
+        };
 
-        fb_info.pAttachments = attachments;
-        fb_info.attachmentCount = 3;
+        fb_info.pAttachments = attachments.data();
+        fb_info.attachmentCount = (uint32_t)attachments.size();
 
         auto result = vkCreateFramebuffer(m_Vulkan.vkbDevice.device, &fb_info, nullptr, &m_Swapchain.framebuffers[i]);
         if (result != VK_SUCCESS) {
@@ -564,22 +622,15 @@ void Vulkan::InitDescriptors()
 void Vulkan::InitShaders()
 {
     const uint32_t *vertShaderCode = __glsl_position;
-    const uint32_t *solidFragShaderCode = __glsl_solid;
     const uint32_t *imageFragShaderCode = __glsl_image;
 
     size_t vertShaderSize = sizeof(__glsl_position);
-    size_t solidFragShaderSize = sizeof(__glsl_solid);
     size_t imageFragShaderSize = sizeof(__glsl_image);
 
     VkShaderModuleCreateInfo vertShaderInfo = {};
     vertShaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     vertShaderInfo.codeSize = vertShaderSize;
     vertShaderInfo.pCode = vertShaderCode;
-
-    VkShaderModuleCreateInfo solidFragShaderInfo = {};
-    solidFragShaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    solidFragShaderInfo.codeSize = solidFragShaderSize;
-    solidFragShaderInfo.pCode = solidFragShaderCode;
 
     VkShaderModuleCreateInfo imageFragShaderInfo = {};
     imageFragShaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -592,12 +643,6 @@ void Vulkan::InitShaders()
         throw Exceptions::EstException("Failed to create vertex shader module");
     }
 
-    result = vkCreateShaderModule(m_Vulkan.vkbDevice.device, &solidFragShaderInfo, nullptr, &m_Vulkan.solidFragShaderModule);
-
-    if (result != VK_SUCCESS) {
-        throw Exceptions::EstException("Failed to create solid fragment shader module");
-    }
-
     result = vkCreateShaderModule(m_Vulkan.vkbDevice.device, &imageFragShaderInfo, nullptr, &m_Vulkan.imageFragShaderModule);
 
     if (result != VK_SUCCESS) {
@@ -606,7 +651,6 @@ void Vulkan::InitShaders()
 
     m_DeletionQueue.push_function([=]() {
         vkDestroyShaderModule(m_Vulkan.vkbDevice.device, m_Vulkan.vertShaderModule, nullptr);
-        vkDestroyShaderModule(m_Vulkan.vkbDevice.device, m_Vulkan.solidFragShaderModule, nullptr);
         vkDestroyShaderModule(m_Vulkan.vkbDevice.device, m_Vulkan.imageFragShaderModule, nullptr); });
 }
 
@@ -797,11 +841,6 @@ void Vulkan::InitMultiSampling()
 
 void Vulkan::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function)
 {
-    vkWaitForFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence, true, 9999999999);
-    vkResetFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence);
-
-    vkResetCommandPool(m_Vulkan.vkbDevice.device, m_Swapchain.uploadContext.commandPool, 0);
-
     VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     auto                     result = vkBeginCommandBuffer(m_Swapchain.uploadContext.commandBuffer, &cmdBeginInfo);
 
@@ -824,6 +863,11 @@ void Vulkan::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function)
     if (result != VK_SUCCESS) {
         throw Exceptions::EstException("Failed to submit queue");
     }
+
+    vkWaitForFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence, true, 9999999999);
+    vkResetFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence);
+
+    vkResetCommandPool(m_Vulkan.vkbDevice.device, m_Swapchain.uploadContext.commandPool, 0);
 }
 
 VulkanFrame &Vulkan::GetCurrentFrame()
@@ -836,18 +880,58 @@ VulkanFrame &Vulkan::GetLastFrame()
     return m_Swapchain.frames[(m_CurrentFrame - 1) % MAX_FRAMES_IN_FLIGHT];
 }
 
-bool Vulkan::BeginFrame()
+void Vulkan::AsyncSubmit(std::function<void(VkCommandBuffer)> &&function)
 {
-    if (!m_SwapchainReady) {
-        return false;
+    auto &frame = GetCurrentFrame();
+
+    auto allocInfo = vkinit::command_buffer_allocate_info(frame.commandPool, 1);
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VkCommandBuffer commandBuffer;
+
+    auto result = vkAllocateCommandBuffers(m_Vulkan.vkbDevice.device, &allocInfo, &commandBuffer);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to allocate command buffer");
     }
+
+    VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(0);
+
+    result = vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to begin command buffer");
+    }
+
+    function(commandBuffer);
+
+    result = vkEndCommandBuffer(commandBuffer);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to end command buffer");
+    }
+
+    VkSubmitInfo submit = vkinit::submit_info(&commandBuffer);
+
+    result = vkQueueSubmit(m_Vulkan.graphicsQueue, 1, &submit, VK_NULL_HANDLE);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to submit queue");
+    }
+
+    m_PerFrameDeletionQueue.push_function([=]() {
+        vkFreeCommandBuffers(m_Vulkan.vkbDevice.device, frame.commandPool, 1, &commandBuffer);
+    });
+}
+
+bool Vulkan::WaitForFrame()
+{
+    auto &frame = GetCurrentFrame();
 
     auto result = vkDeviceWaitIdle(m_Vulkan.vkbDevice.device);
     if (result != VK_SUCCESS) {
         throw Exceptions::EstException("Failed to wait for device idle");
     }
-
-    auto &frame = GetCurrentFrame();
 
     result = vkWaitForFences(m_Vulkan.vkbDevice.device, 1, &frame.renderFence, true, 9999999999);
     if (result == VK_TIMEOUT) {
@@ -861,7 +945,21 @@ bool Vulkan::BeginFrame()
         throw Exceptions::EstException("Failed to reset fence");
     }
 
-    result = vkAcquireNextImageKHR(m_Vulkan.vkbDevice.device, m_Swapchain.swapchain, 9999999999, frame.presentSemaphore, VK_NULL_HANDLE, &m_Swapchain.swapchainIndex);
+    m_FenceRequireReset = false;
+    return true;
+}
+
+bool Vulkan::BeginFrame()
+{
+    if (!m_SwapchainReady) {
+        return false;
+    }
+
+    auto &frame = GetCurrentFrame();
+
+    m_Swapchain.lastSwapchainIndex = m_Swapchain.swapchainIndex;
+
+    auto result = vkAcquireNextImageKHR(m_Vulkan.vkbDevice.device, m_Swapchain.swapchain, 9999999999, frame.presentSemaphore, VK_NULL_HANDLE, &m_Swapchain.swapchainIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_SwapchainReady = false;
         return false;
@@ -976,8 +1074,184 @@ void Vulkan::EndFrame()
         }
     }
 
+    FlushScreenshotQueue();
+
     m_CurrentFrame++;
     m_FrameBegin = false;
+}
+
+void Vulkan::FlushScreenshotQueue()
+{
+    if (screenshotQueues.size() == 0) {
+        WaitForFrame();
+        return;
+    }
+
+    bool supportBlit = false;
+
+    VkFormatProperties formatProps;
+    vkGetPhysicalDeviceFormatProperties(m_Vulkan.vkbDevice.physical_device, m_Vulkan.swapchainFormat, &formatProps);
+    if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) || !(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        supportBlit = false;
+    }
+
+    vkGetPhysicalDeviceFormatProperties(m_Vulkan.vkbDevice.physical_device, VK_FORMAT_B8G8R8A8_UNORM, &formatProps);
+    if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) || !(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        supportBlit = false;
+    }
+
+    auto rect = Graphics::NativeWindow::Get()->GetWindowSize();
+
+    VkExtent3D imageExtent = {
+        (uint32_t)rect.Width,
+        (uint32_t)rect.Height,
+        1
+    };
+
+    VkImage srcImage = m_Swapchain.images[m_Swapchain.swapchainIndex];
+    if (srcImage == VK_NULL_HANDLE) {
+        throw Exceptions::EstException("Failed to capture frame");
+    }
+
+    VkImage dstImage = m_Swapchain.captureFrame.image;
+
+    VkDeviceSize imageSize = imageExtent.width * imageExtent.height * 4;
+
+    AsyncSubmit([=](VkCommandBuffer cmd) {
+        {
+            auto barrier = vkinit::image_memory_barrier(
+                dstImage,
+                0,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+            vkCmdPipelineBarrier(
+                cmd,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+
+            barrier = vkinit::image_memory_barrier(
+                srcImage,
+                VK_ACCESS_MEMORY_READ_BIT,
+                VK_ACCESS_TRANSFER_READ_BIT,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+            vkCmdPipelineBarrier(
+                cmd,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+        }
+
+        if (supportBlit) {
+            VkOffset3D blitSize;
+            blitSize.x = rect.Width;
+            blitSize.y = rect.Height;
+            blitSize.z = 1;
+            VkImageBlit imageBlitRegion{};
+            imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.srcSubresource.layerCount = 1;
+            imageBlitRegion.srcOffsets[1] = blitSize;
+            imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.dstSubresource.layerCount = 1;
+            imageBlitRegion.dstOffsets[1] = blitSize;
+
+            // Issue the blit command
+            vkCmdBlitImage(
+                cmd,
+                srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageBlitRegion,
+                VK_FILTER_NEAREST);
+        } else {
+            VkImageCopy imageCopyRegion{};
+            imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageCopyRegion.srcSubresource.layerCount = 1;
+            imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageCopyRegion.dstSubresource.layerCount = 1;
+            imageCopyRegion.extent = imageExtent;
+
+            // Issue the copy command
+            vkCmdCopyImage(
+                cmd,
+                srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageCopyRegion);
+        }
+
+        {
+            auto barrier = vkinit::image_memory_barrier(
+                dstImage,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_MEMORY_READ_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_GENERAL,
+                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+            vkCmdPipelineBarrier(
+                cmd,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+
+            barrier = vkinit::image_memory_barrier(
+                srcImage,
+                VK_ACCESS_TRANSFER_READ_BIT,
+                VK_ACCESS_MEMORY_READ_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+            vkCmdPipelineBarrier(
+                cmd,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+        }
+    });
+
+    WaitForFrame();
+
+    std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+    bool                  colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), m_Vulkan.swapchainFormat) != formatsBGR.end());
+
+    void *data;
+    vkMapMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.memory, 0, imageSize, 0, &data);
+
+    std::vector<unsigned char> resultData((unsigned char *)data, (unsigned char *)data + imageSize);
+
+    vkUnmapMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.memory);
+
+    if (colorSwizzle) {
+        for (size_t i = 0; i < resultData.size(); i += 4) {
+            std::swap(resultData[i], resultData[i + 2]);
+        }
+    }
+
+    for (auto &it : screenshotQueues) {
+        it(resultData);
+    }
+
+    screenshotQueues.clear();
 }
 
 bool Vulkan::NeedReinit()
@@ -1391,7 +1665,7 @@ BlendHandle Vulkan::CreateBlendState(TextureBlendInfo blendInfo)
 
     std::unordered_map<ShaderFragmentType, std::pair<VkShaderModule, VkShaderModule>> shaders = {
         { ShaderFragmentType::Image, { m_Vulkan.vertShaderModule, m_Vulkan.imageFragShaderModule } },
-        { ShaderFragmentType::Solid, { m_Vulkan.vertShaderModule, m_Vulkan.solidFragShaderModule } }
+        { ShaderFragmentType::Solid, { m_Vulkan.vertShaderModule, m_Vulkan.imageFragShaderModule } }
     };
 
     BlendHandle handleId = VkBlendOperatioId++;
@@ -1610,6 +1884,11 @@ void Vulkan::ImGui_DeInit()
     vkDestroyDescriptorPool(m_Vulkan.vkbDevice.device, m_Imgui.imguiPool, nullptr);
 
     ImGui::DestroyContext();
+}
+
+void Vulkan::CaptureFrame(std::function<void(std::vector<unsigned char>)> queue)
+{
+    screenshotQueues.push_back(queue);
 }
 
 void Vulkan::ImGui_NewFrame()

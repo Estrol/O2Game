@@ -18,7 +18,7 @@
 #endif
 
 using namespace Fonts;
-std::string GenerateHash(const char *data, size_t size);
+std::string GenerateHash(const char *data, size_t size, float fontSize);
 
 FontManager *FontManager::m_instance = nullptr;
 
@@ -88,7 +88,7 @@ FontAtlas *FontManager::LoadFont(FontLoadFileInfo &info)
     _info.FontSize = info.FontSize;
     _info.Ranges = info.Ranges;
 
-    auto fileName = GenerateHash((const char *)_info.Buffer.data(), _info.Buffer.size());
+    auto fileName = GenerateHash((const char *)_info.Buffer.data(), _info.Buffer.size(), _info.FontSize);
     if (m_fonts.find(fileName) != m_fonts.end()) {
         return m_fonts[fileName].get();
     }
@@ -98,7 +98,7 @@ FontAtlas *FontManager::LoadFont(FontLoadFileInfo &info)
 
 FontAtlas *FontManager::LoadFont(FontLoadBufferInfo &info)
 {
-    auto fileName = GenerateHash((const char *)info.Buffer.data(), info.Buffer.size());
+    auto fileName = GenerateHash((const char *)info.Buffer.data(), info.Buffer.size(), info.FontSize);
     if (m_fonts.find(fileName) != m_fonts.end()) {
         return m_fonts[fileName].get();
     }
@@ -224,7 +224,7 @@ FontAtlas *FontManager::LoadFont(FontLoadBufferInfo &info)
     }
 
     auto tex = Graphics::Renderer::Get()->LoadTexture(
-        (const char *)rgba_data.data(),
+        (const unsigned char *)rgba_data.data(),
         tex_width,
         tex_height);
 
@@ -241,7 +241,7 @@ FontAtlas *FontManager::LoadFont(FontLoadBufferInfo &info)
     return m_fonts[fileName].get();
 }
 
-std::string GenerateHash(const char *data, size_t size)
+std::string GenerateHash(const char *data, size_t size, float fontSize)
 {
     uint8_t result[16];
 
@@ -252,5 +252,8 @@ std::string GenerateHash(const char *data, size_t size)
         sprintf(hash + i * 2, "%02x", result[i]);
     }
 
-    return std::string(hash);
+    std::string hashString(hash);
+    hashString += std::to_string(fontSize);
+
+    return hashString;
 }

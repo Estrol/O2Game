@@ -61,7 +61,7 @@ void Game::Run(RunInfo info)
             }
         });
 
-        m_FixedUpdateTimer = AccurateTimeWatch(1.0f / info.renderFrameRate);
+        m_FixedUpdateTimer = AccurateTimeWatch(1.0f / info.fixedFrameRate);
 
         auto renderer = Graphics::Renderer::Get();
         auto scenemanager = Screens::Manager::Get();

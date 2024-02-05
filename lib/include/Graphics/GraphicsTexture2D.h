@@ -68,8 +68,8 @@ namespace Graphics {
         virtual ~Texture2D() = default;
 
         virtual void Load(std::filesystem::path path) = 0;
-        virtual void Load(const char *buf, size_t size) = 0;
-        virtual void Load(const char *pixbuf, uint32_t width, uint32_t height) = 0;
+        virtual void Load(const unsigned char *buf, size_t size) = 0;
+        virtual void Load(const unsigned char *pixbuf, uint32_t width, uint32_t height) = 0;
 
         virtual const void *GetId() = 0;
         virtual const Rect  GetSize() = 0;

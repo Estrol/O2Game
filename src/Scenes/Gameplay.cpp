@@ -10,6 +10,7 @@
 #include <Graphics/NativeWindow.h>
 #include <Graphics/Renderer.h>
 #include <Imgui/imgui.h>
+#include <Misc/Lodepng.h>
 
 #include <random>
 
@@ -33,6 +34,7 @@
 #include <Exceptions/EstException.h>
 
 #include "../Game/Core/Audio/SampleManager.h"
+#include <Screens/ScreenManager.h>
 
 #define AUTOPLAY_TEXT (const char *)u8"Game currently on autoplay!"
 
@@ -132,11 +134,6 @@ void Gameplay::Draw(double delta)
         m_judgement[m_judgeIndex]->Size = UDim2::fromScale(m_judgeSize, m_judgeSize);
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
-
-        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.5, 1.0); // Nice
-        if ((m_judgeTimer += delta) > 0.60) {
-            m_drawJudge = false;
-        }
     }
 
     if (m_drawJam) {
@@ -163,7 +160,6 @@ void Gameplay::Draw(double delta)
         m_comboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
         m_comboNum->Draw(scores.Combo);
 
-        m_comboTimer += delta;
         if (m_comboTimer > 1.0) {
             m_drawCombo = false;
         }
@@ -281,12 +277,52 @@ void Gameplay::Draw(double delta)
     }
 }
 
+void Gameplay::FixedUpdate(double fixedDelta)
+{
+    auto &scores = m_Engine->GetScoreManager()->GetScore();
+
+    if (m_drawJudge) {
+        m_judgeSize = std::clamp(m_judgeSize + (fixedDelta * 6), 0.5, 1.0); // Nice
+        if ((m_judgeTimer += fixedDelta) > 0.60) {
+            m_drawJudge = false;
+        }
+    }
+
+    if (m_drawCombo && scores.Combo > 0) {
+        m_comboTimer += fixedDelta;
+    }
+}
+
 void Gameplay::Input(double delta)
 {
 }
 
 void Gameplay::OnKeyDown(const Inputs::State &state)
 {
+    if (state.Keyboard.Key == Inputs::Keys::F9 || state.Keyboard.Key == Inputs::Keys::PrintScreen) {
+        auto manager = Screens::Manager::Get();
+
+        Graphics::Renderer::Get()->CaptureFrame([=](std::vector<unsigned char> image_data) {
+            auto rect = Graphics::NativeWindow::Get()->GetWindowSize();
+
+            std::string           filename = "screenshot_" + std::to_string(std::time(nullptr)) + ".png";
+            std::filesystem::path ssdir = std::filesystem::current_path() / "Screenshots";
+
+            if (!std::filesystem::exists(ssdir)) {
+                std::filesystem::create_directory(ssdir);
+            }
+
+            std::filesystem::path ssfile = ssdir / filename;
+            lodepng::encode(
+                ssfile.string(),
+                image_data,
+                rect.Width,
+                rect.Height);
+        });
+
+        return;
+    }
+
     m_Engine->OnKeyDown(state);
 }
 
@@ -574,18 +610,6 @@ bool Gameplay::Attach()
         m_exitBtn = std::make_unique<Image>(playingPath / "Exit.png");
         m_exitBtn->Position = UDim2::fromOffset(btnExitRect[0].X, btnExitRect[0].Y); // Fix Exit not functional with Playing.ini
         m_exitBtn->AnchorPoint = { btnExitPos[0].AnchorPointX, btnExitPos[0].AnchorPointY };
-
-        // auto OnButtonHover = [&](int state) {
-        //     m_drawExitButton = state;
-        // };
-
-        // auto OnButtonClick = [&]() {
-        //     m_doExit = true;
-        // };
-
-        // m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
-        // m_exitButtonFunc->OnMouseClick = OnButtonClick;
-        // m_exitButtonFunc->OnMouseHover = OnButtonHover;
 
         m_lnComboNum->Position = UDim2::fromOffset(lnComboPos[0].X, lnComboPos[0].Y);
         m_lnComboNum->NumberPosition = IntToPos(lnComboPos[0].Direction);

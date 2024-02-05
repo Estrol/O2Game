@@ -21,6 +21,7 @@ public:
     void Update(double delta) override;
     void Draw(double delta) override;
     void Input(double delta) override;
+    void FixedUpdate(double fixedDelta) override;
 
     void OnKeyDown(const Inputs::State &state) override;
     void OnKeyUp(const Inputs::State &state) override;

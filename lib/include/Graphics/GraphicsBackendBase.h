@@ -2,6 +2,7 @@
 #define __GRAPHICSBACKENDBASE_H_
 
 #include "Utils/Rect.h"
+#include <functional>
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -140,7 +141,12 @@ namespace Graphics {
             virtual void SetClearDepth(float depth) = 0;
             virtual void SetClearStencil(uint32_t stencil) = 0;
 
+            virtual void CaptureFrame(std::function<void(std::vector<unsigned char>)>) = 0;
+
             virtual BlendHandle CreateBlendState(TextureBlendInfo blendInfo) = 0;
+
+        protected:
+            std::vector<std::function<void(std::vector<unsigned char>)>> screenshotQueues;
         };
     } // namespace Backends
 } // namespace Graphics

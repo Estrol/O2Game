@@ -22,8 +22,8 @@ namespace Graphics {
         ~VKTexture2D() override;
 
         void Load(std::filesystem::path path) override;
-        void Load(const char *buf, size_t size) override;
-        void Load(const char *pixbuf, uint32_t width, uint32_t height) override;
+        void Load(const unsigned char *buf, size_t size) override;
+        void Load(const unsigned char *pixbuf, uint32_t width, uint32_t height) override;
 
         const void *GetId() override;
         const Rect  GetSize() override;

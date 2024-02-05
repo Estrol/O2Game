@@ -41,6 +41,7 @@ void O2Game::Run(int argv, char **argc)
     runInfo.renderFrameRate = 1000.0f;
     runInfo.renderVsync = true;
     runInfo.inputFrameRate = 1000.0f;
+    runInfo.fixedFrameRate = 65.0f;
 
     Graphics::TextureSamplerInfo sampler = {};
     sampler.FilterMag = Graphics::TextureFilter::Nearest;

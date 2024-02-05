@@ -13,14 +13,15 @@ using namespace Graphics;
 
 Rectangle::Rectangle() : Base()
 {
-    std::vector<char> pixels = {
-        (char)0x255, (char)0x255, (char)0x255, (char)0x255
-    };
+    std::vector<unsigned char> pixels(200 * 200 * 4);
+    for (int i = 0; i < 200 * 200 * 4; i++) {
+        pixels[i] = 255;
+    }
 
     auto image_ptr = Renderer::Get()->LoadTexture(
         pixels.data(),
-        1,
-        1);
+        200,
+        200);
 
     m_texture = std::unique_ptr<Graphics::Texture2D>(image_ptr);
 }

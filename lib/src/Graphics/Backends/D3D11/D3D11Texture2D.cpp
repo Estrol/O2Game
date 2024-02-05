@@ -5,8 +5,8 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "D3D11Texture2D.h"
 #include "D3D11Backend.h"
+#include "D3D11Texture2D.h"
 #include "Utils/Helper.h"
 #include <Exceptions/EstException.h>
 #include <Graphics/Renderer.h>
@@ -34,10 +34,10 @@ void D3D11Texture2D::Load(std::filesystem::path path)
 
     auto data = Misc::Filesystem::ReadFile(path);
 
-    Load((const char *)data.data(), data.size());
+    Load((const unsigned char *)data.data(), data.size());
 }
 
-void D3D11Texture2D::Load(const char *buf, size_t size)
+void D3D11Texture2D::Load(const unsigned char *buf, size_t size)
 {
     if (Texture != nullptr) {
         throw Exceptions::EstException("Texture already loaded");

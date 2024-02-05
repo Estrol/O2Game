@@ -5,9 +5,9 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "VulkanTexture2D.h"
 #include "VulkanBackend.h"
 #include "VulkanDescriptor.h"
+#include "VulkanTexture2D.h"
 #include "vkinit.h"
 #include <Exceptions/EstException.h>
 #include <Misc/Filesystem.h>
@@ -46,10 +46,10 @@ void VKTexture2D::Load(std::filesystem::path path)
 
     auto data = Misc::Filesystem::ReadFile(path);
 
-    Load((const char *)data.data(), data.size());
+    Load((const unsigned char *)data.data(), data.size());
 }
 
-void VKTexture2D::Load(const char *buf, size_t size)
+void VKTexture2D::Load(const unsigned char *buf, size_t size)
 {
     if (Descriptor) {
         throw EstException("Cannot initialize texture twice");
@@ -76,11 +76,11 @@ void VKTexture2D::Load(const char *buf, size_t size)
 
     Descriptor->Channels = 4; // always use RGBA
 
-    Load((const char *)image_data, (uint32_t)Descriptor->Size.Width, (uint32_t)Descriptor->Size.Height);
+    Load((const unsigned char *)image_data, (uint32_t)Descriptor->Size.Width, (uint32_t)Descriptor->Size.Height);
     stbi_image_free(image_data);
 }
 
-void VKTexture2D::Load(const char *pixbuf, uint32_t width, uint32_t height)
+void VKTexture2D::Load(const unsigned char *pixbuf, uint32_t width, uint32_t height)
 {
     auto renderer = Graphics::Renderer::Get();
     if (renderer->GetAPI() != Graphics::API::Vulkan) {

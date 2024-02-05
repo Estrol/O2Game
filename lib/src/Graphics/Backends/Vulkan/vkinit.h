@@ -34,6 +34,14 @@ namespace vkinit {
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 
+    VkImageMemoryBarrier image_memory_barrier(
+        VkImage                 image,
+        VkAccessFlags           srcAccessMask,
+        VkAccessFlags           dstAccessMask,
+        VkImageLayout           oldImageLayout,
+        VkImageLayout           newImageLayout,
+        VkImageSubresourceRange subresourceRange);
+
     VkImageCreateInfo image_create_info(VkFormat format, VkSampleCountFlagBits sample, VkImageUsageFlags usageFlags, VkExtent3D extent);
 
     VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);

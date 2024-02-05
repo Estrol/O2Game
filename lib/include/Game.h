@@ -35,6 +35,7 @@ struct RunInfo
     float renderFrameRate;
     bool  renderVsync;
     float inputFrameRate;
+    float fixedFrameRate;
 };
 
 class Game

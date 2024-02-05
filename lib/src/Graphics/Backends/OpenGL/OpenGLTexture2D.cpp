@@ -42,10 +42,10 @@ void GLTexture2D::Load(std::filesystem::path path)
 
     auto data = Misc::Filesystem::ReadFile(path);
 
-    Load((const char *)data.data(), data.size());
+    Load((const unsigned char *)data.data(), data.size());
 }
 
-void GLTexture2D::Load(const char *buf, size_t size)
+void GLTexture2D::Load(const unsigned char *buf, size_t size)
 {
     if (Data.Id != kInvalidTexture) {
         throw Exceptions::EstException("Texture already loaded");
@@ -64,11 +64,11 @@ void GLTexture2D::Load(const char *buf, size_t size)
     }
 
     Data.Channels = 4; // always use RGBA
-    Load((const char *)image_data, Data.Size.Width, Data.Size.Height);
+    Load((const unsigned char *)image_data, Data.Size.Width, Data.Size.Height);
     stbi_image_free(image_data);
 }
 
-void GLTexture2D::Load(const char *pixbuf, uint32_t width, uint32_t height)
+void GLTexture2D::Load(const unsigned char *pixbuf, uint32_t width, uint32_t height)
 {
     if (Data.Id != kInvalidTexture) {
         throw Exceptions::EstException("Texture already loaded");

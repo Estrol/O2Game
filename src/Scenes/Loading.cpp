@@ -12,7 +12,10 @@
 
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
+#include <Graphics/Renderer.h>
 #include <Logs.h>
+
+#include <Misc/Lodepng.h>
 
 #include <Configuration.h>
 
@@ -212,7 +215,7 @@ bool Loading::Attach()
     m_counter = 0.0f;
     SkinManager::Get()->ReloadSkin();
 
-    Env::SetFloat("ParameterRate", 1.5f);
+    Env::SetFloat("ParameterRate", 1.0f);
 
     Env::SetInt("Key", -1);
     Env::SetInt("Difficulty", 2);

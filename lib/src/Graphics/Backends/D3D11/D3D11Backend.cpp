@@ -14,9 +14,8 @@
 #include <Graphics/NativeWindow.h>
 #include <SDl2/SDL_syswm.h>
 
-#include "../../Shaders/image.spv.h"
-#include "../../Shaders/position.spv.h"
-#include "../../Shaders/solid.spv.h"
+#include "../../Shaders/SPV/image.spv.h"
+#include "../../Shaders/SPV/position.spv.h"
 
 // #include <spirv_cross/spirv_hlsl.hpp>
 

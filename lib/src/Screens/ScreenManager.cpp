@@ -32,12 +32,22 @@ void Manager::Update(double delta)
             m_CurrentScreen->Update(delta);
         }
     }
+
+    while (!m_UpdateQueue.empty()) {
+        m_UpdateQueue.front()();
+        m_UpdateQueue.erase(m_UpdateQueue.begin());
+    }
 }
 
 void Manager::Draw(double delta)
 {
     if (m_CurrentScreen != nullptr) {
         m_CurrentScreen->Draw(delta);
+    }
+
+    while (!m_DrawQueue.empty()) {
+        m_DrawQueue.front()();
+        m_DrawQueue.erase(m_DrawQueue.begin());
     }
 }
 
@@ -46,12 +56,22 @@ void Manager::Input(double delta)
     if (m_CurrentScreen != nullptr) {
         m_CurrentScreen->Input(delta);
     }
+
+    while (!m_InputQueue.empty()) {
+        m_InputQueue.front()();
+        m_InputQueue.erase(m_InputQueue.begin());
+    }
 }
 
 void Manager::FixedUpdate(double fixedDelta)
 {
     if (m_CurrentScreen != nullptr) {
         m_CurrentScreen->FixedUpdate(fixedDelta);
+    }
+
+    while (!m_FixedUpdateQueue.empty()) {
+        m_FixedUpdateQueue.front()();
+        m_FixedUpdateQueue.erase(m_FixedUpdateQueue.begin());
     }
 }
 
@@ -82,6 +102,27 @@ void Manager::SetScreen(uint32_t Id)
 
     m_CurrentScreen = m_Screens[Id].get();
     m_CurrentScreen->Attach();
+}
+
+void Manager::Enqueue(EnqueueType type, std::function<void()> func)
+{
+    switch (type) {
+        case EnqueueType::Update:
+            m_UpdateQueue.push_back(func);
+            break;
+
+        case EnqueueType::Draw:
+            m_DrawQueue.push_back(func);
+            break;
+
+        case EnqueueType::Input:
+            m_InputQueue.push_back(func);
+            break;
+
+        case EnqueueType::FixedUpdate:
+            m_FixedUpdateQueue.push_back(func);
+            break;
+    }
 }
 
 Manager *Manager::Get()

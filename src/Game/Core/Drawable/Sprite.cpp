@@ -28,15 +28,18 @@ Sprite::Sprite()
     m_CurrentTime = 0.0f;
 }
 
-Sprite::Sprite(std::vector<std::filesystem::path> paths, float fps) : Sprite::Sprite(paths, 0, fps)
+Sprite::Sprite(std::vector<std::filesystem::path> paths, float fps)
+    : Sprite::Sprite(paths, 0, fps)
 {
 }
 
-Sprite::Sprite(std::vector<Image *> paths, float fps) : Sprite::Sprite(paths, 0, fps)
+Sprite::Sprite(std::vector<Image *> paths, float fps)
+    : Sprite::Sprite(paths, 0, fps)
 {
 }
 
-Sprite::Sprite(std::vector<std::filesystem::path> paths, int repeatIndex, float fps) : Sprite::Sprite()
+Sprite::Sprite(std::vector<std::filesystem::path> paths, int repeatIndex, float fps)
+    : Sprite::Sprite()
 {
     for (auto &path : paths) {
         m_Images.push_back(new Image(path));
@@ -49,7 +52,8 @@ Sprite::Sprite(std::vector<std::filesystem::path> paths, int repeatIndex, float 
     m_ShouldDispose = true;
 }
 
-Sprite::Sprite(std::vector<Image *> paths, int repeatIndex, float fps) : Sprite::Sprite()
+Sprite::Sprite(std::vector<Image *> paths, int repeatIndex, float fps)
+    : Sprite::Sprite()
 {
     m_Images = paths;
 

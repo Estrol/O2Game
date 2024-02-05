@@ -3,53 +3,8 @@ cmake_minimum_required(VERSION 3.8.0)
 file(GLOB_RECURSE HEADERS "./include/*.h" "./include/*.hpp")
 
 if (WIN32)
-	set(glslangValidator "$ENV{VULKAN_SDK}/Bin/glslangValidator.exe")
-elseif (UNIX AND NOT APPLE)
-	set(glslangValidator "$ENV{VULKAN_SDK}/Bin/glslangValidator")
-else()
-	message(FATAL_ERROR "Unsupported platform")
-endif()
-
-# add __ENABLE_D3D11__ preprocessor
-if (WIN32)
     add_compile_definitions("__ENABLE_D3D11__")
 endif()
-
-set(SHADER_LOCATION "${CMAKE_SOURCE_DIR}/lib/src/Graphics/Shaders")
-
-set(SHADERS
-    "${SHADER_LOCATION}/image.frag" 
-    "${SHADER_LOCATION}/solid.frag" 
-    "${SHADER_LOCATION}/position.vert" 
-    "${SHADER_LOCATION}/image_round.frag" 
-    "${SHADER_LOCATION}/solid_round.frag" 
-    "${SHADER_LOCATION}/position_round.vert" 
-)
-
-foreach(shader IN LISTS SHADERS)
-    set(out_string ${shader})
-    string(REPLACE "${SHADER_LOCATION}/" "" out_string ${out_string})
-    string(REPLACE ".frag" "" out_string ${out_string})
-    string(REPLACE ".vert" "" out_string ${out_string})
-
-    set(out_file "${SHADER_LOCATION}/${out_string}.spv.h")
-    message("[SHADER] Compiling shaders ${shader} -> ${out_file}")
-
-    execute_process(
-        COMMAND "${glslangValidator}" 
-            -V -o ${out_file}
-            --vn "__glsl_${out_string}" ${shader}
-
-        RESULT_VARIABLE out 
-        
-    )
-
-    if (out EQUAL 1)
-        message(FATAL_ERROR "glslangValidator compile fail")
-    endif()
-endforeach()
-
-add_compile_definitions("EST_EXPORT")
 
 add_library(EstEngine STATIC ${HEADERS}
     "src/Game.cpp" 
@@ -99,8 +54,6 @@ add_library(EstEngine STATIC ${HEADERS}
     "src/Audio/AudioStream.cpp" 
     "src/Audio/AudioSample.cpp" 
     "src/Audio/AudioEncoder.cpp" 
-    #"src/Audio/AudioSampleChannel.cpp"
-    #"src/Audio/Backend/miniaudio_decoders.cpp"
 
     # Math
     "src/Math/Color3.cpp" 
@@ -129,6 +82,7 @@ add_library(EstEngine STATIC ${HEADERS}
     "src/Misc/Filesystem.cpp"
     "src/Misc/MD5.cpp"
     "src/Graphics/Utils/stb_image.cpp"
+    "src/Graphics/Utils/lodepng.cpp"
 
     # Imgui
     "src/Imgui/imgui.cpp" 

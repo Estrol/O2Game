@@ -15,22 +15,26 @@ Image::Image() : UI::Image::Image()
     AlphaBlend = false;
 }
 
-Image::Image(std::filesystem::path path) : UI::Image::Image(path)
+Image::Image(std::filesystem::path path)
+    : UI::Image::Image(path)
 {
     AlphaBlend = false;
 }
 
-Image::Image(Graphics::Texture2D *texture) : UI::Image::Image(texture)
+Image::Image(Graphics::Texture2D *texture)
+    : UI::Image::Image(texture)
 {
     AlphaBlend = false;
 }
 
-Image::Image(const char *buf, size_t size) : UI::Image::Image(buf, size)
+Image::Image(const char *buf, size_t size)
+    : UI::Image::Image(buf, size)
 {
     AlphaBlend = false;
 }
 
-Image::Image(const char *pixbuf, uint32_t width, uint32_t height) : UI::Image::Image(pixbuf, width, height)
+Image::Image(const char *pixbuf, uint32_t width, uint32_t height)
+    : UI::Image::Image(pixbuf, width, height)
 {
     AlphaBlend = false;
 }

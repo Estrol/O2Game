@@ -47,10 +47,12 @@ namespace Graphics {
         */
 
         Texture2D *LoadTexture(std::filesystem::path path);
-        Texture2D *LoadTexture(const char *buf, size_t size);
-        Texture2D *LoadTexture(const char *pixbuf, uint32_t width, uint32_t height);
+        Texture2D *LoadTexture(const unsigned char *buf, size_t size);
+        Texture2D *LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height);
 
         Graphics::Backends::BlendHandle CreateBlendState(Graphics::Backends::TextureBlendInfo info);
+
+        void CaptureFrame(std::function<void(std::vector<unsigned char>)> callback);
 
         static Renderer *Get();
         static void      Destroy();

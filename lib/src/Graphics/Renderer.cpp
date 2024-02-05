@@ -180,7 +180,7 @@ Texture2D *Renderer::LoadTexture(std::filesystem::path path)
     return texture;
 }
 
-Texture2D *Renderer::LoadTexture(const char *buf, size_t size)
+Texture2D *Renderer::LoadTexture(const unsigned char *buf, size_t size)
 {
     auto texture = CreateTexture(GetAPI(), m_Sampler);
 
@@ -189,13 +189,18 @@ Texture2D *Renderer::LoadTexture(const char *buf, size_t size)
     return texture;
 }
 
-Texture2D *Renderer::LoadTexture(const char *pixbuf, uint32_t width, uint32_t height)
+Texture2D *Renderer::LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height)
 {
     auto texture = CreateTexture(GetAPI(), m_Sampler);
 
     texture->Load(pixbuf, width, height);
 
     return texture;
+}
+
+void Renderer::CaptureFrame(std::function<void(std::vector<unsigned char>)> callback)
+{
+    return m_Backend->CaptureFrame(callback);
 }
 
 Graphics::Backends::BlendHandle Renderer::CreateBlendState(Graphics::Backends::TextureBlendInfo info)

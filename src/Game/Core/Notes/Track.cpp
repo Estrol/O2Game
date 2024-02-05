@@ -45,37 +45,48 @@ Track::~Track()
 
 void Track::Update(double delta)
 {
+    int ObjectCount = 0;
+    int InactiveObjectCount = 0;
+
     double trackPos = m_engine->GetTrackPosition();
     double gameAudioPos = m_engine->GetGameAudioPosition();
     double preBufferPos = m_engine->GetPrebufferTiming();
 
     for (auto &note : m_notes) {
-        if (!note->IsPassed()) {
-            if (!note->IsDrawable()) {
-                double startTime = note->GetInitialTrackPosition();
+        if (++ObjectCount < kMaxObjectCount) {
+            if (!note->IsPassed()) {
+                if (!note->IsDrawable()) {
+                    double startTime = note->GetInitialTrackPosition();
 
-                if (trackPos - startTime > preBufferPos) {
-                    note->SetDrawable(true);
+                    if (trackPos - startTime > preBufferPos) {
+                        note->SetDrawable(true);
+                    }
                 }
-            }
 
-            if (note->GetStartTime() <= gameAudioPos) {
-                m_keySound = note->GetKeysoundId();
-                m_keyVolume = note->GetKeyVolume();
-                m_keyPan = note->GetKeyPan();
-            }
+                if (note->GetStartTime() <= gameAudioPos) {
+                    m_keySound = note->GetKeysoundId();
+                    m_keyVolume = note->GetKeyVolume();
+                    m_keyPan = note->GetKeyPan();
+                }
 
-            note->Update(delta);
+                note->Update(delta);
+            } else {
+                m_inactive_notes.push_back(note);
+            }
         } else {
-            m_inactive_notes.push_back(note);
+            break;
         }
     }
 
     for (auto &note : m_inactive_notes) {
-        if (!note->IsRemoveable()) {
-            note->Update(delta);
+        if (++InactiveObjectCount < kMaxObjectCount) {
+            if (!note->IsRemoveable()) {
+                note->Update(delta);
+            } else {
+                m_noteCaches.push_back(note);
+            }
         } else {
-            m_noteCaches.push_back(note);
+            break;
         }
     }
 

@@ -9,12 +9,21 @@
 #define __SCREENSMANAGER_H_
 
 #include "Base.h"
+#include <functional>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 class Game;
 
 namespace Screens {
+    enum EnqueueType {
+        Update,
+        Draw,
+        Input,
+        FixedUpdate
+    };
+
     class Manager
     {
     public:
@@ -31,6 +40,8 @@ namespace Screens {
         void AddScreen(uint32_t Id, Base *screen);
         void SetScreen(uint32_t Id);
 
+        void Enqueue(EnqueueType type, std::function<void()> func);
+
         static Manager *Get();
         static void     Destroy();
 
@@ -39,6 +50,10 @@ namespace Screens {
         ~Manager() = default;
 
         std::unordered_map<uint32_t, std::unique_ptr<Base>> m_Screens;
+        std::vector<std::function<void()>>                  m_UpdateQueue;
+        std::vector<std::function<void()>>                  m_DrawQueue;
+        std::vector<std::function<void()>>                  m_InputQueue;
+        std::vector<std::function<void()>>                  m_FixedUpdateQueue;
 
         Game *m_Game;
         Base *m_CurrentScreen;

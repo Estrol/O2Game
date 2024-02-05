@@ -55,7 +55,6 @@ namespace Graphics {
             VkDescriptorSetLayout descriptorSetLayout;
 
             VkShaderModule vertShaderModule;
-            VkShaderModule solidFragShaderModule;
             VkShaderModule imageFragShaderModule;
 
             VkSampleCountFlagBits MSAASampleCount;
@@ -96,6 +95,14 @@ namespace Graphics {
             bool isValid;
         };
 
+        struct VulkanPreviousFrame
+        {
+            VkImage        image;
+            VkDeviceMemory memory;
+
+            VulkanBuffer buffer;
+        };
+
         struct VulkanSwapChain
         {
             std::vector<VkFramebuffer> framebuffers;
@@ -103,6 +110,7 @@ namespace Graphics {
             std::vector<VkImage>       images;
 
             std::vector<VulkanFrame> frames;
+            VulkanPreviousFrame      captureFrame;
             VulkanFrame              uploadContext;
             VkPipelineLayout         pipelineLayout;
 
@@ -120,6 +128,7 @@ namespace Graphics {
             VkRenderPass   renderpass;
             uint32_t       imageCount;
             uint32_t       swapchainIndex;
+            uint32_t       lastSwapchainIndex;
         };
 
         struct VulkanRenderPipeline
@@ -190,6 +199,8 @@ namespace Graphics {
 
             virtual BlendHandle CreateBlendState(TextureBlendInfo blendInfo) override;
 
+            virtual void CaptureFrame(std::function<void(std::vector<unsigned char>)>) override;
+
             /* Internal */
             VulkanDescriptor *CreateDescriptor();
             void              DestroyDescriptor(VulkanDescriptor *descriptor, bool _delete = true);
@@ -198,6 +209,7 @@ namespace Graphics {
             VulkanSwapChain *GetSwapchain();
 
             void ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function);
+            void AsyncSubmit(std::function<void(VkCommandBuffer)> &&function);
 
         private:
             void CreateInstance();
@@ -213,6 +225,8 @@ namespace Graphics {
             void DestroyBuffers();
 
             void         FlushQueue();
+            void         FlushScreenshotQueue();
+            bool         WaitForFrame();
             void         ResizeBuffer(VkDeviceSize vertices, VkDeviceSize indices);
             VulkanFrame &GetCurrentFrame();
             VulkanFrame &GetLastFrame();
@@ -240,6 +254,7 @@ namespace Graphics {
             bool m_FrameBegin;
             bool m_HasImgui = false;
             bool m_VSync = false;
+            bool m_FenceRequireReset = false;
 
             uint32_t m_CurrentFrame = 0;
 

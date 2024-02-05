@@ -6,6 +6,8 @@ if(NOT DEFINED ENV{VULKAN_SDK})
     message(FATAL_ERROR "Environment VULKAN_SDK is required to compile the shaders!")
 endif()
 
+# check additional parameters
+
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")

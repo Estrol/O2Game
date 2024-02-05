@@ -31,7 +31,7 @@ Image::Image(Graphics::Texture2D *texture)
 Image::Image(const char *buf, size_t size)
 {
     auto renderer = Renderer::Get();
-    auto image = renderer->LoadTexture(buf, size);
+    auto image = renderer->LoadTexture((const unsigned char *)buf, size);
 
     m_texture = std::unique_ptr<Texture2D>(image);
 }
@@ -39,7 +39,7 @@ Image::Image(const char *buf, size_t size)
 Image::Image(const char *pixbuf, uint32_t width, uint32_t height)
 {
     auto renderer = Renderer::Get();
-    auto image = renderer->LoadTexture(pixbuf, width, height);
+    auto image = renderer->LoadTexture((const unsigned char *)pixbuf, width, height);
 
     m_texture = std::unique_ptr<Texture2D>(image);
 }

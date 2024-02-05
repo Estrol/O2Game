@@ -36,6 +36,7 @@ namespace Graphics {
         struct OpenGLDrawItem
         {
             uint32_t           count;
+            uint32_t           instanceCount;
             ShaderFragmentType type;
             BlendHandle        blend;
             const void        *image;
@@ -90,6 +91,8 @@ namespace Graphics {
             virtual void SetClearDepth(float depth) override;
             virtual void SetClearStencil(uint32_t stencil) override;
 
+            virtual void CaptureFrame(std::function<void(std::vector<unsigned char>)> imageData) override;
+
             virtual BlendHandle CreateBlendState(TextureBlendInfo blendInfo) override;
 
             GLuint CreateTexture();
@@ -100,6 +103,7 @@ namespace Graphics {
             void CreateDefaultBlend();
 
             void       FlushQueue();
+            void       FlushScreenshotQueue();
             OpenGLData Data;
 
             bool m_HasImgui = false;

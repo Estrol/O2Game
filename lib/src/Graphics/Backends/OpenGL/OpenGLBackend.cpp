@@ -16,9 +16,8 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_opengl_glext.h>
 
-#include "../../Shaders/image.spv.h"
-#include "../../Shaders/position.spv.h"
-#include "../../Shaders/solid.spv.h"
+#include "../../Shaders/SPV/image.spv.h"
+#include "../../Shaders/SPV/position.spv.h"
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
 #include <algorithm>
@@ -124,7 +123,7 @@ void OpenGL::Init()
 void OpenGL::CreateShader()
 {
     std::vector<std::pair<ShaderFragmentType, std::pair<const uint32_t *, size_t>>> shaders = {
-        { ShaderFragmentType::Solid, { __glsl_solid, sizeof(__glsl_solid) / sizeof(__glsl_image[0]) } },
+        { ShaderFragmentType::Solid, { __glsl_image, sizeof(__glsl_image) / sizeof(__glsl_image[0]) } },
         { ShaderFragmentType::Image, { __glsl_image, sizeof(__glsl_image) / sizeof(__glsl_image[0]) } }
     };
 
@@ -307,6 +306,33 @@ void OpenGL::EndFrame()
     }
 
     SDL_GL_SwapWindow((SDL_Window *)Graphics::NativeWindow::Get()->GetWindow());
+    FlushScreenshotQueue();
+}
+
+void OpenGL::FlushScreenshotQueue()
+{
+    if (screenshotQueues.size() == 0) {
+        return;
+    }
+
+    auto                       rect = Graphics::NativeWindow::Get()->GetWindowSize();
+    std::vector<unsigned char> pixels(rect.Width * rect.Height * 4);
+
+    glReadPixels(0, 0, rect.Width, rect.Height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    for (int y = 0; y < rect.Height / 2; y++) {
+        for (int x = 0; x < rect.Width; x++) {
+            for (int c = 0; c < 4; c++) {
+                std::swap(pixels[(y * rect.Width + x) * 4 + c], pixels[((rect.Height - 1 - y) * rect.Width + x) * 4 + c]);
+            }
+        }
+    }
+
+    for (auto &it : screenshotQueues) {
+        it(pixels);
+    }
+
+    screenshotQueues.clear();
 }
 
 void OpenGL::Push(SubmitInfo &info)
@@ -339,6 +365,7 @@ void OpenGL::Push(SubmitInfo &info)
     OpenGLDrawItem item = {};
     item.blend = info.alphablend;
     item.count = (uint32_t)info.indices.size();
+    item.instanceCount = 1;
     item.type = info.fragmentType;
     item.uiRadius = info.uiRadius;
     item.image = info.image;
@@ -350,6 +377,48 @@ void OpenGL::Push(SubmitInfo &info)
 
 void OpenGL::Push(std::vector<SubmitInfo> &infos)
 {
+    if (infos.size() == 0) {
+        return;
+    }
+
+    uint32_t maxSize = drawData.vertexSize + (uint32_t)(infos[0].vertices.size() * infos.size());
+
+    if (maxSize >= drawData.vertex.size()) {
+        drawData.vertex.resize(maxSize);
+    }
+
+    uint32_t inMaxSize = drawData.indiceSize + (uint32_t)(infos[0].indices.size() * infos.size());
+
+    if (inMaxSize >= drawData.indices.size()) {
+        drawData.indices.resize(inMaxSize);
+    }
+
+    for (auto &info : infos) {
+        for (auto &it : info.vertices) {
+            it.pos.x = std::round(it.pos.x);
+            it.pos.y = std::round(it.pos.y);
+
+            drawData.vertex[drawData.vertexSize++] = it;
+        }
+
+        for (auto &it : info.indices) {
+            drawData.indices[drawData.indiceSize++] = it + drawData.currentIndexCount;
+        }
+
+        drawData.currentIndexCount += (uint32_t)info.vertices.size();
+    }
+
+    OpenGLDrawItem item = {};
+    item.blend = infos[0].alphablend;
+    item.count = (uint32_t)infos[0].indices.size();
+    item.instanceCount = (uint32_t)infos.size();
+    item.type = infos[0].fragmentType;
+    item.uiRadius = infos[0].uiRadius;
+    item.image = infos[0].image;
+    item.uiSize = infos[0].uiSize;
+    item.clipRect = infos[0].clipRect;
+
+    submitInfos.push_back(item);
 }
 
 GLenum mapBlendFactor(BlendFactor factor)
@@ -522,10 +591,14 @@ void OpenGL::FlushQueue()
 
         glScissor(x, y, w, h);
 
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, (void *)(firstIndex * sizeof(uint16_t)));
+        glDrawElements(
+            GL_TRIANGLES,
+            indexCount * info.instanceCount,
+            GL_UNSIGNED_SHORT,
+            (void *)(firstIndex * sizeof(uint16_t)));
 
-        vertex_offset += indexCount;
-        indices_offset += indexCount;
+        vertex_offset += indexCount * info.instanceCount;
+        indices_offset += indexCount * info.instanceCount;
     }
 
     submitInfos.clear();
@@ -572,6 +645,11 @@ BlendHandle OpenGL::CreateBlendState(TextureBlendInfo blendInfo)
 {
     blendStates[glBlendOperatioId] = blendInfo;
     return glBlendOperatioId++;
+}
+
+void OpenGL::CaptureFrame(std::function<void(std::vector<unsigned char>)> imageData)
+{
+    screenshotQueues.push_back(imageData);
 }
 
 void OpenGL::ImGui_Init()
