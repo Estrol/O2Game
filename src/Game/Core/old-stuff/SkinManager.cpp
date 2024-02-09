@@ -6,6 +6,7 @@
  */
 
 #include "SkinManager.h"
+#include <Exceptions/EstException.h>
 
 SkinManager *SkinManager::m_instance = nullptr;
 
@@ -52,7 +53,7 @@ void SkinManager::LoadSkin(std::string skinName)
     if (m_useLua) {
         m_luaScripting = std::make_unique<LuaScripting>(selectedSkin / "Scripts");
     } else {
-        m_luaScripting.reset();
+        throw Exceptions::EstException("Legacy skinning is not supported, please use Lua skinning.");
     }
 }
 

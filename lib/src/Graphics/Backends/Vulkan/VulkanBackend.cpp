@@ -66,6 +66,10 @@ void Vulkan::ReInit()
 {
     vkDeviceWaitIdle(m_Vulkan.vkbDevice.device);
 
+    if (m_SwapchainReady) {
+        return;
+    }
+
     m_PerFrameDeletionQueue.flush();
     m_SwapchainDeletionQueue.flush();
 
@@ -73,6 +77,8 @@ void Vulkan::ReInit()
         bool result = InitSwapchain();
         if (!result)
             return;
+
+        Logs::Puts("[Renderer] [Vulkan] Reinitializing swapchain and framebuffers");
 
         InitMultiSampling();
         InitFramebuffers();
@@ -86,6 +92,8 @@ void Vulkan::ReInit()
 void Graphics::Backends::Vulkan::Shutdown()
 {
     if (m_Initialized) {
+        Logs::Puts("[Renderer] [Vulkan] Shutting down Vulkan");
+
         vkDeviceWaitIdle(m_Vulkan.vkbDevice.device);
 
         if (m_FrameBegin) {
@@ -112,37 +120,11 @@ void Graphics::Backends::Vulkan::Shutdown()
     }
 }
 
-VkSampleCountFlagBits GetMaxUsableSampleCount(VkPhysicalDevice physicalDevice)
-{
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-
-    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-    if (counts & VK_SAMPLE_COUNT_64_BIT) {
-        return VK_SAMPLE_COUNT_64_BIT;
-    }
-    if (counts & VK_SAMPLE_COUNT_32_BIT) {
-        return VK_SAMPLE_COUNT_32_BIT;
-    }
-    if (counts & VK_SAMPLE_COUNT_16_BIT) {
-        return VK_SAMPLE_COUNT_16_BIT;
-    }
-    if (counts & VK_SAMPLE_COUNT_8_BIT) {
-        return VK_SAMPLE_COUNT_8_BIT;
-    }
-    if (counts & VK_SAMPLE_COUNT_4_BIT) {
-        return VK_SAMPLE_COUNT_4_BIT;
-    }
-    if (counts & VK_SAMPLE_COUNT_2_BIT) {
-        return VK_SAMPLE_COUNT_2_BIT;
-    }
-
-    return VK_SAMPLE_COUNT_1_BIT;
-}
-
 /* Vulkan Create Instance */
 void Vulkan::CreateInstance()
 {
+    Logs::Puts("[Renderer] [Vulkan] Initializing Vulkan");
+
     memset(&m_Vulkan, 0, sizeof(m_Vulkan));
 
     if (volkInitialize() != VK_SUCCESS) {
@@ -185,9 +167,15 @@ void Vulkan::CreateInstance()
 
     volkLoadDevice(vkb_device.device);
 
+    // get GPU name
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(physical_device.physical_device, &deviceProperties);
+
+    Logs::Puts("[Renderer] [Vulkan] Using GPU: %s", deviceProperties.deviceName);
+
     auto queue = vkb_device.get_queue(vkb::QueueType::graphics).value();
     auto queueFamily = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
-    auto maxSampleCount = GetMaxUsableSampleCount(vkb_device.physical_device);
+    auto maxSampleCount = vkinit::get_max_usable_sample_count(vkb_device.physical_device);
 
     m_Vulkan.graphicsQueue = queue;
     m_Vulkan.graphicsQueueFamily = queueFamily;
@@ -209,6 +197,7 @@ bool Vulkan::InitSwapchain()
     builder.set_desired_format({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
         .set_old_swapchain(m_Swapchain.swapchain)
         .set_desired_extent((uint32_t)rect.Width, (uint32_t)rect.Height)
+        .set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
         .set_desired_present_mode(preset);
 
     auto resultbuild = builder.build();
@@ -220,6 +209,8 @@ bool Vulkan::InitSwapchain()
         m_Swapchain.swapchain.swapchain = VK_NULL_HANDLE;
         return false;
     }
+
+    Logs::Puts("[Renderer] [Vulkan] Initializing swapchain");
 
     vkb::destroy_swapchain(m_Swapchain.swapchain);
     m_Swapchain.swapchain = resultbuild.value();
@@ -236,6 +227,7 @@ bool Vulkan::InitSwapchain()
 
     m_Swapchain.imageViews = vkbviews.value();
     m_Swapchain.images = vkimages.value();
+    m_Swapchain.imageCount = (uint32_t)m_Swapchain.images.size();
 
     m_Vulkan.depthFormat = VK_FORMAT_D32_SFLOAT;
     m_Vulkan.swapchainFormat = m_Swapchain.swapchain.image_format;
@@ -288,15 +280,9 @@ bool Vulkan::InitSwapchain()
         m_Swapchain.depthImageMemory = VK_NULL_HANDLE;
     });
 
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_Vulkan.vkbDevice.physical_device, m_Vulkan.surface, &capabilities);
-
-    if (!(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
-        Logs::Puts("[Warning] %s", "Surface does not support VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
-    }
-
     {
         VkImageCreateInfo imageInfo = {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.extent = {
             .width = swapchainExtent.width,
             .height = swapchainExtent.height,
@@ -307,7 +293,7 @@ bool Vulkan::InitSwapchain()
         imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
         imageInfo.arrayLayers = 1;
         imageInfo.mipLevels = 1;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
         imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -351,6 +337,8 @@ bool Vulkan::InitSwapchain()
 
 void Vulkan::CreateRenderpass()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating render pass");
+
     std::array<VkAttachmentDescription, 3> attachments = {};
 
     attachments[0].format = m_Vulkan.swapchainFormat;
@@ -401,22 +389,19 @@ void Vulkan::CreateRenderpass()
 
     std::array<VkSubpassDependency, 2> dependencies = {};
 
-    // Depth attachment
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-    dependencies[0].dependencyFlags = 0;
-    // Color attachment
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = 0;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[1].dstSubpass = 0;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     dependencies[1].srcAccessMask = 0;
-    dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    dependencies[1].dependencyFlags = 0;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -437,6 +422,8 @@ void Vulkan::CreateRenderpass()
 
 void Vulkan::InitFramebuffers()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating framebuffers");
+
     auto                    rect = Graphics::NativeWindow::Get()->GetWindowSize();
     VkExtent2D              _windowExtent = { (uint32_t)rect.Width, (uint32_t)rect.Height };
     VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_Swapchain.renderpass, _windowExtent);
@@ -445,15 +432,14 @@ void Vulkan::InitFramebuffers()
     m_Swapchain.framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
 
     for (uint32_t i = 0; i < swapchain_imagecount; i++) {
+        VkImageView attachments[3];
 
-        std::array<VkImageView, 3> attachments = {
-            m_MultiSamplingTarget.color.view,
-            m_Swapchain.imageViews[i],
-            m_MultiSamplingTarget.depth.view
-        };
+        attachments[0] = m_MultiSamplingTarget.color.view;
+        attachments[1] = m_Swapchain.imageViews[i];
+        attachments[2] = m_MultiSamplingTarget.depth.view;
 
-        fb_info.pAttachments = attachments.data();
-        fb_info.attachmentCount = (uint32_t)attachments.size();
+        fb_info.pAttachments = attachments;
+        fb_info.attachmentCount = 3;
 
         auto result = vkCreateFramebuffer(m_Vulkan.vkbDevice.device, &fb_info, nullptr, &m_Swapchain.framebuffers[i]);
         if (result != VK_SUCCESS) {
@@ -472,10 +458,12 @@ void Vulkan::InitFramebuffers()
 
 void Vulkan::InitCommands()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating command buffers");
+
     VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(m_Vulkan.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    m_Swapchain.frames.resize(MAX_FRAMES_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    m_Swapchain.frames.resize(m_Swapchain.imageCount);
+    for (int i = 0; i < (int)m_Swapchain.imageCount; i++) {
         auto result = vkCreateCommandPool(m_Vulkan.vkbDevice.device, &commandPoolInfo, nullptr, &m_Swapchain.frames[i].commandPool);
 
         if (result != VK_SUCCESS) {
@@ -530,10 +518,12 @@ void Vulkan::InitCommands()
 
 void Vulkan::InitSyncStructures()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating sync structures");
+
     VkFenceCreateInfo     fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
     VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < (int)m_Swapchain.imageCount; i++) {
         auto result = vkCreateFence(m_Vulkan.vkbDevice.device, &fenceCreateInfo, nullptr, &m_Swapchain.frames[i].renderFence);
 
         if (result != VK_SUCCESS) {
@@ -541,25 +531,30 @@ void Vulkan::InitSyncStructures()
         }
 
         m_SwapchainDeletionQueue.push_function([=]() { vkDestroyFence(m_Vulkan.vkbDevice.device, m_Swapchain.frames[i].renderFence, nullptr); });
-
-        result = vkCreateSemaphore(m_Vulkan.vkbDevice.device, &semaphoreCreateInfo, nullptr, &m_Swapchain.frames[i].presentSemaphore);
-
-        if (result != VK_SUCCESS) {
-            throw Exceptions::EstException("Failed to create preset fence");
-        }
-
-        result = vkCreateSemaphore(m_Vulkan.vkbDevice.device, &semaphoreCreateInfo, nullptr, &m_Swapchain.frames[i].renderSemaphore);
-
-        if (result != VK_SUCCESS) {
-            throw Exceptions::EstException("Failed to create render fence");
-        }
-
-        m_SwapchainDeletionQueue.push_function([=]() {
-            vkDestroySemaphore(m_Vulkan.vkbDevice.device, m_Swapchain.frames[i].presentSemaphore, nullptr);
-            vkDestroySemaphore(m_Vulkan.vkbDevice.device, m_Swapchain.frames[i].renderSemaphore, nullptr); });
     }
 
-    auto result = vkCreateFence(m_Vulkan.vkbDevice.device, &fenceCreateInfo, nullptr, &m_Swapchain.uploadContext.renderFence);
+    auto result = vkCreateSemaphore(m_Vulkan.vkbDevice.device, &semaphoreCreateInfo, nullptr, &m_Semaphores.presentSemaphore);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to create preset fence");
+    }
+
+    result = vkCreateSemaphore(m_Vulkan.vkbDevice.device, &semaphoreCreateInfo, nullptr, &m_Semaphores.renderSemaphore);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to create render fence");
+    }
+
+    // reset the fences
+    for (int i = 0; i < (int)m_Swapchain.imageCount; i++) {
+        vkResetFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.frames[i].renderFence);
+    }
+
+    m_SwapchainDeletionQueue.push_function([=]() {
+            vkDestroySemaphore(m_Vulkan.vkbDevice.device, m_Semaphores.presentSemaphore, nullptr);
+            vkDestroySemaphore(m_Vulkan.vkbDevice.device, m_Semaphores.renderSemaphore, nullptr); });
+
+    result = vkCreateFence(m_Vulkan.vkbDevice.device, &fenceCreateInfo, nullptr, &m_Swapchain.uploadContext.renderFence);
 
     if (result != VK_SUCCESS) {
         throw Exceptions::EstException("Failed to create upload fence");
@@ -570,6 +565,8 @@ void Vulkan::InitSyncStructures()
 
 void Vulkan::InitDescriptors()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating descriptors");
+
     std::vector<VkDescriptorPoolSize> sizes = {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -621,6 +618,8 @@ void Vulkan::InitDescriptors()
 
 void Vulkan::InitShaders()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating shaders");
+
     const uint32_t *vertShaderCode = __glsl_position;
     const uint32_t *imageFragShaderCode = __glsl_image;
 
@@ -656,11 +655,7 @@ void Vulkan::InitShaders()
 
 void Vulkan::InitPipeline()
 {
-    // NONE, no blending
-    // BLEND, dstRGB = (srcRGB * srcA) + (dstRGB * (1-srcA)), dstA = srcA + (dstA * (1-srcA))
-    // ADD, dstRGB = (srcRGB * srcA) + dstRGB, dstA = dstA
-    // MOD, dstRGB = srcRGB * dstRGB, dstA = dstA
-    // MUL dstRGB = (srcRGB * dstRGB) + (dstRGB * (1-srcA)), dstA = (srcA * dstA) + (dstA * (1-srcA))
+    Logs::Puts("[Renderer] [Vulkan] Creating pipeline");
 
     TextureBlendInfo blendNone = {
         true,
@@ -721,6 +716,8 @@ void Vulkan::InitPipeline()
 
 void Vulkan::InitMultiSampling()
 {
+    Logs::Puts("[Renderer] [Vulkan] Creating MSAA multi sampling targets");
+
     auto       window = Graphics::NativeWindow::Get()->GetWindowSize();
     VkExtent3D extent = { (uint32_t)window.Width, (uint32_t)window.Height, (uint32_t)0 };
     extent.depth = 1;
@@ -864,7 +861,25 @@ void Vulkan::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function)
         throw Exceptions::EstException("Failed to submit queue");
     }
 
-    vkWaitForFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence, true, 9999999999);
+    while (true) {
+        auto result = vkWaitForFences(
+            m_Vulkan.vkbDevice.device,
+            1,
+            &m_Swapchain.uploadContext.renderFence,
+            true,
+            10000000);
+
+        if (result == VK_SUCCESS) {
+            break;
+        }
+
+        Logs::Puts("[Renderer] [Vulkan] [Warning] vkWaitForFences return %d after 10ms, retrying...", result);
+
+        if (result != VK_TIMEOUT) {
+            throw Exceptions::EstException("Failed to wait for fence");
+        }
+    }
+
     vkResetFences(m_Vulkan.vkbDevice.device, 1, &m_Swapchain.uploadContext.renderFence);
 
     vkResetCommandPool(m_Vulkan.vkbDevice.device, m_Swapchain.uploadContext.commandPool, 0);
@@ -872,12 +887,12 @@ void Vulkan::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function)
 
 VulkanFrame &Vulkan::GetCurrentFrame()
 {
-    return m_Swapchain.frames[m_CurrentFrame % MAX_FRAMES_IN_FLIGHT];
+    return m_Swapchain.frames[m_Swapchain.swapchainIndex];
 }
 
 VulkanFrame &Vulkan::GetLastFrame()
 {
-    return m_Swapchain.frames[(m_CurrentFrame - 1) % MAX_FRAMES_IN_FLIGHT];
+    return m_Swapchain.frames[m_Swapchain.lastSwapchainIndex];
 }
 
 void Vulkan::AsyncSubmit(std::function<void(VkCommandBuffer)> &&function)
@@ -911,6 +926,15 @@ void Vulkan::AsyncSubmit(std::function<void(VkCommandBuffer)> &&function)
         throw Exceptions::EstException("Failed to end command buffer");
     }
 
+    // create fence
+    VkFenceCreateInfo fenceInfo = vkinit::fence_create_info(0);
+    VkFence           fence;
+    result = vkCreateFence(m_Vulkan.vkbDevice.device, &fenceInfo, nullptr, &fence);
+
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("Failed to create fence");
+    }
+
     VkSubmitInfo submit = vkinit::submit_info(&commandBuffer);
 
     result = vkQueueSubmit(m_Vulkan.graphicsQueue, 1, &submit, VK_NULL_HANDLE);
@@ -919,7 +943,11 @@ void Vulkan::AsyncSubmit(std::function<void(VkCommandBuffer)> &&function)
         throw Exceptions::EstException("Failed to submit queue");
     }
 
+    vkinit::wait_for_fences(m_Vulkan.vkbDevice.device, { fence });
+
     m_PerFrameDeletionQueue.push_function([=]() {
+        vkDestroyFence(m_Vulkan.vkbDevice.device, fence, nullptr);
+
         vkFreeCommandBuffers(m_Vulkan.vkbDevice.device, frame.commandPool, 1, &commandBuffer);
     });
 }
@@ -933,17 +961,7 @@ bool Vulkan::WaitForFrame()
         throw Exceptions::EstException("Failed to wait for device idle");
     }
 
-    result = vkWaitForFences(m_Vulkan.vkbDevice.device, 1, &frame.renderFence, true, 9999999999);
-    if (result == VK_TIMEOUT) {
-        return false;
-    } else if (result != VK_SUCCESS) {
-        throw Exceptions::EstException("Failed to wait for fence");
-    }
-
-    result = vkResetFences(m_Vulkan.vkbDevice.device, 1, &frame.renderFence);
-    if (result != VK_SUCCESS) {
-        throw Exceptions::EstException("Failed to reset fence");
-    }
+    vkinit::wait_for_fences(m_Vulkan.vkbDevice.device, { frame.renderFence });
 
     m_FenceRequireReset = false;
     return true;
@@ -952,19 +970,28 @@ bool Vulkan::WaitForFrame()
 bool Vulkan::BeginFrame()
 {
     if (!m_SwapchainReady) {
+        m_FrameWithoutSwapchain += 1;
         return false;
     }
 
-    auto &frame = GetCurrentFrame();
-
     m_Swapchain.lastSwapchainIndex = m_Swapchain.swapchainIndex;
 
-    auto result = vkAcquireNextImageKHR(m_Vulkan.vkbDevice.device, m_Swapchain.swapchain, 9999999999, frame.presentSemaphore, VK_NULL_HANDLE, &m_Swapchain.swapchainIndex);
+    auto result = vkAcquireNextImageKHR(m_Vulkan.vkbDevice.device, m_Swapchain.swapchain, 9999999999, m_Semaphores.presentSemaphore, VK_NULL_HANDLE, &m_Swapchain.swapchainIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        Logs::Puts("[Renderer] [Vulkan] Swapchain out of date");
+
         m_SwapchainReady = false;
         return false;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw Exceptions::EstException("Failed to acquire next image");
+    }
+
+    auto &frame = GetCurrentFrame();
+
+    if (m_FrameWithoutSwapchain > 1) {
+        Logs::Puts("[Renderer] [Vulkan] %d frames without swapchain", m_FrameWithoutSwapchain);
+
+        m_FrameWithoutSwapchain = 0;
     }
 
     result = vkResetFences(m_Vulkan.vkbDevice.device, 1, &frame.renderFence);
@@ -993,11 +1020,13 @@ bool Vulkan::BeginFrame()
         throw Exceptions::EstException("Failed to begin command buffer");
     }
 
-    VkClearValue clearValue;
-    clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearValue clearValue = {
+        .color = { { 0.0f, 0.0f, 0.0f, 1.0f } }
+    };
 
-    VkClearValue clearValue2;
-    clearValue2.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearValue clearValue2 = {
+        .color = { { 0.0f, 0.0f, 0.0f, 1.0f } }
+    };
 
     auto       rect = Graphics::NativeWindow::Get()->GetWindowSize();
     VkExtent2D _windowExtent = {
@@ -1005,8 +1034,11 @@ bool Vulkan::BeginFrame()
         (uint32_t)rect.Height
     };
 
-    VkClearValue depthClear;
-    depthClear.depthStencil.depth = 1.f;
+    VkClearValue depthClear = {
+        .depthStencil = {
+            .depth = 1.f,
+        }
+    };
 
     VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(m_Swapchain.renderpass, _windowExtent, m_Swapchain.framebuffers[m_Swapchain.swapchainIndex]);
 
@@ -1048,9 +1080,9 @@ void Vulkan::EndFrame()
 
     submit.pWaitDstStageMask = &waitStage;
     submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &frame.presentSemaphore;
+    submit.pWaitSemaphores = &m_Semaphores.presentSemaphore;
     submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &frame.renderSemaphore;
+    submit.pSignalSemaphores = &m_Semaphores.renderSemaphore;
 
     result = vkQueueSubmit(m_Vulkan.graphicsQueue, 1, &submit, frame.renderFence);
 
@@ -1058,10 +1090,12 @@ void Vulkan::EndFrame()
         throw Exceptions::EstException("Failed to submit queue");
     }
 
+    FlushScreenshotQueue();
+
     VkPresentInfoKHR presentInfo = vkinit::present_info();
     presentInfo.pSwapchains = &m_Swapchain.swapchain.swapchain;
     presentInfo.swapchainCount = 1;
-    presentInfo.pWaitSemaphores = &frame.renderSemaphore;
+    presentInfo.pWaitSemaphores = &m_Semaphores.renderSemaphore;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &m_Swapchain.swapchainIndex;
 
@@ -1074,8 +1108,8 @@ void Vulkan::EndFrame()
         }
     }
 
-    FlushScreenshotQueue();
-
+    WaitForFrame();
+    vkQueueWaitIdle(m_Vulkan.graphicsQueue);
     m_CurrentFrame++;
     m_FrameBegin = false;
 }
@@ -1083,7 +1117,6 @@ void Vulkan::EndFrame()
 void Vulkan::FlushScreenshotQueue()
 {
     if (screenshotQueues.size() == 0) {
-        WaitForFrame();
         return;
     }
 
@@ -1117,7 +1150,7 @@ void Vulkan::FlushScreenshotQueue()
 
     VkDeviceSize imageSize = imageExtent.width * imageExtent.height * 4;
 
-    AsyncSubmit([=](VkCommandBuffer cmd) {
+    ImmediateSubmit([=](VkCommandBuffer cmd) {
         {
             auto barrier = vkinit::image_memory_barrier(
                 dstImage,
@@ -1229,13 +1262,20 @@ void Vulkan::FlushScreenshotQueue()
         }
     });
 
-    WaitForFrame();
+    // wait for semaphore
+    vkQueueWaitIdle(m_Vulkan.graphicsQueue);
 
     std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
     bool                  colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), m_Vulkan.swapchainFormat) != formatsBGR.end());
 
-    void *data;
-    vkMapMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.memory, 0, imageSize, 0, &data);
+    VkImageSubresource  subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+    VkSubresourceLayout subResourceLayout;
+    vkGetImageSubresourceLayout(m_Vulkan.vkbDevice.device, dstImage, &subResource, &subResourceLayout);
+
+    unsigned char *data;
+    vkMapMemory(m_Vulkan.vkbDevice.device, m_Swapchain.captureFrame.memory, 0, imageSize, 0, (void **)&data);
+
+    data += subResourceLayout.offset;
 
     std::vector<unsigned char> resultData((unsigned char *)data, (unsigned char *)data + imageSize);
 
@@ -1245,6 +1285,11 @@ void Vulkan::FlushScreenshotQueue()
         for (size_t i = 0; i < resultData.size(); i += 4) {
             std::swap(resultData[i], resultData[i + 2]);
         }
+    }
+
+    // make all alpha to 255
+    for (size_t i = 3; i < resultData.size(); i += 4) {
+        resultData[i] = 255;
     }
 
     for (auto &it : screenshotQueues) {

@@ -31,7 +31,6 @@
 #include "../Game/Core/Audio/SampleManager.h"
 
 #include "../Game/Core/Database/GameDatabase.h"
-#include "../Game/Core/Skinning/SkinManager.h"
 
 #include "../Game/MsgBoxEx.h"
 #include <UI/Text.h>
@@ -59,6 +58,7 @@ void Loading::Update(double delta)
     int  diffIndex = Env::GetInt("Difficulty");
     bool IsO2Jam = false;
     bool IsFile = false;
+    bool IsThirdParty = false;
 
     Chart *chart = reinterpret_cast<Chart *>(Env::GetPointer("Chart"));
     if (!chart || chart->GetO2JamId() != songId) {
@@ -213,8 +213,6 @@ void Loading::Update(double delta)
 bool Loading::Attach()
 {
     m_counter = 0.0f;
-    SkinManager::Get()->ReloadSkin();
-
     Env::SetFloat("ParameterRate", 1.0f);
 
     Env::SetInt("Key", -1);

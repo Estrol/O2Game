@@ -5,11 +5,11 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "RhythmEngine.h"
 #include "../Data/Util/Util.hpp"
 #include "../Env.h"
 #include "./Audio/SampleManager.h"
 #include "./Resources/NoteImages.h"
+#include "RhythmEngine.h"
 #include <Configuration.h>
 #include <Graphics/NativeWindow.h>
 #include <Logs.h>
@@ -404,11 +404,11 @@ void RhythmEngine::Update(double delta)
         auto frame = GetAutoplayAtThisFrame(m_currentAudioPosition);
 
         for (auto &frame : frame.KeyDowns) {
-            m_tracks[frame.Lane]->OnKeyDown();
+            m_tracks[frame.Lane]->OnKeyDown(frame.Time);
         }
 
         for (auto &frame : frame.KeyUps) {
-            m_tracks[frame.Lane]->OnKeyUp();
+            m_tracks[frame.Lane]->OnKeyUp(frame.Time);
         }
     }
 
@@ -454,7 +454,7 @@ void RhythmEngine::OnKeyDown(const Inputs::State &state)
                 it.isPressed = true;
 
                 if (i < m_tracks.size()) {
-                    m_tracks[i]->OnKeyDown();
+                    m_tracks[i]->OnKeyDown(m_currentAudioPosition);
                 }
             }
         }
@@ -474,7 +474,7 @@ void RhythmEngine::OnKeyUp(const Inputs::State &state)
                 it.isPressed = false;
 
                 if (i < m_tracks.size()) {
-                    m_tracks[i]->OnKeyUp();
+                    m_tracks[i]->OnKeyUp(m_currentAudioPosition);
                 }
             }
         }

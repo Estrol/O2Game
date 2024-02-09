@@ -15,8 +15,8 @@ namespace {
     std::unordered_map<std::string, bool>                  env_bool;
     std::unordered_map<std::string, std::filesystem::path> paths;
 
-    std::unordered_map<std::string, void *>            pointers;
-    std::unordered_map<std::string, std::vector<char>> buffers;
+    std::unordered_map<std::string, void *>                     pointers;
+    std::unordered_map<std::string, std::vector<unsigned char>> buffers;
 } // namespace
 
 std::string Env::GetString(const std::string &key)
@@ -64,7 +64,7 @@ void *Env::GetPointer(const std::string &key)
     return pointers[key];
 }
 
-void Env::SetBuffer(const std::string &key, const std::vector<char> &value)
+void Env::SetBuffer(const std::string &key, const std::vector<unsigned char> &value)
 {
     buffers[key] = value;
 }
@@ -99,10 +99,10 @@ void Env::SetPointer(const std::string &key, void *value)
     pointers[key] = value;
 }
 
-std::vector<char> Env::GetBuffer(const std::string &key)
+std::vector<unsigned char> Env::GetBuffer(const std::string &key)
 {
     if (buffers.find(key) == buffers.end())
-        return std::vector<char>();
+        return std::vector<unsigned char>();
 
     return buffers[key];
 }

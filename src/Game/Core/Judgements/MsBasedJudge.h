@@ -13,7 +13,7 @@ class MsBasedJudge : public JudgeBase
 public:
     MsBasedJudge(RhythmEngine *engine);
 
-    std::tuple<bool, NoteResult> CalculateResult(Note *note) override;
-    bool                         IsAccepted(Note *note) override;
-    bool                         IsMissed(Note *note) override;
+    std::tuple<bool, NoteResult> CalculateResult(Note *note, double time) override;
+    bool                         IsAccepted(Note *note, double time) override;
+    bool                         IsMissed(Note *note, double time) override;
 };

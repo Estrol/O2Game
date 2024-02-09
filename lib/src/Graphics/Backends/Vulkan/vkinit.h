@@ -1,5 +1,6 @@
 #pragma once
 #include "./Volk/volk.h"
+#include <vector>
 
 namespace vkinit {
     VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
@@ -14,7 +15,11 @@ namespace vkinit {
 
     VkSemaphoreCreateInfo semaphore_create_info(VkSemaphoreCreateFlags flags = 0);
 
+    VkSampleCountFlagBits get_max_usable_sample_count(VkPhysicalDevice physicalDevice);
+
     VkSubmitInfo submit_info(VkCommandBuffer *cmd);
+
+    void wait_for_fences(VkDevice device, const std::vector<VkFence> &fences);
 
     VkPresentInfoKHR present_info();
 

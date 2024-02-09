@@ -31,8 +31,8 @@ public:
 
     void Update(double delta);
     void Render(double delta);
-    void OnKeyUp();
-    void OnKeyDown();
+    void OnKeyUp(double time);
+    void OnKeyDown(double time);
 
     void HandleScore(NoteHitInfo info);
     void HandleHoldScore(HoldResult res);

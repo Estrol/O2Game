@@ -296,18 +296,14 @@ double SampleManager::GetRate()
     return m_rate;
 }
 
-void SampleManager::ResumeAll()
+void SampleManager::StopAll()
 {
-    /*for (auto &kv : sampleIndex) {
-        kv.second->Play();
-    }*/
-}
-
-void SampleManager::PauseAll()
-{
-    /*for (auto &kv : sampleIndex) {
-        sampleIndex.erase(kv.first);
-    }*/
+    for (auto &it : samplePlaying) {
+        if (it.second) {
+            samples[it.first].Sample->Stop();
+            it.second = false;
+        }
+    }
 }
 
 std::unordered_map<int, NoteAudioSample> &SampleManager::GetSamples()

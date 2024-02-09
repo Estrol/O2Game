@@ -5,9 +5,9 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "LuaScripting.h"
 #include "../../Data/Util/Util.hpp"
 #include "../../Env.h"
+#include "LuaScripting.h"
 
 #include <Exceptions/EstException.h>
 
@@ -56,6 +56,10 @@ struct IGame
         auto height = std::stoi(split[1]);
 
         return std::make_tuple(width, height);
+    }
+
+    int GetKeyCount()
+    {
     }
 };
 

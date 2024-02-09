@@ -168,7 +168,7 @@ void Note::Update(double delta)
     m_HitTime = m_StartTime - audioPos;
 
     if (m_Type == NoteType::NORMAL) {
-        if (judge->IsMissed(this)) {
+        if (judge->IsMissed(this, audioPos)) {
             if (!IsPassed()) {
                 m_HitPos = m_StartTime + m_HitTime;
                 OnHit(NoteResult::MISS);
@@ -178,7 +178,7 @@ void Note::Update(double delta)
         }
     } else {
         if (m_State == NoteState::HOLD_PRE) {
-            if (judge->IsMissed(this)) {
+            if (judge->IsMissed(this, audioPos)) {
                 m_HitPos = m_StartTime + m_HitTime;
                 OnHit(NoteResult::MISS);
             }
@@ -196,7 +196,7 @@ void Note::Update(double delta)
                 }
             }
 
-            if (judge->IsMissed(this)) {
+            if (judge->IsMissed(this, audioPos)) {
                 if (m_State == NoteState::HOLD_ON_HOLDING || m_State == NoteState::HOLD_MISSED_ACTIVE) {
                     m_HitPos = m_EndTime + (m_EndTime - audioPos);
                     if (m_State == NoteState::HOLD_ON_HOLDING) {
@@ -403,13 +403,13 @@ bool Note::IsHoldEffectDrawable() const
     return m_ShouldDrawHoldEffect;
 }
 
-std::tuple<bool, NoteResult> Note::CheckHit()
+std::tuple<bool, NoteResult> Note::CheckHit(double time)
 {
     JudgeBase *judge = m_Engine->GetJudge();
 
     if (m_Type == NoteType::NORMAL) {
-        double time_to_end = m_Engine->GetGameAudioPosition() - m_StartTime;
-        auto   result = judge->CalculateResult(this);
+        double time_to_end = time - m_StartTime;
+        auto   result = judge->CalculateResult(this, time);
         if (std::get<bool>(result)) {
             m_Ignore = false;
         }
@@ -417,16 +417,16 @@ std::tuple<bool, NoteResult> Note::CheckHit()
         return result;
     } else {
         if (m_State == NoteState::HOLD_PRE) {
-            double time_to_end = m_Engine->GetGameAudioPosition() - m_StartTime;
-            auto   result = judge->CalculateResult(this);
+            double time_to_end = time - m_StartTime;
+            auto   result = judge->CalculateResult(this, time);
             if (std::get<bool>(result)) {
                 m_Ignore = false;
             }
 
             return result;
         } else if (m_State == NoteState::HOLD_MISSED_ACTIVE) {
-            double time_to_end = m_Engine->GetGameAudioPosition() - m_EndTime;
-            auto   result = judge->CalculateResult(this);
+            double time_to_end = time - m_EndTime;
+            auto   result = judge->CalculateResult(this, time);
             if (std::get<bool>(result)) {
                 m_Ignore = false;
             }
@@ -438,14 +438,14 @@ std::tuple<bool, NoteResult> Note::CheckHit()
     }
 }
 
-std::tuple<bool, NoteResult> Note::CheckRelease()
+std::tuple<bool, NoteResult> Note::CheckRelease(double time)
 {
     if (m_Type == NoteType::HOLD) {
-        double     time_to_end = m_Engine->GetGameAudioPosition() - m_EndTime;
+        double     time_to_end = time - m_EndTime;
         JudgeBase *judge = m_Engine->GetJudge();
 
         if (m_State == NoteState::HOLD_ON_HOLDING || m_State == NoteState::HOLD_MISSED_ACTIVE) {
-            auto result = judge->CalculateResult(this);
+            auto result = judge->CalculateResult(this, time);
 
             if (std::get<bool>(result)) {
                 if (m_State == NoteState::HOLD_MISSED_ACTIVE) {

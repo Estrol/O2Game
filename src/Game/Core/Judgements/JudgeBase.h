@@ -20,11 +20,11 @@ class JudgeBase
 {
 public:
     JudgeBase(RhythmEngine *engine);
-    virtual std::tuple<bool, NoteResult>   CalculateResult(Note *note);
+    virtual std::tuple<bool, NoteResult>   CalculateResult(Note *note, double time);
     virtual std::tuple<int, int, int, int> GetJudgeTime();
 
-    virtual bool IsMissed(Note *note);
-    virtual bool IsAccepted(Note *note);
+    virtual bool IsMissed(Note *note, double time);
+    virtual bool IsAccepted(Note *note, double time);
 
 protected:
     RhythmEngine *m_engine;

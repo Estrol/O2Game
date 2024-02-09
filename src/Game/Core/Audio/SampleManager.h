@@ -30,8 +30,7 @@ namespace SampleManager {
     void   Stop(int index);
     void   SetRate(double rate);
     double GetRate();
-    void   ResumeAll();
-    void   PauseAll();
+    void   StopAll();
 
     std::unordered_map<int, NoteAudioSample> &GetSamples();
 

@@ -104,6 +104,11 @@ void Manager::HandleMouseMotionEvent(SDL_Event &event)
     MousePosition.Y = event.motion.y;
 }
 
+Vector2 Manager::GetMousePosition()
+{
+    return MousePosition;
+}
+
 bool Manager::IsKeyDown(Keys key)
 {
     return KeyStates[key];

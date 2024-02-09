@@ -10,6 +10,7 @@
 
 namespace Logs {
     void Puts(const char *fmt, ...);
-}
+    void Debug(const char *fmt, ...);
+} // namespace Logs
 
 #endif

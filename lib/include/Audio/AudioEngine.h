@@ -53,6 +53,8 @@ namespace Audio {
         std::vector<std::unique_ptr<Sample>> m_Samples;
         std::vector<std::unique_ptr<Stream>> m_Streams;
 
+        std::vector<std::unique_ptr<Stream>> m_StreamsToDestroy;
+
         bool m_initialized;
     };
 } // namespace Audio

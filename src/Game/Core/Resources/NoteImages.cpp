@@ -5,8 +5,8 @@
  * See the LICENSE file in the root of this project for details.
  */
 
+#include "../Skinning/LuaSkin.h"
 #include "NoteImages.h"
-#include "../Skinning/SkinManager.h"
 #include <Exceptions/EstException.h>
 #include <Graphics/Renderer.h>
 #include <Misc/Filesystem.h>
@@ -27,88 +27,96 @@ void NoteImages::LoadImageResources()
         throw Exceptions::EstException("Note images already loaded");
     }
 
-    auto manager = SkinManager::Get();
+    auto manager = LuaSkin::Get();
     auto renderer = Graphics::Renderer::Get();
 
-    auto skinPath = manager->GetPath();
-    auto skinNotePath = skinPath / "Notes";
+    manager->LoadScript(SkinGroup::Notes);
 
     for (int i = 0; i < 7; i++) {
-        NoteValue note = manager->GetNote(SkinGroup::Notes, "LaneHit" + std::to_string(i));
-        NoteValue hold = manager->GetNote(SkinGroup::Notes, "LaneHold" + std::to_string(i));
+        NoteValue note = manager->GetNote("LaneHit" + std::to_string(i));
+        NoteValue hold = manager->GetNote("LaneHold" + std::to_string(i));
 
         auto noteImage = std::make_unique<NoteImage>();
         auto holdImage = std::make_unique<NoteImage>();
 
-        noteImage->MaxFrames = note.numOfFiles;
-        holdImage->MaxFrames = hold.numOfFiles;
+        noteImage->MaxFrames = (int)note.Files.size();
+        holdImage->MaxFrames = (int)hold.Files.size();
 
-        noteImage->Images.resize(note.numOfFiles);
-        holdImage->Images.resize(hold.numOfFiles);
+        noteImage->Images.resize(noteImage->MaxFrames);
+        holdImage->Images.resize(holdImage->MaxFrames);
 
-        for (int j = 0; j < note.numOfFiles; j++) {
-            auto path = skinNotePath / (note.fileName + std::to_string(j) + ".png");
+        Rect noteSize = { 0, 0, (int)note.Size.X.Offset, (int)note.Size.Y.Offset };
+        Rect holdSize = { 0, 0, (int)hold.Size.X.Offset, (int)hold.Size.Y.Offset };
+
+        for (int j = 0; j < noteImage->MaxFrames; j++) {
+            auto path = note.Files[j];
             if (!std::filesystem::exists(path)) {
-                throw Exceptions::EstException("File: %s is not found!", path.string().c_str());
+                throw Exceptions::EstException("File: %s is not found!", path.c_str());
             }
 
             auto texture = renderer->LoadTexture(path);
-            Rect size = texture->GetSize();
+            // Rect size = texture->GetSize();
 
             noteImage->Images[j] = new Image(texture);
-            noteImage->ImagesRect = size;
+            noteImage->ImagesRect = noteSize;
         }
 
-        for (int j = 0; j < hold.numOfFiles; j++) {
-            auto path = skinNotePath / (hold.fileName + std::to_string(j) + ".png");
+        for (int j = 0; j < holdImage->MaxFrames; j++) {
+            auto path = hold.Files[j];
             if (!std::filesystem::exists(path)) {
-                throw Exceptions::EstException("File: %s is not found!", path.string().c_str());
+                throw Exceptions::EstException("File: %s is not found!", path.c_str());
             }
 
             auto texture = renderer->LoadTexture(path);
-            Rect size = texture->GetSize();
+            // Rect size = texture->GetSize();
 
             holdImage->Images[j] = new Image(texture);
-            holdImage->ImagesRect = size;
+            holdImage->ImagesRect = holdSize;
         }
 
         s_NoteImages[(NoteImageType)i] = std::move(noteImage);
         s_NoteImages[(NoteImageType)(i + 7)] = std::move(holdImage);
     }
 
-    NoteValue trailUp = manager->GetNote(SkinGroup::Notes, "NoteTrailUp");
-    NoteValue trailDown = manager->GetNote(SkinGroup::Notes, "NoteTrailDown");
+    NoteValue trailUp = manager->GetNote("NoteTrailUp");
+    NoteValue trailDown = manager->GetNote("NoteTrailDown");
 
     auto trailUpImg = std::make_unique<NoteImage>();
     auto trailDownImg = std::make_unique<NoteImage>();
 
-    trailUpImg->Images.resize(trailUp.numOfFiles);
-    trailDownImg->Images.resize(trailDown.numOfFiles);
+    int trailUpMaxFrames = (int)trailUp.Files.size();
+    int trailDownMaxFrames = (int)trailDown.Files.size();
 
-    for (int i = 0; i < trailUp.numOfFiles; i++) {
-        auto path = skinNotePath / (trailUp.fileName + std::to_string(i) + ".png");
+    trailUpImg->Images.resize(trailUpMaxFrames);
+    trailDownImg->Images.resize(trailDownMaxFrames);
+
+    Rect trailUpSize = { 0, 0, (int)trailUp.Size.X.Offset, (int)trailUp.Size.Y.Offset };
+    Rect trailDownSize = { 0, 0, (int)trailDown.Size.X.Offset, (int)trailDown.Size.Y.Offset };
+
+    for (int i = 0; i < trailUpMaxFrames; i++) {
+        auto path = trailUp.Files[i];
         if (!std::filesystem::exists(path)) {
-            throw Exceptions::EstException("File: %s is not found!", path.string().c_str());
+            throw Exceptions::EstException("File: %s is not found!", path.c_str());
         }
 
         auto texture = renderer->LoadTexture(path);
-        Rect size = texture->GetSize();
+        // Rect size = texture->GetSize();
 
         trailUpImg->Images[i] = new Image(texture);
-        trailUpImg->ImagesRect = size;
+        trailUpImg->ImagesRect = trailDownSize;
     }
 
-    for (int i = 0; i < trailDown.numOfFiles; i++) {
-        auto path = skinNotePath / (trailDown.fileName + std::to_string(i) + ".png");
+    for (int i = 0; i < trailDownMaxFrames; i++) {
+        auto path = trailDown.Files[i];
         if (!std::filesystem::exists(path)) {
-            throw Exceptions::EstException("File: %s is not found!", path.string().c_str());
+            throw Exceptions::EstException("File: %s is not found!", path.c_str());
         }
 
         auto texture = renderer->LoadTexture(path);
         Rect size = texture->GetSize();
 
         trailDownImg->Images[i] = new Image(texture);
-        trailDownImg->ImagesRect = size;
+        trailDownImg->ImagesRect = trailDownSize;
     }
 
     s_NoteImages[NoteImageType::TRAIL_UP] = std::move(trailUpImg);

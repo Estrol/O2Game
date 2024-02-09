@@ -24,7 +24,7 @@ To able build this project you need to have installed:
 
 Make sure you have the requirements installed and configured correctly.
 - set `VCPKG_ROOT` environment variable to your vcpkg root directory
-- If you using Windows then set `VULKAN_SDK` environment variable to your Vulkan SDK directory
+- Optional: If you using Windows then set `VULKAN_SDK` environment variable to your Vulkan SDK directory
 - It's recommended to use Vulkan 1.2.198.1 to support most system
 
 ## Building
@@ -33,16 +33,16 @@ To build the project, follow these steps:
 - Clone the repository including submodules:
     - `git clone --recurse-submodules https://github.com/Estrol/o2game.git`
 - Create build directory:
-    - If windows: `./configure-win32.bat Debug` or `./configure-win32.bat Release`
-    - If linux: `./configure-linux.sh Debug` or `./configure-linux.sh Release`
+    - If windows: `cmake --preset x64-windows` or `cmake --preset x64-windows-debug`
+    - TODO: If linux.
 - Build the project:
     - cd to `build` directory
     - Windows: `cmake --build . --config Debug` or `cmake --build . --config Release`
-    - Linux: `cmake --build . --config Debug` or `cmake --build . --config Release`
+    - TODO: If linux.
 - Run the game:
     - cd to `build` directory
     - Windows: cd to `Game/Debug/` or `Game/Release/` and run `Game.exe`
-    - Linux: cd to `Game` and run `./Game`
+    - TODO: If linux.
 
 Note: to switch between `Release` and `Debug` build, you need to delete the `build` directory and reconfigure it again with the new build type.
 
@@ -53,7 +53,7 @@ The game is tested on these platform:
 |----------|----------|--------|
 | Windows 11 | Visual Studio 2022 | Working |
 | Windows 11 | Mingw-w64 8.1.0 | Broken |
-| Ubuntu 22.04 | GCC 11.1.0 | Working |
-| WSL Ubuntu 20.04 | GCC 10.3.0 | Working |
+| Ubuntu 22.04 | GCC 11.1.0 | Broken |
+| WSL Ubuntu 20.04 | GCC 10.3.0 | Broken |
 
-Developer note: I ([Estrol](https://github.com/Estrol)) only tested on Windows 11 and Ubuntu 20.04. If you have tested on other platform, please let me know.
+Developer note: I ([Estrol](https://github.com/Estrol)) only tested on Windows 11. If you have tested on other platform, please let me know.

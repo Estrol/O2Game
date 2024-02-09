@@ -62,6 +62,7 @@ add_library(EstEngine STATIC ${HEADERS}
     "src/Math/Vector2.cpp" 
     "src/Math/Vector3.cpp" 
     "src/Math/Vector4.cpp"
+    "src/Math/Tween.cpp"
 
     # Inputs
     "src/Inputs/InputManager.cpp" 

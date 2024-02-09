@@ -71,8 +71,8 @@ public:
     NoteType  GetType() const;
     NoteState GetState() const;
 
-    std::tuple<bool, NoteResult> CheckHit();
-    std::tuple<bool, NoteResult> CheckRelease();
+    std::tuple<bool, NoteResult> CheckHit(double time);
+    std::tuple<bool, NoteResult> CheckRelease(double time);
     void                         OnHit(NoteResult result);
     void                         OnRelease(NoteResult result);
 

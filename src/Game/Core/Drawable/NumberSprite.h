@@ -28,6 +28,8 @@ public:
 
     UDim2           Position;
     UDim2           Position2;
+    Color3          Color;
+    UDim2           Size;
     Vector2         AnchorPoint;
     NumericPosition NumberPosition = NumericPosition::MID;
     bool            FillWithZeros = false;

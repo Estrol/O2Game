@@ -10,6 +10,7 @@
 #include "../Game/Core/Drawable/NumberSprite.h"
 #include "../Game/Core/Drawable/Sprite.h"
 #include "../Game/Core/RhythmEngine.h"
+#include <Math/Tween.h>
 #include <Screens/Base.h>
 #include <UI/Image.h>
 #include <UI/Text.h>
@@ -66,10 +67,19 @@ private:
     std::unique_ptr<Sprite> m_comboLogo;
     std::unique_ptr<Sprite> m_targetBar;
 
+    std::shared_ptr<Image> m_ResultTopRowImage;
+    std::shared_ptr<Image> m_ResultBottomRowImage;
+
+    std::shared_ptr<Tween> m_TweenTop;
+    std::shared_ptr<Tween> m_TweenBottom;
+
     bool m_resourceFucked;
     bool m_starting;
+    bool m_frameCaptured;
     bool m_ended;
     int  m_judgeIndex;
+
+    double m_startTime;
 
     /* Scoring */
     bool m_drawJam;
@@ -105,4 +115,7 @@ private:
     bool  m_autoPlay;
     int   m_autoTextSize;
     UDim2 m_autoTextPos;
+
+    /* RhythmEngine callback */
+    void OnTrackEvent(TrackEvent e);
 };

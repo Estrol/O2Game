@@ -21,12 +21,11 @@ namespace {
     const double kHitMaxTicks = 192.0;
 } // namespace
 
-std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note *note)
+std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double hitTime = note->GetHitTime();
 
-    double hitOffset = abs(hitTime - audioPos) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
+    double hitOffset = abs(hitTime - time) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
 
     if (hitOffset <= kNoteCoolHitRatio)
         return { true, NoteResult::COOL };
@@ -38,22 +37,20 @@ std::tuple<bool, NoteResult> BeatBasedJudge::CalculateResult(Note *note)
     return { false, NoteResult::MISS };
 }
 
-bool BeatBasedJudge::IsAccepted(Note *note)
+bool BeatBasedJudge::IsAccepted(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double hitTime = note->GetHitTime();
 
-    double hitOffset = (hitTime - audioPos) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
+    double hitOffset = (hitTime - time) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
 
     return hitOffset <= kNoteBadHitRatio;
 }
 
-bool BeatBasedJudge::IsMissed(Note *note)
+bool BeatBasedJudge::IsMissed(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double hitTime = note->GetHitTime();
 
-    double hitOffset = (hitTime - audioPos) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
+    double hitOffset = (hitTime - time) / (kHitBaseBPS / note->GetBPMTime()) * kHitMaxTicks;
 
     return hitOffset < -kNoteBadHitRatio;
 }

@@ -1,4 +1,6 @@
 ﻿#include "vkinit.h"
+#include <Exceptions/EstException.h>
+#include <Logs.h>
 
 VkCommandPoolCreateInfo vkinit::command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags /*= 0*/)
 {
@@ -71,6 +73,55 @@ VkImageMemoryBarrier vkinit::image_memory_barrier(
     imageMemoryBarrier.subresourceRange = subresourceRange;
 
     return imageMemoryBarrier;
+}
+
+VkSampleCountFlagBits vkinit::get_max_usable_sample_count(VkPhysicalDevice physicalDevice)
+{
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) {
+        return VK_SAMPLE_COUNT_64_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) {
+        return VK_SAMPLE_COUNT_32_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) {
+        return VK_SAMPLE_COUNT_16_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) {
+        return VK_SAMPLE_COUNT_8_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) {
+        return VK_SAMPLE_COUNT_4_BIT;
+    }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) {
+        return VK_SAMPLE_COUNT_2_BIT;
+    }
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+void vkinit::wait_for_fences(VkDevice device, const std::vector<VkFence> &fences)
+{
+    while (true) {
+        VkResult result = vkWaitForFences(device, (uint32_t)fences.size(), fences.data(), VK_TRUE, 1000000000);
+        if (result == VK_SUCCESS) {
+            break;
+        }
+
+        Logs::Puts("[Renderer] [Vulkan] [Warning] vkWaitForFences return %d after 10ms, retrying...", result);
+
+        if (result != VK_TIMEOUT) {
+            throw Exceptions::EstException("vkWaitForFences failed!");
+        }
+    }
+
+    auto result = vkResetFences(device, (uint32_t)fences.size(), fences.data());
+    if (result != VK_SUCCESS) {
+        throw Exceptions::EstException("vkResetFences failed!");
+    }
 }
 
 VkFenceCreateInfo vkinit::fence_create_info(VkFenceCreateFlags flags /*= 0*/)

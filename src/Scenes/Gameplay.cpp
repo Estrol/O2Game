@@ -12,12 +12,13 @@
 #include <Imgui/imgui.h>
 #include <Misc/Lodepng.h>
 
+#include "SceneList.h"
 #include <random>
 
 #include "../Game/Data/chart.hpp"
 #include "../Game/Data/ojn.h"
 
-#include "../Game/Core/Skinning/SkinManager.h"
+#include "../Game/Core/Skinning/LuaSkin.h"
 #include "../Game/Env.h"
 
 #include "../Game/Core/Drawable/ImageGenerators.h"
@@ -31,6 +32,8 @@
 #include <Audio/AudioEngine.h>
 #include <Audio/AudioSample.h>
 
+#include <Math/Tween.h>
+
 #include <Exceptions/EstException.h>
 
 #include "../Game/Core/Audio/SampleManager.h"
@@ -40,20 +43,51 @@
 
 void Gameplay::Update(double delta)
 {
-    m_Engine->Update(delta);
+    if (m_resourceFucked) {
+        return;
+    }
 
-    static float a = 0;
-    a += static_cast<float>(delta);
+    if (m_ended) {
+        if (!m_frameCaptured) {
+            m_frameCaptured = true;
+            SampleManager::StopAll();
 
-    static bool started = false;
-    if (a >= 1.5 && !started) {
-        started = true;
-        m_Engine->Start();
+            auto scoreManager = m_Engine->GetScoreManager();
+            auto scoreInfo = scoreManager->GetScore();
+
+            Env::SetInt("Score", scoreInfo.Score);
+            Env::SetInt("Cool", scoreInfo.Cool);
+            Env::SetInt("Good", scoreInfo.Good);
+            Env::SetInt("Bad", scoreInfo.Bad);
+            Env::SetInt("Miss", scoreInfo.Miss);
+            Env::SetInt("MaxJam", scoreInfo.MaxJamCombo);
+            Env::SetInt("MaxCombo", scoreInfo.MaxJamCombo);
+            Env::SetBool("IsClear", true);
+        } else {
+            m_ResultTopRowImage->Position = m_TweenTop->Update((float)delta);
+            m_ResultBottomRowImage->Position = m_TweenBottom->Update((float)delta);
+
+            if (m_TweenBottom->IsFinished() && m_TweenTop->IsFinished()) {
+                Screens::Manager::Get()->SetScreen(SceneList::RESULT);
+            }
+        }
+    } else {
+        m_Engine->Update(delta);
+
+        m_startTime += delta;
+        if (m_startTime >= 1.5 && !m_starting) {
+            m_starting = true;
+            m_Engine->Start();
+        }
     }
 }
 
 void Gameplay::Draw(double delta)
 {
+    if (m_resourceFucked) {
+        return;
+    }
+
     // TODO: find better way
     bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
 
@@ -275,6 +309,17 @@ void Gameplay::Draw(double delta)
             m_autoTextPos = UDim2::fromOffset(rect.Width, 50);
         }
     }
+
+    if (m_ended) {
+        m_ResultTopRowImage->Draw();
+        m_ResultBottomRowImage->Draw();
+    }
+
+    Graphics::Renderer::Get()->ImGui_NewFrame();
+
+    // ImGui::ShowDemoWindow();
+
+    Graphics::Renderer::Get()->ImGui_EndFrame();
 }
 
 void Gameplay::FixedUpdate(double fixedDelta)
@@ -323,6 +368,12 @@ void Gameplay::OnKeyDown(const Inputs::State &state)
         return;
     }
 
+    if (state.Keyboard.Key == Inputs::Keys::F10) {
+        m_ended = true;
+
+        return;
+    }
+
     m_Engine->OnKeyDown(state);
 }
 
@@ -335,18 +386,23 @@ bool Gameplay::Attach()
 {
     m_ended = false;
     m_starting = false;
+    m_frameCaptured = false;
     m_doExit = false;
     m_drawExitButton = false;
     m_resourceFucked = false;
     m_drawJudge = false;
 
-    try {
-        auto bufferRect = Graphics::NativeWindow::Get()->GetBufferSize();
+    m_startTime = 0.0f;
 
-        auto manager = SkinManager::Get();
-        manager->LoadSkin("Default");
-        manager->SetKeyCount(7);
-        manager->Arena_SetIndex(1);
+    try {
+        auto   bufferRect = Graphics::NativeWindow::Get()->GetBufferSize();
+        Chart *chart = reinterpret_cast<Chart *>(Env::GetPointer("Chart"));
+
+        if (!chart) {
+            throw Exceptions::EstException("Chart is not loaded!");
+        }
+
+        auto manager = LuaSkin::Get();
 
         int LaneOffset = 5;
         int HitPos = 480;
@@ -358,11 +414,7 @@ bool Gameplay::Attach()
             throw Exceptions::EstException("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
         }
 
-        int  arena = Env::GetInt("Arena");
-        auto skinPath = manager->GetPath(); // Move to above, make it easiest
-        auto playingPath = skinPath / "Playing";
-        auto arenaPath = playingPath / "Arena";
-
+        int arena = Env::GetInt("Arena");
         if (arena == 0) {
             std::random_device dev;
             std::mt19937       rng(dev());
@@ -372,384 +424,10 @@ bool Gameplay::Attach()
             arena = dist(rng);
         }
 
-        arenaPath /= std::to_string(arena);
+        Env::SetInt("KeyCount", chart->m_keyCount);
         Env::SetInt("CurrentArena", arena);
 
-        if (!std::filesystem::exists(arenaPath)) {
-            throw Exceptions::EstException("Arena %d is missing from folder: %s", arena, arenaPath.string().c_str());
-        }
-
-        manager->SetKeyCount(7);
-        manager->Arena_SetIndex(arena);
-
-        for (int i = 0; i < 7; i++) {
-            m_keyState[i] = false;
-            m_drawHit[i] = false;
-            m_drawHold[i] = false;
-        }
-
-        m_title = std::make_unique<UI::Text>("arial.ttf", 13.0f);
-        auto TitlePos = manager->GetPosition(SkinGroup::Playing, "Title"); // conf.GetPosition("Title");
-        auto RectPos = manager->GetRect(SkinGroup::Playing, "Title");      // conf.GetRect("Title");
-        m_title->Position = UDim2::fromOffset(TitlePos[0].X, TitlePos[0].Y);
-        m_title->AnchorPoint = { TitlePos[0].AnchorPointX, TitlePos[0].AnchorPointY };
-        m_title->TextClipping = { RectPos[0].X, RectPos[0].Y, RectPos[0].Width, RectPos[0].Height };
-
-        m_autoText = std::make_unique<UI::Text>("arial.ttf", 13.0f);
-        m_autoTextSize = static_cast<int>(m_autoText->MeasureString(AUTOPLAY_TEXT).y);
-
-        m_autoTextPos = UDim2::fromOffset(bufferRect.Width, 50);
-
-        m_PlayBG = std::make_unique<Image>(arenaPath / ("PlayingBG.png"));
-        auto PlayBGPos = manager->Arena_GetPosition("PlayingBG"); // arena_conf.GetPosition("PlayingBG");
-        m_PlayBG->Position = UDim2::fromOffset(PlayBGPos[0].X, PlayBGPos[0].Y);
-        m_PlayBG->AnchorPoint = { PlayBGPos[0].AnchorPointX, PlayBGPos[0].AnchorPointY };
-
-        auto conKeyLight = manager->GetPosition(SkinGroup::Playing, "KeyLighting"); // conf.GetPosition("KeyLighting");
-        auto conKeyButton = manager->GetPosition(SkinGroup::Playing, "KeyButton");  // conf.GetPosition("KeyButton");
-
-        if (conKeyLight.size() < 7 || conKeyButton.size() < 7) {
-            throw Exceptions::EstException("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
-        }
-
-        auto playfieldPos = manager->GetPosition(SkinGroup::Playing, "Playfield"); // conf.GetPosition("Playfield");
-        m_Playfield = std::make_unique<Image>(playingPath / "Playfield.png");
-        m_Playfield->Position = UDim2::fromOffset(playfieldPos[0].X, playfieldPos[0].Y);
-        m_Playfield->AnchorPoint = { playfieldPos[0].AnchorPointX, playfieldPos[0].AnchorPointY };
-
-        for (int i = 0; i < 7; i++) {
-            m_keyLighting[i] = std::move(std::make_unique<Image>(playingPath / ("KeyLighting" + std::to_string(i) + ".png")));
-            m_keyButtons[i] = std::move(std::make_unique<Image>(playingPath / ("KeyButton" + std::to_string(i) + ".png")));
-
-            m_keyLighting[i]->Position = UDim2::fromOffset(conKeyLight[i].X, conKeyLight[i].Y);
-            m_keyButtons[i]->Position = UDim2::fromOffset(conKeyButton[i].X, conKeyButton[i].Y);
-        }
-
-        std::vector<std::filesystem::path> numComboPaths = {};
-        for (int i = 0; i < 10; i++) {
-            auto filePath = arenaPath / ("ComboNum" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-
-                throw Exceptions::EstException("Failed to load Integer Images 0-9, please check your skin folder.");
-            }
-
-            numComboPaths.emplace_back(filePath);
-        }
-
-        m_comboNum = std::make_unique<NumberSprite>(numComboPaths);
-        auto numPos = manager->Arena_GetNumeric("Combo").front(); // arena_conf.GetNumeric("Combo").front();
-
-        m_comboNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
-        m_comboNum->NumberPosition = IntToPos(numPos.Direction);
-        m_comboNum->MaxDigits = numPos.MaxDigit;
-        m_comboNum->FillWithZeros = numPos.FillWithZero;
-        m_comboNum->AlphaBlend = true;
-
-        std::vector<std::filesystem::path> numJamPaths = {};
-        for (int i = 0; i < 10; i++) {
-            auto filePath = playingPath / ("JamNum" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-
-                throw Exceptions::EstException("Failed to load Integer Images 0-9, please check your skin folder.");
-            }
-
-            numJamPaths.emplace_back(filePath);
-        }
-
-        m_jamNum = std::make_unique<NumberSprite>(numJamPaths);
-        numPos = manager->GetNumeric(SkinGroup::Playing, "Jam").front();
-
-        m_jamNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
-        m_jamNum->NumberPosition = IntToPos(numPos.Direction);
-        m_jamNum->MaxDigits = numPos.MaxDigit;
-        m_jamNum->FillWithZeros = numPos.FillWithZero;
-
-        std::vector<std::filesystem::path> numScorePaths = {};
-        for (int i = 0; i < 10; i++) {
-            auto filePath = playingPath / ("ScoreNum" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-
-                throw Exceptions::EstException("Failed to load Integer Images 0-9, please check your skin folder.");
-            }
-
-            numScorePaths.emplace_back(filePath);
-        }
-
-        m_scoreNum = std::make_unique<NumberSprite>(numScorePaths);
-        numPos = manager->GetNumeric(SkinGroup::Playing, "Score").front(); // conf.GetNumeric("Score").front();
-
-        m_scoreNum->Position = UDim2::fromOffset(numPos.X, numPos.Y);
-        m_scoreNum->NumberPosition = IntToPos(numPos.Direction);
-        m_scoreNum->MaxDigits = numPos.MaxDigit;
-        m_scoreNum->FillWithZeros = numPos.FillWithZero;
-
-        std::vector<std::string> judgeFileName = { "Miss", "Bad", "Good", "Cool" };
-        auto                     judgePos = manager->Arena_GetPosition("Judge"); // arena_conf.GetPosition("Judge");
-        if (judgePos.size() < 4) {
-            throw Exceptions::EstException("Playing.ini : Positions : Judge : Not enough positions! (count < 4)");
-        }
-
-        for (int i = 0; i < 4; i++) {
-            auto filePath = arenaPath / ("Judge" + judgeFileName[i] + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                throw Exceptions::EstException("Failed to load Judge image!");
-            }
-
-            m_judgement[i] = std::move(std::make_unique<Image>(filePath));
-            m_judgement[i]->Position = UDim2::fromOffset(judgePos[i].X, judgePos[i].Y);
-            m_judgement[i]->AlphaBlend = true;
-        }
-
-        m_jamGauge = std::make_unique<Image>(playingPath / "JamGauge.png");
-        auto gaugePos = manager->GetPosition(SkinGroup::Playing, "JamGauge"); // conf.GetPosition("JamGauge");
-        if (gaugePos.size() < 1) {
-            throw Exceptions::EstException("Playing.ini : Positions : JamGauge : Position Not defined!");
-        }
-
-        m_jamGauge->Position = UDim2::fromOffset(gaugePos[0].X, gaugePos[0].Y);
-        m_jamGauge->AnchorPoint = { gaugePos[0].AnchorPointX, gaugePos[0].AnchorPointY };
-
-        auto                               jamLogoPos = manager->GetSprite(SkinGroup::Playing, "JamLogo"); // conf.GetSprite("JamLogo");
-        std::vector<std::filesystem::path> jamLogoFileName = {};
-        for (int i = 0; i < jamLogoPos.numOfFrames; i++) {
-            auto filePath = playingPath / ("JamLogo" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-
-                throw Exceptions::EstException("Failed to load Jam Logo image!");
-            }
-
-            jamLogoFileName.emplace_back(filePath);
-        }
-
-        m_jamLogo = std::make_unique<Sprite>(jamLogoFileName, 0.25f);
-        m_jamLogo->Position = UDim2::fromOffset(jamLogoPos.X, jamLogoPos.Y);
-        m_jamLogo->AnchorPoint = { (double)jamLogoPos.AnchorPointX, (double)jamLogoPos.AnchorPointY };
-        m_jamLogo->SetDelay(jamLogoPos.FrameTime);
-
-        auto                               lifeBarPos = manager->GetSprite(SkinGroup::Playing, "LifeBar"); // conf.GetSprite("LifeBar");
-        std::vector<std::filesystem::path> lifeBarFileName = {};
-        for (int i = 0; i < lifeBarPos.numOfFrames; i++) {
-            auto filePath = playingPath / ("LifeBar" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-                throw Exceptions::EstException("Failed to load Life Bar image!");
-            }
-
-            lifeBarFileName.emplace_back(filePath);
-        }
-
-        m_lifeBar = std::make_unique<Sprite>(lifeBarFileName, 0.15f);
-        m_lifeBar->Position = UDim2::fromOffset(lifeBarPos.X, lifeBarPos.Y);
-        m_lifeBar->AnchorPoint = { lifeBarPos.AnchorPointX, lifeBarPos.AnchorPointY };
-        m_lifeBar->SetDelay(lifeBarPos.FrameTime);
-
-        std::vector<std::filesystem::path> lnComboFileName = {};
-        for (int i = 0; i < 10; i++) {
-            auto filePath = playingPath / ("LongNoteNum" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-                throw Exceptions::EstException("Failed to load Long Note Combo image!");
-            }
-
-            lnComboFileName.emplace_back(filePath);
-        }
-
-        std::vector<std::filesystem::path> statsNumFileName = {};
-        for (int i = 0; i < 10; i++) {
-            auto filePath = playingPath / ("StatsNum" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-                throw Exceptions::EstException("Failed to load Stats Number image!");
-            }
-
-            statsNumFileName.emplace_back(filePath);
-        }
-
-        m_statsNum = std::make_unique<NumberSprite>(statsNumFileName);
-        auto statsNumPos = manager->GetNumeric(SkinGroup::Playing, "Stats"); // conf.GetNumeric("Stats");
-        if (statsNumPos.size() < 5) {
-            throw Exceptions::EstException("Playing.ini : Numerics : Stats : Not enough positions! (count < 5)");
-        }
-
-        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
-        m_statsNum->MaxDigits = statsNumPos[0].MaxDigit;
-        m_statsNum->FillWithZeros = statsNumPos[0].FillWithZero;
-        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
-        m_statsNum->AnchorPoint = { 0, .5 };
-
-        // COOL: 0 -> MAXCOMBO: 4
-        for (int i = 0; i < 5; i++) {
-            m_statsPos[i] = UDim2::fromOffset(statsNumPos[i].X, statsNumPos[i].Y);
-        }
-
-        m_lnComboNum = std::make_unique<NumberSprite>(lnComboFileName);
-        auto lnComboPos = manager->GetNumeric(SkinGroup::Playing, "LongNoteCombo"); // conf.GetNumeric("LongNoteCombo");
-        if (lnComboPos.size() < 1) {
-            throw Exceptions::EstException("Playing.ini : Numerics : LongNoteCombo : Position Not defined!");
-        }
-
-        auto btnExitPos = manager->GetPosition(SkinGroup::Playing, "ExitButton"); // conf.GetPosition("ExitButton");
-        auto btnExitRect = manager->GetRect(SkinGroup::Playing, "Exit");          // conf.GetRect("Exit");
-
-        if (btnExitPos.size() < 1 || btnExitRect.size() < 1) {
-            throw Exceptions::EstException("Playing.ini : Positions|Rect : Exit : Not defined!");
-        }
-
-        m_exitBtn = std::make_unique<Image>(playingPath / "Exit.png");
-        m_exitBtn->Position = UDim2::fromOffset(btnExitRect[0].X, btnExitRect[0].Y); // Fix Exit not functional with Playing.ini
-        m_exitBtn->AnchorPoint = { btnExitPos[0].AnchorPointX, btnExitPos[0].AnchorPointY };
-
-        m_lnComboNum->Position = UDim2::fromOffset(lnComboPos[0].X, lnComboPos[0].Y);
-        m_lnComboNum->NumberPosition = IntToPos(lnComboPos[0].Direction);
-        m_lnComboNum->MaxDigits = lnComboPos[0].MaxDigit;
-        m_lnComboNum->FillWithZeros = lnComboPos[0].FillWithZero;
-        m_lnComboNum->AlphaBlend = true;
-
-        auto                               lnLogoPos = manager->GetSprite(SkinGroup::Playing, "LongNoteLogo"); // conf.GetSprite("LongNoteLogo");
-        std::vector<std::filesystem::path> lnLogoFileName = {};
-        for (int i = 0; i < lnLogoPos.numOfFrames; i++) {
-            auto filePath = playingPath / ("LongNoteLogo" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "Missing: " << filePath.filename() << std::endl;
-                throw Exceptions::EstException("Failed to load Long Note Logo image!");
-            }
-
-            lnLogoFileName.emplace_back(filePath);
-        }
-
-        m_lnLogo = std::make_unique<Sprite>(lnLogoFileName, 0.25f);
-        m_lnLogo->Position = UDim2::fromOffset(lnLogoPos.X, lnLogoPos.Y);
-        m_lnLogo->AnchorPoint = { lnLogoPos.AnchorPointX, lnLogoPos.AnchorPointY };
-        m_lnLogo->SetDelay(lnLogoPos.FrameTime);
-        m_lnLogo->AlphaBlend = true;
-
-        auto                               comboLogoPos = manager->Arena_GetSprite("ComboLogo"); // arena_conf.GetSprite("ComboLogo");
-        std::vector<std::filesystem::path> comboFileName = {};
-        for (int i = 0; i < comboLogoPos.numOfFrames; i++) {
-            auto file = arenaPath / ("ComboLogo" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(file)) {
-                break;
-            }
-
-            comboFileName.emplace_back(file);
-        }
-
-        m_comboLogo = std::make_unique<Sprite>(comboFileName, 0.25f);
-        m_comboLogo->Position = UDim2::fromOffset(comboLogoPos.X, comboLogoPos.Y);
-        m_comboLogo->AnchorPoint = { comboLogoPos.AnchorPointX, comboLogoPos.AnchorPointY };
-        m_comboLogo->SetDelay(comboLogoPos.FrameTime);
-        m_comboLogo->AlphaBlend = true;
-
-        m_waveGage = std::make_unique<Image>(playingPath / "WaveGage.png");
-        auto waveGagePos = manager->GetPosition(SkinGroup::Playing, "WaveGage").front(); // conf.GetPosition("WaveGage").front();
-        m_waveGage->Position = UDim2::fromOffset(waveGagePos.X, waveGagePos.Y);
-        m_waveGage->AnchorPoint = { waveGagePos.AnchorPointX, waveGagePos.AnchorPointY };
-
-        std::vector<std::filesystem::path> numTimerPaths = {};
-        for (int i = 0; i < 10; i++) {
-            numTimerPaths.emplace_back(playingPath / ("PlayTimeNum" + std::to_string(i) + ".png"));
-
-            if (!std::filesystem::exists(numTimerPaths.back())) {
-                throw Exceptions::EstException("Failed to load Timer Images 0-9, please check your skin folder.");
-            }
-        }
-
-        auto                               targetPos = manager->GetSprite(SkinGroup::Playing, "TargetBar"); // conf.GetSprite("TargetBar");
-        std::vector<std::filesystem::path> targetBarPaths = {};
-        for (int i = 0; i < targetPos.numOfFrames; i++) {
-            auto filePath = playingPath / ("TargetBar" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(filePath)) {
-                throw Exceptions::EstException("Failed to load TargetBar Images, please check your skin folder.");
-            }
-
-            targetBarPaths.emplace_back(filePath);
-        }
-
-        auto playfooterPos = manager->GetPosition(SkinGroup::Playing, "Playfooter").front();
-        m_Playfooter = std::make_unique<Image>(playingPath / "PlayfieldFooter.png");
-        m_Playfooter->Position = UDim2::fromOffset(playfooterPos.X, playfooterPos.Y);
-        m_Playfooter->AnchorPoint = { playfooterPos.AnchorPointX, playfooterPos.AnchorPointY };
-
-        m_targetBar = std::make_unique<Sprite>(targetBarPaths);
-        m_targetBar->Position = UDim2::fromOffset(targetPos.X, targetPos.Y);
-        m_targetBar->AnchorPoint = { targetPos.AnchorPointX, targetPos.AnchorPointY };
-        m_targetBar->SetDelay(targetPos.FrameTime);
-
-        m_minuteNum = std::make_unique<NumberSprite>(numTimerPaths);
-        auto minutePos = manager->GetNumeric(SkinGroup::Playing, "Minute"); // conf.GetNumeric("Minute");
-        m_minuteNum->NumberPosition = IntToPos(minutePos[0].Direction);
-        m_minuteNum->MaxDigits = minutePos[0].MaxDigit;
-        m_minuteNum->FillWithZeros = minutePos[0].FillWithZero;
-        m_minuteNum->Position = UDim2::fromOffset(minutePos[0].X, minutePos[0].Y);
-
-        m_secondNum = std::make_unique<NumberSprite>(numTimerPaths);
-        auto secondPos = manager->GetNumeric(SkinGroup::Playing, "Second"); // conf.GetNumeric("Second");
-        m_secondNum->NumberPosition = IntToPos(secondPos[0].Direction);
-        m_secondNum->MaxDigits = secondPos[0].MaxDigit;
-        m_secondNum->FillWithZeros = secondPos[0].FillWithZero;
-        m_secondNum->Position = UDim2::fromOffset(secondPos[0].X, secondPos[0].Y);
-
-        auto pillsPosition = manager->GetPosition(SkinGroup::Playing, "Pill"); // conf.GetPosition("Pill");
-        if (pillsPosition.size() < 5) {
-            throw Exceptions::EstException("Playing.ini : Positions : Pill : Not enough positions! (count < 5)");
-        }
-
-        for (int i = 0; i < 5; i++) {
-            auto file = playingPath / ("Pill" + std::to_string(i) + ".png");
-
-            auto pos = pillsPosition[i];
-            m_pills[i] = std::move(std::make_unique<Image>(file));
-            m_pills[i]->Position = UDim2::fromOffset(pos.X, pos.Y);
-            m_pills[i]->AnchorPoint = { pos.AnchorPointX, pos.AnchorPointY };
-        }
-
-        auto hitEffectPos = manager->Arena_GetSprite("HitEffect");   // arena_conf.GetSprite("HitEffect");
-        auto holdEffectPos = manager->Arena_GetSprite("HoldEffect"); // arena_conf.GetSprite("HoldEffect");
-
-        std::vector<std::filesystem::path> HitEffect = {};
-        for (int i = 0; i < hitEffectPos.numOfFrames; i++) {
-            auto path = arenaPath / ("HitEffect" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(path)) {
-                break;
-            }
-
-            HitEffect.emplace_back(path);
-        }
-
-        std::vector<std::filesystem::path> holdEffect = {};
-        for (int i = 0; i < holdEffectPos.numOfFrames; i++) {
-            auto path = arenaPath / ("HoldEffect" + std::to_string(i) + ".png");
-
-            if (!std::filesystem::exists(path)) {
-                break;
-            }
-
-            holdEffect.emplace_back(path);
-        }
-
         {
-            Chart *chart = reinterpret_cast<Chart *>(Env::GetPointer("Chart"));
-
-            if (!chart) {
-                throw Exceptions::EstException("Chart is not loaded!");
-            }
-
             m_Engine = std::make_shared<RhythmEngine>();
             Env::SetInt("Autoplay", 1);
 
@@ -768,33 +446,294 @@ bool Gameplay::Attach()
 
             m_Engine->SetGuideLineIndex(idx);
 
-            auto OnTrackEvent = [&](TrackEvent e) {
-                if (e.IsKeyEvent) {
-                    m_keyState[e.Lane] = e.State;
-                } else {
-                    if (e.IsHitEvent) {
-                        if (e.IsHitLongEvent) {
-                            m_holdEffect[e.Lane]->Reset();
-                            m_drawHit[e.Lane] = false;
-                            m_drawHold[e.Lane] = e.State;
-
-                            if (!e.State) {
-                                m_hitEffect[e.Lane]->Reset();
-                                m_drawHit[e.Lane] = true;
-                            }
-                        } else {
-                            m_hitEffect[e.Lane]->Reset();
-                            m_drawHit[e.Lane] = true;
-                            m_drawHold[e.Lane] = false;
-                        }
-                    }
-                }
-            };
-
-            m_Engine->ListenKeyEvent(OnTrackEvent);
+            m_Engine->ListenKeyEvent([=](TrackEvent e) { OnTrackEvent(e); });
 
             m_Engine->Load(info);
+        }
 
+        /**
+         * Begin playing scene group
+         */
+
+        manager->LoadScript(SkinGroup::Playing);
+
+        for (int i = 0; i < 7; i++) {
+            m_keyState[i] = false;
+            m_drawHit[i] = false;
+            m_drawHold[i] = false;
+        }
+
+        m_title = std::make_unique<UI::Text>("arial.ttf", 13.0f);
+        auto TitlePos = manager->GetPosition("Title").front();
+        auto RectPos = manager->GetRect("Title");
+        m_title->Position = TitlePos.Position;
+        m_title->AnchorPoint = TitlePos.AnchorPoint;
+        m_title->TextClipping = {
+            (int)RectPos[0].Position.X.Offset,
+            (int)RectPos[0].Position.Y.Offset,
+            (int)RectPos[0].Size.X.Offset,
+            (int)RectPos[0].Size.Y.Offset
+        };
+
+        m_autoText = std::make_unique<UI::Text>("arial.ttf", 13.0f);
+        m_autoTextSize = static_cast<int>(m_autoText->MeasureString(AUTOPLAY_TEXT).y);
+
+        m_autoTextPos = UDim2::fromOffset(bufferRect.Width, 50);
+
+        auto playfieldPos = manager->GetPosition("Playfield").front();
+        m_Playfield = std::make_unique<Image>(playfieldPos.Path);
+        m_Playfield->Position = playfieldPos.Position;
+        m_Playfield->Size = playfieldPos.Size;
+        m_Playfield->AnchorPoint = playfieldPos.AnchorPoint;
+
+        auto conKeyLight = manager->GetPosition("KeyLighting");
+        auto conKeyButton = manager->GetPosition("KeyButton");
+
+        if (conKeyLight.size() < 7 || conKeyButton.size() < 7) {
+            throw Exceptions::EstException("Playing.ini : Positions : KeyLighting#KeyButton : Not enough positions! (count < 7)");
+        }
+
+        for (int i = 0; i < 7; i++) {
+            m_keyLighting[i] = std::move(std::make_unique<Image>(conKeyLight[i].Path));
+            m_keyButtons[i] = std::move(std::make_unique<Image>(conKeyButton[i].Path));
+
+            m_keyLighting[i]->Position = conKeyLight[i].Position;
+            m_keyButtons[i]->Position = conKeyButton[i].Position;
+
+            m_keyLighting[i]->Size = conKeyLight[i].Size;
+            m_keyButtons[i]->Size = conKeyButton[i].Size;
+        }
+
+        auto jamNumPos = manager->GetNumeric("Jam").front();
+        m_jamNum = std::make_unique<NumberSprite>(jamNumPos.Files);
+
+        m_jamNum->Position = jamNumPos.Position;
+        m_jamNum->Size = jamNumPos.Size;
+        m_jamNum->NumberPosition = IntToPos(jamNumPos.Direction);
+        m_jamNum->MaxDigits = jamNumPos.MaxDigit;
+        m_jamNum->Color = jamNumPos.Color;
+        m_jamNum->FillWithZeros = jamNumPos.FillWithZero;
+
+        auto scoreNumPos = manager->GetNumeric("Score").front(); // conf.GetNumeric("Score").front();
+        m_scoreNum = std::make_unique<NumberSprite>(scoreNumPos.Files);
+
+        m_scoreNum->Position = scoreNumPos.Position;
+        m_scoreNum->Size = scoreNumPos.Size;
+        m_scoreNum->NumberPosition = IntToPos(scoreNumPos.Direction);
+        m_scoreNum->MaxDigits = scoreNumPos.MaxDigit;
+        m_scoreNum->Color = scoreNumPos.Color;
+        m_scoreNum->FillWithZeros = scoreNumPos.FillWithZero;
+
+        auto gaugePos = manager->GetPosition("JamGauge").front();
+        m_jamGauge = std::make_unique<Image>(gaugePos.Path);
+
+        m_jamGauge->Position = gaugePos.Position;
+        m_jamGauge->Size = gaugePos.Size;
+        m_jamGauge->Color3 = gaugePos.Color;
+        m_jamGauge->AnchorPoint = gaugePos.AnchorPoint;
+
+        auto jamLogoPos = manager->GetSprite("JamLogo");
+
+        m_jamLogo = std::make_unique<Sprite>(jamLogoPos.Files, jamLogoPos.FrameTime);
+        m_jamLogo->Position = jamLogoPos.Position;
+        m_jamLogo->Size = jamLogoPos.Size;
+        m_jamLogo->AnchorPoint = jamLogoPos.AnchorPoint;
+
+        auto lifeBarPos = manager->GetSprite("LifeBar");
+
+        m_lifeBar = std::make_unique<Sprite>(lifeBarPos.Files, lifeBarPos.FrameTime);
+        m_lifeBar->Position = lifeBarPos.Position;
+        m_lifeBar->Size = lifeBarPos.Size;
+        m_lifeBar->AnchorPoint = lifeBarPos.AnchorPoint;
+
+        auto statsNumPos = manager->GetNumeric("Stats"); // conf.GetNumeric("Stats");
+        if (statsNumPos.size() < 5) {
+            throw Exceptions::EstException("Playing.ini : Numerics : Stats : Not enough positions! (count < 5)");
+        }
+
+        m_statsNum = std::make_unique<NumberSprite>(statsNumPos[0].Files);
+
+        m_statsNum->Size = statsNumPos[0].Size;
+        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
+        m_statsNum->MaxDigits = statsNumPos[0].MaxDigit;
+        m_statsNum->FillWithZeros = statsNumPos[0].FillWithZero;
+        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
+        m_statsNum->AnchorPoint = { 0, .5 };
+
+        // COOL: 0 -> MAXCOMBO: 4
+        for (int i = 0; i < 5; i++) {
+            m_statsPos[i] = statsNumPos[i].Position;
+        }
+
+        auto lnComboPos = manager->GetNumeric("LongNoteCombo").front();
+        m_lnComboNum = std::make_unique<NumberSprite>(lnComboPos.Files);
+
+        m_lnComboNum->Position = lnComboPos.Position;
+        m_lnComboNum->NumberPosition = IntToPos(lnComboPos.Direction);
+        m_lnComboNum->MaxDigits = lnComboPos.MaxDigit;
+        m_lnComboNum->FillWithZeros = lnComboPos.FillWithZero;
+        m_lnComboNum->AlphaBlend = true;
+        m_lnComboNum->Size = lnComboPos.Size;
+
+        auto btnExitPos = manager->GetPosition("ExitButton").front();
+        auto btnExitRect = manager->GetRect("Exit");
+
+        m_exitBtn = std::make_unique<Image>(btnExitPos.Path);
+        m_exitBtn->Position = btnExitPos.Position; // Fix Exit not functional with Playing.ini
+        m_exitBtn->Size = btnExitPos.Size;
+        m_exitBtn->AnchorPoint = btnExitPos.AnchorPoint;
+
+        auto lnLogoPos = manager->GetSprite("LongNoteLogo"); // conf.GetSprite("LongNoteLogo");
+
+        m_lnLogo = std::make_unique<Sprite>(lnLogoPos.Files, lnLogoPos.FrameTime);
+        m_lnLogo->Position = lnLogoPos.Position;
+        m_lnLogo->Size = lnLogoPos.Size;
+        m_lnLogo->AnchorPoint = lnLogoPos.AnchorPoint;
+        m_lnLogo->TintColor = lnLogoPos.Color;
+        m_lnLogo->AlphaBlend = true;
+
+        auto waveGagePos = manager->GetPosition("WaveGage").front();
+        m_waveGage = std::make_unique<Image>(waveGagePos.Path);
+        m_waveGage->Position = waveGagePos.Position;
+        m_waveGage->Size = waveGagePos.Size;
+        m_waveGage->AnchorPoint = waveGagePos.AnchorPoint;
+        m_waveGage->Color3 = waveGagePos.Color;
+
+        auto playfooterPos = manager->GetPosition("Playfooter").front();
+        m_Playfooter = std::make_unique<Image>(playfooterPos.Path);
+        m_Playfooter->Position = playfooterPos.Position;
+        m_Playfooter->Size = playfooterPos.Size;
+        m_Playfooter->AnchorPoint = playfooterPos.AnchorPoint;
+        m_Playfooter->Color3 = playfooterPos.Color;
+
+        auto targetPos = manager->GetSprite("TargetBar");
+        m_targetBar = std::make_unique<Sprite>(targetPos.Files, targetPos.FrameTime);
+        m_targetBar->Position = targetPos.Position;
+        m_targetBar->Size = targetPos.Size;
+        m_targetBar->TintColor = targetPos.Color;
+        m_targetBar->AnchorPoint = targetPos.AnchorPoint;
+
+        auto minutePos = manager->GetNumeric("Minute").front();
+        m_minuteNum = std::make_unique<NumberSprite>(minutePos.Files);
+        m_minuteNum->NumberPosition = IntToPos(minutePos.Direction);
+        m_minuteNum->MaxDigits = minutePos.MaxDigit;
+        m_minuteNum->FillWithZeros = minutePos.FillWithZero;
+        m_minuteNum->Position = minutePos.Position;
+        m_minuteNum->Size = minutePos.Size;
+        m_minuteNum->Color = minutePos.Color;
+
+        auto secondPos = manager->GetNumeric("Second").front();
+        m_secondNum = std::make_unique<NumberSprite>(secondPos.Files);
+        m_secondNum->NumberPosition = IntToPos(secondPos.Direction);
+        m_secondNum->MaxDigits = secondPos.MaxDigit;
+        m_secondNum->FillWithZeros = secondPos.FillWithZero;
+        m_secondNum->Position = secondPos.Position;
+        m_secondNum->Size = secondPos.Size;
+        m_secondNum->Color = secondPos.Color;
+
+        auto pillsPosition = manager->GetPosition("Pill");
+        if (pillsPosition.size() < 5) {
+            throw Exceptions::EstException("Playing.ini : Positions : Pill : Not enough positions! (count < 5)");
+        }
+
+        for (int i = 0; i < 5; i++) {
+            auto pos = pillsPosition[i];
+            m_pills[i] = std::move(std::make_unique<Image>(pos.Path));
+            m_pills[i]->Position = pos.Position;
+            m_pills[i]->Size = pos.Size;
+            m_pills[i]->AnchorPoint = pos.AnchorPoint;
+            m_pills[i]->Color3 = pos.Color;
+        }
+
+        auto topRowImagePos = manager->GetPosition("TopRow").front();
+        m_ResultTopRowImage = std::make_unique<Image>(topRowImagePos.Path);
+        m_ResultTopRowImage->Position = topRowImagePos.Position;
+        m_ResultTopRowImage->Size = topRowImagePos.Size;
+        m_ResultTopRowImage->AnchorPoint = topRowImagePos.AnchorPoint;
+        m_ResultTopRowImage->Color3 = topRowImagePos.Color;
+
+        auto bottomRowImagePos = manager->GetPosition("BottomRow").front();
+        m_ResultBottomRowImage = std::make_unique<Image>(bottomRowImagePos.Path);
+        m_ResultBottomRowImage->Position = bottomRowImagePos.Position;
+        m_ResultBottomRowImage->Size = bottomRowImagePos.Size;
+        m_ResultBottomRowImage->AnchorPoint = bottomRowImagePos.AnchorPoint;
+        m_ResultBottomRowImage->Color3 = bottomRowImagePos.Color;
+
+        auto topRowTween = manager->GetTween("TopRow");
+        m_TweenTop = std::make_shared<Tween>(
+            m_ResultTopRowImage->Position,
+            topRowTween.Destination,
+            topRowTween.Duration,
+            topRowTween.Type);
+
+        auto bottomRowTween = manager->GetTween("BottomRow");
+        m_TweenBottom = std::make_shared<Tween>(
+            m_ResultBottomRowImage->Position,
+            bottomRowTween.Destination,
+            bottomRowTween.Duration,
+            bottomRowTween.Type);
+
+        /**
+         * End playing scene group
+         * Begin arena scene group
+         */
+
+        manager->LoadScript(SkinGroup::Arena);
+
+        // TODO: Arena
+        std::vector<std::string> judgeFileName = { "Miss", "Bad", "Good", "Cool" };
+        auto                     judgePos = manager->GetPosition("Judge");
+        if (judgePos.size() < 4) {
+            throw Exceptions::EstException("Playing.ini : Positions : Judge : Not enough positions! (count < 4)");
+        }
+
+        for (int i = 0; i < 4; i++) {
+            auto file = judgePos[i];
+
+            if (!std::filesystem::exists(file.Path)) {
+                throw Exceptions::EstException("Failed to load Judge image!");
+            }
+
+            m_judgement[i] = std::move(std::make_unique<Image>(file.Path));
+            m_judgement[i]->Position = judgePos[i].Position;
+            m_judgement[i]->Size = judgePos[i].Size;
+            m_judgement[i]->AnchorPoint = judgePos[i].AnchorPoint;
+            m_judgement[i]->Color3 = judgePos[i].Color;
+            m_judgement[i]->AlphaBlend = true;
+        }
+
+        // TODO: Arena
+        auto comboLogoPos = manager->GetSprite("ComboLogo");
+
+        m_comboLogo = std::make_unique<Sprite>(comboLogoPos.Files, comboLogoPos.FrameTime);
+        m_comboLogo->Position = comboLogoPos.Position;
+        m_comboLogo->Size = comboLogoPos.Size;
+        m_comboLogo->TintColor = comboLogoPos.Color;
+        m_comboLogo->AnchorPoint = comboLogoPos.AnchorPoint;
+        m_comboLogo->AlphaBlend = true;
+
+        // TODO: Arena
+        auto playingBgPos = manager->GetPosition("PlayingBG").front();
+
+        m_PlayBG = std::make_unique<Image>(playingBgPos.Path);
+        m_PlayBG->Position = playingBgPos.Position;
+        m_PlayBG->Size = playingBgPos.Size;
+        m_PlayBG->Color3 = playingBgPos.Color;
+        m_PlayBG->AnchorPoint = playingBgPos.AnchorPoint;
+
+        // TODO: Arena
+        auto numPos = manager->GetNumeric("Combo").front();
+        m_comboNum = std::make_unique<NumberSprite>(numPos.Files);
+
+        m_comboNum->Position = numPos.Position;
+        m_comboNum->Size = numPos.Size;
+        m_comboNum->Color = numPos.Color;
+        m_comboNum->NumberPosition = IntToPos(numPos.Direction);
+        m_comboNum->MaxDigits = numPos.MaxDigit;
+        m_comboNum->FillWithZeros = numPos.FillWithZero;
+        m_comboNum->AlphaBlend = true;
+
+        {
             std::map<int, std::vector<int>> mappedKeyIndex = {
                 // 4: 1, 2, x, x, x, 3, 4
                 { 4, { 0, 1, 5, 6 } },
@@ -857,11 +796,14 @@ bool Gameplay::Attach()
             m_Engine->GetScoreManager()->ListenLongNote(OnLongComboEvent);
         }
 
+        auto hitEffectPos = manager->GetSprite("HitEffect");
+        auto holdEffectPos = manager->GetSprite("HoldEffect");
+
         auto lanePos = m_Engine->GetLanePos();
         auto laneSize = m_Engine->GetLaneSizes();
         for (int i = 0; i < 7; i++) {
-            m_hitEffect[i] = std::move(std::make_unique<Sprite>(HitEffect));
-            m_holdEffect[i] = std::move(std::make_unique<Sprite>(holdEffect));
+            m_hitEffect[i] = std::move(std::make_unique<Sprite>(hitEffectPos.Files, hitEffectPos.FrameTime));
+            m_holdEffect[i] = std::move(std::make_unique<Sprite>(holdEffectPos.Files, holdEffectPos.FrameTime));
 
             m_hitEffect[i]->SetDelay(hitEffectPos.FrameTime);
             m_holdEffect[i]->SetDelay(holdEffectPos.FrameTime);
@@ -871,13 +813,13 @@ bool Gameplay::Attach()
             m_holdEffect[i]->AlphaBlend = true;
 
             float pos = std::ceil(lanePos[i] + (laneSize[i] / 2.0f));
-            auto  hitPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(hitEffectPos.X, hitEffectPos.Y);
-            auto  holdPos = UDim2::fromOffset(pos, HitPos - 15) + UDim2::fromOffset(holdEffectPos.X, holdEffectPos.Y);
+            auto  hitPos = UDim2::fromOffset(pos, HitPos - 15) + hitEffectPos.Position;
+            auto  holdPos = UDim2::fromOffset(pos, HitPos - 15) + holdEffectPos.Position;
 
             m_hitEffect[i]->Position = hitPos;   // -15 or it will too Deep
             m_holdEffect[i]->Position = holdPos; // -15 or it will too Deep
-            m_hitEffect[i]->AnchorPoint = { hitEffectPos.AnchorPointX, hitEffectPos.AnchorPointY };
-            m_holdEffect[i]->AnchorPoint = { holdEffectPos.AnchorPointX, holdEffectPos.AnchorPointY };
+            m_hitEffect[i]->AnchorPoint = hitEffectPos.AnchorPoint;
+            m_holdEffect[i]->AnchorPoint = holdEffectPos.AnchorPoint;
         }
 
         bool IsHD = Env::GetBool("Hidden");
@@ -919,7 +861,6 @@ bool Gameplay::Attach()
         m_resourceFucked = true;
     }
 
-    MsgBox::InShow("msg_id", "Hello title", "Hello world");
     return true;
 }
 
@@ -927,4 +868,28 @@ bool Gameplay::Detach()
 {
     m_Engine.reset();
     return true;
+}
+
+void Gameplay::OnTrackEvent(TrackEvent e)
+{
+    if (e.IsKeyEvent) {
+        m_keyState[e.Lane] = e.State;
+    } else {
+        if (e.IsHitEvent) {
+            if (e.IsHitLongEvent) {
+                m_holdEffect[e.Lane]->Reset();
+                m_drawHit[e.Lane] = false;
+                m_drawHold[e.Lane] = e.State;
+
+                if (!e.State) {
+                    m_hitEffect[e.Lane]->Reset();
+                    m_drawHit[e.Lane] = true;
+                }
+            } else {
+                m_hitEffect[e.Lane]->Reset();
+                m_drawHit[e.Lane] = true;
+                m_drawHold[e.Lane] = false;
+            }
+        }
+    }
 }

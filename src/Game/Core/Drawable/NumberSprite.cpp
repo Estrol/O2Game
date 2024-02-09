@@ -5,8 +5,8 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "NumberSprite.h"
 #include "../../Env.h"
+#include "NumberSprite.h"
 
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
@@ -19,6 +19,8 @@ NumberSprite::NumberSprite(std::vector<std::filesystem::path> numericsFiles)
 
     Position2 = UDim2::fromOffset(0, 0);
     AnchorPoint = { 0, 0 };
+    Color = Color3::fromRGB(255, 255, 255);
+    Size = UDim2::fromScale(1, 1);
 
     m_numericsTexture.resize(10);
     for (int i = 0; i < 10; i++) {
@@ -69,6 +71,8 @@ void NumberSprite::Draw(int number)
                 tex->Position = UDim2({ 0, tx }, { 0, (float)yPos });
                 tex->AlphaBlend = AlphaBlend;
                 tex->AnchorPoint = AnchorPoint;
+                tex->Size = Size;
+                tex->Color3 = Color;
                 tex->Draw();
             }
             break;
@@ -89,6 +93,8 @@ void NumberSprite::Draw(int number)
                 tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
                 tex->AlphaBlend = AlphaBlend;
                 tex->AnchorPoint = AnchorPoint;
+                tex->Size = Size;
+                tex->Color3 = Color;
                 tex->Draw();
                 tx += (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
             }
@@ -104,6 +110,8 @@ void NumberSprite::Draw(int number)
                 tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
                 tex->AnchorPoint = AnchorPoint;
                 tex->AlphaBlend = AlphaBlend;
+                tex->Size = Size;
+                tex->Color3 = Color;
                 tex->Draw();
                 tx += (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
             }

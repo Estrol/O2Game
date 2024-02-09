@@ -85,9 +85,7 @@ namespace Graphics {
 
         struct VulkanFrame
         {
-            VkSemaphore presentSemaphore;
-            VkSemaphore renderSemaphore;
-            VkFence     renderFence;
+            VkFence renderFence;
 
             VkCommandPool   commandPool;
             VkCommandBuffer commandBuffer;
@@ -101,6 +99,12 @@ namespace Graphics {
             VkDeviceMemory memory;
 
             VulkanBuffer buffer;
+        };
+
+        struct VulkanSemaphore
+        {
+            VkSemaphore presentSemaphore;
+            VkSemaphore renderSemaphore;
         };
 
         struct VulkanSwapChain
@@ -231,6 +235,7 @@ namespace Graphics {
             VulkanFrame &GetCurrentFrame();
             VulkanFrame &GetLastFrame();
 
+            VulkanSemaphore     m_Semaphores;
             VulkanObject        m_Vulkan;
             VulkanSwapChain     m_Swapchain;
             VulkanImGui         m_Imgui;
@@ -257,6 +262,7 @@ namespace Graphics {
             bool m_FenceRequireReset = false;
 
             uint32_t m_CurrentFrame = 0;
+            uint32_t m_FrameWithoutSwapchain = 0;
 
             // Descriptor, for auto cleanup
             std::vector<std::unique_ptr<VulkanDescriptor>> m_Descriptors;

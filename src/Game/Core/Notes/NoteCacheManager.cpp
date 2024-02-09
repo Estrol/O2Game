@@ -5,8 +5,8 @@
  * See the LICENSE file in the root of this project for details.
  */
 
-#include "NoteCacheManager.h"
 #include "../Resources/NoteImages.h"
+#include "NoteCacheManager.h"
 #include <Logs.h>
 
 constexpr int MAX_OBJECTS = 50;

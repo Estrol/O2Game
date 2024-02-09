@@ -9,11 +9,16 @@
 #include <Imgui/imgui.h>
 #include <Screens/ScreenManager.h>
 
+#include <Audio/AudioEngine.h>
+#include <Audio/AudioSample.h>
+
 #include "../Scenes/Gameplay.h"
 #include "../Scenes/Loading.h"
+#include "../Scenes/Result.h"
 
 #include "../Scenes/SceneList.h"
 
+#include "Core/Skinning/LuaSkin.h"
 #include "Env.h"
 #include "MsgBoxEx.h"
 
@@ -38,7 +43,7 @@ void O2Game::Run(int argv, char **argc)
     runInfo.buffer_resolution = { 800, 600 };
     runInfo.graphics = Graphics::API::Vulkan;
     runInfo.threadMode = ThreadMode::Multi;
-    runInfo.renderFrameRate = 1000.0f;
+    runInfo.renderFrameRate = 120.0f;
     runInfo.renderVsync = true;
     runInfo.inputFrameRate = 1000.0f;
     runInfo.fixedFrameRate = 65.0f;
@@ -69,6 +74,20 @@ void O2Game::OnLoad()
 
     auto renderer = Graphics::Renderer::Get();
 
+    auto manager = LuaSkin::Get();
+    manager->LoadSkin("Default");
+    manager->LoadScript(SkinGroup::Audio);
+
+    auto audios = manager->GetAudio();
+    auto audioManager = Audio::Engine::Get();
+
+    for (auto &audio : audios) {
+        Audio::Sample *sample = audioManager->LoadSample(audio.Path);
+        std::string    name = AudioTypeString[audio.Type];
+
+        Env::SetPointer(name, sample);
+    }
+
     TextureBlendInfo blendMul = {
         true,
         BlendFactor::BLEND_FACTOR_SRC_ALPHA,
@@ -96,6 +115,7 @@ void O2Game::OnLoad()
 
     scenemanager->AddScreen(SceneList::LOADING, new Loading());
     scenemanager->AddScreen(SceneList::GAMEPLAY, new Gameplay());
+    scenemanager->AddScreen(SceneList::RESULT, new Result());
     scenemanager->SetScreen(SceneList::LOADING);
 }
 

@@ -14,6 +14,7 @@ add_executable(o2game ${HEADERS}
     "Scenes/Gameplay.cpp" 
     "Scenes/Loading.cpp"
     "Scenes/SongSelect.cpp"
+    "Scenes/Result.cpp"
 
     # Core
     "Game/Core/RhythmEngine.cpp"
@@ -31,14 +32,16 @@ add_executable(o2game ${HEADERS}
     "Game/Core/Drawable/Image.cpp" 
     "Game/Core/Drawable/ImageGenerators.cpp" 
     "Game/Core/Drawable/NumberSprite.cpp" 
+    "Game/Core/Drawable/ButtonImage.cpp"
     "Game/Core/Audio/SampleManager.cpp"
     "Game/Core/Scoring/ScoreManager.cpp"
     "Game/Core/Timings/StaticTiming.cpp"
     "Game/Core/Timings/TimingBase.cpp"
     "Game/Core/Timings/VelocityTiming.cpp"
-    "Game/Core/Skinning/LegacySkin.cpp" 
-    "Game/Core/Skinning/LuaScripting.cpp" 
-    "Game/Core/Skinning/SkinManager.cpp" 
+    "Game/Core/Skinning/LuaSkin.cpp"
+    # "Game/Core/Skinning/LegacySkin.cpp" 
+    # "Game/Core/Skinning/LuaScripting.cpp" 
+    # "Game/Core/Skinning/SkinManager.cpp" 
     "Game/Core/Database/GameDatabase.cpp"
 
     # Data

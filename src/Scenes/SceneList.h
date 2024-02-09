@@ -12,4 +12,5 @@ namespace SceneList {
     constexpr int MAINMENU = 1;
     constexpr int LOADING = 2;
     constexpr int GAMEPLAY = 3;
+    constexpr int RESULT = 4;
 };

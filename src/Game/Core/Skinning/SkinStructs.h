@@ -6,14 +6,23 @@
  */
 
 #pragma once
+#include <Math/Color3.h>
+#include <Math/Tween.h>
+#include <Math/Vector2.h>
+#include <filesystem>
+#include <map>
 #include <string>
+#include <vector>
 
 enum class SkinGroup {
     Main,
     MainMenu,
     Notes,
     Playing,
-    SongSelect
+    Arena,
+    SongSelect,
+    Result,
+    Audio
 };
 
 enum class SkinDataType {
@@ -21,7 +30,15 @@ enum class SkinDataType {
     Position,
     Rect,
     Note,
-    Sprite
+    Sprite,
+    Tween,
+    Audio
+};
+
+enum class SkinNumericDirection {
+    Left = -1,
+    Mid = 0,
+    Right = 1
 };
 
 struct LaneInfo
@@ -33,42 +50,72 @@ struct LaneInfo
 // Value Format: X, Y, AnchorPointX?, AnchorPointY?, TintColor?
 struct PositionValue
 {
-    double        X, Y;
-    float         AnchorPointX, AnchorPointY;
-    unsigned char RGB[3];
+    std::filesystem::path Path;
+    UDim2                 Position;
+    UDim2                 Size;
+    Vector2               AnchorPoint;
+    Color3                Color;
 };
 
 // Value format: X, Y, MaxDigits?, Direction?, FillWithZero?
 struct NumericValue
 {
-    double        X, Y;
-    int           MaxDigit;
-    int           Direction;
-    bool          FillWithZero;
-    unsigned char RGB[3];
+    std::vector<std::filesystem::path> Files;
+    UDim2                              Position;
+    UDim2                              Size;
+    int                                MaxDigit;
+    int                                Direction;
+    bool                               FillWithZero;
+    Color3                             Color;
 };
 
 // Value format: X, Y, AnchorPointX, AnchorPointY
 struct SpriteValue
 {
-    int           numOfFrames;
-    double        X, Y;
-    float         AnchorPointX, AnchorPointY;
-    float         FrameTime;
-    unsigned char RGB[3];
+    std::vector<std::filesystem::path> Files;
+    UDim2                              Position;
+    UDim2                              Size;
+    Vector2                            AnchorPoint;
+    float                              FrameTime;
+    Color3                             Color;
 };
 
 // Value format: NumOfFiles, FileName
 struct NoteValue
 {
-    int           numOfFiles;
-    std::string   fileName;
-    float         FrameTime;
-    unsigned char RGB[3];
+    std::vector<std::filesystem::path> Files;
+    UDim2                              Size;
+    float                              FrameTime;
+    Color3                             Color;
 };
 
 struct RectInfo
 {
-    int X, Y;
-    int Width, Height;
+    UDim2 Position;
+    UDim2 Size;
+};
+
+struct TweenInfo
+{
+    UDim2     Destination;
+    TweenType Type;
+    float     Duration;
+};
+
+enum class SkinAudioType {
+    BGM_Lobby,
+    BGM_Waiting,
+    BGM_Result
+};
+
+static std::map<SkinAudioType, std::string> AudioTypeString = {
+    { SkinAudioType::BGM_Lobby, "BGM_Lobby" },
+    { SkinAudioType::BGM_Waiting, "BGM_Waiting" },
+    { SkinAudioType::BGM_Result, "BGM_Result" }
+};
+
+struct AudioInfo
+{
+    std::filesystem::path Path;
+    SkinAudioType         Type;
 };

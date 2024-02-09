@@ -124,7 +124,7 @@ void Track::Render(double delta)
     }
 }
 
-void Track::OnKeyUp()
+void Track::OnKeyUp(double time)
 {
     if (m_callback) {
         TrackEvent e = {};
@@ -138,7 +138,7 @@ void Track::OnKeyUp()
     // create a copy of it, so it wont be NULL if the note is moved to cache
     for (std::shared_ptr<Note> note : m_notes) {
         if (note && !(note->IsPassed() && note->IsRemoveable())) {
-            auto result = note->CheckRelease();
+            auto result = note->CheckRelease(time);
             if (std::get<bool>(result)) {
                 note->OnRelease(std::get<NoteResult>(result));
 
@@ -153,7 +153,7 @@ void Track::OnKeyUp()
     }
 }
 
-void Track::OnKeyDown()
+void Track::OnKeyDown(double time)
 {
     if (m_callback) {
         TrackEvent e = {};
@@ -168,7 +168,7 @@ void Track::OnKeyDown()
     // create a copy of it, so it wont be NULL if the note is moved to cache
     for (std::shared_ptr<Note> note : m_notes) {
         if (note && !(note->IsPassed() && note->IsRemoveable())) {
-            auto result = note->CheckHit();
+            auto result = note->CheckHit(time);
             if (std::get<bool>(result)) {
                 note->OnHit(std::get<NoteResult>(result));
 

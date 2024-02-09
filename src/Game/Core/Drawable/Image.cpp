@@ -13,30 +13,35 @@
 Image::Image() : UI::Image::Image()
 {
     AlphaBlend = false;
+    Color3 = Color3::fromRGB(255, 255, 255);
 }
 
 Image::Image(std::filesystem::path path)
     : UI::Image::Image(path)
 {
     AlphaBlend = false;
+    Color3 = Color3::fromRGB(255, 255, 255);
 }
 
 Image::Image(Graphics::Texture2D *texture)
     : UI::Image::Image(texture)
 {
     AlphaBlend = false;
+    Color3 = Color3::fromRGB(255, 255, 255);
 }
 
 Image::Image(const char *buf, size_t size)
     : UI::Image::Image(buf, size)
 {
     AlphaBlend = false;
+    Color3 = Color3::fromRGB(255, 255, 255);
 }
 
 Image::Image(const char *pixbuf, uint32_t width, uint32_t height)
     : UI::Image::Image(pixbuf, width, height)
 {
     AlphaBlend = false;
+    Color3 = Color3::fromRGB(255, 255, 255);
 }
 
 void Image::Draw()

@@ -22,12 +22,11 @@ MsBasedJudge::MsBasedJudge(RhythmEngine *engine) : JudgeBase(engine)
 {
 }
 
-std::tuple<bool, NoteResult> MsBasedJudge::CalculateResult(Note *note)
+std::tuple<bool, NoteResult> MsBasedJudge::CalculateResult(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = std::abs(noteTime - audioPos);
+    double diff = std::abs(noteTime - time);
     if (diff <= kNoteCoolHitRatio - kNoteCoolHitRatio) {
         return { true, NoteResult::COOL };
     } else if (diff <= kNoteGoodHitRatio - kNoteGoodHitRatio) {
@@ -41,22 +40,20 @@ std::tuple<bool, NoteResult> MsBasedJudge::CalculateResult(Note *note)
     return { false, NoteResult::MISS };
 }
 
-bool MsBasedJudge::IsAccepted(Note *note)
+bool MsBasedJudge::IsAccepted(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = noteTime - audioPos;
+    double diff = noteTime - time;
 
     return diff <= kNoteBadHitRatio;
 }
 
-bool MsBasedJudge::IsMissed(Note *note)
+bool MsBasedJudge::IsMissed(Note *note, double time)
 {
-    double audioPos = m_engine->GetGameAudioPosition();
     double noteTime = note->GetHitTime();
 
-    double diff = noteTime - audioPos;
+    double diff = noteTime - time;
 
     return diff < -kNoteEarlyMissRatio;
 }
