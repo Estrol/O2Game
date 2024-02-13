@@ -137,6 +137,15 @@ void GameplayScene::Render(double delta)
 
     m_Playfooter->Draw();
     m_Playfield->Draw();
+
+    // Draw Mods
+    if (m_noteMod) { // Fix Crash
+        m_noteMod->Draw();
+    }
+    if (m_visualMod) { // Fix Crash
+        m_visualMod->Draw();
+    }
+
     if (!is_flhd_enabled) {
         m_targetBar->Draw(delta);
     }
@@ -924,6 +933,9 @@ bool GameplayScene::Attach()
 
         bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
         bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
+        bool IsRD = EnvironmentSetup::GetInt("Random") == 1;
+        bool IsMR = EnvironmentSetup::GetInt("Mirror") == 1;
+
         if (IsHD || IsFL) {
             std::vector<Segment> segments;
 
@@ -954,6 +966,53 @@ bool GameplayScene::Attach()
             m_laneHideImage = std::make_unique<Texture2D>(imageBuffer.data(), imageBuffer.size());
             m_laneHideImage->Position = UDim2::fromOffset(imagePos, 0);
             m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight);
+        }
+
+        bool areNoteModsActive = IsMR || IsRD; // Check if any of the NoteMods are active (Mirror or Random)
+        bool areVisualModsActive = IsHD || IsFL; // Check if any of the VisualMods are active (Hidden or Flashlight)
+        // I don't put throw error if any file below doesn't exist maybe you can put it if necessary
+        if (areVisualModsActive) { // Draw VisualMods (Hidden and Flashlight)
+            if (IsHD) {
+                std::string VisualModImage = "Hidden.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
+
+            if (IsFL) {
+                std::string VisualModImage = "Flashlight.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
+        }
+
+        if (areNoteModsActive) { // Draw NoteMods (Mirror and Random)
+            if (IsMR) {
+                std::string NoteModImage = "Mirror.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
+
+            if (IsRD) {
+                std::string NoteModImage = "Random.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
         }
 
         auto OnHitEvent = [&](NoteHitInfo info) {
@@ -1031,6 +1090,9 @@ bool GameplayScene::Detach()
     m_Playfield.reset();
     m_Playfooter.reset();
     m_exitBtn.reset();
+
+    m_noteMod.reset();
+    m_visualMod.reset();
 
     m_jamGauge.reset();
     m_waveGage.reset();
