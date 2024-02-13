@@ -12,78 +12,77 @@
 
 Sprite::Sprite()
 {
-    Size = UDim2::fromScale(1, 1);
-    Position = UDim2::fromOffset(0, 0);
-    TintColor = Color3::fromRGB(255, 255, 255);
     AlphaBlend = false;
-    Repeat = true;
     UpdateOnDraw = true;
-    AnchorPoint = { 0, 0 };
+    Repeat = true;
 
-    m_ShouldDispose = false;
-    m_CurrentIndex = 0;
+    m_frameTime = 1.0f;
+    m_elapsedFrameTime = 0.0;
+    m_spriteIndex = 0;
     m_RepeatIndex = 0;
-    m_MaxIndex = 0;
-    m_Delay = 0.0f;
-    m_CurrentTime = 0.0f;
 }
 
-Sprite::Sprite(std::vector<std::filesystem::path> paths, float fps)
-    : Sprite::Sprite(paths, 0, fps)
+Sprite::Sprite(
+    std::filesystem::path               path,
+    std::vector<std::vector<glm::vec2>> texCoords,
+    float                               fps)
+    : UI::Sprite(path, texCoords, fps)
 {
+    AlphaBlend = false;
+    UpdateOnDraw = true;
+    Repeat = true;
+
+    m_frameTime = 1.0 / fps;
+    m_elapsedFrameTime = 0.0;
+    m_spriteIndex = 0;
+    m_RepeatIndex = 0;
 }
 
-Sprite::Sprite(std::vector<Image *> paths, float fps)
-    : Sprite::Sprite(paths, 0, fps)
+Sprite::Sprite(
+    std::shared_ptr<Graphics::Texture2D> texture,
+    std::vector<std::vector<glm::vec2>>  texCoords,
+    float                                fps)
+    : UI::Sprite(texture, texCoords, fps)
 {
-}
+    AlphaBlend = false;
+    UpdateOnDraw = true;
+    Repeat = true;
 
-Sprite::Sprite(std::vector<std::filesystem::path> paths, int repeatIndex, float fps)
-    : Sprite::Sprite()
-{
-    for (auto &path : paths) {
-        m_Images.push_back(new Image(path));
-    }
-
-    m_RepeatIndex = repeatIndex;
-    m_MaxIndex = (int)m_Images.size() - 1;
-    m_Delay = 1.0f / fps;
-
-    m_ShouldDispose = true;
-}
-
-Sprite::Sprite(std::vector<Image *> paths, int repeatIndex, float fps)
-    : Sprite::Sprite()
-{
-    m_Images = paths;
-
-    m_RepeatIndex = repeatIndex;
-    m_MaxIndex = (int)m_Images.size() - 1;
-    m_Delay = 1.0f / fps;
-}
-
-Sprite::~Sprite()
-{
-    if (m_ShouldDispose) {
-        for (auto &image : m_Images) {
-            delete image;
-        }
-    }
+    m_frameTime = 1.0 / fps;
+    m_elapsedFrameTime = 0.0;
+    m_spriteIndex = 0;
+    m_RepeatIndex = 0;
 }
 
 void Sprite::Update(double fixedDelta)
 {
-    m_CurrentTime += static_cast<float>(fixedDelta);
+    m_elapsedFrameTime += fixedDelta;
 
-    if (m_CurrentTime >= m_Delay) {
-        m_CurrentTime = 0;
+    if (m_elapsedFrameTime >= m_frameTime) {
+        m_elapsedFrameTime = 0.0;
+        m_spriteIndex++;
 
-        m_CurrentIndex++;
+        if (m_spriteIndex >= m_texCoords.size()) {
+            if (Repeat) {
+                m_spriteIndex = m_RepeatIndex;
+            } else {
+                m_spriteIndex = (int)(m_texCoords.size());
+            }
+        }
     }
+}
 
-    if (Repeat && m_CurrentIndex >= m_Images.size()) {
-        m_CurrentIndex = m_RepeatIndex;
-    }
+void Sprite::Draw()
+{
+    auto window = Graphics::NativeWindow::Get();
+    auto windowSize = window->GetBufferSize();
+
+    Draw(0, windowSize);
+}
+
+void Sprite::Draw(Rect rc)
+{
+    Draw(0, rc);
 }
 
 void Sprite::Draw(double delta)
@@ -91,7 +90,7 @@ void Sprite::Draw(double delta)
     auto window = Graphics::NativeWindow::Get();
     auto windowSize = window->GetBufferSize();
 
-    Draw(delta, { 0, 0, windowSize.Width, windowSize.Height });
+    Draw(delta, windowSize);
 }
 
 void Sprite::Draw(double delta, Rect clip)
@@ -100,32 +99,66 @@ void Sprite::Draw(double delta, Rect clip)
         Update(delta);
     }
 
-    if (m_CurrentIndex < m_Images.size()) {
-        CalculateSize();
-
-        auto &frame = m_Images[m_CurrentIndex];
-
-        frame->AlphaBlend = AlphaBlend;
-        frame->Color3 = TintColor;
-
-        if (m_CurrentIndex != 0) {
-            frame->Position = UDim2::fromOffset(AbsolutePosition.X, AbsolutePosition.Y);
-            frame->Size = UDim2::fromOffset(AbsoluteSize.X, AbsoluteSize.Y);
-            frame->AnchorPoint = { 0, 0 };
+    if (m_spriteIndex < m_texCoords.size()) {
+        if (AlphaBlend) {
+            BlendState = Env::GetInt("BlendAlpha");
+        } else {
+            BlendState = Env::GetInt("BlendNonAlpha");
         }
 
-        frame->Draw(clip);
+        Image::Draw(clip);
     }
+}
+
+void Sprite::CalculateSize()
+{
+    UDim2 PositionToCalculate = Position - Position2;
+
+    Rect   imageRect = GetImageSize();
+    Rect   bufferRect = Graphics::NativeWindow::Get()->GetBufferSize();
+    double ImageWidth = imageRect.Width;
+    double ImageHeight = imageRect.Height;
+    double Width = bufferRect.Width;
+    double Height = bufferRect.Height;
+
+    double X = 0;
+    double Y = 0;
+
+    if (Parent != nullptr && Parent != this) {
+        Parent->CalculateSize();
+
+        Width = Parent->AbsoluteSize.X;
+        Height = Parent->AbsoluteSize.Y;
+        X = Parent->AbsolutePosition.X;
+        Y = Parent->AbsolutePosition.Y;
+    }
+
+    double x0 = (Width * PositionToCalculate.X.Scale) + PositionToCalculate.X.Offset;
+    double y0 = (Height * PositionToCalculate.Y.Scale) + PositionToCalculate.Y.Offset;
+
+    double x1 = (ImageWidth * Size.X.Scale) + Size.X.Offset;
+    double y1 = (ImageHeight * Size.Y.Scale) + Size.Y.Offset;
+
+    double xAnchor = x1 * std::clamp(AnchorPoint.X, 0.0, 1.0);
+    double yAnchor = y1 * std::clamp(AnchorPoint.Y, 0.0, 1.0);
+
+    x0 -= xAnchor;
+    y0 -= yAnchor;
+
+    AbsolutePosition = { (X + x0), (Y + y0) };
+    AbsoluteSize = { x1, y1 };
+
+    roundedCornerPixels = glm::vec4();
 }
 
 void Sprite::SetIndexAt(int index)
 {
-    m_CurrentIndex = index;
+    m_spriteIndex = index;
 }
 
 void Sprite::SetDelay(float fps)
 {
-    m_Delay = 1.0f / fps;
+    m_frameTime = 1.0 / fps;
 }
 
 void Sprite::SetRepeatIndex(int index)
@@ -135,26 +168,10 @@ void Sprite::SetRepeatIndex(int index)
 
 void Sprite::Reset()
 {
-    m_CurrentIndex = 0;
+    m_spriteIndex = 0;
 }
 
 void Sprite::ResetLast()
 {
-    m_CurrentIndex = (int)m_Images.size() - 1;
-}
-
-Image **Sprite::GetImages()
-{
-    return &m_Images[0];
-}
-
-void Sprite::CalculateSize()
-{
-    m_Images[0]->AnchorPoint = AnchorPoint;
-    m_Images[0]->Size = Size;
-    m_Images[0]->Position = Position - Position2;
-    m_Images[0]->CalculateSize();
-
-    AbsoluteSize = m_Images[0]->AbsoluteSize;
-    AbsolutePosition = m_Images[0]->AbsolutePosition;
+    m_spriteIndex = (int)(m_texCoords.size() - 1);
 }

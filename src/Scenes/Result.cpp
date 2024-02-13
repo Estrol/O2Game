@@ -91,7 +91,7 @@ bool Result::Attach()
 
     auto scorePos = manager->GetPosition("Score").front();
     auto scoreImgs = manager->GetNumeric("Score").front();
-    m_Score = std::make_shared<NumberSprite>(scoreImgs.Files);
+    m_Score = std::make_shared<NumberSprite>(scoreImgs.Path, scoreImgs.TexCoords);
     m_Score->Position = scorePos.Position;
     m_Score->Size = scorePos.Size;
     m_Score->AnchorPoint = scorePos.AnchorPoint;
@@ -113,20 +113,13 @@ bool Result::Attach()
     m_Lose->Color3 = losePos.Color;
 
     auto backRect = manager->GetRect("Back").front();
-    auto backHoverOn = manager->GetPosition("BackHoverOn").front();
-    auto backHoverOff = manager->GetPosition("BackHoverOff").front();
+    auto backHoverButton = manager->GetSprite("BackHover");
 
-    auto backHoverOnImg = std::make_shared<Image>(backHoverOn.Path);
-    backHoverOnImg->Position = backHoverOn.Position;
-    backHoverOnImg->Size = backHoverOn.Size;
-    backHoverOnImg->AnchorPoint = backHoverOn.AnchorPoint;
-    backHoverOnImg->Color3 = backHoverOn.Color;
-
-    auto backHoverOffImg = std::make_shared<Image>(backHoverOff.Path);
-    backHoverOffImg->Position = backHoverOff.Position;
-    backHoverOffImg->Size = backHoverOff.Size;
-    backHoverOffImg->AnchorPoint = backHoverOff.AnchorPoint;
-    backHoverOffImg->Color3 = backHoverOff.Color;
+    std::shared_ptr<Sprite> backButtonSprite = std::make_shared<Sprite>(backHoverButton.Path, backHoverButton.TexCoords, 0.0f);
+    backButtonSprite->Position = backHoverButton.Position;
+    backButtonSprite->Size = backHoverButton.Size;
+    backButtonSprite->AnchorPoint = backHoverButton.AnchorPoint;
+    backButtonSprite->Color3 = backHoverButton.Color;
 
     m_BackButton = std::make_shared<ButtonImage>(
         Rect{
@@ -134,7 +127,7 @@ bool Result::Attach()
             (int)backRect.Position.Y.Offset,
             (int)backRect.Size.X.Offset,
             (int)backRect.Size.Y.Offset },
-        std::make_pair(backHoverOffImg, backHoverOnImg));
+        backButtonSprite);
 
     m_BackButton->OnClick([]() { MsgBox::Show("Hello", "Hello"); });
 
@@ -164,10 +157,10 @@ bool Result::Attach()
     };
 
     auto statsImgs = manager->GetNumeric("Stats").front();
-    m_Stats = std::make_shared<NumberSprite>(statsImgs.Files);
+    m_Stats = std::make_shared<NumberSprite>(statsImgs.Path, statsImgs.TexCoords);
     m_Stats->NumberPosition = IntToPos(statsImgs.Direction);
     m_Stats->FillWithZeros = statsImgs.FillWithZero;
-    m_Stats->Color = statsImgs.Color;
+    m_Stats->Color3 = statsImgs.Color;
     m_Stats->Size = statsImgs.Size;
 
     m_ScoreInfo = ScoreInfo{

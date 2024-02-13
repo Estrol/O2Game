@@ -1310,6 +1310,10 @@ void Vulkan::Push(SubmitInfo &info)
         return;
     }
 
+    if (info.uiSize.x == 0 || info.uiSize.y == 0) {
+        return;
+    }
+
     uint32_t maxSize = (m_DrawData.vertexSize + static_cast<uint32_t>(info.vertices.size())) * sizeof(info.vertices[0]);
     uint32_t inMaxSize = (m_DrawData.indiceSize + static_cast<uint32_t>(info.indices.size())) * sizeof(info.indices[0]);
 
@@ -1341,6 +1345,10 @@ void Vulkan::Push(SubmitInfo &info)
 void Vulkan::Push(std::vector<SubmitInfo> &infos)
 {
     if (infos.size() == 0) {
+        return;
+    }
+
+    if (infos[0].uiSize.x == 0 || infos[0].uiSize.y == 0) {
         return;
     }
 

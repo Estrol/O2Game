@@ -12,6 +12,7 @@
 #include "./Replay/Autoplay.h"
 #include "./Scoring/ScoreManager.h"
 #include "./Timings/TimingBase.h"
+#include <Graphics/SpriteBatch.h>
 #include <Graphics/Utils/Rect.h>
 #include <Inputs/Keys.h>
 #include <Math/Vector2.h>
@@ -60,6 +61,15 @@ public:
     void Draw(double delta);
     void DrawTimingLine(double delta);
 
+    void SetSpriteBatch(
+        std::shared_ptr<Graphics::SpriteBatch> note,
+        std::shared_ptr<Graphics::SpriteBatch> hold,
+        std::shared_ptr<Graphics::SpriteBatch> measure);
+
+    std::shared_ptr<Graphics::SpriteBatch> GetNoteSpriteBatch() const;
+    std::shared_ptr<Graphics::SpriteBatch> GetHoldSpriteBatch() const;
+    std::shared_ptr<Graphics::SpriteBatch> GetMeasureSpriteBatch() const;
+
     void OnKeyDown(const Inputs::State &state);
     void OnKeyUp(const Inputs::State &state);
 
@@ -105,6 +115,10 @@ private:
     void            UpdateVirtualResolution();
     void            CreateTimingMarkers();
     ReplayFrameData GetAutoplayAtThisFrame(double offset);
+
+    std::shared_ptr<Graphics::SpriteBatch> m_noteSpriteBatch;
+    std::shared_ptr<Graphics::SpriteBatch> m_holdSpriteBatch;
+    std::shared_ptr<Graphics::SpriteBatch> m_measureSpriteBatch;
 
     double m_rate = 0.0;
     double m_offset = 0.0;

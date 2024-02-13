@@ -10,6 +10,7 @@
 
 #include "GraphicsBackendBase.h"
 #include "GraphicsTexture2D.h"
+#include <map>
 #include <string>
 #include <vector>
 
@@ -46,9 +47,9 @@ namespace Graphics {
             Make sure delete the texture before Renderer is destroyed
         */
 
-        Texture2D *LoadTexture(std::filesystem::path path);
-        Texture2D *LoadTexture(const unsigned char *buf, size_t size);
-        Texture2D *LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height);
+        std::shared_ptr<Texture2D> LoadTexture(std::filesystem::path path);
+        std::shared_ptr<Texture2D> LoadTexture(const unsigned char *buf, size_t size);
+        std::shared_ptr<Texture2D> LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height);
 
         Graphics::Backends::BlendHandle CreateBlendState(Graphics::Backends::TextureBlendInfo info);
 
@@ -65,8 +66,10 @@ namespace Graphics {
         API                m_API;
         TextureSamplerInfo m_Sampler;
 
-        Backends::Base *m_Backend;
-        bool            m_onFrame = false;
+        std::shared_ptr<Backends::Base> m_Backend;
+        bool                            m_onFrame = false;
+
+        std::map<std::string, std::shared_ptr<Texture2D>> m_textures_caches;
     };
 } // namespace Graphics
 

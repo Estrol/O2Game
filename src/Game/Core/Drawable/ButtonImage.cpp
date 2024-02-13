@@ -15,8 +15,8 @@ ButtonImage::ButtonImage()
     m_Callback = {};
 }
 
-ButtonImage::ButtonImage(Rect clickArena, std::pair<std::shared_ptr<Image>, std::shared_ptr<Image>> images)
-    : m_ClickArena(clickArena), m_Images(images)
+ButtonImage::ButtonImage(Rect clickArena, std::shared_ptr<Sprite> image)
+    : m_ClickArena(clickArena), m_Image(image)
 {
     m_Callback = {};
 }
@@ -31,14 +31,12 @@ void ButtonImage::Draw()
 void ButtonImage::Draw(Rect rect)
 {
     if (IsHovered()) {
-        if (m_Images.second) {
-            m_Images.second->Draw(rect);
-        }
+        m_Image->SetIndexAt(0);
     } else {
-        if (m_Images.first) {
-            m_Images.first->Draw(rect);
-        }
+        m_Image->SetIndexAt(1);
     }
+
+    m_Image->Draw(rect);
 }
 
 // clang-format off

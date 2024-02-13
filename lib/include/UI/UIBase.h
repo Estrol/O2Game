@@ -10,6 +10,7 @@
 
 #include <Graphics/GraphicsBackendBase.h>
 #include <Graphics/GraphicsTexture2D.h>
+#include <Graphics/SpriteBatch.h>
 #include <Graphics/Utils/Rect.h>
 #include <Math/Color3.h>
 #include <Math/UDim2.h>
@@ -59,7 +60,8 @@ namespace UI {
         Vector2 AnchorPoint;
         Vector4 CornerRadius;
 
-        Graphics::Backends::BlendHandle BlendState;
+        std::shared_ptr<Graphics::SpriteBatch> SpriteBatch;
+        Graphics::Backends::BlendHandle        BlendState;
 
         float Transparency;
         float Rotation;
@@ -87,7 +89,7 @@ namespace UI {
         std::vector<Graphics::Backends::Vertex> m_vertices;
         std::vector<uint16_t>                   m_indices;
 
-        std::unique_ptr<Graphics::Texture2D> m_texture;
+        std::shared_ptr<Graphics::Texture2D> m_texture;
         Graphics::Texture2D                 *m_texturePtr = nullptr;
         RenderMode                           m_renderMode = RenderMode::Normal;
 

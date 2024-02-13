@@ -6,30 +6,30 @@
  */
 
 #include "../Drawable/Sprite.h"
+#include "../Resources/NoteImages.h"
 #include "../RhythmEngine.h"
 #include "TimingLine.h"
 #include <UI/Image.h>
 
 TimingLine::TimingLine()
 {
-    std::vector<char> whiteimg = {
-        (char)0xFF, (char)0xFF, (char)0xFF, (char)0xFF
-    };
+    auto config = Resources::NoteImages::Get(NoteImageType::MEASURE_LINE);
 
-    m_image = new Image((const char *)whiteimg.data(), 1, 1);
-    m_line = new Sprite({ m_image }, 0, 60.0f);
-    m_line->TintColor = Color3::fromRGB(255, 255, 255);
+    m_line = std::make_shared<Sprite>(config->Texture, config->TexCoords, config->FrameRate);
+    m_line->Size = UDim2::fromOffset(0, config->ImagesRect.Height);
+    m_line->Position = UDim2::fromOffset(0, 0);
+    m_line->Color3 = config->Color;
 }
 
 TimingLine::~TimingLine()
 {
-    delete m_line;
-    delete m_image;
 }
 
 void TimingLine::Load(TimingLineDesc timing)
 {
     m_engine = timing.Engine;
+
+    m_line->SpriteBatch = m_engine->GetMeasureSpriteBatch();
 
     m_offset = timing.Offset;
     m_startTime = timing.StartTime;
@@ -74,7 +74,7 @@ void TimingLine::Draw(double delta)
     double min = 0, max = hitPos;
     double pos_y = min + (max - min) * alpha;
 
-    m_line->Size = UDim2::fromOffset(playRect.Width - playRect.X, 1);
+    m_line->Size = UDim2::fromOffset(playRect.Width - playRect.X, m_line->Size.Y.Offset);
     m_line->Position = UDim2::fromOffset(m_imagePos, pos_y); //+ start.Lerp(end, alpha);
 
     if (m_line->Position.Y.Offset >= 0 && m_line->Position.Y.Offset < hitPos + 10) {

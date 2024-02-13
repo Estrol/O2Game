@@ -1,5 +1,6 @@
 #include "../../Env.h"
 #include "LuaSkin.h"
+#include <Graphics/Utils/stb_image.h>
 
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
@@ -38,7 +39,11 @@ inline void panic_handler(sol::optional<std::string> maybe_msg)
 
 void LuaSkin::LoadSkin(std::string skinName)
 {
+#if defined(_DEBUG)
+    CurrentPath = std::filesystem::current_path() / ".." / ".." / "resources" / "Resources";
+#else
     CurrentPath = std::filesystem::current_path() / "Skins" / skinName;
+#endif
     if (!std::filesystem::exists(CurrentPath)) {
         throw Exceptions::EstException("Skin %s does not exist", skinName.c_str());
     }
@@ -133,7 +138,8 @@ void LuaSkin::LoadScript(SkinGroup group)
         "GetKeyCount", &GameLua::GetKeyCount,
         "GetSkinPath", &GameLua::GetSkinPath,
         "GetScriptPath", &GameLua::GetScriptPath,
-        "IsPathExist", &GameLua::IsPathExist);
+        "IsPathExist", &GameLua::IsPathExist,
+        "GetImageSize", &GameLua::GetImageSize);
 
     Script.game = std::make_shared<GameLua>();
     Script.game->__skin = this;
@@ -194,8 +200,7 @@ std::vector<NumericValue> LuaSkin::GetNumeric(std::string key)
             throw Exceptions::EstException("[Numeric] [%s] Key '%s' does not exist or not table", luaFileName.c_str(), key.c_str());
         }
 
-        sol::table key_array = table[SkinDataType::Numeric][key];
-
+        sol::table                key_array = table[SkinDataType::Numeric][key];
         std::vector<NumericValue> result;
         for (auto &value : key_array) {
             if (!value.second.is<sol::table>()) {
@@ -209,26 +214,76 @@ std::vector<NumericValue> LuaSkin::GetNumeric(std::string key)
             NumericValue numeric_value = {};
             sol::table   value_table = value.second;
 
-            if (value_table["Files"] == sol::nil || !value_table["Files"].is<sol::table>()) {
+            if (value_table["Path"] == sol::nil || !value_table["Path"].is<std::string>()) {
                 throw Exceptions::EstException(
-                    "[Numeric] %s at key: '%s', Files field is not a table or nil but got %s",
+                    "[Numeric] %s at key: '%s', Path field is not a string or nil but got %s",
                     luaFileName.c_str(),
                     key.c_str(),
-                    get_type_name(value_table[1].get_type()));
+                    get_type_name(value_table["Path"].get_type()));
             }
 
-            sol::table files = value_table["Files"];
-            for (int i = 1; i <= files.size(); i++) {
-                if (!files[i].is<std::string>()) {
+            std::string path = value_table["Path"];
+            numeric_value.Path = path;
+
+            if (value_table["TexCoords"] == sol::nil) {
+                auto skinSize = Script.game->GetImageSize(path);
+
+                int width = skinSize.first;
+                int height = skinSize.second;
+
+                std::vector<std::vector<glm::vec2>> texCoords = {
+                    { { 0, 0 }, { width, 0 }, { 0, height }, { width, height } }
+                };
+
+                numeric_value.TexCoords = texCoords;
+            } else {
+                if (!value_table["TexCoords"].is<sol::table>()) {
                     throw Exceptions::EstException(
-                        "[Numeric] %s at key: '%s', File %d is not a string but got %s",
+                        "[Numeric] %s at key: '%s', TexCoords field is not a table or nil but got %s",
                         luaFileName.c_str(),
                         key.c_str(),
-                        i, get_type_name(files[i].get_type()));
+                        get_type_name(value_table[1].get_type()));
                 }
 
-                std::string file = files[i];
-                numeric_value.Files.push_back(file);
+                sol::table values = value_table["TexCoords"];
+                for (auto &value : values) {
+                    if (!value.second.is<sol::table>()) {
+                        throw Exceptions::EstException(
+                            "[Numeric] %s at key: '%s', TexCoords value is not a table but got %s",
+                            luaFileName.c_str(),
+                            key.c_str(),
+                            get_type_name(value.second.get_type()));
+                    }
+
+                    sol::table             itr = value.second;
+                    std::vector<glm::vec2> texCoords;
+
+                    for (auto &itr_value : itr) {
+                        if (!itr_value.second.is<sol::table>()) {
+                            throw Exceptions::EstException(
+                                "[Numeric] %s at key: '%s', TexCoords value is not a table but got %s",
+                                luaFileName.c_str(),
+                                key.c_str(),
+                                get_type_name(itr_value.second.get_type()));
+                        }
+
+                        sol::table itr_table = itr_value.second;
+                        if (itr_table[1] == sol::nil || !itr_table[1].is<double>()) {
+                            throw Exceptions::EstException("[Numeric] %s at key: '%s', TexCoords[1] is not a number or nil", luaFileName.c_str(), key.c_str());
+                        }
+
+                        if (itr_table[2] == sol::nil || !itr_table[2].is<double>()) {
+                            throw Exceptions::EstException("[Numeric] %s at key: '%s', TexCoords[2] is not a number or nil", luaFileName.c_str(), key.c_str());
+                        }
+
+                        double x = itr_table[1];
+                        double y = itr_table[2];
+
+                        texCoords.push_back(glm::vec2(x, y));
+                    }
+
+                    numeric_value.TexCoords.push_back(texCoords);
+                }
             }
 
             if (value_table["Position"] == sol::nil || !value_table["Position"].is<sol::table>()) {
@@ -386,6 +441,65 @@ std::vector<PositionValue> LuaSkin::GetPosition(std::string key)
 
             std::string path = value_table["Path"];
             position_value.Path = path;
+
+            if (value_table["TexCoord"] == sol::nil) {
+                try {
+                    auto skinSize = Script.game->GetImageSize(path);
+
+                    int width = skinSize.first;
+                    int height = skinSize.second;
+
+                    std::vector<glm::vec2> texCoord = {
+                        { 0, 0 }, { width, 0 }, { 0, height }, { width, height }
+                    };
+
+                    position_value.TexCoord = texCoord;
+                } catch (const Exceptions::EstException &) {
+                    std::vector<glm::vec2> texCoord = {
+                        { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }
+                    };
+
+                    position_value.TexCoord = texCoord;
+                }
+
+            } else {
+                if (!value_table["TexCoord"].is<sol::table>()) {
+                    throw Exceptions::EstException(
+                        "[Position] %s at key: '%s', TexCoord field is not a table or nil but got %s",
+                        luaFileName.c_str(),
+                        key.c_str(),
+                        get_type_name(value_table["TexCoord"].get_type()));
+                }
+
+                sol::table             values = value_table["TexCoord"];
+                std::vector<glm::vec2> texCoord;
+
+                for (auto &value : values) {
+                    if (!value.second.is<sol::table>()) {
+                        throw Exceptions::EstException(
+                            "[Position] %s at key: '%s', TexCoord value is not a table but got %s",
+                            luaFileName.c_str(),
+                            key.c_str(),
+                            get_type_name(value.second.get_type()));
+                    }
+
+                    sol::table itr_table = value.second;
+                    if (itr_table[1] == sol::nil || !itr_table[1].is<double>()) {
+                        throw Exceptions::EstException("[Position] %s at key: '%s', TexCoord[1] is not a number or nil", luaFileName.c_str(), key.c_str());
+                    }
+
+                    if (itr_table[2] == sol::nil || !itr_table[2].is<double>()) {
+                        throw Exceptions::EstException("[Position] %s at key: '%s', TexCoord[2] is not a number or nil", luaFileName.c_str(), key.c_str());
+                    }
+
+                    double x = itr_table[1];
+                    double y = itr_table[2];
+
+                    texCoord.push_back(glm::vec2(x, y));
+                }
+
+                position_value.TexCoord = texCoord;
+            }
 
             if (value_table["Position"] == sol::nil || !value_table["Position"].is<sol::table>()) {
                 throw Exceptions::EstException(
@@ -628,77 +742,77 @@ std::vector<AudioInfo> LuaSkin::GetAudio()
     }
 }
 
-NoteValue LuaSkin::GetNote(std::string key)
-{
-    try {
-        sol::table &script_table = *Script.table.get();
-        sol::table  table = script_table["Data"];
-        auto        luaFileName = ExpectedFiles[CurrentGroup];
+// NoteValue LuaSkin::GetNote(std::string key)
+// {
+//     try {
+//         sol::table &script_table = *Script.table.get();
+//         sol::table  table = script_table["Data"];
+//         auto        luaFileName = ExpectedFiles[CurrentGroup];
 
-        // check if the key exists
-        if (table[SkinDataType::Note][key] == sol::nil || !table[SkinDataType::Note][key].is<sol::table>()) {
-            throw Exceptions::EstException("[%s] Key '%s' does not exist or not table", luaFileName.c_str(), key.c_str());
-        }
+//         // check if the key exists
+//         if (table[SkinDataType::Note][key] == sol::nil || !table[SkinDataType::Note][key].is<sol::table>()) {
+//             throw Exceptions::EstException("[%s] Key '%s' does not exist or not table", luaFileName.c_str(), key.c_str());
+//         }
 
-        sol::table key_array = table[SkinDataType::Note][key];
+//         sol::table key_array = table[SkinDataType::Note][key];
 
-        if (key_array["Files"] == sol::nil || !key_array["Files"].is<sol::table>()) {
-            throw Exceptions::EstException(
-                "[Note] %s at key: '%s', Files field is not a table or nil but got %s",
-                luaFileName.c_str(),
-                key.c_str(),
-                get_type_name(key_array[1].get_type()));
-        }
+//         if (key_array["Files"] == sol::nil || !key_array["Files"].is<sol::table>()) {
+//             throw Exceptions::EstException(
+//                 "[Note] %s at key: '%s', Files field is not a table or nil but got %s",
+//                 luaFileName.c_str(),
+//                 key.c_str(),
+//                 get_type_name(key_array[1].get_type()));
+//         }
 
-        NoteValue note_value = {};
+//         NoteValue note_value = {};
 
-        sol::table files = key_array["Files"];
-        for (int i = 1; i <= files.size(); i++) {
-            std::string file = files[i];
-            note_value.Files.push_back(file);
-        }
+//         sol::table files = key_array["Files"];
+//         for (int i = 1; i <= files.size(); i++) {
+//             std::string file = files[i];
+//             note_value.Files.push_back(file);
+//         }
 
-        if (key_array["Size"] == sol::nil || !key_array["Size"].is<sol::table>()) {
-            throw Exceptions::EstException(
-                "[Note] %s at key: '%s', Size field is not a table or nil but got %s",
-                luaFileName.c_str(),
-                key.c_str(),
-                get_type_name(key_array["Size"].get_type()));
-        }
+//         if (key_array["Size"] == sol::nil || !key_array["Size"].is<sol::table>()) {
+//             throw Exceptions::EstException(
+//                 "[Note] %s at key: '%s', Size field is not a table or nil but got %s",
+//                 luaFileName.c_str(),
+//                 key.c_str(),
+//                 get_type_name(key_array["Size"].get_type()));
+//         }
 
-        sol::table size = key_array["Size"];
+//         sol::table size = key_array["Size"];
 
-        if (size[1] == sol::nil || !size[1].is<double>()) {
-            throw Exceptions::EstException("[Note] %s at key: '%s', Size[1] is not a number or nil", luaFileName.c_str(), key.c_str());
-        }
+//         if (size[1] == sol::nil || !size[1].is<double>()) {
+//             throw Exceptions::EstException("[Note] %s at key: '%s', Size[1] is not a number or nil", luaFileName.c_str(), key.c_str());
+//         }
 
-        if (size[2] == sol::nil || !size[2].is<double>()) {
-            throw Exceptions::EstException("[Note] %s at key: '%s', Size[2] is not a number or nil", luaFileName.c_str(), key.c_str());
-        }
+//         if (size[2] == sol::nil || !size[2].is<double>()) {
+//             throw Exceptions::EstException("[Note] %s at key: '%s', Size[2] is not a number or nil", luaFileName.c_str(), key.c_str());
+//         }
 
-        note_value.Size = UDim2::fromOffset(size[1], size[2]);
+//         note_value.Size = UDim2::fromOffset(size[1], size[2]);
 
-        if (key_array["FrameTime"] == sol::nil || !key_array["FrameTime"].is<double>()) {
-            throw Exceptions::EstException(
-                "[Note] %s at key: '%s', FrameTime field is not a number or nil but got %s",
-                luaFileName.c_str(),
-                key.c_str(),
-                get_type_name(key_array["FrameTime"].get_type()));
-        }
+//         if (key_array["FrameTime"] == sol::nil || !key_array["FrameTime"].is<double>()) {
+//             throw Exceptions::EstException(
+//                 "[Note] %s at key: '%s', FrameTime field is not a number or nil but got %s",
+//                 luaFileName.c_str(),
+//                 key.c_str(),
+//                 get_type_name(key_array["FrameTime"].get_type()));
+//         }
 
-        note_value.FrameTime = key_array["FrameTime"];
+//         note_value.FrameTime = key_array["FrameTime"];
 
-        sol::table color = key_array["Color"];
-        note_value.Color = Color3::fromRGB(
-            color[1],
-            color[2],
-            color[3]);
+//         sol::table color = key_array["Color"];
+//         note_value.Color = Color3::fromRGB(
+//             color[1],
+//             color[2],
+//             color[3]);
 
-        return note_value;
-    } catch (const sol::error &err) {
-        throw Exceptions::EstException("%s, (key = %s)", err.what(), key.c_str());
-    }
-}
+//         return note_value;
+//     } catch (const sol::error &err) {
+//         throw Exceptions::EstException("%s, (key = %s)", err.what(), key.c_str());
+//     }
+// }
 
 SpriteValue LuaSkin::GetSprite(std::string key)
 {
@@ -714,19 +828,78 @@ SpriteValue LuaSkin::GetSprite(std::string key)
 
         sol::table key_array = table[SkinDataType::Sprite][key];
 
-        if (key_array["Files"] == sol::nil || !key_array["Files"].is<sol::table>()) {
+        if (key_array["Path"] == sol::nil || !key_array["Path"].is<std::string>()) {
             throw Exceptions::EstException(
-                "[Sprite] %s at key: '%s', Files field is not a table or nil but got %s",
+                "[Sprite] %s at key: '%s', Path field is not a string or nil but got %s",
                 luaFileName.c_str(),
                 key.c_str(),
-                get_type_name(key_array[1].get_type()));
+                get_type_name(key_array["Path"].get_type()));
         }
 
         SpriteValue sprite_value = {};
-        sol::table  files = key_array["Files"];
-        for (int i = 1; i <= files.size(); i++) {
-            std::string file = files[i];
-            sprite_value.Files.push_back(file);
+
+        std::string path = key_array["Path"];
+        sprite_value.Path = path;
+
+        if (key_array["TexCoords"] == sol::nil) {
+            auto size = Script.game->GetImageSize(path);
+
+            int width = size.first;
+            int height = size.second;
+
+            std::vector<glm::vec2> texCoords = {
+                { 0, 0 }, { width, 0 }, { 0, height }, { width, height }
+            };
+
+            sprite_value.TexCoords.push_back(texCoords);
+        } else {
+            if (!key_array["TexCoords"].is<sol::table>()) {
+                throw Exceptions::EstException(
+                    "[Sprite] %s at key: '%s', TexCoords field is not a table or nil but got %s",
+                    luaFileName.c_str(),
+                    key.c_str(),
+                    get_type_name(key_array["TexCoords"].get_type()));
+            }
+
+            sol::table values = key_array["TexCoords"];
+            for (auto &value : values) {
+                if (!value.second.is<sol::table>()) {
+                    throw Exceptions::EstException(
+                        "[Sprite] %s at key: '%s', TexCoord value is not a table but got %s",
+                        luaFileName.c_str(),
+                        key.c_str(),
+                        get_type_name(value.second.get_type()));
+                }
+
+                sol::table             itr = value.second;
+                std::vector<glm::vec2> texCoords;
+
+                for (auto &itr_value : itr) {
+                    if (!itr_value.second.is<sol::table>()) {
+                        throw Exceptions::EstException(
+                            "[Sprite] %s at key: '%s', TexCoord value is not a table but got %s",
+                            luaFileName.c_str(),
+                            key.c_str(),
+                            get_type_name(itr_value.second.get_type()));
+                    }
+
+                    sol::table itr_table = itr_value.second;
+                    if (itr_table[1] == sol::nil || !itr_table[1].is<double>()) {
+                        throw Exceptions::EstException("[Sprite] %s at key: '%s', TexCoord[1] is not a number or nil", luaFileName.c_str(), key.c_str());
+                    }
+
+                    if (itr_table[2] == sol::nil || !itr_table[2].is<double>()) {
+                        throw Exceptions::EstException("[Sprite] %s at key: '%s', TexCoord[2] is not a number or nil", luaFileName.c_str(), key.c_str());
+                    }
+
+                    double x = itr_table[1];
+                    double y = itr_table[2];
+
+                    texCoords.push_back(glm::vec2(x, y));
+                }
+
+                sprite_value.TexCoords.push_back(texCoords);
+            }
         }
 
         if (key_array["Position"] == sol::nil || !key_array["Position"].is<sol::table>()) {
@@ -920,4 +1093,20 @@ std::string GameLua::GetScriptPath()
 bool GameLua::IsPathExist(std::string Path)
 {
     return std::filesystem::exists(Path);
+}
+
+std::pair<int, int> GameLua::GetImageSize(std::string Path)
+{
+    if (!IsPathExist(Path)) {
+        throw Exceptions::EstException("Path does not exist: %s", Path.c_str());
+    }
+
+    int width, height;
+    int result = stbi_info(Path.c_str(), &width, &height, nullptr);
+
+    if (result == 0) {
+        throw Exceptions::EstException("Failed to get image size: %s", Path.c_str());
+    }
+
+    return std::make_pair(width, height);
 }

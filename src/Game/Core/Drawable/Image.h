@@ -14,7 +14,7 @@ class Image : public UI::Image
 public:
     Image();
     Image(std::filesystem::path path);
-    Image(Graphics::Texture2D *texture);
+    Image(std::shared_ptr<Graphics::Texture2D> texture);
     Image(const char *buf, size_t size);
     Image(const char *pixbuf, uint32_t width, uint32_t height);
 

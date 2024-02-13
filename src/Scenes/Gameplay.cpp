@@ -63,6 +63,12 @@ void Gameplay::Update(double delta)
             Env::SetInt("MaxJam", scoreInfo.MaxJamCombo);
             Env::SetInt("MaxCombo", scoreInfo.MaxJamCombo);
             Env::SetBool("IsClear", true);
+
+            auto resultAudio = reinterpret_cast<Audio::Sample *>(Env::GetPointer(AudioTypeString[SkinAudioType::BGM_Result]));
+
+            if (resultAudio) {
+                resultAudio->Play();
+            }
         } else {
             m_ResultTopRowImage->Position = m_TweenTop->Update((float)delta);
             m_ResultBottomRowImage->Position = m_TweenBottom->Update((float)delta);
@@ -84,6 +90,8 @@ void Gameplay::Update(double delta)
 
 void Gameplay::Draw(double delta)
 {
+    using namespace Graphics;
+
     if (m_resourceFucked) {
         return;
     }
@@ -98,6 +106,9 @@ void Gameplay::Draw(double delta)
         m_targetBar->Draw(delta);
     }
 
+    m_noteSpriteBatch->Begin();
+    m_holdSpriteBatch->Begin();
+
     for (auto &[lane, pressed] : m_keyState) {
         if (pressed) {
             m_keyLighting[lane]->AlphaBlend = true;
@@ -106,12 +117,24 @@ void Gameplay::Draw(double delta)
         }
     }
 
+    m_noteSpriteBatch->End();
+    m_holdSpriteBatch->End();
+
+    m_noteSpriteBatch->Begin();
+    m_holdSpriteBatch->Begin();
+    m_measureSpriteBatch->Begin();
+
+    m_Engine->DrawTimingLine(delta);
+    m_Engine->Draw(delta);
+
     if (!is_flhd_enabled) {
-        m_Engine->DrawTimingLine(delta);
-        m_Engine->Draw(delta);
+        m_measureSpriteBatch->End();
+        m_holdSpriteBatch->End();
+        m_noteSpriteBatch->End();
     } else {
-        m_Engine->Draw(delta);
-        m_Engine->DrawTimingLine(delta);
+        m_holdSpriteBatch->End();
+        m_noteSpriteBatch->End();
+        m_measureSpriteBatch->End();
     }
 
     if (is_flhd_enabled) {
@@ -124,31 +147,29 @@ void Gameplay::Draw(double delta)
 
     // Draw stats
     {
-        m_statsNum->Position = m_statsPos[0];
-        m_statsNum->Draw(scores.Cool);
-        m_statsNum->Position = m_statsPos[1];
-        m_statsNum->Draw(scores.Good);
-        m_statsNum->Position = m_statsPos[2];
-        m_statsNum->Draw(scores.Bad);
-        m_statsNum->Position = m_statsPos[3];
-        m_statsNum->Draw(scores.Miss);
-        m_statsNum->Position = m_statsPos[4];
-        m_statsNum->Draw(scores.MaxCombo);
+        m_statsNums[0]->Draw(scores.Cool);
+        m_statsNums[1]->Draw(scores.Good);
+        m_statsNums[2]->Draw(scores.Bad);
+        m_statsNums[3]->Draw(scores.Miss);
+        m_statsNums[4]->Draw(scores.MaxCombo);
     }
+
+    m_noteSpriteBatch->Begin();
 
     int numOfPills = m_Engine->GetScoreManager()->GetPills();
     for (int i = 0; i < numOfPills; i++) {
         m_pills[i]->Draw();
     }
 
-    auto curLifeTex = m_lifeBar->GetImages()[0]; // Move lifebar to here so it will not overlapping
-    curLifeTex->CalculateSize();
+    m_noteSpriteBatch->End();
+
+    m_lifeBar->CalculateSize();
 
     Rect rc = {};
-    rc.X = (int)curLifeTex->AbsolutePosition.X;
-    rc.Y = (int)curLifeTex->AbsolutePosition.Y;
-    rc.Width = rc.X + (int)curLifeTex->AbsoluteSize.X;
-    rc.Height = rc.Y + (int)curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+    rc.X = (int)m_lifeBar->AbsolutePosition.X;
+    rc.Y = (int)m_lifeBar->AbsolutePosition.Y;
+    rc.Width = rc.X + (int)m_lifeBar->AbsoluteSize.X;
+    rc.Height = rc.Y + (int)m_lifeBar->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
     float alpha = (float)(kMaxLife - m_Engine->GetScoreManager()->GetLife()) / kMaxLife;
 
     // Add wiggle effect
@@ -165,7 +186,7 @@ void Gameplay::Draw(double delta)
     m_lifeBar->Draw(delta, rc);
 
     if (m_drawJudge && m_judgement[m_judgeIndex] != nullptr) {
-        m_judgement[m_judgeIndex]->Size = UDim2::fromScale(m_judgeSize, m_judgeSize);
+        // m_judgement[m_judgeIndex]->Size = UDim2::fromScale(m_judgeSize, m_judgeSize);
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
     }
@@ -284,6 +305,9 @@ void Gameplay::Draw(double delta)
     m_minuteNum->Draw(currentMinutes);
     m_secondNum->Draw(currentSeconds);
 
+    m_noteSpriteBatch->Begin();
+    m_holdSpriteBatch->Begin();
+
     for (int i = 0; i < 7; i++) {
         m_hitEffect[i]->Draw(delta);
 
@@ -291,6 +315,9 @@ void Gameplay::Draw(double delta)
             m_holdEffect[i]->Draw(delta);
         }
     }
+
+    m_noteSpriteBatch->End();
+    m_holdSpriteBatch->End();
 
     if (m_drawExitButton) {
         m_exitBtn->Draw();
@@ -398,6 +425,10 @@ bool Gameplay::Attach()
         auto   bufferRect = Graphics::NativeWindow::Get()->GetBufferSize();
         Chart *chart = reinterpret_cast<Chart *>(Env::GetPointer("Chart"));
 
+        m_noteSpriteBatch = std::make_shared<Graphics::SpriteBatch>();
+        m_holdSpriteBatch = std::make_shared<Graphics::SpriteBatch>();
+        m_measureSpriteBatch = std::make_shared<Graphics::SpriteBatch>();
+
         if (!chart) {
             throw Exceptions::EstException("Chart is not loaded!");
         }
@@ -414,6 +445,8 @@ bool Gameplay::Attach()
             throw Exceptions::EstException("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
         }
 
+        Env::SetInt("Arena", 1);
+
         int arena = Env::GetInt("Arena");
         if (arena == 0) {
             std::random_device dev;
@@ -429,7 +462,7 @@ bool Gameplay::Attach()
 
         {
             m_Engine = std::make_shared<RhythmEngine>();
-            Env::SetInt("Autoplay", 1);
+            Env::SetInt("Autoplay", 0);
 
             RhythmGameInfo info = {};
             info.Chart = chart;
@@ -485,6 +518,7 @@ bool Gameplay::Attach()
         m_Playfield->Position = playfieldPos.Position;
         m_Playfield->Size = playfieldPos.Size;
         m_Playfield->AnchorPoint = playfieldPos.AnchorPoint;
+        m_Playfield->SetTexCoord(playfieldPos.TexCoord);
 
         auto conKeyLight = manager->GetPosition("KeyLighting");
         auto conKeyButton = manager->GetPosition("KeyButton");
@@ -502,26 +536,35 @@ bool Gameplay::Attach()
 
             m_keyLighting[i]->Size = conKeyLight[i].Size;
             m_keyButtons[i]->Size = conKeyButton[i].Size;
+
+            m_keyLighting[i]->SetTexCoord(conKeyLight[i].TexCoord);
+            m_keyButtons[i]->SetTexCoord(conKeyButton[i].TexCoord);
+
+            m_keyButtons[i]->AnchorPoint = conKeyButton[i].AnchorPoint;
+            m_keyLighting[i]->AnchorPoint = conKeyLight[i].AnchorPoint;
+
+            m_keyButtons[i]->SpriteBatch = m_noteSpriteBatch;
+            m_keyLighting[i]->SpriteBatch = m_holdSpriteBatch;
         }
 
         auto jamNumPos = manager->GetNumeric("Jam").front();
-        m_jamNum = std::make_unique<NumberSprite>(jamNumPos.Files);
+        m_jamNum = std::make_unique<NumberSprite>(jamNumPos.Path, jamNumPos.TexCoords);
 
         m_jamNum->Position = jamNumPos.Position;
         m_jamNum->Size = jamNumPos.Size;
         m_jamNum->NumberPosition = IntToPos(jamNumPos.Direction);
         m_jamNum->MaxDigits = jamNumPos.MaxDigit;
-        m_jamNum->Color = jamNumPos.Color;
+        m_jamNum->Color3 = jamNumPos.Color;
         m_jamNum->FillWithZeros = jamNumPos.FillWithZero;
 
         auto scoreNumPos = manager->GetNumeric("Score").front(); // conf.GetNumeric("Score").front();
-        m_scoreNum = std::make_unique<NumberSprite>(scoreNumPos.Files);
+        m_scoreNum = std::make_unique<NumberSprite>(scoreNumPos.Path, scoreNumPos.TexCoords);
 
         m_scoreNum->Position = scoreNumPos.Position;
         m_scoreNum->Size = scoreNumPos.Size;
         m_scoreNum->NumberPosition = IntToPos(scoreNumPos.Direction);
         m_scoreNum->MaxDigits = scoreNumPos.MaxDigit;
-        m_scoreNum->Color = scoreNumPos.Color;
+        m_scoreNum->Color3 = scoreNumPos.Color;
         m_scoreNum->FillWithZeros = scoreNumPos.FillWithZero;
 
         auto gaugePos = manager->GetPosition("JamGauge").front();
@@ -531,17 +574,18 @@ bool Gameplay::Attach()
         m_jamGauge->Size = gaugePos.Size;
         m_jamGauge->Color3 = gaugePos.Color;
         m_jamGauge->AnchorPoint = gaugePos.AnchorPoint;
+        m_jamGauge->SetTexCoord(gaugePos.TexCoord);
 
         auto jamLogoPos = manager->GetSprite("JamLogo");
 
-        m_jamLogo = std::make_unique<Sprite>(jamLogoPos.Files, jamLogoPos.FrameTime);
+        m_jamLogo = std::make_unique<Sprite>(jamLogoPos.Path, jamLogoPos.TexCoords, jamLogoPos.FrameTime);
         m_jamLogo->Position = jamLogoPos.Position;
         m_jamLogo->Size = jamLogoPos.Size;
         m_jamLogo->AnchorPoint = jamLogoPos.AnchorPoint;
 
         auto lifeBarPos = manager->GetSprite("LifeBar");
 
-        m_lifeBar = std::make_unique<Sprite>(lifeBarPos.Files, lifeBarPos.FrameTime);
+        m_lifeBar = std::make_unique<Sprite>(lifeBarPos.Path, lifeBarPos.TexCoords, lifeBarPos.FrameTime);
         m_lifeBar->Position = lifeBarPos.Position;
         m_lifeBar->Size = lifeBarPos.Size;
         m_lifeBar->AnchorPoint = lifeBarPos.AnchorPoint;
@@ -551,22 +595,21 @@ bool Gameplay::Attach()
             throw Exceptions::EstException("Playing.ini : Numerics : Stats : Not enough positions! (count < 5)");
         }
 
-        m_statsNum = std::make_unique<NumberSprite>(statsNumPos[0].Files);
-
-        m_statsNum->Size = statsNumPos[0].Size;
-        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
-        m_statsNum->MaxDigits = statsNumPos[0].MaxDigit;
-        m_statsNum->FillWithZeros = statsNumPos[0].FillWithZero;
-        m_statsNum->NumberPosition = IntToPos(statsNumPos[0].Direction);
-        m_statsNum->AnchorPoint = { 0, .5 };
-
-        // COOL: 0 -> MAXCOMBO: 4
         for (int i = 0; i < 5; i++) {
-            m_statsPos[i] = statsNumPos[i].Position;
+            auto &statsNum = m_statsNums[i];
+            auto &info = statsNumPos[i];
+
+            statsNum = std::make_shared<NumberSprite>(info.Path, info.TexCoords);
+            statsNum->Size = info.Size;
+            statsNum->NumberPosition = IntToPos(info.Direction);
+            statsNum->MaxDigits = info.MaxDigit;
+            statsNum->FillWithZeros = info.FillWithZero;
+            statsNum->NumberPosition = IntToPos(info.Direction);
+            statsNum->AnchorPoint = { 0, .5 };
         }
 
         auto lnComboPos = manager->GetNumeric("LongNoteCombo").front();
-        m_lnComboNum = std::make_unique<NumberSprite>(lnComboPos.Files);
+        m_lnComboNum = std::make_unique<NumberSprite>(lnComboPos.Path, lnComboPos.TexCoords);
 
         m_lnComboNum->Position = lnComboPos.Position;
         m_lnComboNum->NumberPosition = IntToPos(lnComboPos.Direction);
@@ -585,11 +628,11 @@ bool Gameplay::Attach()
 
         auto lnLogoPos = manager->GetSprite("LongNoteLogo"); // conf.GetSprite("LongNoteLogo");
 
-        m_lnLogo = std::make_unique<Sprite>(lnLogoPos.Files, lnLogoPos.FrameTime);
+        m_lnLogo = std::make_unique<Sprite>(lnLogoPos.Path, lnLogoPos.TexCoords, lnLogoPos.FrameTime);
         m_lnLogo->Position = lnLogoPos.Position;
         m_lnLogo->Size = lnLogoPos.Size;
         m_lnLogo->AnchorPoint = lnLogoPos.AnchorPoint;
-        m_lnLogo->TintColor = lnLogoPos.Color;
+        m_lnLogo->Color3 = lnLogoPos.Color;
         m_lnLogo->AlphaBlend = true;
 
         auto waveGagePos = manager->GetPosition("WaveGage").front();
@@ -605,31 +648,32 @@ bool Gameplay::Attach()
         m_Playfooter->Size = playfooterPos.Size;
         m_Playfooter->AnchorPoint = playfooterPos.AnchorPoint;
         m_Playfooter->Color3 = playfooterPos.Color;
+        m_Playfooter->SetTexCoord(playfooterPos.TexCoord);
 
         auto targetPos = manager->GetSprite("TargetBar");
-        m_targetBar = std::make_unique<Sprite>(targetPos.Files, targetPos.FrameTime);
+        m_targetBar = std::make_unique<Sprite>(targetPos.Path, targetPos.TexCoords, targetPos.FrameTime);
         m_targetBar->Position = targetPos.Position;
         m_targetBar->Size = targetPos.Size;
-        m_targetBar->TintColor = targetPos.Color;
+        m_targetBar->Color3 = targetPos.Color;
         m_targetBar->AnchorPoint = targetPos.AnchorPoint;
 
         auto minutePos = manager->GetNumeric("Minute").front();
-        m_minuteNum = std::make_unique<NumberSprite>(minutePos.Files);
+        m_minuteNum = std::make_unique<NumberSprite>(minutePos.Path, minutePos.TexCoords);
         m_minuteNum->NumberPosition = IntToPos(minutePos.Direction);
         m_minuteNum->MaxDigits = minutePos.MaxDigit;
         m_minuteNum->FillWithZeros = minutePos.FillWithZero;
         m_minuteNum->Position = minutePos.Position;
         m_minuteNum->Size = minutePos.Size;
-        m_minuteNum->Color = minutePos.Color;
+        m_minuteNum->Color3 = minutePos.Color;
 
         auto secondPos = manager->GetNumeric("Second").front();
-        m_secondNum = std::make_unique<NumberSprite>(secondPos.Files);
+        m_secondNum = std::make_unique<NumberSprite>(secondPos.Path, secondPos.TexCoords);
         m_secondNum->NumberPosition = IntToPos(secondPos.Direction);
         m_secondNum->MaxDigits = secondPos.MaxDigit;
         m_secondNum->FillWithZeros = secondPos.FillWithZero;
         m_secondNum->Position = secondPos.Position;
         m_secondNum->Size = secondPos.Size;
-        m_secondNum->Color = secondPos.Color;
+        m_secondNum->Color3 = secondPos.Color;
 
         auto pillsPosition = manager->GetPosition("Pill");
         if (pillsPosition.size() < 5) {
@@ -643,6 +687,8 @@ bool Gameplay::Attach()
             m_pills[i]->Size = pos.Size;
             m_pills[i]->AnchorPoint = pos.AnchorPoint;
             m_pills[i]->Color3 = pos.Color;
+            m_pills[i]->SetTexCoord(pos.TexCoord);
+            m_pills[i]->SpriteBatch = m_noteSpriteBatch;
         }
 
         auto topRowImagePos = manager->GetPosition("TopRow").front();
@@ -651,6 +697,7 @@ bool Gameplay::Attach()
         m_ResultTopRowImage->Size = topRowImagePos.Size;
         m_ResultTopRowImage->AnchorPoint = topRowImagePos.AnchorPoint;
         m_ResultTopRowImage->Color3 = topRowImagePos.Color;
+        m_ResultTopRowImage->SetTexCoord(topRowImagePos.TexCoord);
 
         auto bottomRowImagePos = manager->GetPosition("BottomRow").front();
         m_ResultBottomRowImage = std::make_unique<Image>(bottomRowImagePos.Path);
@@ -658,6 +705,7 @@ bool Gameplay::Attach()
         m_ResultBottomRowImage->Size = bottomRowImagePos.Size;
         m_ResultBottomRowImage->AnchorPoint = bottomRowImagePos.AnchorPoint;
         m_ResultBottomRowImage->Color3 = bottomRowImagePos.Color;
+        m_ResultBottomRowImage->SetTexCoord(bottomRowImagePos.TexCoord);
 
         auto topRowTween = manager->GetTween("TopRow");
         m_TweenTop = std::make_shared<Tween>(
@@ -699,16 +747,17 @@ bool Gameplay::Attach()
             m_judgement[i]->Size = judgePos[i].Size;
             m_judgement[i]->AnchorPoint = judgePos[i].AnchorPoint;
             m_judgement[i]->Color3 = judgePos[i].Color;
+            m_judgement[i]->SetTexCoord(judgePos[i].TexCoord);
             m_judgement[i]->AlphaBlend = true;
         }
 
         // TODO: Arena
         auto comboLogoPos = manager->GetSprite("ComboLogo");
 
-        m_comboLogo = std::make_unique<Sprite>(comboLogoPos.Files, comboLogoPos.FrameTime);
+        m_comboLogo = std::make_unique<Sprite>(comboLogoPos.Path, comboLogoPos.TexCoords, comboLogoPos.FrameTime);
         m_comboLogo->Position = comboLogoPos.Position;
         m_comboLogo->Size = comboLogoPos.Size;
-        m_comboLogo->TintColor = comboLogoPos.Color;
+        m_comboLogo->Color3 = comboLogoPos.Color;
         m_comboLogo->AnchorPoint = comboLogoPos.AnchorPoint;
         m_comboLogo->AlphaBlend = true;
 
@@ -723,11 +772,11 @@ bool Gameplay::Attach()
 
         // TODO: Arena
         auto numPos = manager->GetNumeric("Combo").front();
-        m_comboNum = std::make_unique<NumberSprite>(numPos.Files);
+        m_comboNum = std::make_unique<NumberSprite>(numPos.Path, numPos.TexCoords);
 
         m_comboNum->Position = numPos.Position;
         m_comboNum->Size = numPos.Size;
-        m_comboNum->Color = numPos.Color;
+        m_comboNum->Color3 = numPos.Color;
         m_comboNum->NumberPosition = IntToPos(numPos.Direction);
         m_comboNum->MaxDigits = numPos.MaxDigit;
         m_comboNum->FillWithZeros = numPos.FillWithZero;
@@ -802,8 +851,8 @@ bool Gameplay::Attach()
         auto lanePos = m_Engine->GetLanePos();
         auto laneSize = m_Engine->GetLaneSizes();
         for (int i = 0; i < 7; i++) {
-            m_hitEffect[i] = std::move(std::make_unique<Sprite>(hitEffectPos.Files, hitEffectPos.FrameTime));
-            m_holdEffect[i] = std::move(std::make_unique<Sprite>(holdEffectPos.Files, holdEffectPos.FrameTime));
+            m_hitEffect[i] = std::move(std::make_unique<Sprite>(hitEffectPos.Path, hitEffectPos.TexCoords, hitEffectPos.FrameTime));
+            m_holdEffect[i] = std::move(std::make_unique<Sprite>(holdEffectPos.Path, holdEffectPos.TexCoords, holdEffectPos.FrameTime));
 
             m_hitEffect[i]->SetDelay(hitEffectPos.FrameTime);
             m_holdEffect[i]->SetDelay(holdEffectPos.FrameTime);
@@ -811,6 +860,12 @@ bool Gameplay::Attach()
             m_hitEffect[i]->Repeat = false;
             m_hitEffect[i]->AlphaBlend = true;
             m_holdEffect[i]->AlphaBlend = true;
+
+            m_hitEffect[i]->Size = hitEffectPos.Size;
+            m_holdEffect[i]->Size = holdEffectPos.Size;
+
+            m_hitEffect[i]->SpriteBatch = m_noteSpriteBatch;
+            m_holdEffect[i]->SpriteBatch = m_holdSpriteBatch;
 
             float pos = std::ceil(lanePos[i] + (laneSize[i] / 2.0f));
             auto  hitPos = UDim2::fromOffset(pos, HitPos - 15) + hitEffectPos.Position;
@@ -822,10 +877,14 @@ bool Gameplay::Attach()
             m_holdEffect[i]->AnchorPoint = holdEffectPos.AnchorPoint;
         }
 
+        m_usingFLHD = false;
+
         bool IsHD = Env::GetBool("Hidden");
         bool IsFL = Env::GetBool("Flashlight");
         if (IsHD || IsFL) {
-            std::vector<Segment> segments;
+            m_usingFLHD = true;
+
+            std::vector<Segment> segments = {};
 
             if (IsFL) {
                 segments = {
@@ -856,6 +915,7 @@ bool Gameplay::Attach()
             m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight);
         }
 
+        m_Engine->SetSpriteBatch(m_noteSpriteBatch, m_holdSpriteBatch, m_measureSpriteBatch);
     } catch (const Exceptions::EstException &e) {
         MsgBox::Show("Error", e.what(), MsgBox::Type::Ok, MsgBox::Flags::Error);
         m_resourceFucked = true;

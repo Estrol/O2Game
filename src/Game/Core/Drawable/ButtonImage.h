@@ -7,16 +7,18 @@
 
 #pragma once
 
-#include "Image.h"
+#include "Sprite.h"
 #include <functional>
 
+#include <glm/glm.hpp>
 #include <utility>
+#include <vector>
 
 class ButtonImage
 {
 public:
     ButtonImage();
-    ButtonImage(Rect clickArena, std::pair<std::shared_ptr<Image>, std::shared_ptr<Image>> images);
+    ButtonImage(Rect clickArena, std::shared_ptr<Sprite> image);
 
     void Draw();
     void Draw(Rect rect);
@@ -27,7 +29,8 @@ public:
     void OnClick(std::function<void()> callback);
 
 private:
-    Rect                                                      m_ClickArena;
-    std::function<void()>                                     m_Callback;
-    std::pair<std::shared_ptr<Image>, std::shared_ptr<Image>> m_Images;
+    Rect                  m_ClickArena;
+    std::function<void()> m_Callback;
+
+    std::shared_ptr<Sprite> m_Image;
 };

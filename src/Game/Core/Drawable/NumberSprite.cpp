@@ -11,118 +11,195 @@
 #include <Exceptions/EstException.h>
 #include <Graphics/NativeWindow.h>
 
-NumberSprite::NumberSprite(std::vector<std::filesystem::path> numericsFiles)
+NumberSprite::NumberSprite()
 {
-    if (numericsFiles.size() != 10) {
-        throw Exceptions::EstException("NumberSprite::NumberSprite: numericsFiles.size() != 10");
-    }
-
-    Position2 = UDim2::fromOffset(0, 0);
-    AnchorPoint = { 0, 0 };
-    Color = Color3::fromRGB(255, 255, 255);
-    Size = UDim2::fromScale(1, 1);
-
-    m_numericsTexture.resize(10);
-    for (int i = 0; i < 10; i++) {
-        auto path = numericsFiles[i];
-        m_numericsTexture[i] = std::make_shared<Image>(path);
-        m_numbericsWidth[i] = m_numericsTexture[i]->GetImageSize();
-    }
+    m_renderMode = UI::RenderMode::Batches;
 }
 
-NumberSprite::~NumberSprite()
+NumberSprite::NumberSprite(
+    std::filesystem::path               path,
+    std::vector<std::vector<glm::vec2>> texCoords)
+    : Sprite(path, texCoords, 0)
 {
-    m_numericsTexture.clear();
+    m_renderMode = UI::RenderMode::Batches;
+}
+
+NumberSprite::NumberSprite(
+    std::shared_ptr<Graphics::Texture2D> texture,
+    std::vector<std::vector<glm::vec2>>  texCoords)
+    : Sprite(texture, texCoords, 0)
+{
+    m_renderMode = UI::RenderMode::Batches;
 }
 
 void NumberSprite::Draw(int number)
 {
-    std::string numberString = std::to_string(number);
-    if (MaxDigits != 0 && numberString.size() > MaxDigits) {
-        numberString = numberString.substr(numberString.size() - MaxDigits, MaxDigits);
+    NumberToDraw = number;
+
+    if (AlphaBlend) {
+        BlendState = Env::GetInt("BlendAlpha");
     } else {
-        while (numberString.size() < MaxDigits && FillWithZeros) {
-            numberString = "0" + numberString;
-        }
+        BlendState = Env::GetInt("BlendNonAlpha");
     }
 
-    auto rect = Graphics::NativeWindow::Get()->GetBufferSize();
+    UI::Base::Draw();
+}
 
-    double xPos = (rect.Width * Position.X.Scale) + Position.X.Offset;
-    double yPos = (rect.Height * Position.Y.Scale) + Position.Y.Offset;
+void NumberSprite::CalculateSize()
+{
+    UDim2 PositionToCalculate = Position - Position2;
 
-    double xMPos = (rect.Width * Position2.X.Scale) + Position2.X.Offset;
-    double yMPos = (rect.Height * Position2.Y.Scale) + Position2.Y.Offset;
+    Rect   imageRect = GetImageSize();
+    Rect   bufferRect = Graphics::NativeWindow::Get()->GetBufferSize();
+    double ImageWidth = imageRect.Width;
+    double ImageHeight = imageRect.Height;
+    double Width = bufferRect.Width;
+    double Height = bufferRect.Height;
 
-    xPos += xMPos;
-    yPos += yMPos;
+    double X = 0;
+    double Y = 0;
 
-    float offsetScl = static_cast<float>(Offset) / 100.0f;
+    if (Parent != nullptr && Parent != this) {
+        Parent->CalculateSize();
 
-    switch (NumberPosition) {
-        case NumericPosition::LEFT:
-        {
-            float tx = static_cast<float>(xPos);
-            for (int i = (int)numberString.length() - 1; i >= 0; i--) {
-                int digit = numberString[i] - '0';
+        Width = Parent->AbsoluteSize.X;
+        Height = Parent->AbsoluteSize.Y;
+        X = Parent->AbsolutePosition.X;
+        Y = Parent->AbsolutePosition.Y;
+    }
 
-                tx -= (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
-                auto &tex = m_numericsTexture[digit];
-                tex->Position = UDim2({ 0, tx }, { 0, (float)yPos });
-                tex->AlphaBlend = AlphaBlend;
-                tex->AnchorPoint = AnchorPoint;
-                tex->Size = Size;
-                tex->Color3 = Color;
-                tex->Draw();
+    double x0 = (Width * PositionToCalculate.X.Scale) + PositionToCalculate.X.Offset;
+    double y0 = (Height * PositionToCalculate.Y.Scale) + PositionToCalculate.Y.Offset;
+
+    double x1 = (ImageWidth * Size.X.Scale) + Size.X.Offset;
+    double y1 = (ImageHeight * Size.Y.Scale) + Size.Y.Offset;
+
+    double xAnchor = x1 * std::clamp(AnchorPoint.X, 0.0, 1.0);
+    double yAnchor = y1 * std::clamp(AnchorPoint.Y, 0.0, 1.0);
+
+    x0 -= xAnchor;
+    y0 -= yAnchor;
+
+    AbsolutePosition = { (X + x0), (Y + y0) };
+    AbsoluteSize = { x1, y1 };
+
+    roundedCornerPixels = glm::vec4();
+}
+
+void NumberSprite::OnDraw()
+{
+    m_batches.clear();
+
+    {
+        std::string numberString = std::to_string(NumberToDraw);
+        if (MaxDigits != 0 && numberString.size() > MaxDigits) {
+            numberString = numberString.substr(numberString.size() - MaxDigits, MaxDigits);
+        } else {
+            while (numberString.size() < MaxDigits && FillWithZeros) {
+                numberString = "0" + numberString;
             }
-            break;
         }
 
-        case NumericPosition::MID:
-        {
-            float totalWidth = 0;
-            for (int i = 0; i < numberString.length(); i++) {
-                int digit = numberString[i] - '0';
-                totalWidth += (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
+        CalculateSize();
+        float offsetScl = static_cast<float>(Offset) / 100.0f;
+
+        switch (NumberPosition) {
+            case NumericPosition::LEFT:
+            {
+                double tx = AbsolutePosition.X;
+                for (int i = (int)numberString.length() - 1; i >= 0; i--) {
+                    int digit = numberString[i] - '0';
+                    m_spriteIndex = digit;
+
+                    tx -= AbsoluteSize.X + (AbsoluteSize.X * offsetScl);
+                    AbsolutePosition.X = tx;
+                    AddToQueue();
+                }
+                break;
             }
 
-            float tx = static_cast<float>(xPos) - totalWidth / 2 + (Offset * totalWidth) / 200;
-            for (int i = 0; i < numberString.length(); i++) {
-                int   digit = numberString[i] - '0';
-                auto &tex = m_numericsTexture[digit];
-                tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
-                tex->AlphaBlend = AlphaBlend;
-                tex->AnchorPoint = AnchorPoint;
-                tex->Size = Size;
-                tex->Color3 = Color;
-                tex->Draw();
-                tx += (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
-            }
-            break;
-        }
+            case NumericPosition::MID:
+            {
+                double totalWidth = 0;
+                for (int i = 0; i < numberString.length(); i++) {
+                    int digit = numberString[i] - '0';
+                    totalWidth += AbsoluteSize.X + (AbsoluteSize.X * offsetScl);
+                }
 
-        case NumericPosition::RIGHT:
-        {
-            float tx = static_cast<float>(xPos);
-            for (int i = 0; i < numberString.length(); i++) {
-                int   digit = numberString[i] - '0';
-                auto &tex = m_numericsTexture[digit];
-                tex->Position = UDim2({ 0, (float)tx }, { 0, (float)yPos });
-                tex->AnchorPoint = AnchorPoint;
-                tex->AlphaBlend = AlphaBlend;
-                tex->Size = Size;
-                tex->Color3 = Color;
-                tex->Draw();
-                tx += (float)m_numbericsWidth[digit].Width + (m_numbericsWidth[digit].Width * offsetScl);
-            }
-            break;
-        }
+                double tx = AbsolutePosition.X - totalWidth / 2 + (Offset * totalWidth) / 200;
+                for (int i = 0; i < numberString.length(); i++) {
+                    int digit = numberString[i] - '0';
+                    m_spriteIndex = digit;
 
-        default:
-        {
-            throw Exceptions::EstException("Invalid NumericPosition");
+                    AbsolutePosition.X = tx;
+                    tx += AbsoluteSize.X + (AbsoluteSize.X * offsetScl);
+                    AddToQueue();
+                }
+                break;
+            }
+
+            case NumericPosition::RIGHT:
+            {
+                double tx = AbsolutePosition.X;
+                for (int i = 0; i < numberString.length(); i++) {
+                    int digit = numberString[i] - '0';
+                    m_spriteIndex = digit;
+
+                    AbsolutePosition.X = tx;
+                    tx += AbsoluteSize.X + (AbsoluteSize.X * offsetScl);
+                    AddToQueue();
+                }
+                break;
+            }
+
+            default:
+            {
+                throw Exceptions::EstException("Invalid NumericPosition");
+            }
         }
     }
+}
+
+void NumberSprite::AddToQueue()
+{
+    double x1 = AbsolutePosition.X;
+    double y1 = AbsolutePosition.Y;
+    double x2 = x1 + AbsoluteSize.X;
+    double y2 = y1 + AbsoluteSize.Y;
+
+    auto uv1 = m_texCoords[m_spriteIndex][0]; // Top-left
+    auto uv2 = m_texCoords[m_spriteIndex][1]; // Top-right
+    auto uv3 = m_texCoords[m_spriteIndex][3]; // Bottom-Right
+    auto uv4 = m_texCoords[m_spriteIndex][2]; // Bottom-left
+
+    glm::vec4 color = {
+        Color3.R * 255,
+        Color3.G * 255,
+        Color3.B * 255,
+        Transparency * 255
+    };
+
+    // clang-format off
+    uint32_t col = ((uint32_t)(color.a) << 24) 
+        | ((uint32_t)(color.b) << 16) 
+        | ((uint32_t)(color.g) << 8) 
+        | ((uint32_t)(color.r) << 0);
+    // clang-format on
+
+    shaderFragmentType = Graphics::Backends::ShaderFragmentType::Image;
+
+    m_SubmitInfo.indices = { 0, 1, 2, 3, 4, 5 };
+    m_SubmitInfo.vertices = {
+        { { x1, y1 }, uv1, col },
+        { { x1, y2 }, uv4, col },
+        { { x2, y2 }, uv3, col },
+
+        { { x1, y1 }, uv1, col },
+        { { x2, y2 }, uv3, col },
+        { { x2, y1 }, uv2, col },
+    };
+
+    InsertToBatch();
 }
 
 NumericPosition IntToPos(int i)

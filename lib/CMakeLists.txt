@@ -15,6 +15,7 @@ add_library(EstEngine STATIC ${HEADERS}
     # Main Graphics
     "src/Graphics/NativeWindow.cpp" 
     "src/Graphics/Renderer.cpp" 
+    "src/Graphics/SpriteBatch.cpp"
 
     # Screens
     "src/Screens/Base.cpp" 
@@ -26,7 +27,8 @@ add_library(EstEngine STATIC ${HEADERS}
     "src/UI/Image.cpp" 
     "src/UI/Text.cpp" 
     "src/UI/TextBox.cpp"
-    "src/UI/Dialog.cpp" 
+    "src/UI/Dialog.cpp"
+    "src/UI/Sprite.cpp"
 
     # Vulkan backends
     "src/Graphics/Backends/Vulkan/VulkanBackend.cpp" 

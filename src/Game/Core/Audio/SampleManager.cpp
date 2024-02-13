@@ -313,8 +313,13 @@ std::unordered_map<int, NoteAudioSample> &SampleManager::GetSamples()
 
 void SampleManager::Dispose()
 {
-    Audio::Engine::Get()->DestroyAll();
+    for (auto &it : samples) {
+        if (it.second.Sample) {
+            it.second.Sample->Stop();
+
+            Audio::Engine::Get()->Destroy(it.second.Sample);
+        }
+    }
 
     samples.clear();
-    // sampleIndex.clear();
 }

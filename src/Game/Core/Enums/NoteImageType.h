@@ -26,4 +26,6 @@ enum class NoteImageType {
 
     TRAIL_UP,
     TRAIL_DOWN,
+
+    MEASURE_LINE
 };

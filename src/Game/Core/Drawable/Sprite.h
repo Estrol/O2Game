@@ -6,19 +6,29 @@
  */
 
 #pragma once
-#include "Image.h"
+#include <Graphics/Utils/Rect.h>
+#include <Math/Color3.h>
+#include <UI/Sprite.h>
 #include <filesystem>
 
-class Sprite
+class Sprite : public UI::Sprite
 {
 public:
     Sprite();
-    Sprite(std::vector<std::filesystem::path> paths, float fps = 0.0f);
-    Sprite(std::vector<Image *> paths, float fps = 0.0f);
-    Sprite(std::vector<std::filesystem::path> paths, int repeatIndex, float fps);
-    Sprite(std::vector<Image *> paths, int repeatIndex, float fps);
+    Sprite(
+        std::filesystem::path               path,
+        std::vector<std::vector<glm::vec2>> texCoords,
+        float                               fps);
+    Sprite(
+        std::shared_ptr<Graphics::Texture2D> texture,
+        std::vector<std::vector<glm::vec2>>  texCoords,
+        float                                fps);
 
-    ~Sprite();
+    virtual void Draw() override;
+    virtual void Draw(Rect rect) override;
+    virtual void Draw(double delta);
+    virtual void Draw(double delta, Rect rect);
+    virtual void Update(double fixedDelta);
 
     void SetIndexAt(int index);
     void SetDelay(float fps);
@@ -26,34 +36,14 @@ public:
     void Reset();
     void ResetLast();
 
-    bool AlphaBlend;   // Enable alpha blending
-    bool Repeat;       // Whatever the sprite should repeat or not
-    bool UpdateOnDraw; // Whatever the sprite index should update on draw or not, can be useful to update in fixed update thread
+    bool Repeat;
+    bool UpdateOnDraw;
 
-    Vector2 AnchorPoint; // Anchor point of the sprite
-    Color3  TintColor;   // Tint color of the sprite
-    UDim2   Position;
-    UDim2   Position2;
-    UDim2   Size;
+    UDim2 Position2;
+    bool  AlphaBlend;
 
-    Vector2 AbsoluteSize;
-    Vector2 AbsolutePosition;
+    void CalculateSize() override;
 
-    void Update(double fixedDelta);
-
-    void Draw(double delta);
-    void Draw(double delta, Rect rect);
-
-    Image **GetImages();
-    void    CalculateSize();
-
-private:
-    uint32_t m_CurrentIndex;
-    uint32_t m_RepeatIndex;
-    uint32_t m_MaxIndex;
-    float    m_Delay;
-    float    m_CurrentTime;
-    bool     m_ShouldDispose;
-
-    std::vector<Image *> m_Images;
+protected:
+    int m_RepeatIndex;
 };

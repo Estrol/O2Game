@@ -18,12 +18,10 @@ Rectangle::Rectangle() : Base()
         pixels[i] = 255;
     }
 
-    auto image_ptr = Renderer::Get()->LoadTexture(
+    m_texture = Renderer::Get()->LoadTexture(
         pixels.data(),
         200,
         200);
-
-    m_texture = std::unique_ptr<Graphics::Texture2D>(image_ptr);
 }
 
 void Rectangle::OnDraw()

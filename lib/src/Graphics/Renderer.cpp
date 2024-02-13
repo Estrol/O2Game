@@ -35,8 +35,10 @@ void Renderer::Destroy()
 Renderer::~Renderer()
 {
     if (m_Backend) {
+        m_textures_caches.clear();
+
         m_Backend->Shutdown();
-        delete m_Backend;
+        m_Backend.reset();
     }
 }
 
@@ -46,8 +48,6 @@ void Renderer::Init(API api, TextureSamplerInfo sampler)
 
     m_API = api;
     m_Sampler = sampler;
-
-    ::printf("API: %d\n", api);
 
     Base *backend = nullptr;
     switch (api) {
@@ -71,12 +71,12 @@ void Renderer::Init(API api, TextureSamplerInfo sampler)
 
     backend->Init();
 
-    m_Backend = backend;
+    m_Backend = std::shared_ptr<Base>(backend);
 }
 
 Backends::Base *Renderer::GetBackend()
 {
-    return m_Backend;
+    return m_Backend.get();
 }
 
 API Renderer::GetAPI()
@@ -150,20 +150,34 @@ void Renderer::ImGui_EndFrame()
     m_Backend->ImGui_EndFrame();
 }
 
-Texture2D *CreateTexture(API api, TextureSamplerInfo sampler)
+std::string HashTexturePath(std::filesystem::path path)
 {
-    Texture2D *texture = nullptr;
+    std::hash<std::string> hasher;
+    return std::to_string(hasher(path.string()));
+}
+
+std::string HashTextureMemory(const unsigned char *buf, size_t size)
+{
+    std::hash<std::string> hasher;
+    return std::to_string(hasher(std::string((const char *)buf, size)));
+}
+
+std::shared_ptr<Texture2D> CreateTexture(API api, TextureSamplerInfo sampler)
+{
+    std::shared_ptr<Texture2D> texture;
 
     switch (api) {
         case API::Vulkan:
         {
-            texture = new VKTexture2D(sampler);
+            auto texvk = new VKTexture2D(sampler);
+            texture = std::shared_ptr<Texture2D>(texvk);
             break;
         }
 
         case API::OpenGL:
         {
-            texture = new GLTexture2D(sampler);
+            auto texgl = new GLTexture2D(sampler);
+            texture = std::shared_ptr<Texture2D>(texgl);
             break;
         }
     }
@@ -171,30 +185,48 @@ Texture2D *CreateTexture(API api, TextureSamplerInfo sampler)
     return texture;
 }
 
-Texture2D *Renderer::LoadTexture(std::filesystem::path path)
+std::shared_ptr<Texture2D> Renderer::LoadTexture(std::filesystem::path path)
 {
-    auto texture = CreateTexture(GetAPI(), m_Sampler);
+    auto hashKey = HashTexturePath(path);
 
+    if (m_textures_caches.find(hashKey) != m_textures_caches.end()) {
+        return m_textures_caches[hashKey];
+    }
+
+    auto texture = CreateTexture(GetAPI(), m_Sampler);
     texture->Load(path);
 
+    m_textures_caches[hashKey] = texture;
     return texture;
 }
 
-Texture2D *Renderer::LoadTexture(const unsigned char *buf, size_t size)
+std::shared_ptr<Texture2D> Renderer::LoadTexture(const unsigned char *buf, size_t size)
 {
-    auto texture = CreateTexture(GetAPI(), m_Sampler);
+    auto hashKey = HashTextureMemory(buf, size);
 
+    if (m_textures_caches.find(hashKey) != m_textures_caches.end()) {
+        return m_textures_caches[hashKey];
+    }
+
+    auto texture = CreateTexture(GetAPI(), m_Sampler);
     texture->Load(buf, size);
 
+    m_textures_caches[hashKey] = texture;
     return texture;
 }
 
-Texture2D *Renderer::LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height)
+std::shared_ptr<Texture2D> Renderer::LoadTexture(const unsigned char *pixbuf, uint32_t width, uint32_t height)
 {
-    auto texture = CreateTexture(GetAPI(), m_Sampler);
+    auto hashKey = HashTextureMemory(pixbuf, width * height * 4);
 
+    if (m_textures_caches.find(hashKey) != m_textures_caches.end()) {
+        return m_textures_caches[hashKey];
+    }
+
+    auto texture = CreateTexture(GetAPI(), m_Sampler);
     texture->Load(pixbuf, width, height);
 
+    m_textures_caches[hashKey] = texture;
     return texture;
 }
 

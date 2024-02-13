@@ -118,6 +118,9 @@ private:
     int m_KeyVolume;
     int m_KeyPan;
 
+    int   m_HoldXIncrement;
+    float m_HoldTimeChange;
+
     NoteType   m_Type;
     NoteState  m_State;
     NoteResult m_HitResult;

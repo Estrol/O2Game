@@ -39,7 +39,6 @@ private:
     double m_startTime, m_offset, m_currentTrackPosition;
     int    m_imagePos, m_imageSize;
 
-    Sprite       *m_line;
-    RhythmEngine *m_engine;
-    Image        *m_image;
+    std::shared_ptr<Sprite> m_line;
+    RhythmEngine           *m_engine;
 };

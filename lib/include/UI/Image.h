@@ -27,17 +27,21 @@ namespace UI {
     public:
         Image();
         Image(std::filesystem::path path);
-        Image(Graphics::Texture2D *texture);
+        Image(std::shared_ptr<Graphics::Texture2D> texture);
         Image(const char *buf, size_t size);
         Image(const char *pixbuf, uint32_t width, uint32_t height);
 
         Rect           GetImageSize() const;
         ImageScaleMode ScaleMode = ImageScaleMode::Stretch;
 
+        void SetTexCoord(std::vector<glm::vec2> texCoord);
+
     protected:
         void OnDraw() override;
+        std::vector<glm::vec2> texCoord;
 
-        void CalculateSize() override;
+            void
+            CalculateSize() override;
     };
 } // namespace UI
 

@@ -10,6 +10,7 @@
 #include "../Game/Core/Drawable/NumberSprite.h"
 #include "../Game/Core/Drawable/Sprite.h"
 #include "../Game/Core/RhythmEngine.h"
+#include <Graphics/SpriteBatch.h>
 #include <Math/Tween.h>
 #include <Screens/Base.h>
 #include <UI/Image.h>
@@ -43,14 +44,19 @@ private:
     std::unique_ptr<NumberSprite> m_minuteNum;
     std::unique_ptr<NumberSprite> m_secondNum;
 
-    std::unordered_map<int, std::shared_ptr<Image>>  m_keyLighting;
-    std::unordered_map<int, std::shared_ptr<Image>>  m_keyButtons;
-    std::unordered_map<int, std::shared_ptr<Image>>  m_judgement;
-    std::unordered_map<int, std::shared_ptr<Image>>  m_pills;
-    std::unordered_map<int, std::shared_ptr<Sprite>> m_hitEffect;
-    std::unordered_map<int, std::shared_ptr<Sprite>> m_holdEffect;
-    std::unordered_map<int, bool>                    m_keyState;
-    std::unordered_map<int, UDim2>                   m_statsPos;
+    std::shared_ptr<Graphics::SpriteBatch> m_noteSpriteBatch;
+    std::shared_ptr<Graphics::SpriteBatch> m_holdSpriteBatch;
+    std::shared_ptr<Graphics::SpriteBatch> m_measureSpriteBatch;
+
+    std::unordered_map<int, std::shared_ptr<NumberSprite>> m_statsNums;
+    std::unordered_map<int, std::shared_ptr<Image>>        m_keyLighting;
+    std::unordered_map<int, std::shared_ptr<Image>>        m_keyButtons;
+    std::unordered_map<int, std::shared_ptr<Image>>        m_judgement;
+    std::unordered_map<int, std::shared_ptr<Image>>        m_pills;
+    std::unordered_map<int, std::shared_ptr<Sprite>>       m_hitEffect;
+    std::unordered_map<int, std::shared_ptr<Sprite>>       m_holdEffect;
+    std::unordered_map<int, bool>                          m_keyState;
+    std::unordered_map<int, UDim2>                         m_statsPos;
 
     std::unique_ptr<Image> m_exitBtn;
     std::unique_ptr<Image> m_Playfield;
@@ -77,6 +83,7 @@ private:
     bool m_starting;
     bool m_frameCaptured;
     bool m_ended;
+    bool m_usingFLHD;
     int  m_judgeIndex;
 
     double m_startTime;

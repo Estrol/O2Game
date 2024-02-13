@@ -23,7 +23,7 @@ Image::Image(std::filesystem::path path)
     Color3 = Color3::fromRGB(255, 255, 255);
 }
 
-Image::Image(Graphics::Texture2D *texture)
+Image::Image(std::shared_ptr<Graphics::Texture2D> texture)
     : UI::Image::Image(texture)
 {
     AlphaBlend = false;

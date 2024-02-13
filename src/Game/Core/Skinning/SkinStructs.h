@@ -10,6 +10,7 @@
 #include <Math/Tween.h>
 #include <Math/Vector2.h>
 #include <filesystem>
+#include <glm/glm.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -50,34 +51,37 @@ struct LaneInfo
 // Value Format: X, Y, AnchorPointX?, AnchorPointY?, TintColor?
 struct PositionValue
 {
-    std::filesystem::path Path;
-    UDim2                 Position;
-    UDim2                 Size;
-    Vector2               AnchorPoint;
-    Color3                Color;
+    std::filesystem::path  Path;
+    std::vector<glm::vec2> TexCoord;
+    UDim2                  Position;
+    UDim2                  Size;
+    Vector2                AnchorPoint;
+    Color3                 Color;
 };
 
 // Value format: X, Y, MaxDigits?, Direction?, FillWithZero?
 struct NumericValue
 {
-    std::vector<std::filesystem::path> Files;
-    UDim2                              Position;
-    UDim2                              Size;
-    int                                MaxDigit;
-    int                                Direction;
-    bool                               FillWithZero;
-    Color3                             Color;
+    std::filesystem::path               Path;
+    std::vector<std::vector<glm::vec2>> TexCoords;
+    UDim2                               Position;
+    UDim2                               Size;
+    int                                 MaxDigit;
+    int                                 Direction;
+    bool                                FillWithZero;
+    Color3                              Color;
 };
 
 // Value format: X, Y, AnchorPointX, AnchorPointY
 struct SpriteValue
 {
-    std::vector<std::filesystem::path> Files;
-    UDim2                              Position;
-    UDim2                              Size;
-    Vector2                            AnchorPoint;
-    float                              FrameTime;
-    Color3                             Color;
+    std::filesystem::path               Path;
+    std::vector<std::vector<glm::vec2>> TexCoords;
+    UDim2                               Position;
+    UDim2                               Size;
+    Vector2                             AnchorPoint;
+    float                               FrameTime;
+    Color3                              Color;
 };
 
 // Value format: NumOfFiles, FileName

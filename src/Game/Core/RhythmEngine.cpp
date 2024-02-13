@@ -729,3 +729,28 @@ void RhythmEngine::SetKeys(Inputs::Keys *keys)
         KeyMapping[i].key = keys[i];
     }
 }
+
+void RhythmEngine::SetSpriteBatch(
+    std::shared_ptr<Graphics::SpriteBatch> note,
+    std::shared_ptr<Graphics::SpriteBatch> hold,
+    std::shared_ptr<Graphics::SpriteBatch> measure)
+{
+    m_noteSpriteBatch = note;
+    m_holdSpriteBatch = hold;
+    m_measureSpriteBatch = measure;
+}
+
+std::shared_ptr<Graphics::SpriteBatch> RhythmEngine::GetNoteSpriteBatch() const
+{
+    return m_noteSpriteBatch;
+}
+
+std::shared_ptr<Graphics::SpriteBatch> RhythmEngine::GetHoldSpriteBatch() const
+{
+    return m_holdSpriteBatch;
+}
+
+std::shared_ptr<Graphics::SpriteBatch> RhythmEngine::GetMeasureSpriteBatch() const
+{
+    return m_measureSpriteBatch;
+}

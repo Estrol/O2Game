@@ -192,7 +192,7 @@ void Loading::Update(double delta)
         m_LoadingBar->Draw();
     }
 
-    if (m_counter > 2.5 && chart != nullptr && !fucked && currentProgress >= maxProgress) {
+    if (m_counter > 0 && chart != nullptr && !fucked && currentProgress >= maxProgress) {
         Screens::Manager::Get()->SetScreen(SceneList::GAMEPLAY);
     } else {
         if (fucked) {

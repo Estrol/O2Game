@@ -9,8 +9,6 @@
 #include "NoteCacheManager.h"
 #include <Logs.h>
 
-constexpr int MAX_OBJECTS = 50;
-
 NoteCacheManager::NoteCacheManager()
 {
     m_noteTextures = std::unordered_map<NoteImageType, std::vector<Sprite *>>();
@@ -46,11 +44,6 @@ void NoteCacheManager::Repool(Sprite *image, NoteImageType noteType)
 
     auto &it = m_noteTextures[noteType];
 
-    if (it.size() >= MAX_OBJECTS) {
-        delete image;
-        return;
-    }
-
     it.push_back(image);
 }
 
@@ -61,11 +54,6 @@ void NoteCacheManager::RepoolHold(Sprite *image, NoteImageType noteType)
 
     auto &it = m_holdTextures[noteType];
 
-    if (it.size() >= MAX_OBJECTS) {
-        delete image;
-        return;
-    }
-
     it.push_back(image);
 }
 
@@ -75,11 +63,6 @@ void NoteCacheManager::RepoolTrail(Sprite *image, NoteImageType noteType)
         return;
 
     auto &it = m_trailTextures[noteType];
-
-    if (it.size() >= MAX_OBJECTS) {
-        delete image;
-        return;
-    }
 
     it.push_back(image);
 }
@@ -95,7 +78,7 @@ Sprite *NoteCacheManager::Depool(NoteImageType noteType)
         } else {
             auto textures = Resources::NoteImages::Get(noteType);
 
-            image = new Sprite(textures->Images, 0, 120);
+            image = new Sprite(textures->Texture, textures->TexCoords, textures->FrameRate);
             image->Size = UDim2::fromOffset(textures->ImagesRect.Width, textures->ImagesRect.Height);
             image->Repeat = true;
         }
@@ -117,7 +100,7 @@ Sprite *NoteCacheManager::DepoolHold(NoteImageType noteType)
         } else {
             auto textures = Resources::NoteImages::Get(noteType);
 
-            image = new Sprite(textures->Images, 0, 120);
+            image = new Sprite(textures->Texture, textures->TexCoords, textures->FrameRate);
             image->Size = UDim2::fromOffset(textures->ImagesRect.Width, textures->ImagesRect.Height);
             image->Repeat = true;
         }
@@ -139,7 +122,7 @@ Sprite *NoteCacheManager::DepoolTrail(NoteImageType noteType)
         } else {
             auto textures = Resources::NoteImages::Get(noteType);
 
-            image = new Sprite(textures->Images, 0, 120);
+            image = new Sprite(textures->Texture, textures->TexCoords, textures->FrameRate);
             image->Size = UDim2::fromOffset(textures->ImagesRect.Width, textures->ImagesRect.Height);
             image->Repeat = true;
         }
@@ -162,7 +145,29 @@ NoteCacheManager *NoteCacheManager::Get()
 void NoteCacheManager::Release()
 {
     if (s_instance) {
-        Logs::Puts("[NoteCacheManager] Release about: hold=%d, note=%d, trail=%d", s_instance->m_holdTextures.size(), s_instance->m_noteTextures.size(), s_instance->m_trailTextures.size());
+        int holdTotal = 0;
+        for (auto &it : s_instance->m_holdTextures) {
+            holdTotal += it.second.size();
+        }
+
+        int noteTotal = 0;
+        for (auto &it : s_instance->m_noteTextures) {
+            noteTotal += it.second.size();
+        }
+
+        int trailTotal = 0;
+        for (auto &it : s_instance->m_trailTextures) {
+            trailTotal += it.second.size();
+        }
+
+        int total = holdTotal + noteTotal + trailTotal;
+
+        Logs::Puts(
+            "[NoteCacheManager] Release about: %d hold, %d note, %d trail, total: %d",
+            holdTotal,
+            noteTotal,
+            trailTotal,
+            total);
 
         delete s_instance;
         s_instance = nullptr;

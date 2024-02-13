@@ -154,14 +154,24 @@ void Base::DrawVertices()
         }
 
         // RotateVertex();
-        renderer->Push(m_SubmitInfo);
+
+        if (SpriteBatch) {
+            SpriteBatch->Draw(m_SubmitInfo);
+        } else {
+            renderer->Push(m_SubmitInfo);
+        }
     } else {
         if (!m_batches.size()) {
             InsertToBatch();
         }
 
         // RotateVertex();
-        renderer->Push(m_batches);
+
+        if (SpriteBatch) {
+            SpriteBatch->Draw(m_batches);
+        } else {
+            renderer->Push(m_batches);
+        }
     }
 }
 

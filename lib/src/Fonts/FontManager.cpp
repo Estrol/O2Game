@@ -198,10 +198,10 @@ FontAtlas *FontManager::LoadFont(FontLoadBufferInfo &info)
 
             glyph.Rect = glm::vec4(x0, y0, x1, y1);
 
-            glyph.UV[0] = glm::vec2(glyph.Top.x / tex_width, glyph.Top.y / tex_height);
-            glyph.UV[1] = glm::vec2(glyph.Bottom.x / tex_width, glyph.Top.y / tex_height);
-            glyph.UV[2] = glm::vec2(glyph.Bottom.x / tex_width, glyph.Bottom.y / tex_height);
-            glyph.UV[3] = glm::vec2(glyph.Top.x / tex_width, glyph.Bottom.y / tex_height);
+            glyph.UV[0] = glm::vec2(glyph.Top.x / tex_width, glyph.Top.y / tex_height);       // Top left
+            glyph.UV[1] = glm::vec2(glyph.Bottom.x / tex_width, glyph.Top.y / tex_height);    // Top right
+            glyph.UV[2] = glm::vec2(glyph.Bottom.x / tex_width, glyph.Bottom.y / tex_height); // Bottom right
+            glyph.UV[3] = glm::vec2(glyph.Top.x / tex_width, glyph.Bottom.y / tex_height);    // Bottom left
 
             if (c == '?') {
                 Invalid = glyph;
@@ -223,13 +223,12 @@ FontAtlas *FontManager::LoadFont(FontLoadBufferInfo &info)
         rgba_data[i * 4 + 3] = pixel & 0xFF; // Alpha
     }
 
-    auto tex = Graphics::Renderer::Get()->LoadTexture(
+    auto atlas = std::make_unique<FontAtlas>();
+    atlas->Texture = Graphics::Renderer::Get()->LoadTexture(
         (const unsigned char *)rgba_data.data(),
         tex_width,
         tex_height);
 
-    auto atlas = std::make_unique<FontAtlas>();
-    atlas->Texture = std::unique_ptr<Graphics::Texture2D>(tex);
     atlas->Glyphs = std::move(glyphs);
     atlas->NewlineHeight = faceHeight;
     atlas->TexSize = glm::vec2(tex_width, tex_height);

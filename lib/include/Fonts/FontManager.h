@@ -33,7 +33,7 @@ namespace Fonts {
 
     struct FontAtlas
     {
-        std::unique_ptr<Graphics::Texture2D> Texture;
+        std::shared_ptr<Graphics::Texture2D> Texture;
         std::vector<Glyph>                   Glyphs;
         glm::vec2                            TexSize;
 

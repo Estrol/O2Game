@@ -20,7 +20,8 @@ struct GameLua
 
     /* Utility */
 
-    bool IsPathExist(std::string Path);
+    bool                IsPathExist(std::string Path);
+    std::pair<int, int> GetImageSize(std::string Path);
 
     LuaSkin    *__skin;
     std::string __group;
@@ -43,7 +44,7 @@ public:
     std::vector<PositionValue> GetPosition(std::string key);
     std::vector<RectInfo>      GetRect(std::string key);
     std::vector<AudioInfo>     GetAudio();
-    NoteValue                  GetNote(std::string key);
+    //NoteValue                  GetNote(std::string key);
     SpriteValue                GetSprite(std::string key);
     TweenInfo                  GetTween(std::string key);
 

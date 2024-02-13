@@ -47,6 +47,10 @@ void Sample::Load(std::filesystem::path path)
     fs.close();
 
     Preload();
+
+    SetVolume(100.0f);
+    SetPan(0.0f);
+    SetRate(1.0f);
 }
 
 void Sample::Load(const char *buf, size_t size)
@@ -59,6 +63,10 @@ void Sample::Load(const char *buf, size_t size)
     memcpy(m_Buffer.data(), buf, size);
 
     Preload();
+
+    SetVolume(100.0f);
+    SetPan(0.0f);
+    SetRate(1.0f);
 }
 
 void Sample::Load(ECHANDLE encoder)
@@ -73,6 +81,10 @@ void Sample::Load(ECHANDLE encoder)
     if (result != EST_OK) {
         throw Exceptions::EstException("Failed to load audio sample: %s", EST_GetError());
     }
+
+    SetVolume(100.0f);
+    SetPan(0.0f);
+    SetRate(1.0f);
 }
 
 void Sample::Play()

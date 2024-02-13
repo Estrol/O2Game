@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "Image.h"
+#include "Sprite.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -19,18 +19,17 @@ enum class NumericPosition {
 
 NumericPosition IntToPos(int i);
 
-class NumberSprite
+class NumberSprite : public Sprite
 {
 public:
-    NumberSprite() = default;
-    NumberSprite(std::vector<std::filesystem::path> numericsPath);
-    ~NumberSprite();
+    NumberSprite();
+    NumberSprite(
+        std::filesystem::path               path,
+        std::vector<std::vector<glm::vec2>> texCoords);
+    NumberSprite(
+        std::shared_ptr<Graphics::Texture2D> texture,
+        std::vector<std::vector<glm::vec2>>  texCoords);
 
-    UDim2           Position;
-    UDim2           Position2;
-    Color3          Color;
-    UDim2           Size;
-    Vector2         AnchorPoint;
     NumericPosition NumberPosition = NumericPosition::MID;
     bool            FillWithZeros = false;
     bool            AlphaBlend = false;
@@ -38,8 +37,10 @@ public:
     int             Offset = 0;
 
     void Draw(int value);
+    void CalculateSize() override;
 
 protected:
-    std::vector<std::shared_ptr<Image>> m_numericsTexture;
-    std::map<int, Rect>                 m_numbericsWidth;
+    void OnDraw() override;
+    void AddToQueue();
+    int  NumberToDraw = 0;
 };

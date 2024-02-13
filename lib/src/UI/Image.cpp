@@ -13,35 +13,32 @@ using namespace Graphics;
 
 Image::Image()
 {
+    texCoord = {};
 }
 
 Image::Image(std::filesystem::path path)
 {
     auto renderer = Renderer::Get();
-    auto image = renderer->LoadTexture(path);
-
-    m_texture = std::unique_ptr<Texture2D>(image);
+    m_texture = renderer->LoadTexture(path);
 }
 
-Image::Image(Graphics::Texture2D *texture)
+Image::Image(std::shared_ptr<Graphics::Texture2D> texture)
 {
-    m_texture = std::unique_ptr<Texture2D>(texture);
+    m_texture = texture;
 }
 
 Image::Image(const char *buf, size_t size)
 {
     auto renderer = Renderer::Get();
-    auto image = renderer->LoadTexture((const unsigned char *)buf, size);
 
-    m_texture = std::unique_ptr<Texture2D>(image);
+    m_texture = renderer->LoadTexture((const unsigned char *)buf, size);
 }
 
 Image::Image(const char *pixbuf, uint32_t width, uint32_t height)
 {
     auto renderer = Renderer::Get();
-    auto image = renderer->LoadTexture((const unsigned char *)pixbuf, width, height);
 
-    m_texture = std::unique_ptr<Texture2D>(image);
+    m_texture = renderer->LoadTexture((const unsigned char *)pixbuf, width, height);
 }
 
 Rect Image::GetImageSize() const
@@ -50,6 +47,17 @@ Rect Image::GetImageSize() const
         return m_texturePtr->GetSize();
     } else {
         return m_texture->GetSize();
+    }
+}
+
+void Image::SetTexCoord(std::vector<glm::vec2> texCoord)
+{
+    auto imageSize = GetImageSize();
+
+    this->texCoord = texCoord;
+    for (auto &uv : this->texCoord) {
+        uv.x /= (float)imageSize.Width;
+        uv.y /= (float)imageSize.Height;
     }
 }
 
@@ -67,6 +75,13 @@ void Image::OnDraw()
     glm::vec2 uv2(1.0f, 0.0f); // Top-right UV coordinate
     glm::vec2 uv3(1.0f, 1.0f); // Bottom-right UV coordinate
     glm::vec2 uv4(0.0f, 1.0f); // Bottom-left UV coordinate
+
+    if (texCoord.size() == 4) {
+        uv1 = texCoord[0];
+        uv2 = texCoord[1];
+        uv3 = texCoord[3];
+        uv4 = texCoord[2];
+    }
 
     glm::vec4 color = {
         Color3.R * 255,

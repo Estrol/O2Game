@@ -106,15 +106,21 @@ void Note::Load(NoteInfoDesc desc)
     m_ImageType = desc.ImageType;
     m_ImageBodyType = desc.ImageBodyType;
 
+    auto holdSpriteBatch = m_Engine->GetHoldSpriteBatch();
+    auto noteSpriteBatch = m_Engine->GetNoteSpriteBatch();
+
     m_Head = NoteCacheManager::Get()->Depool(m_ImageType);
     m_Head->AnchorPoint = { 0, 1 };
+    m_Head->SpriteBatch = noteSpriteBatch;
 
     if (desc.Type == NoteType::HOLD) {
         m_Tail = NoteCacheManager::Get()->Depool(m_ImageType);
         m_Tail->AnchorPoint = m_Head->AnchorPoint;
+        m_Tail->SpriteBatch = noteSpriteBatch;
 
         m_Body = NoteCacheManager::Get()->DepoolHold(m_ImageBodyType);
         m_Body->AnchorPoint = { 0, 0.5 };
+        m_Body->SpriteBatch = holdSpriteBatch;
 
         m_StartBPM = desc.StartBPM;
         m_EndBPM = desc.EndBPM;
@@ -130,6 +136,9 @@ void Note::Load(NoteInfoDesc desc)
 
     m_TrailUp = NoteCacheManager::Get()->DepoolTrail(NoteImageType::TRAIL_UP);
     m_TrailDown = NoteCacheManager::Get()->DepoolTrail(NoteImageType::TRAIL_DOWN);
+
+    m_TrailUp->SpriteBatch = holdSpriteBatch;
+    m_TrailDown->SpriteBatch = holdSpriteBatch;
 
     m_StartTime = desc.StartTime;
     m_EndTime = desc.EndTime;
@@ -153,6 +162,9 @@ void Note::Load(NoteInfoDesc desc)
 
     m_HitPos = 0;
     m_RelPos = 0;
+
+    m_HoldXIncrement = 0;
+    m_HoldTimeChange = 0.0f;
 
     m_LastScoreTime = -1;
 }
@@ -241,7 +253,6 @@ void Note::Render(double delta)
         float Transparency = 0.9f;
 
         if (m_HitResult >= NoteResult::GOOD && m_State == NoteState::HOLD_ON_HOLDING) {
-            // m_Head->Position.Y.Offset = hitPos;
             Transparency = 1.0f;
         }
 
@@ -254,10 +265,19 @@ void Note::Render(double delta)
         double height = headPos - tailPos;
         double position = (height / 2.0) + tailPos;
 
-        m_Body->Position = UDim2::fromOffset(m_LaneOffset, position);
+        m_HoldTimeChange += static_cast<float>(delta);
+
+        if (m_State == NoteState::HOLD_ON_HOLDING && m_HoldTimeChange > 0.05f) {
+            m_HoldTimeChange = 0;
+            m_HoldXIncrement = m_HoldXIncrement == 1 ? -1 : m_HoldXIncrement + 1;
+        } else {
+            m_HoldXIncrement = 0;
+        }
+
+        m_Body->Position = UDim2::fromOffset(m_LaneOffset + m_HoldXIncrement, position);
         m_Body->Size = { 0, m_Body->Size.X.Offset, 0, height };
 
-        m_Body->TintColor = { Transparency, Transparency, Transparency };
+        m_Body->Color3 = { Transparency, Transparency, Transparency };
 
         bool b1 = isWithinRange(m_Head->Position.Y.Offset, min, max);
         bool b2 = isWithinRange(m_Tail->Position.Y.Offset, min, max);
