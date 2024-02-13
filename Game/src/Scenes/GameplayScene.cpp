@@ -7,6 +7,7 @@
 #include <numeric>
 #include <random>
 #include <unordered_map>
+#include <Logs.h>
 
 #include "Configuration.h"
 #include "Game.h"
@@ -1013,6 +1014,21 @@ bool GameplayScene::Attach()
                 m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
                 m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
             }
+        }
+
+        std::string modSelected;
+
+        if (IsHD) modSelected += "Hidden, ";
+        if (IsFL) modSelected += "Flashlight, ";
+        if (IsRD) modSelected += "Random, ";
+        if (IsMR) modSelected += "Mirror, ";
+
+        if (!modSelected.empty()) {
+            modSelected.erase(modSelected.size() - 2);
+            Logs::Puts(("[Gameplay] Using modifier " + modSelected).c_str());
+        }
+        else {
+            Logs::Puts("[Gameplay] Not using any modifier");
         }
 
         auto OnHitEvent = [&](NoteHitInfo info) {
