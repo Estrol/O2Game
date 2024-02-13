@@ -973,7 +973,7 @@ bool GameplayScene::Attach()
         // I don't put throw error if any file below doesn't exist maybe you can put it if necessary
         if (areVisualModsActive) { // Draw VisualMods (Hidden and Flashlight)
             if (IsHD) {
-                std::string VisualModImage = "Hidden.png";
+                std::string VisualModImage = "ModHidden.png";
                 auto VisualModfilename = playingPath / VisualModImage;
 
                 auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
@@ -983,7 +983,7 @@ bool GameplayScene::Attach()
             }
 
             if (IsFL) {
-                std::string VisualModImage = "Flashlight.png";
+                std::string VisualModImage = "ModFlashlight.png";
                 auto VisualModfilename = playingPath / VisualModImage;
 
                 auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
@@ -995,7 +995,7 @@ bool GameplayScene::Attach()
 
         if (areNoteModsActive) { // Draw NoteMods (Mirror and Random)
             if (IsMR) {
-                std::string NoteModImage = "Mirror.png";
+                std::string NoteModImage = "ModMirror.png";
                 auto NoteModfilename = playingPath / NoteModImage;
 
                 auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
@@ -1005,7 +1005,7 @@ bool GameplayScene::Attach()
             }
 
             if (IsRD) {
-                std::string NoteModImage = "Random.png";
+                std::string NoteModImage = "ModRandom.png";
                 auto NoteModfilename = playingPath / NoteModImage;
 
                 auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
