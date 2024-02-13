@@ -135,8 +135,8 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    m_Playfooter->Draw();
     m_Playfield->Draw();
+    m_Playfooter->Draw();
 
     // Draw Mods
     if (m_noteMod) { // Fix Crash
