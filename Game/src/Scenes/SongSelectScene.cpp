@@ -28,7 +28,7 @@
 #include "../Data/Chart.hpp"
 #include "../Data/Util/Util.hpp"
 
-static std::array<std::string, 6>  Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
+static std::array<std::string, 8>  Mods = { "Mirror", "Random", "Panic", "Rearrange", "Autoplay", "Hidden", "Flashlight", "Sudden" };
 static std::array<std::string, 14> Arena = { "Music Background", "Random",
                                              "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
@@ -489,41 +489,34 @@ void SongSelectScene::OnGameSelectMusic(double delta)
                 if (ImGui::Button(mod.c_str(), MathUtil::ScaleVec2(ImVec2(80, 0)))) {
                     EnvironmentSetup::SetInt(mod, value == 1 ? 0 : 1);
 
-                    switch (i) {
-                        case 0:
-                        {
-                            EnvironmentSetup::SetInt(Mods[1], 0);
-                            EnvironmentSetup::SetInt(Mods[2], 0);
-                            break;
-                        }
-
-                        case 1:
-                        {
-                            EnvironmentSetup::SetInt(Mods[0], 0);
-                            EnvironmentSetup::SetInt(Mods[2], 0);
-                            break;
-                        }
-
-                        case 2:
-                        {
-                            bOpenRearrange = EnvironmentSetup::GetInt(Mods[2]) == 1;
-
-                            EnvironmentSetup::SetInt(Mods[0], 0);
-                            EnvironmentSetup::SetInt(Mods[1], 0);
-                            break;
-                        }
-
-                        case 4:
-                        {
-                            EnvironmentSetup::SetInt(Mods[5], 0);
-                            break;
-                        }
-
-                        case 5:
-                        {
-                            EnvironmentSetup::SetInt(Mods[4], 0);
-                            break;
-                        }
+                    switch (i) { // New Modifier
+                    case 0: // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        break;
+                    case 1: // Random
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        break;
+                    case 2: // Panic
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        break;
+                    case 3: // Rearrange
+                        bOpenRearrange = EnvironmentSetup::GetInt(Mods[3]) == 1;
+                        break;
+                    case 5: // Hidden
+                        EnvironmentSetup::SetInt(Mods[6], 0); // Flashlight
+                        EnvironmentSetup::SetInt(Mods[7], 0); // Sudden
+                        break;
+                    case 6: // Flashlight
+                        EnvironmentSetup::SetInt(Mods[5], 0); // Hidden
+                        EnvironmentSetup::SetInt(Mods[7], 0); // Sudden
+                        break;
+                    case 7: // Sudden
+                        EnvironmentSetup::SetInt(Mods[5], 0); // Hidden
+                        EnvironmentSetup::SetInt(Mods[6], 0); // Flashlight
+                        break;
                     }
                 }
 

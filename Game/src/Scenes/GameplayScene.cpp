@@ -146,24 +146,32 @@ void GameplayScene::Render(double delta)
     if (m_visualMod) { // Fix Crash
         m_visualMod->Draw();
     }
-
+    // Maybe u decided below
     if (!is_flhd_enabled) {
-        m_targetBar->Draw(delta);
-    }
-
-    for (auto &[lane, pressed] : m_keyState) {
-        if (pressed) {
-            m_keyLighting[lane]->AlphaBlend = true;
-            m_keyLighting[lane]->Draw();
-            m_keyButtons[lane]->Draw();
+        for (auto& [lane, pressed] : m_keyState) {
+            if (pressed) {
+                m_keyLighting[lane]->AlphaBlend = true;
+                m_keyLighting[lane]->Draw();
+                m_keyButtons[lane]->Draw();
+            }
         }
+        m_targetBar->Draw(delta);
+        m_targetBar->AlphaBlend = true;  // Fix for some cases (Resource updated)
+        m_game->Render(delta);
     }
-
-    m_game->Render(delta);
 
     if (is_flhd_enabled) {
+        m_game->Render(delta);
         m_laneHideImage->Draw();
         m_targetBar->Draw(delta);
+        m_targetBar->AlphaBlend = true; // Fix for some cases (Resource updated)
+        for (auto& [lane, pressed] : m_keyState) {
+            if (pressed) {
+                m_keyLighting[lane]->AlphaBlend = true;
+                m_keyLighting[lane]->Draw();
+                m_keyButtons[lane]->Draw();
+            }
+        }
     }
 
     auto scores = m_game->GetScoreManager()->GetScore();
@@ -934,13 +942,26 @@ bool GameplayScene::Attach()
 
         bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
         bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
+        bool IsSD = EnvironmentSetup::GetInt("Sudden") == 1;
         bool IsRD = EnvironmentSetup::GetInt("Random") == 1;
         bool IsMR = EnvironmentSetup::GetInt("Mirror") == 1;
+        bool IsPC = EnvironmentSetup::GetInt("Panic") == 1; // Requested
 
-        if (IsHD || IsFL) {
+        if (IsHD || IsFL || IsSD) {
             std::vector<Segment> segments;
 
-            if (IsFL) {
+            if (IsHD) {
+                segments = {
+                    //{ 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
+                    //{ 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
+                    //{ 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+                    //{ 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
+                    //{ 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                    { 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+                    { 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
+                    { 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                };
+            } if (IsFL) {
                 segments = {
                     { 0.00f, 0.20f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
                     { 0.33f, 0.38f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
@@ -948,13 +969,11 @@ bool GameplayScene::Attach()
                     { 0.61f, 0.67f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
                     { 0.67f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
                 };
-            } else {
+            }  if (IsSD) {
                 segments = {
-                    { 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
-                    { 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
-                    { 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
-                    { 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
-                    { 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                    { 0.00f, 0.50f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
+                    { 0.50f, 0.55f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
+                    { 0.55f, 1.00f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
                 };
             }
 
@@ -969,10 +988,10 @@ bool GameplayScene::Attach()
             m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight);
         }
 
-        bool areNoteModsActive = IsMR || IsRD; // Check if any of the NoteMods are active (Mirror or Random)
-        bool areVisualModsActive = IsHD || IsFL; // Check if any of the VisualMods are active (Hidden or Flashlight)
+        bool areVisualModsActive = IsHD || IsFL || IsSD; // Check if any of the VisualMods are active (Hidden or Flashlight)
+        bool areNoteModsActive = IsMR || IsRD || IsPC; // Check if any of the NoteMods are active (Mirror or Random)
         // I don't put throw error if any file below doesn't exist maybe you can put it if necessary
-        if (areVisualModsActive) { // Draw VisualMods (Hidden and Flashlight)
+        if (areVisualModsActive) { // Draw VisualMods (Hidden, Flashlight, and Sudden)
             if (IsHD) {
                 std::string VisualModImage = "ModHidden.png";
                 auto VisualModfilename = playingPath / VisualModImage;
@@ -992,9 +1011,18 @@ bool GameplayScene::Attach()
                 m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
                 m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
             }
+            if (IsSD) {
+                std::string VisualModImage = "ModSudden.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
         }
 
-        if (areNoteModsActive) { // Draw NoteMods (Mirror and Random)
+        if (areNoteModsActive) { // Draw NoteMods (Mirror, Random, and Panic)
             if (IsMR) {
                 std::string NoteModImage = "ModMirror.png";
                 auto NoteModfilename = playingPath / NoteModImage;
@@ -1014,14 +1042,25 @@ bool GameplayScene::Attach()
                 m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
                 m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
             }
+            if (IsPC) {
+                std::string NoteModImage = "ModPanic.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
         }
 
         std::string modSelected;
 
         if (IsHD) modSelected += "Hidden, ";
         if (IsFL) modSelected += "Flashlight, ";
+        if (IsSD) modSelected += "Sudden, ";
         if (IsRD) modSelected += "Random, ";
         if (IsMR) modSelected += "Mirror, ";
+        if (IsPC) modSelected += "Panic, ";
 
         if (!modSelected.empty()) {
             modSelected.erase(modSelected.size() - 2);
