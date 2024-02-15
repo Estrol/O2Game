@@ -161,10 +161,6 @@ void GameplayScene::Render(double delta)
     }
 
     if (is_flhd_enabled) {
-        m_game->Render(delta);
-        m_laneHideImage->Draw();
-        m_targetBar->Draw(delta);
-        m_targetBar->AlphaBlend = true; // Fix for some cases (Resource updated)
         for (auto& [lane, pressed] : m_keyState) {
             if (pressed) {
                 m_keyLighting[lane]->AlphaBlend = true;
@@ -172,6 +168,11 @@ void GameplayScene::Render(double delta)
                 m_keyButtons[lane]->Draw();
             }
         }
+        m_game->Render(delta);
+        m_laneHideImage->Draw();
+        m_targetBar->Draw(delta);
+        m_targetBar->AlphaBlend = true; // Fix for some cases (Resource updated)
+        
     }
 
     auto scores = m_game->GetScoreManager()->GetScore();
