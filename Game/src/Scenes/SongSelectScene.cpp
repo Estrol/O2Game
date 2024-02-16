@@ -493,17 +493,23 @@ void SongSelectScene::OnGameSelectMusic(double delta)
                     case 0: // Mirror
                         EnvironmentSetup::SetInt(Mods[1], 0); // Random
                         EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
                         break;
                     case 1: // Random
                         EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
                         EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
                         break;
                     case 2: // Panic
                         EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
                         EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
                         break;
                     case 3: // Rearrange
-                        bOpenRearrange = EnvironmentSetup::GetInt(Mods[3]) == 1;
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        bOpenRearrange = true; // Open Rearrange Window
                         break;
                     case 5: // Hidden
                         EnvironmentSetup::SetInt(Mods[6], 0); // Flashlight
