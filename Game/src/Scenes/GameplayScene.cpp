@@ -1074,7 +1074,6 @@ bool GameplayScene::Attach()
         auto OnHitEvent = [&](NoteHitInfo info) {
             m_scoreTimer = 0;
             m_judgeTimer = 0;
-            m_comboTimer = 0;
             m_judgeSize = 0.5;
 
             m_drawCombo = true;
@@ -1098,6 +1097,7 @@ bool GameplayScene::Attach()
         auto OnLongComboEvent = [&] {
             m_lnTimer = 0;
             m_drawLN = true;
+            m_lnLogo->Reset();
         };
 
         m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
