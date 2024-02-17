@@ -243,33 +243,20 @@ void GameplayScene::Render(double delta)
         const double decrement = 6.0;
         double animationSpeed = 60.0;
 
+        double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
+
+        m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
+        m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
+
+        m_comboLogo->Draw(delta);
+        m_comboNum->DrawNumber(std::get<7>(scores));
+
+        m_comboTimer += delta;
+
         if (m_comboTimer >= 1.0) {
             m_comboTimer = 0.0;
             m_drawCombo = false;
-        }
-        else {
-            double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
-            double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
-
-            // Wiggle effect
-            if (currentposition > 0.0 && currentposition > decrement && m_comboTimer <= 0.001) {
-                double wiggleAmount = decrement * m_comboTimer * animationSpeed;
-                if (currentposition > positionStart - decrement) {
-                    currentposition = positionStart;
-                }
-                else {
-                    currentposition -= wiggleAmount;
-                }
-            }
-
-            /// Directly decrement position
-            m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
-            m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
-
-            m_comboLogo->Draw(delta);
-            m_comboNum->DrawNumber(std::get<7>(scores));
-
-            m_comboTimer += delta;
         }
     }
 
