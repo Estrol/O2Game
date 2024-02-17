@@ -239,11 +239,11 @@ void GameplayScene::Render(double delta)
     }
 
     if (m_drawCombo && std::get<7>(scores) > 0) {
-        const double positionStart = 30.0; // Constants
+        const double positionStart = 30.0;
         const double decrement = 6.0;
         double animationSpeed = 60.0;
 
-        if (m_comboTimer >= 1.0) { // Animation finished, reset parameters for the next animation
+        if (m_comboTimer >= 1.0) {
             m_comboTimer = 0.0;
             m_drawCombo = false;
         }
@@ -252,14 +252,19 @@ void GameplayScene::Render(double delta)
             double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
             // Wiggle effect
-            if (currentposition > 0.0 && currentposition > decrement && m_comboTimer <= 0.01667) {
+            if (currentposition > 0.0 && currentposition > decrement && m_comboTimer <= 0.001) {
                 double wiggleAmount = decrement * m_comboTimer * animationSpeed;
-                currentposition -= wiggleAmount;
+                if (currentposition > positionStart - decrement) {
+                    currentposition = positionStart;
+                }
+                else {
+                    currentposition -= wiggleAmount;
+                }
             }
 
-            // Directly decrement positions
-            m_comboLogo->Position2 = UDim2::fromOffset(0, std::lerp(m_comboLogo->Position2.Y.Offset, currentposition / 3.0, 0.2));
-            m_comboNum->Position2 = UDim2::fromOffset(0, std::lerp(m_comboNum->Position2.Y.Offset, currentposition, 0.2));
+            /// Directly decrement position
+            m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
+            m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
 
             m_comboLogo->Draw(delta);
             m_comboNum->DrawNumber(std::get<7>(scores));
