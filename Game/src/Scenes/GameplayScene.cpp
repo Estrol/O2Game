@@ -219,7 +219,7 @@ void GameplayScene::Render(double delta)
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
 
-        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.7, 1.0); // Nice
+        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.6, 1.0); // Nice
         if ((m_judgeTimer += delta) > 0.60) {
             m_drawJudge = false;
         }
@@ -1055,7 +1055,7 @@ bool GameplayScene::Attach()
         auto OnHitEvent = [&](NoteHitInfo info) {
             m_scoreTimer = 0;
             m_judgeTimer = 0;
-            m_judgeSize = 0.5;
+            m_judgeSize = 0.6;
 
             m_drawCombo = true;
             m_drawJudge = true;
