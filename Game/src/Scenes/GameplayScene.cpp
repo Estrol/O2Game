@@ -48,8 +48,6 @@ GameplayScene::GameplayScene() : Scene::Scene()
     m_keyState = {};
     m_game = nullptr;
     m_drawJam = false;
-    m_wiggleTime = 0;
-    m_wiggleOffset = 0;
 }
 
 void GameplayScene::Update(double delta)
@@ -221,7 +219,7 @@ void GameplayScene::Render(double delta)
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
 
-        m_judgeSize = std::clamp(m_judgeSize + (delta * 7), 0.5, 1.0); // Nice
+        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.7, 1.0); // Nice
         if ((m_judgeTimer += delta) > 0.60) {
             m_drawJudge = false;
         }
@@ -238,13 +236,13 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawCombo && std::get<7>(scores) > 0) {
+    if (m_drawCombo && std::get<7>(scores) > 0) { // This should be O2Jam Replication
         const double positionStart = 30.0;
         const double decrement = 6.0;
         double animationSpeed = 60.0;
 
         double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
-        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0; //TODO: 1px wiggle if combo update too frequently (MAT)
 
         m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
         m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
@@ -261,17 +259,11 @@ void GameplayScene::Render(double delta)
     }
 
     if (m_drawLN && std::get<9>(scores) > 0) {
-        m_position = 5.0;
-        m_wiggleTime = 60 * m_lnTimer;
+        const double positionStart = 5.0;
+        double animationSpeed = 60.0;
 
-        double decrement = 1.0;
-        double totalDecrement = decrement * m_wiggleTime;
-
-        double currentposition = m_position - totalDecrement;
-
-        if (currentposition < 0.0) {
-            currentposition = 0.0;
-        }
+        double targetposition = positionStart - m_lnTimer * animationSpeed;
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
         m_lnLogo->Position2 = UDim2::fromOffset(0, currentposition);
         m_lnLogo->Draw(delta);
@@ -286,6 +278,7 @@ void GameplayScene::Render(double delta)
             m_drawLN = false;
         }
     }
+
 
     float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
     if (gaugeVal > 0) {

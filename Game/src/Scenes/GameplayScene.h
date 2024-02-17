@@ -103,11 +103,6 @@ private:
     bool m_drawHold[7];
     bool m_drawHit[7];
 
-    /* Fixed Animation*/
-    double m_wiggleTime;
-    double m_wiggleOffset;
-    double m_position;
-
     /* button */
     bool m_drawExitButton;
     bool m_doExit;
