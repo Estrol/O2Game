@@ -9,11 +9,11 @@ DrawableNote::DrawableNote(NoteImage *frame) : FrameTimer::FrameTimer()
 
     if (Renderer::GetInstance()->IsVulkan()) {
         for (auto &frame : frame->VulkanTexture) {
-            m_frames.emplace_back(new Texture2D(frame));
+            m_frames.push_back(new Texture2D(frame));
         }
     } else {
         for (auto &frame : frame->Texture) {
-            m_frames.emplace_back(new Texture2D(frame));
+            m_frames.push_back(new Texture2D(frame));
         }
     }
 

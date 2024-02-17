@@ -36,10 +36,6 @@ struct MissInfo
     float time;
 };
 
-double lerp(double a, double b, double t) {
-    return a + t * (b - a);
-}
-
 bool CheckSkinComponent(std::filesystem::path x)
 {
     return std::filesystem::exists(x);
@@ -262,8 +258,8 @@ void GameplayScene::Render(double delta)
             }
 
             // Directly decrement positions
-            m_comboLogo->Position2 = UDim2::fromOffset(0, lerp(m_comboLogo->Position2.Y.Offset, currentposition / 3.0, 0.2));
-            m_comboNum->Position2 = UDim2::fromOffset(0, lerp(m_comboNum->Position2.Y.Offset, currentposition, 0.2));
+            m_comboLogo->Position2 = UDim2::fromOffset(0, std::lerp(m_comboLogo->Position2.Y.Offset, currentposition / 3.0, 0.2));
+            m_comboNum->Position2 = UDim2::fromOffset(0, std::lerp(m_comboNum->Position2.Y.Offset, currentposition, 0.2));
 
             m_comboLogo->Draw(delta);
             m_comboNum->DrawNumber(std::get<7>(scores));

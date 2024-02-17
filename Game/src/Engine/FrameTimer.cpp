@@ -22,7 +22,7 @@ FrameTimer::FrameTimer(std::vector<std::string> frames) : FrameTimer::FrameTimer
 {
     m_frames = std::vector<Texture2D *>();
     for (auto frame : frames) {
-        m_frames.emplace_back(new Texture2D(frame));
+        m_frames.push_back(new Texture2D(frame));
     }
 }
 
@@ -30,7 +30,7 @@ FrameTimer::FrameTimer(std::vector<std::filesystem::path> frames) : FrameTimer::
 {
     m_frames = std::vector<Texture2D *>();
     for (auto frame : frames) {
-        m_frames.emplace_back(new Texture2D(frame));
+        m_frames.push_back(new Texture2D(frame));
     }
 }
 
@@ -38,7 +38,7 @@ FrameTimer::FrameTimer(std::vector<SDL_Texture *> frames) : FrameTimer::FrameTim
 {
     m_frames = std::vector<Texture2D *>();
     for (auto frame : frames) {
-        m_frames.emplace_back(new Texture2D(frame));
+        m_frames.push_back(new Texture2D(frame));
     }
 }
 
@@ -46,7 +46,7 @@ FrameTimer::FrameTimer(std::vector<Texture2D_Vulkan *> frames) : FrameTimer::Fra
 {
     m_frames = std::vector<Texture2D *>();
     for (auto frame : frames) {
-        m_frames.emplace_back(new Texture2D(frame));
+        m_frames.push_back(new Texture2D(frame));
     }
 }
 

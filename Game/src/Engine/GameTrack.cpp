@@ -71,7 +71,7 @@ void GameTrack::Update(double delta)
         if (note->IsRemoveable()) {
             note->Release();
 
-            m_noteCaches.emplace_back(note);
+            m_noteCaches.push_back(note);
             _note = m_inactive_notes.erase(_note);
         } else {
             note->Update(delta);
