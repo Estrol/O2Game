@@ -149,7 +149,6 @@ void GameplayScene::Render(double delta)
     }
     if (m_visualMod) {
         m_visualMod->Draw();
-        m_laneHideImage.get();
         m_laneHideImage->Draw();
     }
 
