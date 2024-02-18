@@ -228,7 +228,7 @@ void GameplayScene::Render(double delta)
     if (m_drawJam) {
         if (std::get<5>(scores) > 0) {
             m_jamNum->DrawNumber(std::get<5>(scores));
-            m_jamLogo->Draw(delta);
+            m_jamLogo->DrawStop(delta); // Example for DrawStop
         }
 
         if ((m_jamTimer += delta) > 0.60) {

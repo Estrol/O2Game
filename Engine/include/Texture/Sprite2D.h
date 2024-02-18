@@ -33,15 +33,19 @@ public:
 
     void Draw(double delta, bool manual = false);
     void Draw(double delta, Rect *rect, bool manual = false);
+    void DrawStop(double delta, bool manual = false);
+    void DrawOnce(double delta, bool manual = false);
 
     Texture2D *GetTexture();
     void       SetFPS(float fps);
     void       Reset();
 
 private:
-    double m_delay = 1.0;
+    double m_spritespeed = 1.0;
     float  m_currentTime = 0;
     int    m_currentIndex = 0;
+
+    bool m_drawOnce = false;
 
     std::vector<Texture2D *> m_textures;
 };
