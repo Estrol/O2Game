@@ -117,8 +117,6 @@ void GameplayScene::Render(double delta)
 
     ImguiUtil::NewFrame();
 
-    bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
-
     int arena = EnvironmentSetup::GetInt("Arena");
 
     if (arena != -1) {
@@ -133,40 +131,26 @@ void GameplayScene::Render(double delta)
     m_Playfield->Draw();
     m_Playfooter->Draw();
 
-    // Draw Mods
-    if (m_noteMod) { // Fix Crash
-        m_noteMod->Draw();
-    }
-    if (m_visualMod) { // Fix Crash
-        m_visualMod->Draw();
-    }
-    // Maybe u decided below
-    if (!is_flhd_enabled) {
-        for (auto& [lane, pressed] : m_keyState) {
-            if (pressed) {
-                m_keyLighting[lane]->AlphaBlend = true;
-                m_keyLighting[lane]->Draw();
-                m_keyButtons[lane]->Draw();
-            }
+    m_targetBar->Draw(delta);
+
+    for (auto& [lane, pressed] : m_keyState) {
+        if (pressed) {
+            m_keyLighting[lane]->AlphaBlend = true;
+            m_keyLighting[lane]->Draw();
+            m_keyButtons[lane]->Draw();
         }
-        m_targetBar->Draw(delta);
-        m_targetBar->AlphaBlend = true;  // Fix for some cases (Resource updated)
-        m_game->Render(delta);
     }
 
-    if (is_flhd_enabled) {
-        for (auto& [lane, pressed] : m_keyState) {
-            if (pressed) {
-                m_keyLighting[lane]->AlphaBlend = true;
-                m_keyLighting[lane]->Draw();
-                m_keyButtons[lane]->Draw();
-            }
-        }
-        m_game->Render(delta);
+    m_game->Render(delta);
+
+    // Draw Mods
+    if (m_noteMod) {
+        m_noteMod->Draw();
+    }
+    if (m_visualMod) {
+        m_visualMod->Draw();
+        m_laneHideImage.get();
         m_laneHideImage->Draw();
-        m_targetBar->Draw(delta);
-        m_targetBar->AlphaBlend = true; // Fix for some cases (Resource updated)
-        
     }
 
     auto scores = m_game->GetScoreManager()->GetScore();
