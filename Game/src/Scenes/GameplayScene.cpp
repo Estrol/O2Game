@@ -119,13 +119,20 @@ void GameplayScene::Render(double delta)
 
     int arena = EnvironmentSetup::GetInt("Arena");
 
-    if (arena != -1) {
-        m_PlayBG->Draw();
-    } else {
-        auto songBG = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+    bool useSongBG = EnvironmentSetup::GetInt("Song BG") == 1;
+    bool blackBG = EnvironmentSetup::GetInt("Black BG") == 1;
+
+    if (useSongBG) {
+        auto songBG = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (songBG) {
             songBG->Draw();
         }
+    }
+    else if (blackBG) {
+        // Do nothing
+    }
+    else {
+        m_PlayBG->Draw();
     }
 
     m_Playfield->Draw();
