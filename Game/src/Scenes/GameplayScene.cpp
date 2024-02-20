@@ -132,6 +132,7 @@ void GameplayScene::Render(double delta)
     m_Playfooter->Draw();
 
     m_targetBar->Draw(delta);
+    m_targetBar->AlphaBlend = true;
 
     for (auto& [lane, pressed] : m_keyState) {
         if (pressed) {
