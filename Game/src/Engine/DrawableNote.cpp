@@ -23,5 +23,4 @@ DrawableNote::DrawableNote(NoteImage *frame) : FrameTimer::FrameTimer()
         _frame->SetOriginalRECT(frame->TextureRect);
     }
 
-    SetFPS(30); //TODO: Fix animation render glitch, i can't figure it out
-}
+    SetFPS(1000); // FIXME: i had to use this value otherwise it has glitch
