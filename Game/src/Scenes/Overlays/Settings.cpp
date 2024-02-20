@@ -453,7 +453,7 @@ void SettingsOverlay::LoadConfiguration()
 
     auto fps = m_fps[currentFPSIndex];
     if (fps == *(m_fps.end() - 1)) {
-        fps = "9999";
+        fps = "-1"; // Unlimited
     }
 
     SceneManager::GetInstance()->SetFrameLimit(std::atof(fps.c_str()));
