@@ -57,7 +57,8 @@ void GameplayScene::Update(double delta)
             if (EnvironmentSetup::GetInt("Key") >= 0) {
                 m_ended = true;
                 SceneManager::ChangeScene(GameScene::SONGSELECT);
-            } else {
+            }
+            else {
                 if (MsgBox::GetResult("GameplayError") == 4) {
                     m_ended = true;
                     SceneManager::GetInstance()->StopGame();
@@ -77,7 +78,7 @@ void GameplayScene::Update(double delta)
         m_ended = true;
         SceneManager::DisplayFade(100, [] {
             SceneManager::ChangeScene(GameScene::RESULT);
-        });
+            });
     }
 
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
@@ -97,11 +98,12 @@ void GameplayScene::Update(double delta)
         if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
             SceneManager::DisplayFade(100, [] {
                 SceneManager::ChangeScene(GameScene::RESULT);
-            });
-        } else {
+                });
+        }
+        else {
             SceneManager::DisplayFade(100, [] {
                 SceneManager::ChangeScene(GameScene::SONGSELECT);
-            });
+                });
         }
     }
 
@@ -125,6 +127,7 @@ void GameplayScene::Render(double delta)
     if (useSongBG) {
         auto songBG = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (songBG) {
+            songBG->TintColor = Color3::FromRGB(128, 128, 128);
             songBG->Draw();
         }
     }
@@ -287,7 +290,8 @@ void GameplayScene::Render(double delta)
             };
 
             m_jamGauge->Draw(&rc);
-        } else {
+        }
+        else {
             // Fill from left to right
             lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.X, gaugeVal));
             Rect rc = {
@@ -354,7 +358,8 @@ void GameplayScene::Render(double delta)
     int idx = 2;
     try {
         idx = std::stoi(Configuration::Load("Game", "GuideLine"));
-    } catch (const std::invalid_argument &) {
+    }
+    catch (const std::invalid_argument&) {
         idx = 2;
     }
 
@@ -369,7 +374,7 @@ void GameplayScene::Input(double delta)
     m_game->Input(delta);
 }
 
-void GameplayScene::OnKeyDown(const KeyState &state)
+void GameplayScene::OnKeyDown(const KeyState& state)
 {
     if (m_resourceFucked)
         return;
@@ -377,7 +382,7 @@ void GameplayScene::OnKeyDown(const KeyState &state)
     m_game->OnKeyDown(state);
 }
 
-void GameplayScene::OnKeyUp(const KeyState &state)
+void GameplayScene::OnKeyUp(const KeyState& state)
 {
     if (m_resourceFucked)
         return;
@@ -385,7 +390,7 @@ void GameplayScene::OnKeyUp(const KeyState &state)
     m_game->OnKeyUp(state);
 }
 
-void GameplayScene::OnMouseDown(const MouseState &state)
+void GameplayScene::OnMouseDown(const MouseState& state)
 {
 }
 
@@ -410,7 +415,8 @@ bool GameplayScene::Attach()
         try {
             LaneOffset = std::stoi(manager->GetSkinProp("Game", "LaneOffset", "5"));
             HitPos = std::stoi(manager->GetSkinProp("Game", "HitPos", "480"));
-        } catch (const std::invalid_argument &) {
+        }
+        catch (const std::invalid_argument&) {
             throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
         }
 
@@ -669,11 +675,11 @@ bool GameplayScene::Attach()
 
         auto OnButtonHover = [&](int state) {
             m_drawExitButton = state;
-        };
+            };
 
         auto OnButtonClick = [&]() {
             m_doExit = true;
-        };
+            };
 
         m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
         m_exitButtonFunc->OnMouseClick = OnButtonClick;
@@ -786,7 +792,7 @@ bool GameplayScene::Attach()
             m_pills[i]->AnchorPoint = { pos.AnchorPointX, pos.AnchorPointY };
         }
 
-        Chart *chart = (Chart *)EnvironmentSetup::GetObj("SONG");
+        Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
         if (chart == nullptr) {
             throw std::runtime_error("Fatal error: Chart is null");
         }
@@ -803,7 +809,8 @@ bool GameplayScene::Attach()
         int idx = 2;
         try {
             idx = std::stoi(Configuration::Load("Game", "GuideLine"));
-        } catch (const std::invalid_argument &) {
+        }
+        catch (const std::invalid_argument&) {
             idx = 2;
         }
 
@@ -812,7 +819,8 @@ bool GameplayScene::Attach()
         auto OnTrackEvent = [&](GameTrackEvent e) {
             if (e.IsKeyEvent) {
                 m_keyState[e.Lane] = e.State;
-            } else {
+            }
+            else {
                 if (e.IsHitEvent) {
                     if (e.IsHitLongEvent) {
                         m_holdEffect[e.Lane]->ResetIndex();
@@ -823,14 +831,15 @@ bool GameplayScene::Attach()
                             m_hitEffect[e.Lane]->ResetIndex();
                             m_drawHit[e.Lane] = true;
                         }
-                    } else {
+                    }
+                    else {
                         m_hitEffect[e.Lane]->ResetIndex();
                         m_drawHit[e.Lane] = true;
                         m_drawHold[e.Lane] = false;
                     }
                 }
             }
-        };
+            };
 
         m_game->ListenKeyEvent(OnTrackEvent);
 
@@ -1054,7 +1063,7 @@ bool GameplayScene::Attach()
             m_comboTimer = 0;
             m_comboLogo->Reset();
             m_judgeIndex = (int)info.Result;
-        };
+            };
 
         m_game->GetScoreManager()->ListenHit(OnHitEvent);
 
@@ -1062,7 +1071,7 @@ bool GameplayScene::Attach()
             m_drawJam = true;
             m_jamTimer = 0;
             m_jamLogo->Reset();
-        };
+            };
 
         m_game->GetScoreManager()->ListenJam(OnJamEvent);
 
@@ -1070,22 +1079,16 @@ bool GameplayScene::Attach()
             m_lnTimer = 0;
             m_drawLN = true;
             m_lnLogo->Reset();
-        };
+            };
 
         m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
-
-        if (arena != -1) {
-            auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
-            if (obj) {
-                obj->TintColor = Color3::FromRGB(128, 128, 128);
-            }
-        }
-
-    } catch (SDLException &e) {
+    }
+    catch (SDLException& e) {
         MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;
         return true;
-    } catch (std::exception &e) {
+    }
+    catch (std::exception& e) {
         MsgBox::Show("GameplayError", "Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;
         return true;
@@ -1162,8 +1165,8 @@ bool GameplayScene::Detach()
     m_exitButtonFunc.reset();
 
     int arena = EnvironmentSetup::GetInt("Arena");
-    if (arena != -1) {
-        auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+    if (arena) {
+        auto obj = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (obj) {
             obj->TintColor = Color3::FromRGB(255, 255, 255);
         }
@@ -1173,7 +1176,7 @@ bool GameplayScene::Detach()
     return true;
 }
 
-void *GameplayScene::CreateScreenshotWin32()
+void* GameplayScene::CreateScreenshotWin32()
 {
     return nullptr;
 }
