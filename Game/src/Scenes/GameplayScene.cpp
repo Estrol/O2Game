@@ -127,7 +127,6 @@ void GameplayScene::Render(double delta)
     if (useSongBG) {
         auto songBG = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (songBG) {
-            songBG->TintColor = Color3::FromRGB(128, 128, 128);
             songBG->Draw();
         }
     }
@@ -236,7 +235,7 @@ void GameplayScene::Render(double delta)
         double animationSpeed = 60.0;
 
         double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
-        double currentposition = (targetposition > 0.0) ? targetposition : 0.0; //TODO: 1px wiggle if combo update too frequently (MAT)
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
         m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
         m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
@@ -972,7 +971,7 @@ bool GameplayScene::Attach()
 
         bool areVisualModsActive = IsHD || IsFL || IsSD; // Check if any of the VisualMods are active (Hidden or Flashlight)
         bool areNoteModsActive = IsMR || IsRD || IsPC; // Check if any of the NoteMods are active (Mirror or Random)
-        // I don't put throw error if any file below doesn't exist maybe you can put it if necessary
+
         if (areVisualModsActive) { // Draw VisualMods (Hidden, Flashlight, and Sudden)
             if (IsHD) {
                 std::string VisualModImage = "ModHidden.png";
@@ -1052,6 +1051,22 @@ bool GameplayScene::Attach()
             Logs::Puts("[Gameplay] Not using any modifier");
         }
 
+        int difficulty = EnvironmentSetup::GetInt("Difficulty"); // Debug
+        switch (difficulty) {
+        case 0:
+            Logs::Puts("[ScoreManager] Using difficulty Easy");
+            break;
+        case 1:
+            Logs::Puts("[ScoreManager] Using difficulty Normal");
+            break;
+        case 2:
+            Logs::Puts("[ScoreManager] Using difficulty Hard");
+            break;
+        default:
+            Logs::Puts("[ScoreManager] Unknown difficulty");
+            break;
+        }
+
         auto OnHitEvent = [&](NoteHitInfo info) {
             m_scoreTimer = 0;
             m_judgeTimer = 0;
@@ -1082,7 +1097,15 @@ bool GameplayScene::Attach()
             };
 
         m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
+
+        if (arena != -1) {
+            auto obj = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
+            if (obj) {
+                obj->TintColor = Color3::FromRGB(128, 128, 128);
+            }
+        }
     }
+
     catch (SDLException& e) {
         MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;

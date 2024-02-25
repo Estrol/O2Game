@@ -1,8 +1,8 @@
 #include "ScoreManager.hpp"
 #include <algorithm>
 #include <limits.h>
-// TODO: Make Proper O2Jam Health Rules with MAXHP 1000 instead 100
-// This health system look like on Hard only, not good
+#include "../EnvironmentSetup.hpp"
+
 ScoreManager::ScoreManager()
 {
     m_cool = 0;
@@ -32,61 +32,138 @@ ScoreManager::~ScoreManager()
 {
 }
 
-void ScoreManager::OnHit(NoteHitInfo info)
+void ScoreManager::OnHit(NoteHitInfo info) // Fuck it, just leave it max HP 100 and divided that by 10
 {
-    switch (info.Result) {
-
+    int difficulty = EnvironmentSetup::GetInt("Difficulty");
+    switch (difficulty) {
+    case 0: // Easy
+        switch (info.Result) {
         case NoteResult::COOL:
-        {
-            AddLife(0.1f);
-            m_jamGauge += 4;
+            AddLife(0.3f);
+            m_jamGauge += 4.0f;
             m_score += 200 + (10 * m_jamCombo);
             m_cool++;
             break;
-        }
-
         case NoteResult::GOOD:
-        {
-            AddLife(0);
-            m_jamGauge += 2;
+            AddLife(0.2f);
+            m_jamGauge += 2.0f;
             m_score += 100 + (5 * m_jamCombo);
             m_good++;
             break;
-        }
-
-        case NoteResult::BAD:
-        {
+        case NoteResult::BAD: // IDK if this correct or not (from old code)
             if (m_numOfPills > 0) {
                 m_numOfPills = std::clamp(m_numOfPills - 1, 0, 5);
                 m_score += 200 + (10 * m_jamCombo);
                 m_cool++;
-
                 info.Result = NoteResult::COOL;
-            } else {
-                AddLife(-0.5);
-                m_jamGauge = 0;
+            }
+            else {
+                AddLife(-1.0f);
+                m_jamGauge = 0.0f;
                 m_coolCombo = 0;
                 m_score += 4;
                 m_combo = 0;
                 m_bad++;
             }
             break;
-        }
-
         default:
-        {
-            AddLife(-3);
+            AddLife(-5.0f);
             m_combo = 0;
             m_jamCombo = 0;
-            m_jamGauge = 0;
-
+            m_jamGauge = 0.0f;
             if (m_life > 0) {
                 m_score -= 10;
             }
-
             m_miss++;
             break;
         }
+        break;
+
+    case 1: // Normal
+        switch (info.Result) {
+        case NoteResult::COOL:
+            AddLife(0.2f);
+            m_jamGauge += 4.0f;
+            m_score += 200 + (10 * m_jamCombo);
+            m_cool++;
+            break;
+        case NoteResult::GOOD:
+            AddLife(0.1f);
+            m_jamGauge += 2.0f;
+            m_score += 100 + (5 * m_jamCombo);
+            m_good++;
+            break;
+        case NoteResult::BAD: // IDK if this correct or not (from old code)
+            if (m_numOfPills > 0) {
+                m_numOfPills = std::clamp(m_numOfPills - 1, 0, 5);
+                m_score += 200 + (10 * m_jamCombo);
+                m_cool++;
+                info.Result = NoteResult::COOL;
+            }
+            else {
+                AddLife(-0.7f);
+                m_jamGauge = 0.0f;
+                m_coolCombo = 0;
+                m_score += 4;
+                m_combo = 0;
+                m_bad++;
+            }
+            break;
+        default:
+            AddLife(-4.0f);
+            m_combo = 0;
+            m_jamCombo = 0;
+            m_jamGauge = 0.0f;
+            if (m_life > 0) {
+                m_score -= 10;
+            }
+            m_miss++;
+            break;
+        }
+        break;
+
+    case 2: // Hard
+        switch (info.Result) {
+        case NoteResult::COOL:
+            AddLife(0.1f);
+            m_jamGauge += 4.0f;
+            m_score += 200 + (10 * m_jamCombo);
+            m_cool++;
+            break;
+        case NoteResult::GOOD:
+            AddLife(0.0f);
+            m_jamGauge += 2.0f;
+            m_score += 100 + (5 * m_jamCombo);
+            m_good++;
+            break;
+        case NoteResult::BAD: // IDK if this correct or not (from old code)
+            if (m_numOfPills > 0) {
+                m_numOfPills = std::clamp(m_numOfPills - 1, 0, 5);
+                m_score += 200 + (10 * m_jamCombo);
+                m_cool++;
+                info.Result = NoteResult::COOL;
+            }
+            else {
+                AddLife(-0.5f);
+                m_jamGauge = 0.0f;
+                m_coolCombo = 0;
+                m_score += 4;
+                m_combo = 0;
+                m_bad++;
+            }
+            break;
+        default:
+            AddLife(-3.0f);
+            m_combo = 0;
+            m_jamCombo = 0;
+            m_jamGauge = 0.0f;
+            if (m_life > 0) {
+                m_score -= 10;
+            }
+            m_miss++;
+            break;
+        }
+        break;
     }
 
     m_combo = std::clamp(m_combo, 0, INT_MAX);
@@ -101,7 +178,8 @@ void ScoreManager::OnHit(NoteHitInfo info)
             m_coolCombo = 0;
             m_numOfPills = std::clamp(m_numOfPills + 1, 0, 5);
         }
-    } else {
+    }
+    else {
         m_coolCombo = 0;
     }
 
@@ -132,17 +210,17 @@ void ScoreManager::OnHit(NoteHitInfo info)
 void ScoreManager::OnLongNoteHold(HoldResult result)
 {
     switch (result) {
-        case HoldResult::HoldBreak:
-        {
-            m_lnCombo = 0;
-            break;
-        }
+    case HoldResult::HoldBreak:
+    {
+        m_lnCombo = 0;
+        break;
+    }
 
-        case HoldResult::HoldAdd:
-        {
-            m_lnCombo += 1;
-            break;
-        }
+    case HoldResult::HoldAdd:
+    {
+        m_lnCombo += 1;
+        break;
+    }
     }
 
     m_lnMaxCombo = (std::max)(m_lnCombo, m_lnMaxCombo);

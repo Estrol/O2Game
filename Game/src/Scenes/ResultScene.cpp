@@ -165,7 +165,7 @@ bool ResultScene::Attach()
     }
 
     if (audio) {
-        audio->SetVolume(50);
+        audio->SetVolume(100);
         audio->Play();
     }
 

@@ -431,7 +431,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
         }
 
         if (ImGui::BeginChild("#test2", MathUtil::ScaleVec2(ImVec2(200, 290)), true)) {
-            std::vector<std::string> difficulty = { "EX", "NX", "HX" };
+            std::vector<std::string> difficulty = { "EZ", "NM", "HD" };
 
             ImGui::Text("Note difficulty");
             for (int i = 0; i < difficulty.size(); i++) {
@@ -443,7 +443,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
                 }
 
                 if (ImGui::Button(difficulty[i].c_str(), MathUtil::ScaleVec2(ImVec2(30, 30)))) {
-                    EnvironmentSetup::SetInt("Difficulty", i);
+                    EnvironmentSetup::SetInt("Difficulty", i);  // 0 EZ, 1 NM, 2 HD 
                 }
 
                 if (index == i) {
