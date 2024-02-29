@@ -226,7 +226,7 @@ void Texture2D::Draw(Rect *clipRect, bool manualDraw)
         ImVec2 uv3(1.0f, 1.0f); // Bottom-right UV coordinate
         ImVec2 uv4(0.0f, 1.0f); // Bottom-left UV coordinate
 
-        ImU32 color = IM_COL32_WHITE;
+        ImU32 color = IM_COL32((uint8_t)(TintColor.R * 255), (uint8_t)(TintColor.G * 255), (uint8_t)(TintColor.B * 255), 255); // Probably fix for Color3
 
         std::array<ImDrawVert, 6> vertexData;
 
