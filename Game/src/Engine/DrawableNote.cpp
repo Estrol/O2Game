@@ -24,5 +24,5 @@ DrawableNote::DrawableNote(NoteImage* frame) : FrameTimer::FrameTimer()
         _frame->SetOriginalRECT(frame->TextureRect);
     }
 
-    SetFPS(1000); // FIXME: i had to use this value otherwise it has glitch
+    SetFPS(0); // FIXME: i had to use this value otherwise it has glitch
 }
