@@ -206,6 +206,10 @@ void Note::Update(double delta)
             }
         }
     }
+    bool pressed = IsPassed();
+    if (pressed) {
+        m_state = NoteState::DO_REMOVE;
+    }
 }
 
 void Note::Render(double delta)
