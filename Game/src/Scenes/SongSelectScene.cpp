@@ -28,8 +28,8 @@
 #include "../Data/Chart.hpp"
 #include "../Data/Util/Util.hpp"
 
-static std::array<std::string, 6>  Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
-static std::array<std::string, 14> Arena = { "Music Background", "Random",
+static std::array<std::string, 10>  Mods = { "Mirror", "Random", "Panic (FixMe)", "Rearrange", "Autoplay", "Hidden", "Flashlight", "Sudden", "Song BG", "Black BG" };
+static std::array<std::string, 13> Arena = { "Random",
                                              "Arena 1", "Arena 2", "Arena 3", "Arena 4", "Arena 5", "Arena 6", "Arena 7", "Arena 8", "Arena 9", "Arena 10", "Arena 11", "Arena 12" };
 
 SongSelectScene::SongSelectScene()
@@ -431,7 +431,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
         }
 
         if (ImGui::BeginChild("#test2", MathUtil::ScaleVec2(ImVec2(200, 290)), true)) {
-            std::vector<std::string> difficulty = { "EX", "NX", "HX" };
+            std::vector<std::string> difficulty = { "EZ", "NM", "HD" };
 
             ImGui::Text("Note difficulty");
             for (int i = 0; i < difficulty.size(); i++) {
@@ -443,7 +443,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
                 }
 
                 if (ImGui::Button(difficulty[i].c_str(), MathUtil::ScaleVec2(ImVec2(30, 30)))) {
-                    EnvironmentSetup::SetInt("Difficulty", i);
+                    EnvironmentSetup::SetInt("Difficulty", i);  // 0 EZ, 1 NM, 2 HD 
                 }
 
                 if (index == i) {
@@ -459,7 +459,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
             ImGui::Spacing();
             ImGui::PushItemWidth(ImGui::GetCurrentWindow()->Size.x - 15);
 
-            ImGui::Text("Notespeed");
+            ImGui::Text("Note speed");
             {
                 ImGui::InputFloat("###NoteSpeed", &currentSpeed, 0.05f, 0.1f, "%.2f");
                 currentSpeed = std::clamp(currentSpeed, 0.1f, 4.0f);
@@ -473,7 +473,7 @@ void SongSelectScene::OnGameSelectMusic(double delta)
 
             ImGui::PopItemWidth();
 
-            ImGui::Text("Mods");
+            ImGui::Text("Modifier");
 
             for (int i = 0; i < Mods.size(); i++) {
                 auto &mod = Mods[i];
@@ -489,41 +489,46 @@ void SongSelectScene::OnGameSelectMusic(double delta)
                 if (ImGui::Button(mod.c_str(), MathUtil::ScaleVec2(ImVec2(80, 0)))) {
                     EnvironmentSetup::SetInt(mod, value == 1 ? 0 : 1);
 
-                    switch (i) {
-                        case 0:
-                        {
-                            EnvironmentSetup::SetInt(Mods[1], 0);
-                            EnvironmentSetup::SetInt(Mods[2], 0);
-                            break;
-                        }
-
-                        case 1:
-                        {
-                            EnvironmentSetup::SetInt(Mods[0], 0);
-                            EnvironmentSetup::SetInt(Mods[2], 0);
-                            break;
-                        }
-
-                        case 2:
-                        {
-                            bOpenRearrange = EnvironmentSetup::GetInt(Mods[2]) == 1;
-
-                            EnvironmentSetup::SetInt(Mods[0], 0);
-                            EnvironmentSetup::SetInt(Mods[1], 0);
-                            break;
-                        }
-
-                        case 4:
-                        {
-                            EnvironmentSetup::SetInt(Mods[5], 0);
-                            break;
-                        }
-
-                        case 5:
-                        {
-                            EnvironmentSetup::SetInt(Mods[4], 0);
-                            break;
-                        }
+                    switch (i) { // New Modifier
+                    case 0: // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
+                        break;
+                    case 1: // Random
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
+                        break;
+                    case 2: // Panic
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[3], 0); // Rearrange
+                        break;
+                    case 3: // Rearrange
+                        EnvironmentSetup::SetInt(Mods[0], 0); // Mirror
+                        EnvironmentSetup::SetInt(Mods[1], 0); // Random
+                        EnvironmentSetup::SetInt(Mods[2], 0); // Panic
+                        bOpenRearrange = true; // Open Rearrange Window
+                        break;
+                    case 5: // Hidden
+                        EnvironmentSetup::SetInt(Mods[6], 0); // Flashlight
+                        EnvironmentSetup::SetInt(Mods[7], 0); // Sudden
+                        break;
+                    case 6: // Flashlight
+                        EnvironmentSetup::SetInt(Mods[5], 0); // Hidden
+                        EnvironmentSetup::SetInt(Mods[7], 0); // Sudden
+                        break;
+                    case 7: // Sudden
+                        EnvironmentSetup::SetInt(Mods[5], 0); // Hidden
+                        EnvironmentSetup::SetInt(Mods[6], 0); // Flashlight
+                        break;
+                    case 8: // Song Background
+                        EnvironmentSetup::SetInt(Mods[9], 0); // Black Background
+                        break;
+                    case 9: // Black Background
+                        EnvironmentSetup::SetInt(Mods[8], 0); // Song Background
+                        break;
                     }
                 }
 
@@ -544,12 +549,12 @@ void SongSelectScene::OnGameSelectMusic(double delta)
             ImGui::Text("Arena");
 
             // select
-            int value = EnvironmentSetup::GetInt("Arena") + 1;
+            int value = EnvironmentSetup::GetInt("Arena");
             if (ImGui::BeginCombo("###ComboBox1Arena", Arena[value].c_str(), 0)) {
                 for (int i = 0; i < Arena.size(); i++) {
                     bool is_selected = i == value;
                     if (ImGui::Selectable(Arena[i].c_str(), is_selected)) {
-                        EnvironmentSetup::SetInt("Arena", i - 1);
+                        EnvironmentSetup::SetInt("Arena", i);
                     }
                 }
 

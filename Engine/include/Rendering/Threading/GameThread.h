@@ -2,6 +2,7 @@
 #include <functional>
 #include <thread>
 #include <vector>
+#include <mutex>
 
 class GameThread
 {
@@ -18,6 +19,8 @@ public:
 private:
     bool m_run;
     bool m_background;
+
+    std::mutex m_mutex;
 
     std::thread m_thread;
 

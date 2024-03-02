@@ -42,7 +42,7 @@ void GameTrack::Update(double delta)
         auto &note = *_note;
 
         if (note->IsPassed()) {
-            m_inactive_notes.push_back(note);
+            m_inactive_notes.emplace_back(note);
             _note = m_notes.erase(_note);
         } else {
             if (!note->IsDrawable()) {
@@ -212,7 +212,7 @@ void GameTrack::AddNote(NoteInfoDesc *desc)
         m_keySound = note->GetKeysoundId();
     }
 
-    m_notes.push_back(std::move(note));
+    m_notes.emplace_back(std::move(note));
 }
 
 void GameTrack::ListenEvent(std::function<void(GameTrackEvent)> callback)

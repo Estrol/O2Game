@@ -19,7 +19,7 @@
 #include "../EnvironmentSetup.hpp"
 #include "../GameScenes.h"
 
-static std::array<std::string, 6> Mods = { "Mirror", "Random", "Rearrange", "Autoplay", "Hidden", "Flashlight" };
+static std::array<std::string, 8>  Mods = { "Mirror", "Random", "Panic", "Rearrange", "Autoplay", "Hidden", "Flashlight", "Sudden" };
 
 ResultScene::ResultScene()
 {
@@ -165,7 +165,7 @@ bool ResultScene::Attach()
     }
 
     if (audio) {
-        audio->SetVolume(50);
+        audio->SetVolume(100);
         audio->Play();
     }
 

@@ -7,6 +7,7 @@
 #include <numeric>
 #include <random>
 #include <unordered_map>
+#include <Logs.h>
 
 #include "Configuration.h"
 #include "Game.h"
@@ -47,8 +48,6 @@ GameplayScene::GameplayScene() : Scene::Scene()
     m_keyState = {};
     m_game = nullptr;
     m_drawJam = false;
-    m_wiggleTime = 0;
-    m_wiggleOffset = 0;
 }
 
 void GameplayScene::Update(double delta)
@@ -58,7 +57,8 @@ void GameplayScene::Update(double delta)
             if (EnvironmentSetup::GetInt("Key") >= 0) {
                 m_ended = true;
                 SceneManager::ChangeScene(GameScene::SONGSELECT);
-            } else {
+            }
+            else {
                 if (MsgBox::GetResult("GameplayError") == 4) {
                     m_ended = true;
                     SceneManager::GetInstance()->StopGame();
@@ -78,7 +78,7 @@ void GameplayScene::Update(double delta)
         m_ended = true;
         SceneManager::DisplayFade(100, [] {
             SceneManager::ChangeScene(GameScene::RESULT);
-        });
+            });
     }
 
     int difficulty = EnvironmentSetup::GetInt("Difficulty");
@@ -98,11 +98,12 @@ void GameplayScene::Update(double delta)
         if (std::get<1>(scores) != 0 || std::get<2>(scores) != 0 || std::get<3>(scores) != 0 || std::get<4>(scores) != 0) {
             SceneManager::DisplayFade(100, [] {
                 SceneManager::ChangeScene(GameScene::RESULT);
-            });
-        } else {
+                });
+        }
+        else {
             SceneManager::DisplayFade(100, [] {
                 SceneManager::ChangeScene(GameScene::SONGSELECT);
-            });
+                });
         }
     }
 
@@ -118,26 +119,31 @@ void GameplayScene::Render(double delta)
 
     ImguiUtil::NewFrame();
 
-    bool is_flhd_enabled = m_laneHideImage.get() != nullptr;
-
     int arena = EnvironmentSetup::GetInt("Arena");
 
-    if (arena != -1) {
-        m_PlayBG->Draw();
-    } else {
-        auto songBG = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+    bool useSongBG = EnvironmentSetup::GetInt("Song BG") == 1;
+    bool blackBG = EnvironmentSetup::GetInt("Black BG") == 1;
+
+    if (useSongBG) {
+        auto songBG = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (songBG) {
             songBG->Draw();
         }
     }
-
-    m_Playfooter->Draw();
-    m_Playfield->Draw();
-    if (!is_flhd_enabled) {
-        m_targetBar->Draw(delta);
+    else if (blackBG) {
+        // Do nothing
+    }
+    else {
+        m_PlayBG->Draw();
     }
 
-    for (auto &[lane, pressed] : m_keyState) {
+    m_Playfield->Draw();
+    m_Playfooter->Draw();
+
+    m_targetBar->Draw(delta);
+    m_targetBar->AlphaBlend = true;
+
+    for (auto& [lane, pressed] : m_keyState) {
         if (pressed) {
             m_keyLighting[lane]->AlphaBlend = true;
             m_keyLighting[lane]->Draw();
@@ -147,9 +153,13 @@ void GameplayScene::Render(double delta)
 
     m_game->Render(delta);
 
-    if (is_flhd_enabled) {
+    // Draw Mods
+    if (m_noteMod) {
+        m_noteMod->Draw();
+    }
+    if (m_visualMod) {
+        m_visualMod->Draw();
         m_laneHideImage->Draw();
-        m_targetBar->Draw(delta);
     }
 
     auto scores = m_game->GetScoreManager()->GetScore();
@@ -178,16 +188,16 @@ void GameplayScene::Render(double delta)
     curLifeTex->CalculateSize();
 
     Rect rc = {};
-    rc.left = (int)curLifeTex->AbsolutePosition.X;
-    rc.top = (int)curLifeTex->AbsolutePosition.Y;
-    rc.right = rc.left + (int)curLifeTex->AbsoluteSize.X;
-    rc.bottom = rc.top + (int)curLifeTex->AbsoluteSize.Y + 5; // Need to add + value because wiggle effect =w=
+    rc.left = static_cast<int>(curLifeTex->AbsolutePosition.X);
+    rc.top = static_cast<int>(curLifeTex->AbsolutePosition.Y);
+    rc.right = static_cast<int>(rc.left + curLifeTex->AbsoluteSize.X);
+    rc.bottom = static_cast<int>(rc.top + curLifeTex->AbsoluteSize.Y + 10); // Add + value because of the wiggle effect
     float alpha = (float)(kMaxLife - m_game->GetScoreManager()->GetLife()) / kMaxLife;
 
     // Add wiggle effect
     float yOffset = 0.0f;
     // Wiggle effect after the first second
-    yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 5.0f;
+    yOffset = sinf((float)m_game->GetElapsedTime() * 75.0f) * 10.0f;
 
     int topCur = (int)::round((1.0f - alpha) * rc.top + alpha * rc.bottom);
     rc.top = topCur + static_cast<int>(::round(yOffset));
@@ -202,7 +212,7 @@ void GameplayScene::Render(double delta)
         m_judgement[m_judgeIndex]->AnchorPoint = { 0.5, 0.5 };
         m_judgement[m_judgeIndex]->Draw();
 
-        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.5, 1.0); // Nice
+        m_judgeSize = std::clamp(m_judgeSize + (delta * 6), 0.6, 1.0); // Nice
         if ((m_judgeTimer += delta) > 0.60) {
             m_drawJudge = false;
         }
@@ -211,7 +221,7 @@ void GameplayScene::Render(double delta)
     if (m_drawJam) {
         if (std::get<5>(scores) > 0) {
             m_jamNum->DrawNumber(std::get<5>(scores));
-            m_jamLogo->Draw(delta);
+            m_jamLogo->DrawStop(delta); // Example for DrawStop
         }
 
         if ((m_jamTimer += delta) > 0.60) {
@@ -219,59 +229,39 @@ void GameplayScene::Render(double delta)
         }
     }
 
-    if (m_drawCombo && std::get<7>(scores) > 0) {
-        m_amplitude = 30.0;
-        m_wiggleTime = 60 * m_comboTimer;
+    if (m_drawCombo && std::get<7>(scores) > 0) { // This should be O2Jam Replication
+        const double positionStart = 30.0;
+        const double decrement = 6.0;
+        double animationSpeed = 60.0;
 
-        double decrement = 6.0;                           // Calculate the decrement for each frame
-        double totalDecrement = decrement * m_wiggleTime; // Calculate the total decrement based on the current frame/time
+        double targetposition = positionStart - decrement * m_comboTimer * animationSpeed;
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
-        double currentAmplitude = m_amplitude - totalDecrement; // Adjust the amplitude based on the total decrement
+        m_comboLogo->Position2 = UDim2::fromOffset(0, currentposition / 3.0);
+        m_comboNum->Position2 = UDim2::fromOffset(0, currentposition);
 
-        if (currentAmplitude < 0.0) {
-            currentAmplitude = 0.0; // Stopper like this due compiler issues
-        }
-
-        if (m_comboTimer > 1.0) {     // Check if the previous animation hasn't finished
-            m_comboTimer = 0.0;       // Reset the timer
-            m_amplitude += decrement; // Increase the starting amplitude for the next animation
-        }
-
-        m_comboLogo->Position2 = UDim2::fromOffset(0, currentAmplitude / 3.0);
         m_comboLogo->Draw(delta);
-
-        m_comboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
         m_comboNum->DrawNumber(std::get<7>(scores));
 
         m_comboTimer += delta;
-        if (m_comboTimer > 1.0) {
+
+        if (m_comboTimer >= 1.0) {
             m_comboTimer = 0.0;
             m_drawCombo = false;
         }
     }
 
-    if (m_drawLN && std::get<9>(scores) > 0) { // Same Animation logic like DrawCombo
-        m_amplitude = 5.0;
-        m_wiggleTime = 60 * m_lnTimer;
+    if (m_drawLN && std::get<9>(scores) > 0) {
+        const double positionStart = 5.0;
+        double animationSpeed = 60.0;
 
-        double decrement = 1.0;
-        double totalDecrement = decrement * m_wiggleTime;
+        double targetposition = positionStart - m_lnTimer * animationSpeed;
+        double currentposition = (targetposition > 0.0) ? targetposition : 0.0;
 
-        double currentAmplitude = m_amplitude - totalDecrement;
-
-        if (currentAmplitude < 0.0) {
-            currentAmplitude = 0.0;
-        }
-
-        if (m_lnTimer > 1.0) {
-            m_lnTimer = 0.0;
-            m_amplitude += decrement;
-        }
-
-        m_lnLogo->Position2 = UDim2::fromOffset(0, currentAmplitude);
+        m_lnLogo->Position2 = UDim2::fromOffset(0, currentposition);
         m_lnLogo->Draw(delta);
 
-        m_lnComboNum->Position2 = UDim2::fromOffset(0, currentAmplitude);
+        m_lnComboNum->Position2 = UDim2::fromOffset(0, currentposition);
         m_lnComboNum->DrawNumber(std::get<9>(scores));
 
         m_lnTimer += delta;
@@ -279,9 +269,9 @@ void GameplayScene::Render(double delta)
         if (m_lnTimer > 1.0) {
             m_lnTimer = 0.0;
             m_drawLN = false;
-            m_lnLogo->Reset();
         }
     }
+
 
     float gaugeVal = (float)m_game->GetScoreManager()->GetJamGauge() / kMaxJamGauge;
     if (gaugeVal > 0) {
@@ -299,7 +289,8 @@ void GameplayScene::Render(double delta)
             };
 
             m_jamGauge->Draw(&rc);
-        } else {
+        }
+        else {
             // Fill from left to right
             lerp = static_cast<int>(std::lerp(0.0, m_jamGauge->AbsoluteSize.X, gaugeVal));
             Rect rc = {
@@ -366,7 +357,8 @@ void GameplayScene::Render(double delta)
     int idx = 2;
     try {
         idx = std::stoi(Configuration::Load("Game", "GuideLine"));
-    } catch (const std::invalid_argument &) {
+    }
+    catch (const std::invalid_argument&) {
         idx = 2;
     }
 
@@ -381,7 +373,7 @@ void GameplayScene::Input(double delta)
     m_game->Input(delta);
 }
 
-void GameplayScene::OnKeyDown(const KeyState &state)
+void GameplayScene::OnKeyDown(const KeyState& state)
 {
     if (m_resourceFucked)
         return;
@@ -389,7 +381,7 @@ void GameplayScene::OnKeyDown(const KeyState &state)
     m_game->OnKeyDown(state);
 }
 
-void GameplayScene::OnKeyUp(const KeyState &state)
+void GameplayScene::OnKeyUp(const KeyState& state)
 {
     if (m_resourceFucked)
         return;
@@ -397,7 +389,7 @@ void GameplayScene::OnKeyUp(const KeyState &state)
     m_game->OnKeyUp(state);
 }
 
-void GameplayScene::OnMouseDown(const MouseState &state)
+void GameplayScene::OnMouseDown(const MouseState& state)
 {
 }
 
@@ -422,7 +414,8 @@ bool GameplayScene::Attach()
         try {
             LaneOffset = std::stoi(manager->GetSkinProp("Game", "LaneOffset", "5"));
             HitPos = std::stoi(manager->GetSkinProp("Game", "HitPos", "480"));
-        } catch (const std::invalid_argument &) {
+        }
+        catch (const std::invalid_argument&) {
             throw std::runtime_error("Invalid parameter on Skin::Game::LaneOffset or Skin::Game::HitPos");
         }
 
@@ -681,11 +674,11 @@ bool GameplayScene::Attach()
 
         auto OnButtonHover = [&](int state) {
             m_drawExitButton = state;
-        };
+            };
 
         auto OnButtonClick = [&]() {
             m_doExit = true;
-        };
+            };
 
         m_exitButtonFunc = std::make_unique<Button>(btnExitRect[0].X, btnExitRect[0].Y, btnExitRect[0].Width, btnExitRect[0].Height);
         m_exitButtonFunc->OnMouseClick = OnButtonClick;
@@ -798,7 +791,7 @@ bool GameplayScene::Attach()
             m_pills[i]->AnchorPoint = { pos.AnchorPointX, pos.AnchorPointY };
         }
 
-        Chart *chart = (Chart *)EnvironmentSetup::GetObj("SONG");
+        Chart* chart = (Chart*)EnvironmentSetup::GetObj("SONG");
         if (chart == nullptr) {
             throw std::runtime_error("Fatal error: Chart is null");
         }
@@ -815,7 +808,8 @@ bool GameplayScene::Attach()
         int idx = 2;
         try {
             idx = std::stoi(Configuration::Load("Game", "GuideLine"));
-        } catch (const std::invalid_argument &) {
+        }
+        catch (const std::invalid_argument&) {
             idx = 2;
         }
 
@@ -824,7 +818,8 @@ bool GameplayScene::Attach()
         auto OnTrackEvent = [&](GameTrackEvent e) {
             if (e.IsKeyEvent) {
                 m_keyState[e.Lane] = e.State;
-            } else {
+            }
+            else {
                 if (e.IsHitEvent) {
                     if (e.IsHitLongEvent) {
                         m_holdEffect[e.Lane]->ResetIndex();
@@ -835,14 +830,15 @@ bool GameplayScene::Attach()
                             m_hitEffect[e.Lane]->ResetIndex();
                             m_drawHit[e.Lane] = true;
                         }
-                    } else {
+                    }
+                    else {
                         m_hitEffect[e.Lane]->ResetIndex();
                         m_drawHit[e.Lane] = true;
                         m_drawHold[e.Lane] = false;
                     }
                 }
             }
-        };
+            };
 
         m_game->ListenKeyEvent(OnTrackEvent);
 
@@ -927,10 +923,26 @@ bool GameplayScene::Attach()
 
         bool IsHD = EnvironmentSetup::GetInt("Hidden") == 1;
         bool IsFL = EnvironmentSetup::GetInt("Flashlight") == 1;
-        if (IsHD || IsFL) {
+        bool IsSD = EnvironmentSetup::GetInt("Sudden") == 1;
+        bool IsRD = EnvironmentSetup::GetInt("Random") == 1;
+        bool IsMR = EnvironmentSetup::GetInt("Mirror") == 1;
+        bool IsPC = EnvironmentSetup::GetInt("Panic") == 1; // Requested
+
+        if (IsHD || IsFL || IsSD) {
             std::vector<Segment> segments;
 
-            if (IsFL) {
+            if (IsHD) {
+                segments = {
+                    //{ 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
+                    //{ 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
+                    //{ 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+                    //{ 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
+                    //{ 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                    { 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+                    { 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
+                    { 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                };
+            } if (IsFL) {
                 segments = {
                     { 0.00f, 0.20f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
                     { 0.33f, 0.38f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
@@ -938,13 +950,11 @@ bool GameplayScene::Attach()
                     { 0.61f, 0.67f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
                     { 0.67f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
                 };
-            } else {
+            }  if (IsSD) {
                 segments = {
-                    { 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
-                    { 0.00f, 0.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
-                    { 0.00f, 0.45f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
-                    { 0.45f, 0.50f, { 0, 0, 0, 0 }, { 0, 0, 0, 255 } },
-                    { 0.50f, 1.00f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } }
+                    { 0.00f, 0.50f, { 0, 0, 0, 255 }, { 0, 0, 0, 255 } },
+                    { 0.50f, 0.55f, { 0, 0, 0, 255 }, { 0, 0, 0, 0 } },
+                    { 0.55f, 1.00f, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
                 };
             }
 
@@ -959,11 +969,108 @@ bool GameplayScene::Attach()
             m_laneHideImage->Size = UDim2::fromOffset(imageWidth, imageHeight);
         }
 
+        bool areVisualModsActive = IsHD || IsFL || IsSD; // Check if any of the VisualMods are active (Hidden or Flashlight)
+        bool areNoteModsActive = IsMR || IsRD || IsPC; // Check if any of the NoteMods are active (Mirror or Random)
+
+        if (areVisualModsActive) { // Draw VisualMods (Hidden, Flashlight, and Sudden)
+            if (IsHD) {
+                std::string VisualModImage = "ModHidden.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
+
+            if (IsFL) {
+                std::string VisualModImage = "ModFlashlight.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
+            if (IsSD) {
+                std::string VisualModImage = "ModSudden.png";
+                auto VisualModfilename = playingPath / VisualModImage;
+
+                auto visualModPos = manager->GetPosition(SkinGroup::Playing, "VisualMods").front();
+                m_visualMod = std::make_unique<Texture2D>(VisualModfilename);
+                m_visualMod->Position = UDim2::fromOffset(visualModPos.X, visualModPos.Y);
+                m_visualMod->AnchorPoint = { visualModPos.AnchorPointX, visualModPos.AnchorPointY };
+            }
+        }
+
+        if (areNoteModsActive) { // Draw NoteMods (Mirror, Random, and Panic)
+            if (IsMR) {
+                std::string NoteModImage = "ModMirror.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
+
+            if (IsRD) {
+                std::string NoteModImage = "ModRandom.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
+            if (IsPC) {
+                std::string NoteModImage = "ModPanic.png";
+                auto NoteModfilename = playingPath / NoteModImage;
+
+                auto noteModPos = manager->GetPosition(SkinGroup::Playing, "NoteMods").front();
+                m_noteMod = std::make_unique<Texture2D>(NoteModfilename);
+                m_noteMod->Position = UDim2::fromOffset(noteModPos.X, noteModPos.Y);
+                m_noteMod->AnchorPoint = { noteModPos.AnchorPointX, noteModPos.AnchorPointY };
+            }
+        }
+
+        std::string modSelected;
+
+        if (IsHD) modSelected += "Hidden, ";
+        if (IsFL) modSelected += "Flashlight, ";
+        if (IsSD) modSelected += "Sudden, ";
+        if (IsRD) modSelected += "Random, ";
+        if (IsMR) modSelected += "Mirror, ";
+        if (IsPC) modSelected += "Panic, ";
+
+        if (!modSelected.empty()) {
+            modSelected.erase(modSelected.size() - 2);
+            Logs::Puts(("[Gameplay] Using modifier " + modSelected).c_str());
+        }
+        else {
+            Logs::Puts("[Gameplay] Not using any modifier");
+        }
+
+        int difficulty = EnvironmentSetup::GetInt("Difficulty"); // Debug
+        switch (difficulty) {
+        case 0:
+            Logs::Puts("[ScoreManager] Using difficulty Easy");
+            break;
+        case 1:
+            Logs::Puts("[ScoreManager] Using difficulty Normal");
+            break;
+        case 2:
+            Logs::Puts("[ScoreManager] Using difficulty Hard");
+            break;
+        default:
+            Logs::Puts("[ScoreManager] Unknown difficulty");
+            break;
+        }
+
         auto OnHitEvent = [&](NoteHitInfo info) {
             m_scoreTimer = 0;
             m_judgeTimer = 0;
-            m_comboTimer = 0;
-            m_judgeSize = 0.5;
+            m_judgeSize = 0.6;
 
             m_drawCombo = true;
             m_drawJudge = true;
@@ -971,7 +1078,7 @@ bool GameplayScene::Attach()
             m_comboTimer = 0;
             m_comboLogo->Reset();
             m_judgeIndex = (int)info.Result;
-        };
+            };
 
         m_game->GetScoreManager()->ListenHit(OnHitEvent);
 
@@ -979,29 +1086,32 @@ bool GameplayScene::Attach()
             m_drawJam = true;
             m_jamTimer = 0;
             m_jamLogo->Reset();
-        };
+            };
 
         m_game->GetScoreManager()->ListenJam(OnJamEvent);
 
         auto OnLongComboEvent = [&] {
             m_lnTimer = 0;
             m_drawLN = true;
-        };
+            m_lnLogo->Reset();
+            };
 
         m_game->GetScoreManager()->ListenLongNote(OnLongComboEvent);
 
         if (arena != -1) {
-            auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+            auto obj = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
             if (obj) {
                 obj->TintColor = Color3::FromRGB(128, 128, 128);
             }
         }
+    }
 
-    } catch (SDLException &e) {
+    catch (SDLException& e) {
         MsgBox::Show("GameplayError", "Image Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;
         return true;
-    } catch (std::exception &e) {
+    }
+    catch (std::exception& e) {
         MsgBox::Show("GameplayError", "Error", e.what(), MsgBoxType::OK);
         m_resourceFucked = true;
         return true;
@@ -1034,6 +1144,9 @@ bool GameplayScene::Detach()
     m_Playfield.reset();
     m_Playfooter.reset();
     m_exitBtn.reset();
+
+    m_noteMod.reset();
+    m_visualMod.reset();
 
     m_jamGauge.reset();
     m_waveGage.reset();
@@ -1075,8 +1188,8 @@ bool GameplayScene::Detach()
     m_exitButtonFunc.reset();
 
     int arena = EnvironmentSetup::GetInt("Arena");
-    if (arena != -1) {
-        auto obj = (Texture2D *)EnvironmentSetup::GetObj("SongBackground");
+    if (arena) {
+        auto obj = (Texture2D*)EnvironmentSetup::GetObj("SongBackground");
         if (obj) {
             obj->TintColor = Color3::FromRGB(255, 255, 255);
         }
@@ -1086,7 +1199,7 @@ bool GameplayScene::Detach()
     return true;
 }
 
-void *GameplayScene::CreateScreenshotWin32()
+void* GameplayScene::CreateScreenshotWin32()
 {
     return nullptr;
 }

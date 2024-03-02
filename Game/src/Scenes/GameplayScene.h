@@ -50,6 +50,8 @@ private:
     std::unique_ptr<Texture2D> m_Playfield;
     std::unique_ptr<Texture2D> m_PlayBG;
     std::unique_ptr<Texture2D> m_Playfooter;
+    std::unique_ptr<Texture2D> m_noteMod;
+    std::unique_ptr<Texture2D> m_visualMod;
 
     std::unique_ptr<Texture2D> m_jamGauge;
     std::unique_ptr<Texture2D> m_waveGage;
@@ -100,11 +102,6 @@ private:
     /* Hit/Hold Effect */
     bool m_drawHold[7];
     bool m_drawHit[7];
-
-    /* Fixed Animation*/
-    double m_wiggleTime;
-    double m_wiggleOffset;
-    double m_amplitude;
 
     /* button */
     bool m_drawExitButton;

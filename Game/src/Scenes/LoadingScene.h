@@ -17,6 +17,7 @@ public:
 
 private:
     // can't load chart lmao
+    bool IsFile = false; // fix for most problem
     bool fucked = false;
     bool is_shown = false;
     bool is_ready = false;
@@ -25,5 +26,5 @@ private:
     std::u8string m_title;
 
     double     m_counter;
-    Texture2D *m_background;
+    Texture2D* m_background;
 };
